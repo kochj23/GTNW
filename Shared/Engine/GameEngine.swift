@@ -16,6 +16,12 @@ class GameEngine: ObservableObject {
     @Published var showingGameOver = false
     @Published var advisors: [Advisor] = []
     @Published var selectedAdvisor: Advisor?
+    @Published var crisisManager = CrisisManager()
+    @Published var newsManager = NewsManager()
+    @Published var leaderboardManager = LeaderboardManager()
+    @Published var showingVictoryScreen = false
+    @Published var victoryType: VictoryType?
+    @Published var finalScore: GameScore?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -75,8 +81,34 @@ class GameEngine: ObservableObject {
         // Process consequences of actions
         processConsequences()
 
+        // Check for random crisis events
+        checkForCrisis()
+
+        // Generate news headlines
+        generateNews()
+
         // Log system updates
         logSystemUpdates()
+    }
+
+    /// Generate news headlines for this turn
+    private func generateNews() {
+        guard let gameState = gameState else { return }
+        newsManager.generateNews(from: gameState)
+    }
+
+    /// Check for and generate crisis events
+    private func checkForCrisis() {
+        guard let gameState = gameState else { return }
+
+        // Don't generate crisis if one is already active
+        guard crisisManager.activeCrisis == nil else { return }
+
+        // Generate random crisis based on game state
+        if let crisis = crisisManager.generateRandomCrisis(gameState: gameState) {
+            crisisManager.presentCrisis(crisis)
+            addLog("🚨 CRISIS EVENT: \(crisis.title)", type: .critical)
+        }
     }
 
     /// Process all AI-controlled countries
@@ -1190,37 +1222,35 @@ class GameEngine: ObservableObject {
 
     /// Check for game over conditions
     private func checkGameOver() {
-        guard let gameState = gameState else { return }
+        guard var gameState = gameState else { return }
 
-        // Player destroyed
-        if let playerCountry = gameState.getPlayerCountry(), playerCountry.isDestroyed {
+        // Check for defeat
+        let defeatCheck = VictoryChecker.checkDefeat(gameState: gameState)
+        if defeatCheck.defeated {
             gameState.gameOver = true
-            gameState.gameOverReason = "Your nation has been destroyed in nuclear fire."
+            gameState.gameOverReason = defeatCheck.reason
+            self.gameState = gameState
+
+            // Calculate final score (no victory)
+            let score = GameScore.calculate(from: gameState, victoryType: nil)
+            self.finalScore = score
+            self.victoryType = nil
+            self.showingVictoryScreen = true
             showGameOver()
             return
         }
 
-        // Nuclear annihilation
-        if gameState.globalRadiation >= 500 {
+        // Check for victory
+        if let victory = VictoryChecker.checkVictory(gameState: gameState) {
             gameState.gameOver = true
-            gameState.gameOverReason = "Global radiation levels have made Earth uninhabitable. Humanity is extinct."
-            showGameOver()
-            return
-        }
+            gameState.gameOverReason = victory.description
+            self.gameState = gameState
 
-        // Total casualties
-        if gameState.totalCasualties >= 1_000_000_000 {
-            gameState.gameOver = true
-            gameState.gameOverReason = "Over 1 billion lives lost. Civilization has collapsed."
-            showGameOver()
-            return
-        }
-
-        // Check for victory - player is last standing with nuclear capability
-        let survivingNuclearPowers = gameState.countries.filter { !$0.isDestroyed && $0.nuclearWarheads > 0 }
-        if survivingNuclearPowers.count == 1 && survivingNuclearPowers.first?.id == gameState.playerCountryID {
-            gameState.gameOver = true
-            gameState.gameOverReason = "You have achieved nuclear supremacy... but at what cost?"
+            // Calculate final score with victory
+            let score = GameScore.calculate(from: gameState, victoryType: victory)
+            self.finalScore = score
+            self.victoryType = victory
+            self.showingVictoryScreen = true
             showGameOver()
             return
         }

@@ -61,6 +61,42 @@ struct MainTabView: View {
                     .tag(4)
             }
             .frame(minWidth: 1400, minHeight: 900)
+            .overlay(
+                // Crisis Event Overlay
+                Group {
+                    if let crisis = gameEngine.crisisManager.activeCrisis,
+                       let gameState = gameEngine.gameState {
+                        DetailedCrisisView(
+                            crisis: crisis,
+                            gameState: gameState,
+                            onResolve: { optionIndex in
+                                var mutableState = gameState
+                                gameEngine.crisisManager.resolveCrisis(optionIndex: optionIndex, gameState: &mutableState)
+                                gameEngine.gameState = mutableState
+                            },
+                            crisisManager: gameEngine.crisisManager
+                        )
+                        .transition(.opacity)
+                    }
+                }
+            )
+            .sheet(isPresented: $gameEngine.showingVictoryScreen) {
+                if let gameState = gameEngine.gameState,
+                   let score = gameEngine.finalScore {
+                    VictoryScreen(
+                        gameState: gameState,
+                        victoryType: gameEngine.victoryType,
+                        score: score,
+                        onNewGame: {
+                            gameEngine.showingVictoryScreen = false
+                            gameEngine.startNewGame()
+                        },
+                        onViewLeaderboard: {
+                            // TODO: Show leaderboard
+                        }
+                    )
+                }
+            }
         }
     }
 }

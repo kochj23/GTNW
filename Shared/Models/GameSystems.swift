@@ -44,7 +44,7 @@ enum Crisis: String, Codable, CaseIterable {
     var time: Int { [13, 1, 1, 3, 2, 1, 3][Crisis.allCases.firstIndex(of: self)!] }
 }
 
-struct CrisisEvent: Identifiable, Codable {
+struct SimpleCrisis: Identifiable, Codable {
     let id = UUID()
     let type: Crisis, turn: Int
     var deadline: Int, resolved = false
@@ -266,8 +266,8 @@ class SystemsManager: ObservableObject {
     @Published var spyNets: [SpyNetwork] = []
 
     // Crises
-    @Published var crises: [CrisisEvent] = []
-    @Published var resolved: [CrisisEvent] = []
+    @Published var crises: [SimpleCrisis] = []
+    @Published var resolved: [SimpleCrisis] = []
 
     // Environment
     @Published var environ = EnvironState()
@@ -320,7 +320,7 @@ class SystemsManager: ObservableObject {
 
         if gs.defconLevel.rawValue <= 2 && Int.random(in: 0...100) < 20 {
             let crisis = Crisis.allCases.randomElement()!
-            crises.append(CrisisEvent(type: crisis, turn: gs.turn, deadline: crisis.time))
+            crises.append(SimpleCrisis(type: crisis, turn: gs.turn, deadline: crisis.time))
         }
     }
 
