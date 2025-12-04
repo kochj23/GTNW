@@ -19,6 +19,8 @@ class GameEngine: ObservableObject {
     @Published var crisisManager = CrisisManager()
     @Published var newsManager = NewsManager()
     @Published var leaderboardManager = LeaderboardManager()
+    @Published var eventLogger = EventLogger()
+    @Published var mlxManager = MLXManager()
     @Published var showingVictoryScreen = false
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
@@ -168,26 +170,40 @@ class GameEngine: ObservableObject {
 
     /// Execute AI action
     private func executeAIAction(_ action: AIAction, for country: Country) {
+        guard let gameState = gameState else { return }
+
         switch action {
         case .wait:
-            break
+            eventLogger.log("No action taken", type: .system, country: country.name, turn: gameState.turn)
 
         case .declareWar(let targetID):
             declareWar(aggressor: country.id, defender: targetID)
+            if let target = getCountry(targetID) {
+                eventLogger.log("Declared war on \(target.name)", type: .war, country: country.name, turn: gameState.turn)
+            }
 
         case .launchNuclearStrike(let targetID, let warheads):
             launchNuclearStrike(from: country.id, to: targetID, warheads: warheads)
+            if let target = getCountry(targetID) {
+                eventLogger.log("Launched \(warheads) nuclear warheads at \(target.name)", type: .nuclear, country: country.name, turn: gameState.turn)
+            }
 
         case .threatenNuclearStrike(let targetID):
             addLog("\(country.flag) \(country.name) threatens \(getCountry(targetID)?.name ?? "unknown") with nuclear strike!", type: .warning)
             modifyDiplomaticRelation(from: country.id, to: targetID, by: -20)
             raiseDEFCON()
+            if let target = getCountry(targetID) {
+                eventLogger.log("Threatened \(target.name) with nuclear strike", type: .intel, country: country.name, turn: gameState.turn)
+            }
 
         case .improveDiplomacy:
             // Find country with mediocre relations and improve them
             if let targetID = country.diplomaticRelations.filter({ $0.value > -50 && $0.value < 50 }).keys.randomElement() {
                 modifyDiplomaticRelation(from: country.id, to: targetID, by: 10)
                 addLog("\(country.flag) \(country.name) improves relations with \(getCountry(targetID)?.name ?? "unknown")", type: .info)
+                if let target = getCountry(targetID) {
+                    eventLogger.log("Improved relations with \(target.name)", type: .diplomacy, country: country.name, turn: gameState.turn)
+                }
             }
 
         case .seekAlliance:
@@ -195,10 +211,13 @@ class GameEngine: ObservableObject {
             if let targetID = country.diplomaticRelations.filter({ $0.value > 60 }).keys.randomElement(),
                !country.alliances.contains(targetID) {
                 formAlliance(country1: country.id, country2: targetID)
+                if let target = getCountry(targetID) {
+                    eventLogger.log("Formed alliance with \(target.name)", type: .diplomacy, country: country.name, turn: gameState.turn)
+                }
             }
 
         case .continuousWar:
-            break
+            eventLogger.log("Continuing war operations", type: .war, country: country.name, turn: gameState.turn)
         }
     }
 

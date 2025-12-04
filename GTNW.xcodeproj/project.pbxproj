@@ -14,7 +14,9 @@
 		14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
 		14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
 		229A0D1F5A663D4CEE959DD7 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
+		2B76DF08711E46FDE51A69CC /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
+		3E66D88CA341C393647721B0 /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		3F3776463616B38201BA5954 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
 		40BA548AC1F96838707E22F5 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
 		413EAB2EAC191B5E7C15F48D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
@@ -30,6 +32,7 @@
 		6EB415D2D4186D38A3616E76 /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
 		6FC58C6C449B38D80847C955 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
 		7494639D7337DF87DC04D621 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
+		74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */; };
 		75F82511211E162114221744 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94847C472F1566DF6947C4A3 /* CommandView.swift */; };
 		7ABDEF5D1B4F33715640E692 /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		7B58B87BA586678F7FB2A833 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
@@ -50,6 +53,7 @@
 		B4DB344F934840E5FA6D390D /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F961F9A3D52CD1EC10D97CF /* GameState.swift */; };
 		B6D8AE81F735B62EAF7434AA /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		B746AF0BA4E999B1AAA41F68 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
+		B75C5D455FB1A2E43EE928A1 /* TextCommandInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */; };
 		BAF1EAEAFAD80B5751A45D7B /* ScoringSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */; };
 		C747E59FD9038F32DA3B4D6D /* AdministrationSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */; };
 		CDC8A64EC7294EAFA55258B0 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
@@ -66,6 +70,7 @@
 /* Begin PBXFileReference section */
 		00ED35FA1859FB798CDBD083 /* WorldMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMap.swift; sourceTree = "<group>"; };
 		07228E319CC144294BA9F6FA /* VictoryScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VictoryScreen.swift; sourceTree = "<group>"; };
+		0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextCommandInterface.swift; sourceTree = "<group>"; };
 		0D125C47BA1FCDB0CEAA7177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisView.swift; sourceTree = "<group>"; };
@@ -79,6 +84,7 @@
 		60D0B51B989A94270AE3580D /* AdvisorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorViews.swift; sourceTree = "<group>"; };
 		75BFDEE85E6AE222B571791D /* ModernCommandView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernCommandView.swift; sourceTree = "<group>"; };
 		79F2CAFFC239692E6D4C5120 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
+		82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MLXIntegration.swift; sourceTree = "<group>"; };
 		846D958A103EA494AAC732D1 /* CyberWarfare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberWarfare.swift; sourceTree = "<group>"; };
 		94847C472F1566DF6947C4A3 /* CommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandView.swift; sourceTree = "<group>"; };
 		991630D748C5C7E56E47730C /* GTNW_macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GTNW_macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,6 +127,7 @@
 				3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */,
 				5EFC468BB40351CE42893C87 /* NewsFeed.swift */,
 				CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */,
+				82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -141,6 +148,7 @@
 				75BFDEE85E6AE222B571791D /* ModernCommandView.swift */,
 				2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */,
 				F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */,
+				0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -300,6 +308,8 @@
 				E783177D41BC2CC35FB83780 /* ModernCommandView.swift in Sources */,
 				7C21F19C72C2D2CC41B19895 /* ModernCountryPicker.swift in Sources */,
 				CDC8A64EC7294EAFA55258B0 /* SimpleModernWorldMap.swift in Sources */,
+				2B76DF08711E46FDE51A69CC /* MLXIntegration.swift in Sources */,
+				B75C5D455FB1A2E43EE928A1 /* TextCommandInterface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,6 +342,8 @@
 				5B51E2D1A374CBC57D3A29CA /* ModernCommandView.swift in Sources */,
 				FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */,
 				3F3776463616B38201BA5954 /* SimpleModernWorldMap.swift in Sources */,
+				3E66D88CA341C393647721B0 /* MLXIntegration.swift in Sources */,
+				74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

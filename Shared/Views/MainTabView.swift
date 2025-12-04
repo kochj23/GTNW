@@ -59,6 +59,14 @@ struct MainTabView: View {
                         Label("Intelligence", systemImage: "eye.fill")
                     }
                     .tag(4)
+
+                // Terminal Interface (NEW)
+                TextCommandInterface()
+                    .environmentObject(gameEngine)
+                    .tabItem {
+                        Label("Terminal", systemImage: "terminal.fill")
+                    }
+                    .tag(5)
             }
             .frame(minWidth: 1400, minHeight: 900)
             .overlay(
