@@ -1401,6 +1401,56 @@ extension GameEngine {
             addLog("🛰️ \(asatAttacks.count) satellite(s) destroyed - Debris risk: \(gs.systems.debris.kessler)%", type: .warning)
         }
     }
+
+    // MARK: - Shadow President Actions
+
+    func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String) {
+        guard var gameState = gameState else { return }
+
+        let result = ShadowPresidentActionManager.execute(
+            action: action,
+            from: playerID,
+            to: targetID,
+            gameState: &gameState
+        )
+
+        if result.relationChange != 0 {
+            modifyDiplomaticRelation(from: playerID, to: targetID, by: result.relationChange)
+        }
+
+        if result.economicImpact != 0, let playerIndex = gameState.countries.firstIndex(where: { $0.id == playerID }) {
+            gameState.countries[playerIndex].gdp += Double(result.economicImpact) / 1_000_000_000_000.0
+        }
+
+        if result.triggeredWar {
+            declareWar(aggressor: playerID, defender: targetID)
+        }
+
+        addLog("[\(action.category.rawValue)] \(action.rawValue): \(result.message)", type: result.success ? .info : .error)
+        eventLogger.log(
+            "\(action.rawValue) against \(gameState.getCountry(id: targetID)?.name ?? targetID)",
+            type: actionCategoryToEventType(action.category),
+            country: gameState.getPlayerCountry()?.name,
+            turn: gameState.turn
+        )
+
+        self.gameState = gameState
+
+        if action.category == .covert && Double.random(in: 0...1) < result.detectedProbability {
+            addLog("⚠️ COVERT OPERATION DETECTED!", type: .warning)
+            modifyDiplomaticRelation(from: playerID, to: targetID, by: -40)
+        }
+    }
+
+    private func actionCategoryToEventType(_ category: ActionCategory) -> GameEvent.EventType {
+        switch category {
+        case .nuclear: return .nuclear
+        case .military: return .war
+        case .diplomatic, .treaties: return .diplomacy
+        case .economic: return .economic
+        case .covert, .intelligence, .propaganda: return .intel
+        }
+    }
 }
 
 struct LogMessage: Identifiable {

@@ -12,6 +12,7 @@ struct ModernCommandView: View {
     @EnvironmentObject var gameEngine: GameEngine
     @State private var selectedTarget: String?
     @State private var showingCountryPicker = false
+    @State private var showingShadowMenu = false
     @State private var warheadCount: Int = 1
 
     var body: some View {
@@ -48,6 +49,20 @@ struct ModernCommandView: View {
             }
             .sheet(isPresented: $showingCountryPicker) {
                 ModernCountryPicker(gameState: gameState, selectedCountry: $selectedTarget)
+            }
+            .sheet(isPresented: $showingShadowMenu) {
+                if let targetID = selectedTarget,
+                   let target = gameState.getCountry(id: targetID),
+                   let player = gameState.getPlayerCountry() {
+                    ShadowPresidentMenu(
+                        player: player,
+                        target: target,
+                        gameState: gameState,
+                        onExecute: { action in
+                            gameEngine.executeShadowPresidentAction(action, from: player.id, to: target.id)
+                        }
+                    )
+                }
             }
         }
     }
@@ -171,12 +186,12 @@ struct ModernCommandView: View {
             }
 
             ModernButton(
-                title: "COVERT\nOPERATIONS",
-                icon: "eye.fill",
+                title: "SHADOW PRESIDENT\nACTIONS (132)",
+                icon: "list.bullet.rectangle.fill",
                 color: GTNWColors.neonPurple,
                 enabled: selectedTarget != nil
             ) {
-                // TODO: Show covert ops menu
+                showingShadowMenu = true
             }
 
             ModernButton(

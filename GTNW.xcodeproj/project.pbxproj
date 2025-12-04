@@ -10,6 +10,7 @@
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
 		0F4B5D2A37DF76925230F475 /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
+		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		1357BE3A32F95BEC7FA165C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
 		14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
 		14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
@@ -41,12 +42,14 @@
 		83B159532906E78B9953F22F /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		854167CE65FCF346BA800663 /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F2CAFFC239692E6D4C5120 /* GameEngine.swift */; };
 		871F3746E1D5AA2E551969F2 /* Advisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DCC47475BC4E6E381CED1 /* Advisor.swift */; };
+		8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */; };
 		948B3C658864BE9FC3F88C4C /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		9A97F22D5B4A34C796C91BA2 /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		9B6EDDFB99BB9370BBAE9C2F /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
 		9DC12054C5A84DD1809A0902 /* ModernDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */; };
 		A2E0F2B1CD4B7389BE51392A /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */; };
+		A7CC75F8CE70E5B15D7D71CF /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		A9D02ACB1A124DDD9347432B /* CrisisEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17109F6B50FA8125C522471 /* CrisisEvents.swift */; };
 		AAF17D0470F8F9CD9C403056 /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */; };
 		B3A56622AE3C641209272325 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
@@ -59,6 +62,7 @@
 		CDC8A64EC7294EAFA55258B0 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
 		D1AEE746E0771199654D4B8C /* Country.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4591D208BA4670CBA98E76 /* Country.swift */; };
 		D7B745442B105570408715EB /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F2CAFFC239692E6D4C5120 /* GameEngine.swift */; };
+		DA4280DDF1E43A064470916B /* ShadowPresidentActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */; };
 		E53E4698A3E911D099B1CD40 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F961F9A3D52CD1EC10D97CF /* GameState.swift */; };
 		E60EF72D1CF53E4ACAF32705 /* Country.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4591D208BA4670CBA98E76 /* Country.swift */; };
 		E783177D41BC2CC35FB83780 /* ModernCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75BFDEE85E6AE222B571791D /* ModernCommandView.swift */; };
@@ -77,6 +81,8 @@
 		204DCC47475BC4E6E381CED1 /* Advisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Advisor.swift; sourceTree = "<group>"; };
 		2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernCountryPicker.swift; sourceTree = "<group>"; };
 		2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalAdministrations.swift; sourceTree = "<group>"; };
+		3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPresidentMenu.swift; sourceTree = "<group>"; };
+		390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPresidentActions.swift; sourceTree = "<group>"; };
 		3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScoringSystem.swift; sourceTree = "<group>"; };
 		4F961F9A3D52CD1EC10D97CF /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
 		5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProhibitedWeapons.swift; sourceTree = "<group>"; };
@@ -128,6 +134,7 @@
 				5EFC468BB40351CE42893C87 /* NewsFeed.swift */,
 				CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */,
 				82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */,
+				390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -149,6 +156,7 @@
 				2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */,
 				F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */,
 				0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */,
+				3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -310,6 +318,8 @@
 				CDC8A64EC7294EAFA55258B0 /* SimpleModernWorldMap.swift in Sources */,
 				2B76DF08711E46FDE51A69CC /* MLXIntegration.swift in Sources */,
 				B75C5D455FB1A2E43EE928A1 /* TextCommandInterface.swift in Sources */,
+				DA4280DDF1E43A064470916B /* ShadowPresidentActions.swift in Sources */,
+				A7CC75F8CE70E5B15D7D71CF /* ShadowPresidentMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +354,8 @@
 				3F3776463616B38201BA5954 /* SimpleModernWorldMap.swift in Sources */,
 				3E66D88CA341C393647721B0 /* MLXIntegration.swift in Sources */,
 				74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */,
+				8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */,
+				0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
