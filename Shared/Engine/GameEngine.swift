@@ -28,8 +28,8 @@ class GameEngine: ObservableObject {
     // MARK: - Game Lifecycle
 
     /// Start a new game
-    func startNewGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal) {
-        gameState = GameState(playerCountryID: playerCountryID, difficultyLevel: difficulty)
+    func startNewGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal, administration: Administration? = nil) {
+        gameState = GameState(playerCountryID: playerCountryID, difficultyLevel: difficulty, administration: administration)
         logMessages = []
         showingGameOver = false
 

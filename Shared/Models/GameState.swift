@@ -33,13 +33,14 @@ class GameState: ObservableObject, Codable {
     @Published var activeCyberOperations: [CyberOperation]
     @Published var cyberIncidents: [CyberIncident]
     @Published var activeWeaponPrograms: [WeaponsDevelopmentProgram]
+    @Published var advisors: [Advisor] = []
 
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes
         case globalRadiation, totalCasualties, playerCountryID, gameOver
         case gameOverReason, difficultyLevel, turnHistory, peaceTurns
         case isMultiplayer, currentPlayerIndex, playerCountries
-        case activeCyberOperations, cyberIncidents, activeWeaponPrograms
+        case activeCyberOperations, cyberIncidents, activeWeaponPrograms, advisors
     }
 
     init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil) {
@@ -98,6 +99,7 @@ class GameState: ObservableObject, Codable {
         activeCyberOperations = try c.decodeIfPresent([CyberOperation].self, forKey: .activeCyberOperations) ?? []
         cyberIncidents = try c.decodeIfPresent([CyberIncident].self, forKey: .cyberIncidents) ?? []
         activeWeaponPrograms = try c.decodeIfPresent([WeaponsDevelopmentProgram].self, forKey: .activeWeaponPrograms) ?? []
+        advisors = try c.decodeIfPresent([Advisor].self, forKey: .advisors) ?? []
     }
 
     func encode(to encoder: Encoder) throws {
@@ -122,6 +124,7 @@ class GameState: ObservableObject, Codable {
         try c.encode(activeCyberOperations, forKey: .activeCyberOperations)
         try c.encode(cyberIncidents, forKey: .cyberIncidents)
         try c.encode(activeWeaponPrograms, forKey: .activeWeaponPrograms)
+        try c.encode(advisors, forKey: .advisors)
     }
 
     // MARK: - Game Logic
