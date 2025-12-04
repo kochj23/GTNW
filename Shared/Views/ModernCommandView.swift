@@ -3,7 +3,7 @@
 //  Global Thermal Nuclear War
 //
 //  Modern glassmorphic command interface
-//  Created by Jordan Koch & Claude Code on 2025-12-03.
+//  Created by Jordan Koch on 2025-12-03.
 //
 
 import SwiftUI

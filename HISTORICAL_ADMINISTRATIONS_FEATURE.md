@@ -1,6 +1,6 @@
 # Historical Administrations Feature - GTNW
 **Date:** December 3, 2025
-**Authors:** Jordan Koch & Claude Code
+**Authors:** Jordan Koch
 
 ## ✨ NEW FEATURE: Play with Any US President Since 1945!
 
@@ -369,4 +369,4 @@ You can now experience nuclear decision-making from the perspective of any US pr
 **Total Advisors:** 50+
 **Total Administrations:** 15
 
-**Authors:** Jordan Koch & Claude Code
+**Authors:** Jordan Koch

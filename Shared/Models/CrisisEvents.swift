@@ -3,7 +3,7 @@
 //  Global Thermal Nuclear War
 //
 //  Dynamic crisis events that create tension and force tough choices
-//  Created by Jordan Koch & Claude Code on 2025-12-03.
+//  Created by Jordan Koch on 2025-12-03.
 //
 
 import Foundation

@@ -1,7 +1,7 @@
 # GTNW - Game Enhancement Ideas
 ## Making Global Thermal Nuclear War More Engaging
 
-**Created by**: Jordan Koch & Claude Code
+**Created by**: Jordan Koch
 **Date**: 2025-12-03
 **Purpose**: Ideas to increase player engagement and replayability
 

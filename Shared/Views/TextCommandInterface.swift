@@ -3,7 +3,7 @@
 //  Global Thermal Nuclear War
 //
 //  Space Quest-style text command interface with event log
-//  Created by Jordan Koch & Claude Code on 2025-12-03.
+//  Created by Jordan Koch on 2025-12-03.
 //
 
 import SwiftUI

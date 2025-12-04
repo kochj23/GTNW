@@ -2,7 +2,7 @@
 ## Comprehensive Feature Implementation Progress
 
 **Date**: 2025-12-03
-**Developer**: Jordan Koch & Claude Code
+**Developer**: Jordan Koch
 **Project**: Global Thermal Nuclear War v2.0
 
 ---

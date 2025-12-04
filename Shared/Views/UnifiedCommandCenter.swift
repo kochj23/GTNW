@@ -4,7 +4,7 @@
 //
 //  Combined Command + Terminal interface
 //  Repository: https://github.com/kochj23/GTNW
-//  Created by Jordan Koch & Claude Code on 2025-12-03.
+//  Created by Jordan Koch on 2025-12-03.
 //
 
 import SwiftUI
