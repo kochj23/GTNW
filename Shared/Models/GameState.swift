@@ -42,7 +42,7 @@ class GameState: ObservableObject, Codable {
         case activeCyberOperations, cyberIncidents, activeWeaponPrograms
     }
 
-    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false) {
+    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil) {
         self.playerCountryID = playerCountryID
         self.difficultyLevel = difficultyLevel
         self.countries = CountryFactory.createAllCountries()
@@ -55,6 +55,13 @@ class GameState: ObservableObject, Codable {
         self.activeCyberOperations = []
         self.cyberIncidents = []
         self.activeWeaponPrograms = []
+
+        // Use selected administration or default to Trump 2025
+        if let admin = administration {
+            self.advisors = admin.advisors
+        } else {
+            self.advisors = Advisor.trumpCabinet()
+        }
 
         if let s = scenario {
             systems.scenario = s

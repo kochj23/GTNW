@@ -11,7 +11,9 @@ struct ContentView: View {
     @EnvironmentObject var gameEngine: GameEngine
     @State private var showingCountrySelection = false
     @State private var showingDifficultySelection = false
+    @State private var showingAdministrationSelection = false
     @State private var selectedDifficulty: DifficultyLevel = .normal
+    @State private var selectedAdministration: Administration? = nil
 
     var body: some View {
         Group {
@@ -87,6 +89,28 @@ struct ContentView: View {
             }
             .padding(.bottom, 20)
 
+            // Administration selection
+            VStack(spacing: 15) {
+                Text("SELECT ADMINISTRATION")
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(AppSettings.terminalAmber)
+
+                Button(action: {
+                    showingAdministrationSelection = true
+                }) {
+                    HStack {
+                        Image(systemName: "person.3.fill")
+                        Text(selectedAdministration?.description ?? "Trump 2025 (Default)")
+                            .font(.system(size: 14, design: .monospaced))
+                    }
+                    .foregroundColor(AppSettings.terminalGreen)
+                    .padding()
+                    .frame(maxWidth: 300)
+                    .border(AppSettings.terminalGreen, width: 1)
+                }
+            }
+            .padding(.bottom, 20)
+
             // Start button
             Button(action: {
                 showingCountrySelection = true
@@ -109,8 +133,14 @@ struct ContentView: View {
         }
         .padding()
         .sheet(isPresented: $showingCountrySelection) {
-            CountrySelectionView(selectedDifficulty: selectedDifficulty)
-                .environmentObject(gameEngine)
+            CountrySelectionView(
+                selectedDifficulty: selectedDifficulty,
+                selectedAdministration: selectedAdministration
+            )
+            .environmentObject(gameEngine)
+        }
+        .sheet(isPresented: $showingAdministrationSelection) {
+            AdministrationSelectionView(selectedAdministration: $selectedAdministration)
         }
     }
 
@@ -429,6 +459,7 @@ struct CountrySelectionView: View {
     @EnvironmentObject var gameEngine: GameEngine
     @Environment(\.dismiss) var dismiss
     let selectedDifficulty: DifficultyLevel
+    let selectedAdministration: Administration?
 
     @State private var selectedCountry: String = "USA"
     @State private var searchText = ""
@@ -483,7 +514,7 @@ struct CountrySelectionView: View {
             }
 
             Button(action: {
-                gameEngine.startNewGame(playerCountryID: selectedCountry, difficulty: selectedDifficulty)
+                gameEngine.startNewGame(playerCountryID: selectedCountry, difficulty: selectedDifficulty, administration: selectedAdministration)
                 dismiss()
             }) {
                 Text("START GAME")
