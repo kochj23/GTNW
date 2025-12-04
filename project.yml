@@ -1,0 +1,48 @@
+name: GTNW
+
+options:
+  bundleIdPrefix: com.wopr
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    ENABLE_PREVIEWS: YES
+
+targets:
+  GTNW_macOS:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - Shared
+    settings:
+      PRODUCT_NAME: GTNW
+      PRODUCT_BUNDLE_IDENTIFIER: com.wopr.gtnw.macos
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_CFBundleDisplayName: "Global Thermal Nuclear War"
+      INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.strategy-games
+      COMBINE_HIDPI_IMAGES: YES
+      CODE_SIGN_STYLE: Automatic
+      CODE_SIGN_IDENTITY: "-"
+
+  GTNW_iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - Shared
+    settings:
+      PRODUCT_NAME: GTNW
+      PRODUCT_BUNDLE_IDENTIFIER: com.wopr.gtnw.ios
+      TARGETED_DEVICE_FAMILY: "1,2"
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_CFBundleDisplayName: "GTNW"
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
+      INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+      INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+      CODE_SIGN_STYLE: Automatic
+      CODE_SIGN_IDENTITY: "Apple Development"
+      DEVELOPMENT_TEAM: "$(DEVELOPMENT_TEAM)"
