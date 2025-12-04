@@ -20,16 +20,16 @@ struct MainTabView: View {
         } else {
             // Game tabs
             TabView(selection: $selectedTab) {
-                // Command Center
-                CommandView()
+                // Command Center (MODERN)
+                ModernCommandView()
                     .environmentObject(gameEngine)
                     .tabItem {
                         Label("Command", systemImage: "command.circle.fill")
                     }
                     .tag(0)
 
-                // World Map
-                WorldMapView(gameState: gameEngine.gameState!)
+                // World Map (MODERN)
+                SimpleModernWorldMap(gameState: gameEngine.gameState!)
                     .tabItem {
                         Label("World Map", systemImage: "globe")
                     }
