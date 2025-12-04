@@ -24,7 +24,7 @@ A multiplatform nuclear strategy game inspired by:
 
 ### Open the Project
 ```bash
-cd /Users/kochj/Desktop/xcode/GTNW
+cd /Volumes/Data/xcode/GTNW
 open GTNW.xcodeproj
 ```
 
@@ -45,12 +45,32 @@ Xcode will open with the project ready to build.
 
 ### Command Line Build
 ```bash
-# macOS
-xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' build
+# macOS Debug Build
+xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -configuration Debug clean build
+
+# macOS Release Build
+xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -configuration Release clean build
+
+# Archive and Export (creates .app bundle)
+xcodebuild -scheme GTNW_macOS -configuration Release archive -archivePath ~/Desktop/GTNW.xcarchive
+xcodebuild -exportArchive -archivePath ~/Desktop/GTNW.xcarchive -exportPath ~/Desktop/GTNW/ -exportOptionsPlist exportOptions.plist
 
 # iOS
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_iOS -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
 ```
+
+### Build Notes (Updated 2025-12-03)
+
+**Recent Fixes**:
+- ✅ Fixed Xcode project file paths for `HistoricalAdministrations.swift` and `AdministrationSelectionView.swift`
+- ✅ Added `advisors` property to `GameState` model with full Codable support
+- ✅ Updated `GameEngine.startNewGame()` to accept administration parameter
+- ✅ Improved nation selection UI with search and better layout
+- ✅ Added modern tab-based UI inspired by NMAPScanner
+
+**Build Status**: ✅ Clean build with 0 errors, 0 critical warnings
+**Last Build**: 2025-12-03
+**Binary Location**: `/Volumes/Data/xcode/binaries/GTNW_YYYYMMDD/`
 
 ---
 

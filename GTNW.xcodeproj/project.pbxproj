@@ -16,6 +16,7 @@
 		4F91BA50EAEF8DB23AF702B4 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94847C472F1566DF6947C4A3 /* CommandView.swift */; };
 		59D72DF370BD09EF52516CBC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
 		67706BD14D60107F9E0A7532 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
+		6E86CE8949A90F2E6B6ECABC /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */; };
 		6EB415D2D4186D38A3616E76 /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
 		6FC58C6C449B38D80847C955 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
 		7494639D7337DF87DC04D621 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
@@ -28,6 +29,7 @@
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		9A97F22D5B4A34C796C91BA2 /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		9B6EDDFB99BB9370BBAE9C2F /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
+		A2E0F2B1CD4B7389BE51392A /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */; };
 		AAF17D0470F8F9CD9C403056 /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */; };
 		B3A56622AE3C641209272325 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
 		B4DB344F934840E5FA6D390D /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F961F9A3D52CD1EC10D97CF /* GameState.swift */; };
@@ -59,6 +61,7 @@
 		AB4591D208BA4670CBA98E76 /* Country.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Country.swift; sourceTree = "<group>"; };
 		B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdministrationSelectionView.swift; sourceTree = "<group>"; };
 		B700263707446EC9BADF298F /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		E7840FA926BF3040BC40D754 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GTNW_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE8EF3871D54AD759C686C04 /* SystemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemsView.swift; sourceTree = "<group>"; };
@@ -97,6 +100,7 @@
 				EE8EF3871D54AD759C686C04 /* SystemsView.swift */,
 				00ED35FA1859FB798CDBD083 /* WorldMap.swift */,
 				B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */,
+				D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -245,6 +249,7 @@
 				83B159532906E78B9953F22F /* WorldMap.swift in Sources */,
 				AAF17D0470F8F9CD9C403056 /* HistoricalAdministrations.swift in Sources */,
 				C747E59FD9038F32DA3B4D6D /* AdministrationSelectionView.swift in Sources */,
+				6E86CE8949A90F2E6B6ECABC /* MainTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -266,6 +271,7 @@
 				229A0D1F5A663D4CEE959DD7 /* ProhibitedWeapons.swift in Sources */,
 				B6D8AE81F735B62EAF7434AA /* SystemsView.swift in Sources */,
 				9A97F22D5B4A34C796C91BA2 /* WorldMap.swift in Sources */,
+				A2E0F2B1CD4B7389BE51392A /* MainTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

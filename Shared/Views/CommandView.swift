@@ -352,50 +352,115 @@ struct CountryPickerView: View {
     private var filteredCountries: [Country] {
         let countries = gameState.countries.filter { !$0.isDestroyed && !$0.isPlayerControlled }
         if searchText.isEmpty {
-            return countries
+            return countries.sorted { $0.name < $1.name }
         }
-        return countries.filter { $0.name.localizedCaseInsensitiveContains(searchText) || $0.code.localizedCaseInsensitiveContains(searchText) }
+        return countries.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
+            $0.code.localizedCaseInsensitiveContains(searchText)
+        }.sorted { $0.name < $1.name }
     }
 
     var body: some View {
-        VStack {
-            Text("SELECT TARGET")
-                .font(.system(size: 20, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalGreen)
-                .padding()
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("🎯 SELECT TARGET NATION")
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundColor(AppSettings.terminalGreen)
 
-            TextField("Search...", text: $searchText)
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal)
+                Spacer()
 
-            List(filteredCountries) { country in
-                Button(action: {
-                    selectedCountry = country.id
+                Button("CANCEL") {
                     dismiss()
-                }) {
-                    HStack {
-                        Text(country.flag)
-                            .font(.system(size: 24))
+                }
+                .foregroundColor(AppSettings.terminalRed)
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+            }
+            .padding()
+            .background(Color.black)
+            .border(AppSettings.terminalGreen, width: 2)
 
-                        VStack(alignment: .leading) {
-                            Text(country.name)
-                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                                .foregroundColor(AppSettings.terminalGreen)
-                            HStack {
-                                Text("☢️ \(country.nuclearWarheads)")
-                                Text("•")
-                                Text(country.alignment.rawValue)
-                            }
-                            .font(.system(size: 10, design: .monospaced))
+            // Search
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(AppSettings.terminalAmber)
+                TextField("Search nations...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .foregroundColor(AppSettings.terminalGreen)
+                    .font(.system(size: 14, design: .monospaced))
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
                             .foregroundColor(AppSettings.terminalAmber)
-                        }
-
-                        Spacer()
                     }
                 }
             }
+            .padding()
+            .background(Color.black.opacity(0.5))
+            .border(AppSettings.terminalAmber, width: 1)
+            .padding()
+
+            // Country count
+            Text("\(filteredCountries.count) nations available")
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(AppSettings.terminalAmber)
+                .padding(.bottom, 10)
+
+            // Countries List
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(filteredCountries) { country in
+                        Button(action: {
+                            selectedCountry = country.id
+                            dismiss()
+                        }) {
+                            HStack(spacing: 15) {
+                                Text(country.flag)
+                                    .font(.system(size: 32))
+
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(country.name)
+                                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalGreen)
+
+                                    HStack(spacing: 10) {
+                                        Text("☢️ \(country.nuclearWarheads)")
+                                            .font(.system(size: 12, design: .monospaced))
+                                            .foregroundColor(country.nuclearWarheads > 0 ? AppSettings.terminalRed : AppSettings.terminalAmber)
+
+                                        Text("•")
+                                            .foregroundColor(AppSettings.terminalAmber)
+
+                                        Text(country.alignment.rawValue)
+                                            .font(.system(size: 12, design: .monospaced))
+                                            .foregroundColor(AppSettings.terminalAmber)
+
+                                        Text("•")
+                                            .foregroundColor(AppSettings.terminalAmber)
+
+                                        Text("Pop: \(country.population.formatted(.number.notation(.compactName)))")
+                                            .font(.system(size: 12, design: .monospaced))
+                                            .foregroundColor(AppSettings.terminalAmber)
+                                    }
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(AppSettings.terminalGreen)
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.3))
+                            .border(AppSettings.terminalGreen, width: 1)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding()
+            }
         }
         .background(AppSettings.terminalBackground)
+        .frame(minWidth: 600, minHeight: 700)
     }
 }
 

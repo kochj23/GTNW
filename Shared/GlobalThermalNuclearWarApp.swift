@@ -14,7 +14,7 @@ struct GlobalThermalNuclearWarApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
                 .environmentObject(gameEngine)
                 .preferredColorScheme(.dark)
         }
