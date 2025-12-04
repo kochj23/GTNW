@@ -20,22 +20,22 @@ struct MainTabView: View {
         } else {
             // Game tabs
             TabView(selection: $selectedTab) {
-                // Command Center (MODERN)
-                ModernCommandView()
+                // Unified Command Center (Commands + Terminal + Event Log)
+                UnifiedCommandCenter()
                     .environmentObject(gameEngine)
                     .tabItem {
                         Label("Command", systemImage: "command.circle.fill")
                     }
                     .tag(0)
 
-                // World Map (MODERN)
+                // World Map
                 SimpleModernWorldMap(gameState: gameEngine.gameState!)
                     .tabItem {
                         Label("World Map", systemImage: "globe")
                     }
                     .tag(1)
 
-                // Systems & Advisors
+                // Systems
                 SystemsView(gameEngine: gameEngine)
                     .tabItem {
                         Label("Systems", systemImage: "cpu")
@@ -59,14 +59,6 @@ struct MainTabView: View {
                         Label("Intelligence", systemImage: "eye.fill")
                     }
                     .tag(4)
-
-                // Terminal Interface (NEW)
-                TextCommandInterface()
-                    .environmentObject(gameEngine)
-                    .tabItem {
-                        Label("Terminal", systemImage: "terminal.fill")
-                    }
-                    .tag(5)
             }
             .frame(minWidth: 1400, minHeight: 900)
             .overlay(

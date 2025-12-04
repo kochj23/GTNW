@@ -10,10 +10,12 @@
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
 		0F4B5D2A37DF76925230F475 /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
+		0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */; };
 		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		1357BE3A32F95BEC7FA165C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
 		14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
 		14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
+		1CDE37637B9A36E743BA1063 /* UnifiedCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */; };
 		229A0D1F5A663D4CEE959DD7 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
 		2B76DF08711E46FDE51A69CC /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
@@ -102,6 +104,7 @@
 		C17109F6B50FA8125C522471 /* CrisisEvents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisEvents.swift; sourceTree = "<group>"; };
 		CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernDesignSystem.swift; sourceTree = "<group>"; };
 		D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnifiedCommandCenter.swift; sourceTree = "<group>"; };
 		E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
 		E7840FA926BF3040BC40D754 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GTNW_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -157,6 +160,7 @@
 				F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */,
 				0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */,
 				3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */,
+				DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -320,6 +324,7 @@
 				B75C5D455FB1A2E43EE928A1 /* TextCommandInterface.swift in Sources */,
 				DA4280DDF1E43A064470916B /* ShadowPresidentActions.swift in Sources */,
 				A7CC75F8CE70E5B15D7D71CF /* ShadowPresidentMenu.swift in Sources */,
+				0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,6 +361,7 @@
 				74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */,
 				8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */,
 				0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */,
+				1CDE37637B9A36E743BA1063 /* UnifiedCommandCenter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
