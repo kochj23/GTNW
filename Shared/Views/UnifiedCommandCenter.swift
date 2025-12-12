@@ -629,17 +629,35 @@ struct UnifiedCommandCenter: View {
             .border(Color.purple, width: 2)
 
             if gameEngine.mlxManager.isConnected {
-                List {
+                VStack(spacing: 12) {
+                    // Performance Gauge
+                    performanceGauge
+
+                    Divider()
+
+                    // Latest Analysis
                     if !gameEngine.mlxManager.lastResponse.isEmpty {
-                        Section("Latest Analysis") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("LATEST ANALYSIS")
+                                .font(GTNWFonts.terminal(size: 10, weight: .bold))
+                                .foregroundColor(.purple)
                             Text(gameEngine.mlxManager.lastResponse)
-                                .font(GTNWFonts.terminal(size: 11))
+                                .font(GTNWFonts.terminal(size: 10))
                                 .foregroundColor(GTNWColors.terminalGreen)
+                                .padding(8)
+                                .background(Color.black.opacity(0.7))
                         }
+                        .padding(.horizontal)
                     }
 
-                    Section("Interaction History") {
-                        ForEach(gameEngine.mlxManager.interactionHistory.prefix(10)) { interaction in
+                    // Interaction History
+                    Text("HISTORY (\(gameEngine.mlxManager.interactionHistory.count))")
+                        .font(GTNWFonts.terminal(size: 10, weight: .bold))
+                        .foregroundColor(.purple)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+
+                    ForEach(gameEngine.mlxManager.interactionHistory.prefix(8)) { interaction in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(interaction.type.uppercased())
                                     .font(GTNWFonts.terminal(size: 9, weight: .bold))
@@ -656,7 +674,7 @@ struct UnifiedCommandCenter: View {
                         }
                     }
                 }
-                .listStyle(.sidebar)
+                .padding()
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
@@ -674,6 +692,80 @@ struct UnifiedCommandCenter: View {
         }
         .background(Color.black)
         .border(Color.purple, width: 2)
+    }
+
+    // Performance gauge (tokens/sec dial from MLX Code)
+    private var performanceGauge: some View {
+        let metrics = GTNWPerformanceMetrics.shared
+
+        return HStack(spacing: 16) {
+            // Tokens/Sec Dial
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 6)
+                    .frame(width: 60, height: 60)
+
+                Circle()
+                    .trim(from: 0, to: min(metrics.averageTokensPerSecond / 100.0, 1.0))
+                    .stroke(
+                        tokenSpeedColor(metrics.averageTokensPerSecond),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    )
+                    .frame(width: 60, height: 60)
+                    .rotationEffect(.degrees(-90))
+
+                VStack(spacing: 1) {
+                    Text(String(format: "%.0f", metrics.averageTokensPerSecond))
+                        .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                        .foregroundColor(GTNWColors.terminalGreen)
+                    Text("t/s")
+                        .font(GTNWFonts.terminal(size: 8))
+                        .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                }
+            }
+
+            // Stats
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("TOKENS:")
+                        .font(GTNWFonts.terminal(size: 9))
+                        .foregroundColor(.purple.opacity(0.7))
+                    Text("\(metrics.totalTokens)")
+                        .font(GTNWFonts.terminal(size: 12, weight: .bold))
+                        .foregroundColor(GTNWColors.terminalGreen)
+                }
+
+                HStack {
+                    Text("AVG:")
+                        .font(GTNWFonts.terminal(size: 9))
+                        .foregroundColor(.purple.opacity(0.7))
+                    Text(String(format: "%.2fs", metrics.averageResponseTime))
+                        .font(GTNWFonts.terminal(size: 11))
+                        .foregroundColor(GTNWColors.terminalAmber)
+                }
+
+                if metrics.peakTokensPerSecond > 0 {
+                    HStack {
+                        Text("PEAK:")
+                            .font(GTNWFonts.terminal(size: 9))
+                            .foregroundColor(.purple.opacity(0.7))
+                        Text(String(format: "%.0f t/s", metrics.peakTokensPerSecond))
+                            .font(GTNWFonts.terminal(size: 11))
+                            .foregroundColor(GTNWColors.terminalGreen)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.black.opacity(0.7))
+        .border(Color.purple, width: 1)
+    }
+
+    private func tokenSpeedColor(_ speed: Double) -> Color {
+        if speed < 20 { return GTNWColors.terminalRed }
+        else if speed < 40 { return .orange }
+        else if speed < 60 { return .yellow }
+        else { return GTNWColors.terminalGreen }
     }
 }
 
