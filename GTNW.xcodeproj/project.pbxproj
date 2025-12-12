@@ -28,6 +28,7 @@
 		4CF3D7350109DEA2300DD6D0 /* ScoringSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */; };
 		4E8047CD4CEA8BC1E4C4BA7C /* ModernDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */; };
 		4F91BA50EAEF8DB23AF702B4 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94847C472F1566DF6947C4A3 /* CommandView.swift */; };
+		515486C6F7801172D64B0809 /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78786BD1A7468DD749F6D70 /* HistoricalAdministrations.swift */; };
 		59D72DF370BD09EF52516CBC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
 		5B51E2D1A374CBC57D3A29CA /* ModernCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75BFDEE85E6AE222B571791D /* ModernCommandView.swift */; };
 		67706BD14D60107F9E0A7532 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
@@ -44,6 +45,7 @@
 		83B159532906E78B9953F22F /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		854167CE65FCF346BA800663 /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F2CAFFC239692E6D4C5120 /* GameEngine.swift */; };
 		871F3746E1D5AA2E551969F2 /* Advisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DCC47475BC4E6E381CED1 /* Advisor.swift */; };
+		87B8CDC1CF805E6C29A9573C /* AdministrationSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA30B80C384A7C2C88DCD76C /* AdministrationSelectionView.swift */; };
 		8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */; };
 		948B3C658864BE9FC3F88C4C /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
@@ -101,6 +103,7 @@
 		AB4591D208BA4670CBA98E76 /* Country.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Country.swift; sourceTree = "<group>"; };
 		B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdministrationSelectionView.swift; sourceTree = "<group>"; };
 		B700263707446EC9BADF298F /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		B78786BD1A7468DD749F6D70 /* HistoricalAdministrations.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HistoricalAdministrations.swift; path = Shared/Models/HistoricalAdministrations.swift; sourceTree = "<group>"; };
 		C17109F6B50FA8125C522471 /* CrisisEvents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisEvents.swift; sourceTree = "<group>"; };
 		CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernDesignSystem.swift; sourceTree = "<group>"; };
 		D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -110,6 +113,7 @@
 		EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GTNW_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE8EF3871D54AD759C686C04 /* SystemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemsView.swift; sourceTree = "<group>"; };
 		F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SimpleModernWorldMap.swift; sourceTree = "<group>"; };
+		FA30B80C384A7C2C88DCD76C /* AdministrationSelectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AdministrationSelectionView.swift; path = Shared/Views/AdministrationSelectionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -138,6 +142,7 @@
 				CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */,
 				82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */,
 				390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */,
+				B78786BD1A7468DD749F6D70 /* HistoricalAdministrations.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -161,6 +166,7 @@
 				0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */,
 				3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */,
 				DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */,
+				FA30B80C384A7C2C88DCD76C /* AdministrationSelectionView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -325,6 +331,8 @@
 				DA4280DDF1E43A064470916B /* ShadowPresidentActions.swift in Sources */,
 				A7CC75F8CE70E5B15D7D71CF /* ShadowPresidentMenu.swift in Sources */,
 				0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */,
+				515486C6F7801172D64B0809 /* HistoricalAdministrations.swift in Sources */,
+				87B8CDC1CF805E6C29A9573C /* AdministrationSelectionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
