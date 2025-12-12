@@ -219,23 +219,59 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Convert MLX decision to AIAction
+    /// Convert MLX decision to AIAction and execute BUILD actions immediately
     private func convertMLXDecisionToAction(_ decision: AIDecision) -> AIAction {
         switch decision.action {
         case .wait:
             return .wait
+
         case .buildMilitary:
-            return .wait // Will be handled separately
+            // Execute BUILD_MILITARY immediately - increase military strength
+            if let gameState = gameState,
+               let countryIndex = gameState.countries.firstIndex(where: { $0.id == decision.targetCountryID ?? "" }) {
+                let country = gameState.countries[countryIndex]
+                let increase = 100_000
+                let cost = 0.5
+
+                if country.gdp >= cost {
+                    gameState.countries[countryIndex].militaryStrength += increase
+                    gameState.countries[countryIndex].gdp -= cost
+                    gameState.aiActionSummary.append("\(country.flag) \(country.name) 🪖 built military (+\(increase)) - \(decision.reason)")
+                    print("[GameEngine] \(country.name) built military: +\(increase)")
+                }
+            }
+            return .wait
+
         case .buildNukes:
-            return .wait // Will be handled separately
+            // Execute BUILD_NUKES immediately - add nuclear warheads
+            if let gameState = gameState,
+               let countryIndex = gameState.countries.firstIndex(where: { $0.id == decision.targetCountryID ?? "" }) {
+                let country = gameState.countries[countryIndex]
+                let increase = 5
+                let cost = 1.0
+
+                if country.gdp >= cost {
+                    gameState.countries[countryIndex].nuclearWarheads += increase
+                    gameState.countries[countryIndex].gdp -= cost
+                    gameState.aiActionSummary.append("\(country.flag) \(country.name) ☢️ built \(increase) nukes - \(decision.reason)")
+                    print("[GameEngine] \(country.name) built nukes: +\(increase)")
+                    raiseDEFCON() // Building nukes increases tension
+                }
+            }
+            return .wait
+
         case .declareWar(let target):
             return .declareWar(target: target)
+
         case .launchNuke(let target, let count):
             return .launchNuclearStrike(target: target, warheads: count)
+
         case .formAlliance(let target):
             return .seekAlliance // Map to existing action
+
         case .sendAid(let target, _):
             return .improveDiplomacy // Map to existing action
+
         case .covertOps(let target):
             return .threatenNuclearStrike(target: target) // Map to closest existing action
         }

@@ -67,58 +67,47 @@ class EnhancedMLXService: ObservableObject {
             performanceMetrics.endProcessing()
         }
 
-        let prompt = buildCountryDecisionPrompt(country: country, gameState: gameState)
+        let context = buildCountryDecisionPrompt(country: country, gameState: gameState)
 
-        if let response = await callMLX(prompt: prompt, category: "country_decision_\(country.id)") {
+        if let response = await callMLXScript(context: context) {
+            print("[EnhancedMLXService] Raw MLX response: \(response)")
             return parseCountryDecision(response: response, country: country, gameState: gameState)
         }
 
+        print("[EnhancedMLXService] MLX call failed, using fallback")
         return fallbackCountryDecision(country: country, gameState: gameState)
     }
 
-    private func buildCountryDecisionPrompt(country: Country, gameState: GameState) -> String {
+    private func buildCountryDecisionPrompt(country: Country, gameState: GameState) -> [String: Any] {
         let wars = country.atWarWith.isEmpty ? "None" : country.atWarWith.joined(separator: ", ")
         let allies = country.alliances.isEmpty ? "None" : country.alliances.joined(separator: ", ")
         let threats = gameState.countries.filter { $0.atWarWith.contains(country.id) }.map { $0.name }.joined(separator: ", ")
 
-        return """
-        You are the AI advisor for \(country.name) in a geopolitical simulation.
+        // Get list of other countries for targeting
+        let otherCountries = gameState.countries
+            .filter { !$0.isPlayerControlled && !$0.isDestroyed && $0.id != country.id }
+            .map { $0.name }
 
-        CURRENT SITUATION:
-        - Country: \(country.name) (\(country.alignment.rawValue))
-        - Population: \(formatNumber(country.population))
-        - GDP: $\(formatNumber(Int64(country.gdp)))B
-        - Military: \(formatNumber(country.militaryStrength))
-        - Nuclear Warheads: \(country.nuclearWarheads)
-        - At War With: \(wars)
-        - Allies: \(allies)
-        - Threats: \(threats.isEmpty ? "None" : threats)
-
-        GLOBAL STATE:
-        - DEFCON Level: \(gameState.defconLevel.rawValue)
-        - Turn: \(gameState.turn)
-        - Active Wars: \(gameState.activeWars.count)
-        - Nuclear Strikes: \(gameState.nuclearStrikes.count)
-        - Total Casualties: \(formatNumber(gameState.totalCasualties))
-
-        PERSONALITY TRAITS:
-        - Aggression: \(country.aggressionLevel)/10
-        - Stability: \(country.stability)/10
-        - Alignment: \(country.alignment.rawValue)
-
-        Decide ONE action for this turn. Choose from:
-        1. WAIT - Do nothing, monitor situation
-        2. BUILD_MILITARY - Increase military strength (costs GDP)
-        3. BUILD_NUKES - Build nuclear weapons (costs GDP)
-        4. ATTACK [country] - Declare conventional war
-        5. NUKE [country] [count] - Launch nuclear strike
-        6. ALLY [country] - Form alliance
-        7. AID [country] - Send economic aid
-        8. COVERT [country] - Covert operation
-
-        Respond with: ACTION: [action] | REASON: [one sentence]
-        Example: ACTION: WAIT | REASON: Current stability allows peaceful development.
-        """
+        // Build structured context for Python script
+        return [
+            "category": "country_decision_\(country.id)",
+            "country_name": country.name,
+            "alignment": country.alignment.rawValue,
+            "population": country.population,
+            "gdp": country.gdp,
+            "military_strength": country.militaryStrength,
+            "nuclear_warheads": country.nuclearWarheads,
+            "at_war_with": country.atWarWith,
+            "allies": country.alliances,
+            "aggression": country.aggressionLevel,
+            "stability": country.stability,
+            "defcon_level": gameState.defconLevel.rawValue,
+            "turn": gameState.turn,
+            "active_wars": gameState.activeWars.count,
+            "nuclear_strikes": gameState.nuclearStrikes.count,
+            "total_casualties": gameState.totalCasualties,
+            "other_countries": otherCountries
+        ]
     }
 
     private func parseCountryDecision(response: String, country: Country, gameState: GameState) -> AIDecision {
@@ -157,9 +146,9 @@ class EnhancedMLXService: ObservableObject {
 
         case "BUILD", "INCREASE":
             if actionPart.uppercased().contains("NUKE") || actionPart.uppercased().contains("NUCLEAR") {
-                return AIDecision(action: .buildNukes, reason: reason)
+                return AIDecision(action: .buildNukes, reason: reason, targetCountryID: country.id)
             } else {
-                return AIDecision(action: .buildMilitary, reason: reason)
+                return AIDecision(action: .buildMilitary, reason: reason, targetCountryID: country.id)
             }
 
         case "COVERT", "SPY", "SABOTAGE":
@@ -332,6 +321,99 @@ class EnhancedMLXService: ObservableObject {
 
     // MARK: - Core MLX Communication
 
+    /// Call external MLX Python script for true LLM inference
+    private func callMLXScript(context: [String: Any]) async -> String? {
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: context),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            print("[EnhancedMLXService] Failed to serialize context")
+            return nil
+        }
+
+        let scriptPath = "/Volumes/Data/xcode/GTNW/Python/gtnw_mlx_inference.py"
+
+        // Check if script exists
+        guard FileManager.default.fileExists(atPath: scriptPath) else {
+            print("[EnhancedMLXService] MLX script not found at: \(scriptPath)")
+            return nil
+        }
+
+        // Get Python path from MLXManager
+        let pythonPath = mlxManager.isConnected ? "/opt/homebrew/bin/python3" : "/usr/bin/python3"
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: pythonPath)
+        task.arguments = [scriptPath, jsonString]
+
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        task.standardOutput = outputPipe
+        task.standardError = errorPipe
+
+        print("[EnhancedMLXService] Executing: \(pythonPath) \(scriptPath)")
+
+        do {
+            try task.run()
+
+            // Monitor output pipe for progressive token generation
+            let tokenTrackingTask = Task { @MainActor in
+                let handle = outputPipe.fileHandleForReading
+                var wordCount = 0
+
+                while task.isRunning {
+                    if let data = try? handle.availableData, !data.isEmpty {
+                        if let text = String(data: data, encoding: .utf8) {
+                            let words = text.split(separator: " ")
+                            for _ in words {
+                                performanceMetrics.recordToken()
+                                wordCount += 1
+                            }
+
+                            if wordCount % 10 == 0 {
+                                print("[MLX] Received \(wordCount) tokens, speed: \(performanceMetrics.tokensPerSecond) t/s")
+                            }
+                        }
+                    }
+                    try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+                }
+            }
+
+            task.waitUntilExit()
+            tokenTrackingTask.cancel()
+
+            // Read full output
+            let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+
+            if let errorOutput = String(data: errorData, encoding: .utf8), !errorOutput.isEmpty {
+                print("[EnhancedMLXService] MLX stderr: \(errorOutput)")
+            }
+
+            guard let output = String(data: outputData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+                print("[EnhancedMLXService] No output from MLX script")
+                return nil
+            }
+
+            // Filter out debug tokens [TOKEN:n]
+            let cleanedOutput = output.replacingOccurrences(of: #"\[TOKEN:\d+\]"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespaces)
+
+            print("[EnhancedMLXService] MLX response: \(cleanedOutput)")
+
+            // Final token count based on actual output
+            let tokens = cleanedOutput.split(separator: " ").count
+            await MainActor.run {
+                print("[EnhancedMLXService] Total tokens this call: \(tokens), grand total: \(performanceMetrics.totalTokens)")
+            }
+
+            return cleanedOutput
+
+        } catch {
+            print("[EnhancedMLXService] Error executing MLX script: \(error)")
+            return nil
+        }
+    }
+
+    /// Fallback method using inline Python (for simple cases)
     private func callMLX(prompt: String, category: String) async -> String? {
         // Check cache first
         let cacheKey = "\(category)_\(prompt.prefix(50))"
@@ -477,21 +559,107 @@ class EnhancedMLXService: ObservableObject {
         }
     }
 
-    // MARK: - Fallback Logic
+    // MARK: - Fallback Logic (When MLX Unavailable)
 
     private func fallbackCountryDecision(country: Country, gameState: GameState) -> AIDecision {
-        // Simple rule-based fallback
+        print("[EnhancedMLXService] Using fallback decision for \(country.name)")
+
+        // Adjust aggression based on difficulty
+        let difficultyMultiplier = gameState.difficultyLevel == .hard ? 1.5 :
+                                    gameState.difficultyLevel == .normal ? 1.0 : 0.7
+        let effectiveAggression = min(10, Int(Double(country.aggressionLevel) * difficultyMultiplier))
+
+        // If at war, escalate based on situation
         if !country.atWarWith.isEmpty {
-            return AIDecision(action: .wait, reason: "Continuing war efforts")
+            // Check if losing (low population or outnumbered)
+            if country.population < 50_000_000 || country.atWarWith.count >= 2 {
+                // Desperate measures
+                if country.nuclearWarheads > 0 && gameState.defconLevel.rawValue <= 2 {
+                    if let enemy = country.atWarWith.first {
+                        return AIDecision(action: .launchNuke(target: enemy, count: min(3, country.nuclearWarheads)),
+                                        reason: "Losing war, nuclear escalation required")
+                    }
+                }
+                return AIDecision(action: .buildMilitary, reason: "Reinforcements urgently needed", targetCountryID: country.id)
+            }
+
+            // Winning or stable war - continue
+            let roll = Int.random(in: 1...100)
+            if roll < 30 {
+                return AIDecision(action: .buildMilitary, reason: "Strengthening offensive capability", targetCountryID: country.id)
+            }
+            return AIDecision(action: .wait, reason: "Consolidating war gains")
         }
 
-        if gameState.defconLevel.rawValue <= 3 && country.aggressionLevel >= 7 {
-            if let target = gameState.countries.first(where: { $0.id != country.id && !$0.isPlayerControlled }) {
-                return AIDecision(action: .declareWar(target: target.id), reason: "High tension demands action")
+        // Not at war - decide based on aggression and situation
+        let actionRoll = Int.random(in: 1...100)
+
+        // Very aggressive countries (8-10)
+        if effectiveAggression >= 8 {
+            if actionRoll <= 40 {
+                // 40% attack
+                if let target = findWeakestEnemy(for: country, in: gameState) {
+                    return AIDecision(action: .declareWar(target: target.id),
+                                    reason: "Strategic opportunity for territorial expansion")
+                }
+            } else if actionRoll <= 60 {
+                // 20% build military
+                return AIDecision(action: .buildMilitary, reason: "Preparing for offensive operations", targetCountryID: country.id)
+            } else if actionRoll <= 70 {
+                // 10% build nukes
+                if country.nuclearWarheads < 50 {
+                    return AIDecision(action: .buildNukes, reason: "Expanding nuclear deterrent", targetCountryID: country.id)
+                }
             }
         }
 
-        return AIDecision(action: .wait, reason: "Maintaining status quo")
+        // Moderately aggressive (5-7)
+        else if effectiveAggression >= 5 {
+            if actionRoll <= 25 {
+                // 25% attack
+                if let target = findWeakestEnemy(for: country, in: gameState) {
+                    return AIDecision(action: .declareWar(target: target.id),
+                                    reason: "Expanding regional influence")
+                }
+            } else if actionRoll <= 50 {
+                // 25% build military
+                return AIDecision(action: .buildMilitary, reason: "Defensive posture strengthening", targetCountryID: country.id)
+            } else if actionRoll <= 60 {
+                // 10% ally
+                if let ally = findPotentialAlly(for: country, in: gameState) {
+                    return AIDecision(action: .formAlliance(target: ally.id),
+                                    reason: "Strategic partnership")
+                }
+            }
+        }
+
+        // Peaceful countries (1-4)
+        else {
+            if actionRoll <= 30 {
+                // 30% build military (defensive)
+                return AIDecision(action: .buildMilitary, reason: "Defensive improvements", targetCountryID: country.id)
+            } else if actionRoll <= 45 {
+                // 15% ally
+                if let ally = findPotentialAlly(for: country, in: gameState) {
+                    return AIDecision(action: .formAlliance(target: ally.id),
+                                    reason: "Diplomatic cooperation")
+                }
+            }
+        }
+
+        return AIDecision(action: .wait, reason: "Monitoring situation")
+    }
+
+    private func findWeakestEnemy(for country: Country, in gameState: GameState) -> Country? {
+        return gameState.countries
+            .filter { $0.id != country.id && !$0.isPlayerControlled && !$0.isDestroyed && !country.alliances.contains($0.id) }
+            .min(by: { $0.militaryStrength < $1.militaryStrength })
+    }
+
+    private func findPotentialAlly(for country: Country, in gameState: GameState) -> Country? {
+        return gameState.countries
+            .filter { $0.id != country.id && !$0.isDestroyed && !country.alliances.contains($0.id) && $0.alignment == country.alignment }
+            .randomElement()
     }
 
     // MARK: - Utilities
@@ -559,6 +727,13 @@ struct AIDecision {
 
     let action: Action
     let reason: String
+    let targetCountryID: String?  // For BUILD actions, store country ID
+
+    init(action: Action, reason: String, targetCountryID: String? = nil) {
+        self.action = action
+        self.reason = reason
+        self.targetCountryID = targetCountryID
+    }
 }
 
 enum EventCategory: String {
