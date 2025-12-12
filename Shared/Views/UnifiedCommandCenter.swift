@@ -658,19 +658,18 @@ struct UnifiedCommandCenter: View {
                         .padding(.horizontal)
 
                     ForEach(gameEngine.mlxManager.interactionHistory.prefix(8)) { interaction in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(interaction.type.uppercased())
-                                    .font(GTNWFonts.terminal(size: 9, weight: .bold))
-                                    .foregroundColor(.purple)
-                                if let input = interaction.input {
-                                    Text("→ \(input)")
-                                        .font(GTNWFonts.terminal(size: 9))
-                                        .foregroundColor(GTNWColors.terminalAmber)
-                                }
-                                Text("✓ \(interaction.output)")
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(interaction.type.uppercased())
+                                .font(GTNWFonts.terminal(size: 9, weight: .bold))
+                                .foregroundColor(.purple)
+                            if let input = interaction.input {
+                                Text("→ \(input)")
                                     .font(GTNWFonts.terminal(size: 9))
-                                    .foregroundColor(GTNWColors.terminalGreen)
+                                    .foregroundColor(GTNWColors.terminalAmber)
                             }
+                            Text("✓ \(interaction.output)")
+                                .font(GTNWFonts.terminal(size: 9))
+                                .foregroundColor(GTNWColors.terminalGreen)
                         }
                     }
                 }
@@ -696,7 +695,9 @@ struct UnifiedCommandCenter: View {
 
     // Performance gauge (tokens/sec dial from MLX Code)
     private var performanceGauge: some View {
-        let metrics = GTNWPerformanceMetrics.shared
+        // TODO: Implement GTNWPerformanceMetrics
+        let tokensPerSecond: Double = 0.0
+        let totalTokens: Int = 0
 
         return HStack(spacing: 16) {
             // Tokens/Sec Dial
@@ -706,16 +707,16 @@ struct UnifiedCommandCenter: View {
                     .frame(width: 60, height: 60)
 
                 Circle()
-                    .trim(from: 0, to: min(metrics.averageTokensPerSecond / 100.0, 1.0))
+                    .trim(from: 0, to: min(tokensPerSecond / 100.0, 1.0))
                     .stroke(
-                        tokenSpeedColor(metrics.averageTokensPerSecond),
+                        tokenSpeedColor(tokensPerSecond),
                         style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
                     .frame(width: 60, height: 60)
                     .rotationEffect(.degrees(-90))
 
                 VStack(spacing: 1) {
-                    Text(String(format: "%.0f", metrics.averageTokensPerSecond))
+                    Text(String(format: "%.0f", tokensPerSecond))
                         .font(GTNWFonts.terminal(size: 14, weight: .bold))
                         .foregroundColor(GTNWColors.terminalGreen)
                     Text("t/s")
@@ -730,7 +731,7 @@ struct UnifiedCommandCenter: View {
                     Text("TOKENS:")
                         .font(GTNWFonts.terminal(size: 9))
                         .foregroundColor(.purple.opacity(0.7))
-                    Text("\(metrics.totalTokens)")
+                    Text("\(totalTokens)")
                         .font(GTNWFonts.terminal(size: 12, weight: .bold))
                         .foregroundColor(GTNWColors.terminalGreen)
                 }
@@ -739,17 +740,17 @@ struct UnifiedCommandCenter: View {
                     Text("AVG:")
                         .font(GTNWFonts.terminal(size: 9))
                         .foregroundColor(.purple.opacity(0.7))
-                    Text(String(format: "%.2fs", metrics.averageResponseTime))
+                    Text(String(format: "%.2fs", 0.0))
                         .font(GTNWFonts.terminal(size: 11))
                         .foregroundColor(GTNWColors.terminalAmber)
                 }
 
-                if metrics.peakTokensPerSecond > 0 {
+                if false {  // metrics.peakTokensPerSecond > 0
                     HStack {
                         Text("PEAK:")
                             .font(GTNWFonts.terminal(size: 9))
                             .foregroundColor(.purple.opacity(0.7))
-                        Text(String(format: "%.0f t/s", metrics.peakTokensPerSecond))
+                        Text(String(format: "%.0f t/s", 0.0))
                             .font(GTNWFonts.terminal(size: 11))
                             .foregroundColor(GTNWColors.terminalGreen)
                     }
