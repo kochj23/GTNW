@@ -81,8 +81,18 @@ class GameEngine: ObservableObject {
         // Process weapons programs
         processWeaponsPrograms()
 
-        // Process AI turns
-        processAITurns()
+        // Process AI turns (synchronous with enhanced fallback)
+        addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
+        processAITurnsSync()
+
+        // Show AI summary
+        if !gameState.aiActionSummary.isEmpty {
+            addLog("", type: .system)
+            addLog("📊 AI TURN SUMMARY:", type: .info)
+            for summary in gameState.aiActionSummary {
+                addLog("  • \(summary)", type: .info)
+            }
+        }
 
         // Update DEFCON level
         updateDEFCON()
@@ -101,6 +111,24 @@ class GameEngine: ObservableObject {
 
         // Log system updates
         logSystemUpdates()
+    }
+
+    /// Process AI turns synchronously (Ollama in background)
+    private func processAITurnsSync() {
+        guard let gameState = gameState else { return }
+
+        print("[GameEngine] ===== Processing AI Turns =====")
+
+        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+            print("[GameEngine] Processing \(country.name) (Aggression: \(country.aggressionLevel), At War: \(country.atWarWith.count))...")
+
+            // Use enhanced fallback AI with 40% attack rates
+            let action = determineAIActionEnhanced(for: country)
+            print("[GameEngine] \(country.name) decided: \(action)")
+            executeAIAction(action, for: country, reason: nil)
+        }
+
+        print("[GameEngine] ===== AI Turns Complete ===== (\(gameState.aiActionSummary.count) actions)")
     }
 
     /// Generate news headlines for this turn
@@ -123,45 +151,7 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Process all AI-controlled countries
-    private func processAITurns() {
-        guard let gameState = gameState else { return }
-
-        // Process AI turns asynchronously with Ollama
-        Task { @MainActor in
-            for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
-                print("[GameEngine] Processing \(country.name)...")
-
-                // Try Ollama first if connected
-                if ollamaService.isConnected {
-                    if let response = await ollamaService.generateCountryDecision(country: country, gameState: gameState) {
-                        let action = parseOllamaDecision(response, country: country, gameState: gameState)
-                        executeAIAction(action, for: country, reason: response)
-                    } else {
-                        // Ollama failed, use enhanced fallback
-                        let action = determineAIActionEnhanced(for: country)
-                        executeAIAction(action, for: country, reason: nil)
-                    }
-                } else {
-                    // No Ollama, use enhanced fallback AI
-                    let action = determineAIActionEnhanced(for: country)
-                    executeAIAction(action, for: country, reason: nil)
-                }
-
-                // Small delay between countries
-                try? await Task.sleep(nanoseconds: 100_000_000)
-            }
-
-            // Show AI summary
-            if let gameState = self.gameState, !gameState.aiActionSummary.isEmpty {
-                self.addLog("", type: .system)
-                self.addLog("📊 AI TURN SUMMARY:", type: .info)
-                for summary in gameState.aiActionSummary {
-                    self.addLog("  • \(summary)", type: .info)
-                }
-            }
-        }
-    }
+    // OLD async processAITurns() REMOVED - using processAITurnsSync() now
 
     /// Parse Ollama's decision response
     private func parseOllamaDecision(_ response: String, country: Country, gameState: GameState) -> AIAction {
