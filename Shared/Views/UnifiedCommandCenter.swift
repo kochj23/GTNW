@@ -11,6 +11,7 @@ import SwiftUI
 
 struct UnifiedCommandCenter: View {
     @EnvironmentObject var gameEngine: GameEngine
+    @StateObject private var mlxManager = MLXManager()
     @State private var selectedTarget: String?
     @State private var showingCountryPicker = false
     @State private var showingShadowMenu = false
@@ -30,9 +31,18 @@ struct UnifiedCommandCenter: View {
                     leftCommandPanel(gameState: gameState)
                         .frame(minWidth: 500, maxWidth: 700)
 
-                    // RIGHT: Event Log + Terminal
+                    // CENTER: Event Log + Terminal
                     rightTerminalPanel(gameState: gameState)
                         .frame(minWidth: 500)
+
+                    // RIGHT: MLX AI Toolkit Panel
+                    mlxPanel
+                        .frame(minWidth: 280, idealWidth: 320, maxWidth: 400)
+                }
+                .onAppear {
+                    Task {
+                        await mlxManager.initialize()
+                    }
                 }
             }
             .sheet(isPresented: $showingCountryPicker) {
@@ -302,6 +312,9 @@ struct UnifiedCommandCenter: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -313,6 +326,9 @@ struct UnifiedCommandCenter: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.declareWar(aggressor: player.id, defender: target)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -324,11 +340,14 @@ struct UnifiedCommandCenter: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.formAlliance(country1: player.id, country2: target)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
                 ModernButton(
-                    title: "END\nTURN",
+                    title: "END TURN\n(MANUAL)",
                     icon: "arrow.right.circle.fill",
                     color: GTNWColors.terminalGreen,
                     enabled: true
@@ -544,6 +563,73 @@ struct UnifiedCommandCenter: View {
                     .fill(color.opacity(0.2))
                     .overlay(Capsule().stroke(color.opacity(0.5), lineWidth: 1))
             )
+    }
+
+    // MARK: - MLX AI Panel
+
+    private var mlxPanel: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Image(systemName: "brain.head.profile")
+                    .foregroundColor(.purple)
+                Text("🧠 MLX AI")
+                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                    .foregroundColor(.purple)
+                Spacer()
+                Circle()
+                    .fill(mlxManager.isConnected ? Color.green : Color.red)
+                    .frame(width: 12, height: 12)
+            }
+            .padding()
+            .background(Color.black)
+            .border(Color.purple, width: 2)
+
+            if mlxManager.isConnected {
+                List {
+                    if !mlxManager.lastResponse.isEmpty {
+                        Section("Latest Analysis") {
+                            Text(mlxManager.lastResponse)
+                                .font(GTNWFonts.terminal(size: 11))
+                                .foregroundColor(GTNWColors.terminalGreen)
+                        }
+                    }
+
+                    Section("Interaction History") {
+                        ForEach(mlxManager.interactionHistory.prefix(10)) { interaction in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(interaction.type.uppercased())
+                                    .font(GTNWFonts.terminal(size: 9, weight: .bold))
+                                    .foregroundColor(.purple)
+                                if let input = interaction.input {
+                                    Text("→ \(input)")
+                                        .font(GTNWFonts.terminal(size: 9))
+                                        .foregroundColor(GTNWColors.terminalAmber)
+                                }
+                                Text("✓ \(interaction.output)")
+                                    .font(GTNWFonts.terminal(size: 9))
+                                    .foregroundColor(GTNWColors.terminalGreen)
+                            }
+                        }
+                    }
+                }
+                .listStyle(.sidebar)
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 32))
+                        .foregroundColor(GTNWColors.terminalAmber)
+                    Text("MLX OFFLINE")
+                        .font(GTNWFonts.terminal(size: 12, weight: .bold))
+                    Text("pip install mlx")
+                        .font(GTNWFonts.terminal(size: 10))
+                        .foregroundColor(GTNWColors.terminalGreen)
+                }
+                .frame(maxHeight: .infinity)
+                .padding()
+            }
+        }
+        .background(Color.black)
+        .border(Color.purple, width: 2)
     }
 }
 
