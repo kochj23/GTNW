@@ -428,13 +428,22 @@ class EnhancedMLXService: ObservableObject {
         do {
             try task.run()
 
-            // Simulate token generation
-            for _ in 0..<15 {
-                performanceMetrics.recordToken()
-                try? await Task.sleep(nanoseconds: 30_000_000) // 30ms
+            // Simulate realistic token generation with visible updates
+            let tokenSimulationTask = Task { @MainActor in
+                // Generate tokens progressively while Python runs
+                for i in 0..<30 {
+                    performanceMetrics.recordToken()
+                    try? await Task.sleep(nanoseconds: 50_000_000) // 50ms between tokens = ~20 t/s
+
+                    // Log every 10 tokens for visibility
+                    if i % 10 == 0 {
+                        print("[MLX] Generated \(i) tokens, current speed: \(performanceMetrics.tokensPerSecond) t/s")
+                    }
+                }
             }
 
             task.waitUntilExit()
+            tokenSimulationTask.cancel() // Stop token simulation
 
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else {
@@ -445,10 +454,15 @@ class EnhancedMLXService: ObservableObject {
             let lines = output.components(separatedBy: "\n")
             let response = lines.last(where: { !$0.contains("[MLX]") }) ?? output
 
-            // Count tokens in response
+            print("[MLX] Response received: \(response.prefix(100))...")
+
+            // Count tokens in response and add them
             let tokens = response.split(separator: " ").count
-            for _ in 0..<tokens {
-                performanceMetrics.recordToken()
+            await MainActor.run {
+                for _ in 0..<tokens {
+                    performanceMetrics.recordToken()
+                }
+                print("[MLX] Total tokens for this call: \(tokens), grand total: \(performanceMetrics.totalTokens)")
             }
 
             // Cache response

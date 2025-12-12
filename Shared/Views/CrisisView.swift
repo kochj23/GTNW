@@ -28,6 +28,42 @@ struct DetailedCrisisView: View {
                 // Crisis Description
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
+                        // Involved Countries
+                        if !crisis.affectedCountries.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("NATIONS INVOLVED:")
+                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                    .foregroundColor(AppSettings.terminalAmber)
+
+                                ForEach(crisis.affectedCountries, id: \.self) { countryID in
+                                    if let country = gameState.getCountry(id: countryID) {
+                                        HStack(spacing: 10) {
+                                            Text(country.flag)
+                                                .font(.system(size: 24))
+
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(country.name)
+                                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                                    .foregroundColor(AppSettings.terminalGreen)
+
+                                                Text("☢️ \(country.nuclearWarheads) • 🪖 \(formatMilitary(country.militaryStrength)) • 👥 \(formatPopulation(country.population))")
+                                                    .font(.system(size: 11, design: .monospaced))
+                                                    .foregroundColor(AppSettings.terminalAmber.opacity(0.8))
+                                            }
+
+                                            Spacer()
+                                        }
+                                        .padding(8)
+                                        .background(Color.black.opacity(0.5))
+                                        .border(AppSettings.terminalGreen.opacity(0.5), width: 1)
+                                    }
+                                }
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.7))
+                            .border(AppSettings.terminalAmber, width: 2)
+                        }
+
                         // Description
                         Text(crisis.description)
                             .font(.system(size: 16, design: .monospaced))
@@ -35,6 +71,18 @@ struct DetailedCrisisView: View {
                             .padding()
                             .background(Color.black.opacity(0.5))
                             .border(AppSettings.terminalGreen, width: 1)
+
+                        // Response Options Header
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("RESPONSE OPTIONS:")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundColor(AppSettings.terminalAmber)
+
+                            Text("Choose your course of action carefully. Each decision has consequences.")
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundColor(AppSettings.terminalAmber.opacity(0.7))
+                        }
+                        .padding()
 
                         // Options
                         ForEach(Array(crisis.options.enumerated()), id: \.offset) { index, option in
@@ -171,6 +219,24 @@ struct DetailedCrisisView: View {
         case 0.5..<0.8: return AppSettings.terminalAmber
         default: return AppSettings.terminalRed
         }
+    }
+
+    private func formatMilitary(_ strength: Int) -> String {
+        if strength >= 1_000_000 {
+            return String(format: "%.1fM", Double(strength) / 1_000_000.0)
+        } else if strength >= 1_000 {
+            return String(format: "%.0fK", Double(strength) / 1_000.0)
+        }
+        return "\(strength)"
+    }
+
+    private func formatPopulation(_ pop: Int) -> String {
+        if pop >= 1_000_000_000 {
+            return String(format: "%.1fB", Double(pop) / 1_000_000_000.0)
+        } else if pop >= 1_000_000 {
+            return String(format: "%.0fM", Double(pop) / 1_000_000.0)
+        }
+        return "\(pop)"
     }
 }
 

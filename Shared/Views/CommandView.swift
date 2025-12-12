@@ -33,38 +33,43 @@ struct CommandView: View {
             print("[CommandView] Creating HSplitView with MLX panel")
 
             return AnyView(
-                HSplitView {
-                    VStack(spacing: 0) {
-                        // DEFCON + Player Status Bar
-                        statusBar(gameState: gameState)
+                GeometryReader { geometry in
+                    HSplitView {
+                        VStack(spacing: 0) {
+                            // DEFCON + Player Status Bar
+                            statusBar(gameState: gameState)
 
-                        // Command Panel
-                        commandPanel(gameState: gameState)
+                            // Command Panel
+                            commandPanel(gameState: gameState)
+                                .frame(maxHeight: .infinity)
 
-                        // Log
-                        logSection
-                    }
-                    .frame(minWidth: 600, maxWidth: .infinity)
-                    .onAppear {
-                        print("[CommandView] Left panel appeared")
-                    }
-
-                    // MLX Panel
-                    mlxPanel
-                        .frame(minWidth: 320, idealWidth: 400, maxWidth: 500)
-                        .onAppear {
-                            print("[CommandView] MLX panel appeared!")
+                            // Log
+                            logSection
                         }
-                }
-                .frame(minWidth: 1000, minHeight: 700)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppSettings.terminalBackground)
-                .onAppear {
-                    print("[CommandView] HSplitView appeared - initializing MLX")
-                    Task {
-                        await mlxManager.initialize()
+                        .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity)
+                        .background(AppSettings.terminalBackground)
+                        .onAppear {
+                            print("[CommandView] Left panel appeared - width: \(geometry.size.width * 0.65)")
+                        }
+
+                        // MLX Panel
+                        mlxPanel
+                            .frame(minWidth: 320, idealWidth: 400, maxWidth: 500, maxHeight: .infinity)
+                            .background(Color.black)
+                            .onAppear {
+                                print("[CommandView] MLX panel appeared!")
+                            }
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .background(AppSettings.terminalBackground)
+                    .onAppear {
+                        print("[CommandView] HSplitView appeared - size: \(geometry.size)")
+                        Task {
+                            await mlxManager.initialize()
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             )
         } else {
             print("[CommandView] No gameState - returning empty view")
@@ -293,10 +298,11 @@ struct CommandView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding()
+        .padding(12)
         .background(Color.black.opacity(0.7))
         .border(AppSettings.terminalGreen, width: 2)
-        .padding()
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
         .sheet(isPresented: $showingCountryPicker) {
             CountryPickerView(gameState: gameState, selectedCountry: $selectedTarget)
         }

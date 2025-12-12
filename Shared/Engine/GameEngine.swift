@@ -80,37 +80,30 @@ class GameEngine: ObservableObject {
         // Process weapons programs
         processWeaponsPrograms()
 
-        // Process AI turns with summary
+        // Process AI turns with summary (async)
         addLog("", type: .system)
         addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
-        processAITurns()
 
-        // Show AI summary
-        if !gameState.aiActionSummary.isEmpty {
-            addLog("", type: .system)
-            addLog("📊 AI TURN SUMMARY:", type: .info)
-            for summary in gameState.aiActionSummary {
-                addLog("  • \(summary)", type: .info)
+        Task { @MainActor in
+            await processAITurns()
+
+            // Show AI summary after AI turns complete
+            if let gameState = self.gameState, !gameState.aiActionSummary.isEmpty {
+                self.addLog("", type: .system)
+                self.addLog("📊 AI TURN SUMMARY:", type: .info)
+                for summary in gameState.aiActionSummary {
+                    self.addLog("  • \(summary)", type: .info)
+                }
             }
+
+            // Continue with rest of turn processing
+            self.updateDEFCON()
+            self.checkGameOver()
+            self.processConsequences()
+            self.checkForCrisis()
+            self.generateNews()
+            self.logSystemUpdates()
         }
-
-        // Update DEFCON level
-        updateDEFCON()
-
-        // Check for game over conditions
-        checkGameOver()
-
-        // Process consequences of actions
-        processConsequences()
-
-        // Check for random crisis events
-        checkForCrisis()
-
-        // Generate news headlines
-        generateNews()
-
-        // Log system updates
-        logSystemUpdates()
     }
 
     /// Generate news headlines for this turn
@@ -134,26 +127,32 @@ class GameEngine: ObservableObject {
     }
 
     /// Process all AI-controlled countries using MLX-powered decision making
-    private func processAITurns() {
+    private func processAITurns() async {
         guard let gameState = gameState else { return }
 
+        print("[GameEngine] Starting processAITurns - \(gameState.countries.filter { !$0.isPlayerControlled && !$0.isDestroyed }.count) countries")
+
         // Process AI countries with MLX-powered decisions
-        Task { @MainActor in
-            for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
-                // Use MLX for AI decision making
-                let mlxDecision = await EnhancedMLXService.shared.generateCountryDecision(
-                    country: country,
-                    gameState: gameState
-                )
+        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+            print("[GameEngine] Processing AI turn for \(country.name)")
 
-                // Convert MLX decision to AIAction and execute
-                let action = convertMLXDecisionToAction(mlxDecision)
-                executeAIAction(action, for: country, reason: mlxDecision.reason)
+            // Use MLX for AI decision making
+            let mlxDecision = await EnhancedMLXService.shared.generateCountryDecision(
+                country: country,
+                gameState: gameState
+            )
 
-                // Small delay between countries to avoid overwhelming MLX
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            }
+            print("[GameEngine] \(country.name) decision: \(mlxDecision.reason)")
+
+            // Convert MLX decision to AIAction and execute
+            let action = convertMLXDecisionToAction(mlxDecision)
+            executeAIAction(action, for: country, reason: mlxDecision.reason)
+
+            // Small delay between countries to avoid overwhelming MLX
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
         }
+
+        print("[GameEngine] Completed processAITurns")
     }
 
     /// Determine what action the AI should take
