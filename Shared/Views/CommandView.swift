@@ -44,18 +44,20 @@ struct CommandView: View {
                         // Log
                         logSection
                     }
-                    .frame(minWidth: 800)
+                    .frame(minWidth: 600, maxWidth: .infinity)
                     .onAppear {
                         print("[CommandView] Left panel appeared")
                     }
 
                     // MLX Panel
                     mlxPanel
-                        .frame(minWidth: 280, idealWidth: 320, maxWidth: 400)
+                        .frame(minWidth: 320, idealWidth: 400, maxWidth: 500)
                         .onAppear {
                             print("[CommandView] MLX panel appeared!")
                         }
                 }
+                .frame(minWidth: 1000, minHeight: 700)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(AppSettings.terminalBackground)
                 .onAppear {
                     print("[CommandView] HSplitView appeared - initializing MLX")
@@ -129,6 +131,7 @@ struct CommandView: View {
                 .font(.system(size: 20, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
 
             // Target selection
             HStack {
@@ -289,6 +292,7 @@ struct CommandView: View {
                 Spacer()
             }
         }
+        .frame(maxWidth: .infinity)
         .padding()
         .background(Color.black.opacity(0.7))
         .border(AppSettings.terminalGreen, width: 2)
@@ -343,6 +347,7 @@ struct CommandView: View {
                             Text(log.message)
                                 .font(.system(size: 14, design: .monospaced))
                                 .foregroundColor(logColor(for: log.type))
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 3)
@@ -351,9 +356,11 @@ struct CommandView: View {
             }
             .frame(maxHeight: 200)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical)
         .background(Color.black)
         .border(AppSettings.terminalGreen, width: 1)
+        .padding(.horizontal)
     }
 
     // MARK: - Helper Components
