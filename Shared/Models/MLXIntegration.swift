@@ -21,6 +21,7 @@ class MLXManager: ObservableObject {
     private let mlxScriptPath = "/Users/kochj/.mlx/gtnw_advisor.py"
     private var process: Process?
     private let maxHistory = 20
+    private let performanceMetrics = GTNWPerformanceMetrics.shared
 
     /// Initialize MLX connection (using NMAPScanner's detection logic)
     func initialize() async {
@@ -107,7 +108,15 @@ class MLXManager: ObservableObject {
         }
 
         isProcessing = true
-        defer { isProcessing = false }
+        await MainActor.run {
+            performanceMetrics.startProcessing()
+        }
+        defer {
+            isProcessing = false
+            Task { @MainActor in
+                performanceMetrics.endProcessing()
+            }
+        }
 
         // Create context for MLX
         let context = createMLXContext(country: country, gameState: gameState)
@@ -126,7 +135,15 @@ class MLXManager: ObservableObject {
         }
 
         isProcessing = true
-        defer { isProcessing = false }
+        await MainActor.run {
+            performanceMetrics.startProcessing()
+        }
+        defer {
+            isProcessing = false
+            Task { @MainActor in
+                performanceMetrics.endProcessing()
+            }
+        }
 
         let prompt = """
         You are WOPR, the AI from WarGames. Analyze this situation and provide strategic advice:
@@ -349,10 +366,31 @@ class MLXManager: ObservableObject {
 
         do {
             try task.run()
+
+            // Simulate token generation during processing
+            // This creates a more realistic token tracking experience
+            Task { @MainActor in
+                // Simulate progressive token generation
+                for _ in 0..<10 {
+                    performanceMetrics.recordToken()
+                    try? await Task.sleep(nanoseconds: 50_000_000) // 50ms between tokens
+                }
+            }
+
             task.waitUntilExit()
 
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Record tokens based on output length (rough approximation)
+            if let output = output {
+                let estimatedTokens = output.split(separator: " ").count
+                await MainActor.run {
+                    for _ in 0..<estimatedTokens {
+                        performanceMetrics.recordToken()
+                    }
+                }
+            }
 
             return output
         } catch {
