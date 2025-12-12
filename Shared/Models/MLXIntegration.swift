@@ -17,41 +17,87 @@ class MLXManager: ObservableObject {
     @Published var isProcessing = false
     @Published var interactionHistory: [MLXInteraction] = []
 
-    private let pythonPath = "/opt/homebrew/bin/python3"
+    private var detectedPythonPath: String?
     private let mlxScriptPath = "/Users/kochj/.mlx/gtnw_advisor.py"
     private var process: Process?
     private let maxHistory = 20
 
-    /// Initialize MLX connection
+    /// Initialize MLX connection (using NMAPScanner's detection logic)
     func initialize() async {
-        // Check if MLX is available
+        print("[MLX] Starting MLX detection...")
+
+        // Check if MLX is available (check multiple locations like NMAPScanner)
         let mlxAvailable = await checkMLXAvailability()
         if mlxAvailable {
-            isConnected = true
-            print("MLX toolkit connected successfully")
+            await MainActor.run {
+                isConnected = true
+            }
+            print("[MLX] ✅ MLX toolkit connected successfully at: \(detectedPythonPath ?? "unknown")")
+            logInteraction(type: "System", output: "✅ MLX Toolkit ONLINE")
         } else {
-            print("MLX not available, falling back to rule-based AI")
-            isConnected = false
+            await MainActor.run {
+                isConnected = false
+            }
+            print("[MLX] ⚠️ MLX not available, falling back to rule-based AI")
+            logInteraction(type: "System", output: "⚠️ MLX not detected - using rule-based parsing")
         }
     }
 
-    /// Check if MLX Python toolkit is available
+    /// Check if MLX Python toolkit is available (NMAPScanner's multi-location approach)
     private func checkMLXAvailability() async -> Bool {
+        // Python locations to check (priority order)
+        let pythonPaths = [
+            "/Volumes/Data/xcode/NMAPScanner/.venv/bin/python3",  // NMAPScanner venv (if shared)
+            "/opt/homebrew/bin/python3",                          // Homebrew M1/M2/M3
+            "/usr/local/bin/python3",                             // Homebrew Intel / MacPorts
+            "/usr/bin/python3"                                    // System Python
+        ]
+
+        for path in pythonPaths {
+            guard FileManager.default.fileExists(atPath: path) else {
+                print("[MLX] Skipping \(path) - doesn't exist")
+                continue
+            }
+
+            print("[MLX] Testing \(path)...")
+            if await testMLXImport(pythonPath: path) {
+                detectedPythonPath = path
+                print("[MLX] ✅ Found MLX at: \(path)")
+                return true
+            }
+        }
+
+        print("[MLX] ❌ MLX not found in any Python location")
+        return false
+    }
+
+    /// Test if MLX can be imported (same test as NMAPScanner)
+    private func testMLXImport(pythonPath: String) async -> Bool {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: pythonPath)
-        task.arguments = ["-c", "import mlx.core as mx; print('OK')"]
+        // Test both mlx.core and mlx_lm like NMAPScanner
+        task.arguments = ["-c", "import mlx.core; import mlx_lm; print('OK')"]
 
         let pipe = Pipe()
         task.standardOutput = pipe
-        task.standardError = pipe
+        task.standardError = Pipe()
 
         do {
             try task.run()
             task.waitUntilExit()
-            return task.terminationStatus == 0
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                let success = output.contains("OK")
+                print("[MLX] \(pythonPath) result: \(success ? "SUCCESS" : "FAILED")")
+                return success
+            }
         } catch {
+            print("[MLX] \(pythonPath) error: \(error)")
             return false
         }
+
+        return false
     }
 
     /// Get AI recommendation for a country's action
@@ -295,7 +341,7 @@ class MLXManager: ObservableObject {
         """
 
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: pythonPath)
+        task.executableURL = URL(fileURLWithPath: detectedPythonPath ?? "/usr/bin/python3")
         task.arguments = ["-c", script, jsonString]
 
         let pipe = Pipe()
