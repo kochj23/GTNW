@@ -22,8 +22,13 @@ class OllamaService: ObservableObject {
     @Published var isGenerating = false
     @Published var totalTokens: Int = 0
     @Published var tokensPerSecond: Double = 0.0
+    @Published var averageTokensPerSecond: Double = 0.0
+    @Published var peakTokensPerSecond: Double = 0.0
+    @Published var totalRequests: Int = 0
 
     private let baseURL = "http://localhost:11434"
+    private var tokenHistory: [Double] = []
+    private let maxHistory = 50
 
     private init() {}
 
@@ -76,11 +81,36 @@ class OllamaService: ObservableObject {
 
         isGenerating = true
         let startTime = Date()
+        let tokensAtStart = totalTokens
+
         defer {
             isGenerating = false
+            totalRequests += 1
+
             let elapsed = Date().timeIntervalSince(startTime)
-            if elapsed > 0 {
-                tokensPerSecond = Double(totalTokens) / elapsed
+            let tokensGenerated = totalTokens - tokensAtStart
+
+            if elapsed > 0 && tokensGenerated > 0 {
+                // Current speed for this request
+                tokensPerSecond = Double(tokensGenerated) / elapsed
+
+                // Update history
+                tokenHistory.append(tokensPerSecond)
+                if tokenHistory.count > maxHistory {
+                    tokenHistory.removeFirst()
+                }
+
+                // Calculate average
+                if !tokenHistory.isEmpty {
+                    averageTokensPerSecond = tokenHistory.reduce(0, +) / Double(tokenHistory.count)
+                }
+
+                // Track peak
+                if tokensPerSecond > peakTokensPerSecond {
+                    peakTokensPerSecond = tokensPerSecond
+                }
+
+                print("[Ollama] Speed: \(String(format: "%.1f", tokensPerSecond)) t/s, Avg: \(String(format: "%.1f", averageTokensPerSecond)) t/s, Peak: \(String(format: "%.1f", peakTokensPerSecond)) t/s")
             }
         }
 

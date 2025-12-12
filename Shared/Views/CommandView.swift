@@ -19,6 +19,7 @@ struct CommandView: View {
     @State private var showingCyberWarfareMenu = false
     @State private var showingWeaponsMenu = false
     @State private var showingSystemsView = false
+    @State private var showingStatsPanel = true
     @State private var pickerMode: PickerMode = .target
 
     enum PickerMode {
@@ -30,6 +31,9 @@ struct CommandView: View {
             VStack(spacing: 0) {
                 // DEFCON + Player Status Bar (Fixed at top)
                 statusBar(gameState: gameState)
+
+                // AI Stats Panel (collapsible)
+                aiStatsPanel
 
                 // Command Panel (Fixed - no scrolling)
                 commandPanel(gameState: gameState)
@@ -90,6 +94,141 @@ struct CommandView: View {
         .padding()
         .background(Color.black)
         .border(AppSettings.terminalGreen, width: 2)
+    }
+
+    // MARK: - AI Stats Panel
+
+    private var aiStatsPanel: some View {
+        VStack(spacing: 0) {
+            // Header with toggle
+            HStack {
+                Image(systemName: "chart.bar.fill")
+                    .foregroundColor(.cyan)
+                Text("AI PERFORMANCE METRICS")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundColor(.cyan)
+
+                Spacer()
+
+                // Connection status
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(gameEngine.ollamaService.isConnected ? Color.green : Color.gray)
+                        .frame(width: 8, height: 8)
+                    Text(gameEngine.ollamaService.isConnected ? "OLLAMA" : "LOCAL")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(gameEngine.ollamaService.isConnected ? AppSettings.terminalGreen : AppSettings.terminalAmber)
+                }
+
+                Button(action: {
+                    withAnimation {
+                        showingStatsPanel.toggle()
+                    }
+                }) {
+                    Image(systemName: showingStatsPanel ? "chevron.up" : "chevron.down")
+                        .foregroundColor(AppSettings.terminalAmber)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(12)
+            .background(Color.black)
+            .border(Color.cyan, width: 2)
+
+            if showingStatsPanel {
+                // Metrics content
+                HStack(spacing: 20) {
+                    // Current tokens/sec (large display)
+                    VStack(spacing: 6) {
+                        Text("CURRENT")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(AppSettings.terminalAmber)
+
+                        Text(String(format: "%.1f", gameEngine.ollamaService.tokensPerSecond))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.cyan)
+
+                        Text("tok/sec")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(AppSettings.terminalAmber.opacity(0.7))
+                    }
+                    .frame(minWidth: 100)
+                    .padding()
+                    .background(Color.cyan.opacity(0.1))
+                    .border(Color.cyan, width: 2)
+
+                    VStack(spacing: 12) {
+                        // Average tokens/sec
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("AVERAGE")
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundColor(AppSettings.terminalAmber)
+                                Text(String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond))
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(AppSettings.terminalGreen)
+                            }
+                            .padding(8)
+                            .background(AppSettings.terminalGreen.opacity(0.1))
+                            .border(AppSettings.terminalGreen, width: 1)
+
+                            Spacer()
+
+                            // Peak tokens/sec
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("PEAK")
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundColor(AppSettings.terminalAmber)
+                                Text(String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond))
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(AppSettings.terminalRed)
+                            }
+                            .padding(8)
+                            .background(AppSettings.terminalRed.opacity(0.1))
+                            .border(AppSettings.terminalRed, width: 1)
+                        }
+
+                        // Total tokens and requests
+                        HStack(spacing: 12) {
+                            statBox(label: "TOTAL TOKENS", value: "\(gameEngine.ollamaService.totalTokens)", color: .purple)
+                            statBox(label: "REQUESTS", value: "\(gameEngine.ollamaService.totalRequests)", color: .orange)
+
+                            // Processing indicator
+                            if gameEngine.ollamaService.isGenerating {
+                                HStack(spacing: 6) {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
+                                        .scaleEffect(0.7)
+                                    Text("PROCESSING")
+                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.cyan)
+                                }
+                                .padding(8)
+                                .background(Color.cyan.opacity(0.1))
+                                .border(Color.cyan, width: 1)
+                            }
+                        }
+                    }
+
+                    Spacer()
+                }
+                .padding(12)
+                .background(Color.black.opacity(0.5))
+            }
+        }
+    }
+
+    private func statBox(label: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundColor(AppSettings.terminalAmber.opacity(0.7))
+            Text(value)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(color)
+        }
+        .padding(8)
+        .background(color.opacity(0.1))
+        .border(color, width: 1)
     }
 
     // MARK: - Command Panel
