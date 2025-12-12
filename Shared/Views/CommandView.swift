@@ -104,7 +104,8 @@ struct CommandView: View {
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .foregroundColor(.cyan)
-                Text("AI PERFORMANCE METRICS")
+                    .font(.system(size: 16))
+                Text("📊 AI PERFORMANCE METRICS")
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(.cyan)
 
@@ -131,8 +132,8 @@ struct CommandView: View {
                 .buttonStyle(.plain)
             }
             .padding(12)
-            .background(Color.black)
-            .border(Color.cyan, width: 2)
+            .background(Color.blue.opacity(0.3))  // BRIGHT BLUE for visibility testing
+            .border(Color.cyan, width: 3)
 
             if showingStatsPanel {
                 // Metrics content
@@ -215,6 +216,8 @@ struct CommandView: View {
                 .background(Color.black.opacity(0.5))
             }
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
     }
 
     private func statBox(label: String, value: String, color: Color) -> some View {

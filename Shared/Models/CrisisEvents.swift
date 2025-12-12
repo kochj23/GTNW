@@ -264,6 +264,30 @@ class CrisisManager: ObservableObject {
                         message: "Hotline confirms no launch. Crisis averted through diplomacy."
                     ),
                     successChance: 0.90
+                ),
+                CrisisOption(
+                    title: "Launch Limited Strike",
+                    description: "Strike only military targets, hold reserves",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [enemy.id: -80],
+                        approvalChange: -20,
+                        triggersWar: true,
+                        warTarget: enemy.id,
+                        message: "Limited strike on false alarm. Escalation restrained but world horrified. War declared."
+                    ),
+                    successChance: 0.60
+                ),
+                CrisisOption(
+                    title: "Evacuate Cities, Await Intel",
+                    description: "Civil defense activation, wait for more data",
+                    advisorRecommendation: "Kristi Noem",
+                    consequences: CrisisConsequences(
+                        approvalChange: 5,
+                        economicImpact: -1000,
+                        message: "FALSE ALARM confirmed. Evacuation costly but citizens appreciate caution."
+                    ),
+                    successChance: 0.95
                 )
             ]
         )
@@ -329,6 +353,28 @@ class CrisisManager: ObservableObject {
                         message: "Accusation strains relations. No evidence of sabotage found."
                     ),
                     successChance: 0.20
+                ),
+                CrisisOption(
+                    title: "Deploy Military Containment",
+                    description: "Send troops to establish quarantine zone",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -10],
+                        approvalChange: 8,
+                        economicImpact: -750,
+                        message: "Containment successful. Radiation limited. Military presence resented but effective."
+                    ),
+                    successChance: 0.80
+                ),
+                CrisisOption(
+                    title: "Demand UN Investigation",
+                    description: "Call for international nuclear safety review",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        approvalChange: 3,
+                        message: "UN investigation launched. Meltdown contained. Safety protocols strengthened globally."
+                    ),
+                    successChance: 0.70
                 )
             ]
         )
@@ -394,6 +440,28 @@ class CrisisManager: ObservableObject {
                         message: "NSA intercepts communications, pinpoints location. Device recovered."
                     ),
                     successChance: 0.65
+                ),
+                CrisisOption(
+                    title: "Offer Ransom Payment",
+                    description: "Negotiate $100M payment for device return",
+                    advisorRecommendation: "Scott Bessent",
+                    consequences: CrisisConsequences(
+                        approvalChange: -15,
+                        economicImpact: -10000,
+                        message: "Ransom paid. Device recovered but setting dangerous precedent."
+                    ),
+                    successChance: 0.85
+                ),
+                CrisisOption(
+                    title: "Evacuate Major Cities",
+                    description: "Emergency evacuation, hope they don't detonate",
+                    advisorRecommendation: "Kristi Noem",
+                    consequences: CrisisConsequences(
+                        approvalChange: -5,
+                        economicImpact: -5000,
+                        message: "Evacuation chaotic. Device detonates in evacuated area - 10K dead vs 100K if unprepared."
+                    ),
+                    successChance: 0.50
                 )
             ]
         )
@@ -461,6 +529,27 @@ class CrisisManager: ObservableObject {
                         message: "Commander launches warhead. Defensive systems intercept. 1 warhead detonates, 50K dead."
                     ),
                     successChance: 0.40
+                ),
+                CrisisOption(
+                    title: "Deploy Psychological Operations",
+                    description: "Use psyops to confuse/delay commander",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        approvalChange: 18,
+                        message: "Psyops successful. Commander becomes disoriented. \(country.name) forces regain control."
+                    ),
+                    successChance: 0.65
+                ),
+                CrisisOption(
+                    title: "EMP Strike on Silo",
+                    description: "Disable electronics without destroying warheads",
+                    advisorRecommendation: "Elon Musk",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -25],
+                        approvalChange: 12,
+                        message: "EMP disables launch systems. Warheads secured. \(country.name) protests sovereignty violation."
+                    ),
+                    successChance: 0.75
                 )
             ]
         )
@@ -524,6 +613,28 @@ class CrisisManager: ObservableObject {
                         message: "Attack repelled quietly. No escalation."
                     ),
                     successChance: 0.80
+                ),
+                CrisisOption(
+                    title: "Launch Proportional Cyber Strike",
+                    description: "Hit their infrastructure equally hard",
+                    advisorRecommendation: "Mike Waltz",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [enemy.id: -35],
+                        approvalChange: 8,
+                        message: "Proportional response. Their power grid down 48 hours. Message sent."
+                    ),
+                    successChance: 0.75
+                ),
+                CrisisOption(
+                    title: "Activate Cyber Defense Protocol Omega",
+                    description: "NSA's most advanced countermeasures",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        approvalChange: 15,
+                        economicImpact: -1000,
+                        message: "Protocol Omega activated. Attack completely neutralized. Systems hardened."
+                    ),
+                    successChance: 0.90
                 )
             ]
         )
@@ -579,6 +690,9 @@ class CrisisManager: ObservableObject {
     }
 
     private func createSimpleCrisis(type: CrisisEventType, title: String, country: Country?, gameState: GameState) -> CrisisEvent {
+        let countryName = country?.name ?? "affected nation"
+        let countryID = country?.id
+
         return CrisisEvent(
             type: type,
             severity: .moderate,
@@ -589,14 +703,71 @@ class CrisisManager: ObservableObject {
             timeLimit: nil,
             options: [
                 CrisisOption(
-                    title: "Respond",
-                    description: "Take action",
-                    consequences: CrisisConsequences(message: "Crisis handled.")
+                    title: "Military Response",
+                    description: "Deploy military forces to address situation",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: countryID.map { [$0: -10] } ?? [:],
+                        approvalChange: 5,
+                        economicImpact: -500,
+                        message: "Military intervention successful. \(countryName) resents show of force but crisis resolved."
+                    ),
+                    successChance: 0.70
                 ),
                 CrisisOption(
-                    title: "Ignore",
-                    description: "Do nothing",
-                    consequences: CrisisConsequences(message: "Crisis unresolved.")
+                    title: "Diplomatic Resolution",
+                    description: "Negotiate peaceful solution",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: countryID.map { [$0: 15] } ?? [:],
+                        approvalChange: 10,
+                        message: "Diplomatic solution reached. Crisis averted peacefully. Relations improved."
+                    ),
+                    successChance: 0.60
+                ),
+                CrisisOption(
+                    title: "Economic Pressure",
+                    description: "Apply sanctions or economic leverage",
+                    advisorRecommendation: "Scott Bessent",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: countryID.map { [$0: -20] } ?? [:],
+                        approvalChange: 8,
+                        message: "Economic pressure forces compliance. Crisis resolved but relations damaged."
+                    ),
+                    successChance: 0.65
+                ),
+                CrisisOption(
+                    title: "Covert Operation",
+                    description: "CIA handles situation quietly",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        approvalChange: 12,
+                        economicImpact: -200,
+                        message: "Covert operation successful. Crisis resolved with no public knowledge."
+                    ),
+                    successChance: 0.55
+                ),
+                CrisisOption(
+                    title: "International Coalition",
+                    description: "Build UN/NATO consensus for action",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        approvalChange: 15,
+                        economicImpact: -300,
+                        message: "Coalition response legitimizes action. Crisis resolved with international support."
+                    ),
+                    successChance: 0.75
+                ),
+                CrisisOption(
+                    title: "Monitor and Wait",
+                    description: "Observe situation, avoid commitment",
+                    advisorRecommendation: "Tulsi Gabbard",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: countryID.map { [$0: -5] } ?? [:],
+                        approvalChange: -3,
+                        message: "Situation deteriorates without intervention. Minimal impact but crisis worsens."
+                    ),
+                    successChance: 0.80
                 )
             ]
         )
