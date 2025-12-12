@@ -19,6 +19,11 @@ struct UnifiedCommandCenter: View {
     @State private var commandText = ""
     @State private var responseMessage = ""
     @FocusState private var isCommandFocused: Bool
+    @State private var showingDefconDetails = false
+    @State private var showingNuclearPowersDetail = false
+    @State private var showingWarsDetail = false
+    @State private var showingTreatiesDetail = false
+    @State private var showingRadiationDetail = false
 
     var body: some View {
         if let gameState = gameEngine.gameState {
@@ -62,6 +67,21 @@ struct UnifiedCommandCenter: View {
                     )
                 }
             }
+            .sheet(isPresented: $showingDefconDetails) {
+                DefconDetailView(gameState: gameState)
+            }
+            .sheet(isPresented: $showingNuclearPowersDetail) {
+                NuclearPowersDetailView(gameState: gameState)
+            }
+            .sheet(isPresented: $showingWarsDetail) {
+                ActiveWarsDetailView(gameState: gameState)
+            }
+            .sheet(isPresented: $showingTreatiesDetail) {
+                TreatiesDetailView(gameState: gameState)
+            }
+            .sheet(isPresented: $showingRadiationDetail) {
+                RadiationDetailView(gameState: gameState)
+            }
         }
     }
 
@@ -73,8 +93,13 @@ struct UnifiedCommandCenter: View {
                 // Header
                 SectionHeader("⚡ COMMAND CENTER", icon: "command.circle.fill", color: GTNWColors.terminalGreen)
 
-                // DEFCON Status
-                DefconIndicator(level: gameState.defconLevel)
+                // DEFCON Status - Clickable
+                Button(action: {
+                    showingDefconDetails = true
+                }) {
+                    DefconIndicator(level: gameState.defconLevel)
+                }
+                .buttonStyle(.plain)
 
                 // Player Status
                 if let player = gameState.getPlayerCountry() {
@@ -360,33 +385,53 @@ struct UnifiedCommandCenter: View {
 
     private func quickStatsGrid(gameState: GameState) -> some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            StatCard(
-                title: "Nuclear Powers",
-                value: "\(gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.count)",
-                icon: "flame.fill",
-                color: GTNWColors.terminalRed
-            )
+            Button(action: {
+                showingNuclearPowersDetail = true
+            }) {
+                StatCard(
+                    title: "Nuclear Powers",
+                    value: "\(gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.count)",
+                    icon: "flame.fill",
+                    color: GTNWColors.terminalRed
+                )
+            }
+            .buttonStyle(.plain)
 
-            StatCard(
-                title: "Active Wars",
-                value: "\(gameState.activeWars.count)",
-                icon: "exclamationmark.triangle.fill",
-                color: .orange
-            )
+            Button(action: {
+                showingWarsDetail = true
+            }) {
+                StatCard(
+                    title: "Active Wars",
+                    value: "\(gameState.activeWars.count)",
+                    icon: "exclamationmark.triangle.fill",
+                    color: .orange
+                )
+            }
+            .buttonStyle(.plain)
 
-            StatCard(
-                title: "Treaties",
-                value: "\(gameState.treaties.count)",
-                icon: "doc.text.fill",
-                color: GTNWColors.terminalGreen
-            )
+            Button(action: {
+                showingTreatiesDetail = true
+            }) {
+                StatCard(
+                    title: "Treaties",
+                    value: "\(gameState.treaties.count)",
+                    icon: "doc.text.fill",
+                    color: GTNWColors.terminalGreen
+                )
+            }
+            .buttonStyle(.plain)
 
-            StatCard(
-                title: "Radiation",
-                value: "\(gameState.globalRadiation)",
-                icon: "radiation",
-                color: gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen
-            )
+            Button(action: {
+                showingRadiationDetail = true
+            }) {
+                StatCard(
+                    title: "Radiation",
+                    value: "\(gameState.globalRadiation)",
+                    icon: "radiation",
+                    color: gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -630,6 +675,321 @@ struct UnifiedCommandCenter: View {
         }
         .background(Color.black)
         .border(Color.purple, width: 2)
+    }
+}
+
+// MARK: - Detail Views
+
+struct DefconDetailView: View {
+    let gameState: GameState
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("🎯 DEFCON \(gameState.defconLevel.rawValue) DETAILS")
+                    .font(GTNWFonts.heading())
+                    .foregroundColor(gameState.defconLevel.color)
+                Spacer()
+                Button("CLOSE") { dismiss() }
+                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                    .foregroundColor(GTNWColors.terminalRed)
+            }
+            .padding()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("MILITARY READINESS")
+                        .font(GTNWFonts.subheading())
+                        .foregroundColor(GTNWColors.terminalAmber)
+
+                    Text(gameState.defconLevel.description)
+                        .font(GTNWFonts.body())
+                        .foregroundColor(GTNWColors.terminalGreen)
+
+                    Divider()
+
+                    Text("ACTIVE MILITARY OPERATIONS")
+                        .font(GTNWFonts.subheading())
+                        .foregroundColor(GTNWColors.terminalAmber)
+
+                    ForEach(gameState.activeWars) { war in
+                        HStack {
+                            if let aggressor = gameState.getCountry(id: war.aggressor),
+                               let defender = gameState.getCountry(id: war.defender) {
+                                Text("\(aggressor.flag) \(aggressor.name)")
+                                    .foregroundColor(GTNWColors.terminalRed)
+                                Text("⚔️")
+                                Text("\(defender.flag) \(defender.name)")
+                                    .foregroundColor(GTNWColors.terminalRed)
+                                Spacer()
+                                Text("Turn \(war.startTurn)")
+                                    .font(GTNWFonts.caption())
+                                    .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                            }
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                    }
+
+                    if gameState.activeWars.isEmpty {
+                        Text("No active military conflicts")
+                            .foregroundColor(GTNWColors.terminalGreen)
+                            .padding()
+                    }
+
+                    Divider()
+
+                    Text("NUCLEAR STRIKES")
+                        .font(GTNWFonts.subheading())
+                        .foregroundColor(GTNWColors.terminalAmber)
+
+                    ForEach(Array(gameState.nuclearStrikes.enumerated()), id: \.offset) { index, strike in
+                        HStack {
+                            if let attacker = gameState.getCountry(id: strike.attacker),
+                               let target = gameState.getCountry(id: strike.target) {
+                                Text("\(attacker.flag) \(attacker.name)")
+                                Text("☢️ → \(strike.warheadsUsed)")
+                                Text("\(target.flag) \(target.name)")
+                                Spacer()
+                                Text("T\(strike.turn)")
+                                    .font(GTNWFonts.caption())
+                            }
+                        }
+                        .foregroundColor(GTNWColors.terminalRed)
+                        .padding()
+                        .background(GTNWColors.terminalRed.opacity(0.1))
+                    }
+
+                    if gameState.nuclearStrikes.isEmpty {
+                        Text("✅ No nuclear weapons fired")
+                            .foregroundColor(GTNWColors.terminalGreen)
+                            .padding()
+                    }
+                }
+                .padding()
+            }
+        }
+        .frame(width: 700, height: 600)
+        .background(GTNWColors.commandCenterBackground)
+    }
+}
+
+struct NuclearPowersDetailView: View {
+    let gameState: GameState
+    @Environment(\.dismiss) var dismiss
+
+    var nuclearNations: [Country] {
+        gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.sorted { $0.nuclearWarheads > $1.nuclearWarheads }
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("☢️ NUCLEAR POWERS")
+                    .font(GTNWFonts.heading())
+                    .foregroundColor(GTNWColors.terminalRed)
+                Spacer()
+                Button("CLOSE") { dismiss() }
+            }
+            .padding()
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(nuclearNations) { country in
+                        HStack {
+                            Text(country.flag)
+                                .font(.system(size: 32))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(country.name)
+                                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                                    .foregroundColor(GTNWColors.terminalGreen)
+                                HStack {
+                                    Text("☢️ \(country.nuclearWarheads) warheads")
+                                    Text("•")
+                                    Text("\(country.alignment.rawValue)")
+                                }
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalAmber)
+                            }
+                            Spacer()
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                    }
+                }
+                .padding()
+            }
+        }
+        .frame(width: 600, height: 500)
+        .background(GTNWColors.commandCenterBackground)
+    }
+}
+
+struct ActiveWarsDetailView: View {
+    let gameState: GameState
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("⚔️ ACTIVE WARS")
+                    .font(GTNWFonts.heading())
+                    .foregroundColor(.orange)
+                Spacer()
+                Button("CLOSE") { dismiss() }
+            }
+            .padding()
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(gameState.activeWars) { war in
+                        if let aggressor = gameState.getCountry(id: war.aggressor),
+                           let defender = gameState.getCountry(id: war.defender) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("\(aggressor.flag) \(aggressor.name)")
+                                        .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                                        .foregroundColor(GTNWColors.terminalRed)
+                                    Text("VS")
+                                        .foregroundColor(GTNWColors.terminalAmber)
+                                    Text("\(defender.flag) \(defender.name)")
+                                        .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                                        .foregroundColor(GTNWColors.terminalRed)
+                                }
+                                Text("Started: Turn \(war.startTurn) • Duration: \(gameState.turn - war.startTurn) turns")
+                                    .font(GTNWFonts.caption())
+                                    .foregroundColor(GTNWColors.terminalAmber)
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.5))
+                        }
+                    }
+
+                    if gameState.activeWars.isEmpty {
+                        Text("No active wars")
+                            .foregroundColor(GTNWColors.terminalGreen)
+                            .padding()
+                    }
+                }
+                .padding()
+            }
+        }
+        .frame(width: 600, height: 500)
+        .background(GTNWColors.commandCenterBackground)
+    }
+}
+
+struct TreatiesDetailView: View {
+    let gameState: GameState
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("📜 TREATIES & ALLIANCES")
+                    .font(GTNWFonts.heading())
+                    .foregroundColor(GTNWColors.terminalGreen)
+                Spacer()
+                Button("CLOSE") { dismiss() }
+            }
+            .padding()
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(Array(gameState.treaties.enumerated()), id: \.offset) { index, treaty in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(treaty.type.rawValue.capitalized)")
+                                .font(GTNWFonts.terminal(size: 12, weight: .bold))
+                                .foregroundColor(GTNWColors.terminalGreen)
+
+                            Text("Signatories: \(treaty.signatories.compactMap { gameState.getCountry(id: $0)?.name }.joined(separator: ", "))")
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalAmber)
+
+                            Text("Turn \(treaty.turn)")
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                    }
+
+                    if gameState.treaties.isEmpty {
+                        Text("No active treaties")
+                            .foregroundColor(GTNWColors.terminalAmber)
+                            .padding()
+                    }
+                }
+                .padding()
+            }
+        }
+        .frame(width: 600, height: 500)
+        .background(GTNWColors.commandCenterBackground)
+    }
+}
+
+struct RadiationDetailView: View {
+    let gameState: GameState
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("☢️ GLOBAL RADIATION")
+                    .font(GTNWFonts.heading())
+                    .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+                Spacer()
+                Button("CLOSE") { dismiss() }
+            }
+            .padding()
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Current Level: \(gameState.globalRadiation)")
+                    .font(GTNWFonts.subheading())
+                    .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+
+                ProgressView(value: Double(min(gameState.globalRadiation, 500)), total: 500.0)
+                    .tint(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+
+                Text("RADIATION LEVELS")
+                    .font(GTNWFonts.subheading())
+                    .foregroundColor(GTNWColors.terminalAmber)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    radiationLevel("0-50", "Safe", .green)
+                    radiationLevel("51-100", "Elevated", .yellow)
+                    radiationLevel("101-200", "Dangerous", .orange)
+                    radiationLevel("201-500", "Critical", .red)
+                    radiationLevel("500+", "Uninhabitable", GTNWColors.terminalRed)
+                }
+                .padding()
+                .background(Color.black.opacity(0.5))
+
+                Text("Total Nuclear Strikes: \(gameState.nuclearStrikes.count)")
+                    .font(GTNWFonts.body())
+                    .foregroundColor(GTNWColors.terminalAmber)
+
+                Text("Total Casualties: \(gameState.totalCasualties.formatted())")
+                    .font(GTNWFonts.body())
+                    .foregroundColor(GTNWColors.terminalRed)
+            }
+            .padding()
+        }
+        .frame(width: 600, height: 500)
+        .background(GTNWColors.commandCenterBackground)
+    }
+
+    private func radiationLevel(_ range: String, _ label: String, _ color: Color) -> some View {
+        HStack {
+            Text(range)
+                .font(GTNWFonts.terminal(size: 12))
+                .foregroundColor(GTNWColors.terminalAmber)
+                .frame(width: 80, alignment: .leading)
+            Text(label)
+                .font(GTNWFonts.terminal(size: 12))
+                .foregroundColor(color)
+        }
     }
 }
 
