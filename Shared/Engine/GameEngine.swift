@@ -31,6 +31,11 @@ class GameEngine: ObservableObject {
         // Engine ready to start game
         // Initialize advisors
         advisors = Advisor.trumpCabinet()
+
+        // Initialize MLX service for AI-powered gameplay
+        Task { @MainActor in
+            await EnhancedMLXService.shared.initialize()
+        }
     }
 
     // MARK: - Game Lifecycle
@@ -128,14 +133,26 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Process all AI-controlled countries
+    /// Process all AI-controlled countries using MLX-powered decision making
     private func processAITurns() {
         guard let gameState = gameState else { return }
 
-        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
-            // AI decision making
-            let action = determineAIAction(for: country)
-            executeAIAction(action, for: country)
+        // Process AI countries with MLX-powered decisions
+        Task { @MainActor in
+            for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+                // Use MLX for AI decision making
+                let mlxDecision = await EnhancedMLXService.shared.generateCountryDecision(
+                    country: country,
+                    gameState: gameState
+                )
+
+                // Convert MLX decision to AIAction and execute
+                let action = convertMLXDecisionToAction(mlxDecision)
+                executeAIAction(action, for: country, reason: mlxDecision.reason)
+
+                // Small delay between countries to avoid overwhelming MLX
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            }
         }
     }
 
@@ -203,25 +220,53 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Execute AI action with concise summary
-    private func executeAIAction(_ action: AIAction, for country: Country) {
+    /// Convert MLX decision to AIAction
+    private func convertMLXDecisionToAction(_ decision: AIDecision) -> AIAction {
+        switch decision.action {
+        case .wait:
+            return .wait
+        case .buildMilitary:
+            return .wait // Will be handled separately
+        case .buildNukes:
+            return .wait // Will be handled separately
+        case .declareWar(let target):
+            return .declareWar(target: target)
+        case .launchNuke(let target, let count):
+            return .launchNuclearStrike(target: target, warheads: count)
+        case .formAlliance(let target):
+            return .seekAlliance // Map to existing action
+        case .sendAid(let target, _):
+            return .improveDiplomacy // Map to existing action
+        case .covertOps(let target):
+            return .threatenNuclearStrike(target: target) // Map to closest existing action
+        }
+    }
+
+    /// Execute AI action with concise summary and MLX reasoning
+    private func executeAIAction(_ action: AIAction, for country: Country, reason: String? = nil) {
         guard let gameState = gameState else { return }
 
         switch action {
         case .wait:
-            // Don't log waiting - too verbose
-            break
+            // Log MLX reasoning if provided
+            if let reason = reason, !reason.isEmpty {
+                gameState.aiActionSummary.append("\(country.flag) \(country.name): \(reason)")
+            }
 
         case .declareWar(let targetID):
             declareWar(aggressor: country.id, defender: targetID)
             if let target = getCountry(targetID) {
-                gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(target.flag) \(target.name)")
+                let summary = "\(country.flag) \(country.name) ⚔️ declared war on \(target.flag) \(target.name)"
+                let fullSummary = reason != nil ? "\(summary) - \(reason!)" : summary
+                gameState.aiActionSummary.append(fullSummary)
             }
 
         case .launchNuclearStrike(let targetID, let warheads):
             launchNuclearStrike(from: country.id, to: targetID, warheads: warheads)
             if let target = getCountry(targetID) {
-                gameState.aiActionSummary.append("\(country.flag) \(country.name) ☢️ launched \(warheads) nukes at \(target.flag) \(target.name)")
+                let summary = "\(country.flag) \(country.name) ☢️ launched \(warheads) nukes at \(target.flag) \(target.name)"
+                let fullSummary = reason != nil ? "\(summary) - \(reason!)" : summary
+                gameState.aiActionSummary.append(fullSummary)
             }
 
         case .threatenNuclearStrike(let targetID):

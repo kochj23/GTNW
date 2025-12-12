@@ -69,8 +69,63 @@ struct NewsEvent: Identifiable, Codable {
 class NewsManager: ObservableObject {
     @Published var headlines: [NewsEvent] = []
     private let maxHeadlines = 50
+    private var useMLX: Bool = true  // Toggle MLX-powered news generation
 
     func generateNews(from gameState: GameState) {
+        // Use MLX for dynamic news generation if available
+        Task { @MainActor in
+            let isMLXAvailable = await checkMLXAvailability()
+            if useMLX && isMLXAvailable {
+                await generateMLXNews(from: gameState)
+            } else {
+                generateStaticNews(from: gameState)
+            }
+        }
+    }
+
+    @MainActor
+    private func checkMLXAvailability() async -> Bool {
+        return EnhancedMLXService.shared.isConnected
+    }
+
+    /// Generate dynamic news using MLX
+    private func generateMLXNews(from gameState: GameState) async {
+        // Wars
+        for war in gameState.activeWars {
+            if let aggressor = gameState.getCountry(id: war.aggressor),
+               let defender = gameState.getCountry(id: war.defender) {
+                let context = "\(aggressor.name) declares war on \(defender.name)"
+                if let headline = await EnhancedMLXService.shared.generateNewsArticle(headline: context, gameState: gameState) {
+                    addHeadline(headline, source: .ap, severity: .breaking, turn: gameState.turn)
+                } else {
+                    addHeadline(context, source: .ap, severity: .breaking, turn: gameState.turn)
+                }
+            }
+        }
+
+        // Nuclear strikes
+        if let lastStrike = gameState.nuclearStrikes.last {
+            if let attacker = gameState.getCountry(id: lastStrike.attacker),
+               let target = gameState.getCountry(id: lastStrike.target) {
+                let context = "\(attacker.name) launches nuclear strike on \(target.name) - \(lastStrike.casualties.formatted()) casualties"
+                if let headline = await EnhancedMLXService.shared.generateNewsArticle(headline: context, gameState: gameState) {
+                    addHeadline(headline, source: .cnn, severity: .breaking, turn: gameState.turn)
+                } else {
+                    addHeadline(context, source: .cnn, severity: .breaking, turn: gameState.turn)
+                }
+            }
+        }
+
+        // Generate additional contextual news based on game state
+        if gameState.defconLevel.rawValue <= 2 {
+            if let headline = await EnhancedMLXService.shared.generateEvent(gameState: gameState, eventType: .nuclear) {
+                addHeadline(headline, source: .reuters, severity: .breaking, turn: gameState.turn)
+            }
+        }
+    }
+
+    /// Generate static news (fallback when MLX unavailable)
+    private func generateStaticNews(from gameState: GameState) {
         // Wars
         for war in gameState.activeWars {
             if let aggressor = gameState.getCountry(id: war.aggressor),
