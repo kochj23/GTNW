@@ -1,7 +1,7 @@
 # GTNW - Nuclear Escalation Fix & Comprehensive Recommendations
 
 **Date**: December 11, 2025
-**Author**: Jordan Koch (with Claude Code)
+**Author**: Jordan Koch
 **Issue**: Nuclear war starts within 6 turns - way too fast
 **Status**: Analysis complete, fixes recommended
 

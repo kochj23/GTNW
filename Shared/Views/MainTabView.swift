@@ -59,6 +59,15 @@ struct MainTabView: View {
                         Label("Intelligence", systemImage: "eye.fill")
                     }
                     .tag(4)
+
+                // Metrics Dashboard
+                if let gameState = gameEngine.gameState {
+                    MetricsPanel(gameState: gameState)
+                        .tabItem {
+                            Label("Metrics", systemImage: "chart.bar.doc.horizontal.fill")
+                        }
+                        .tag(5)
+                }
             }
             .frame(minWidth: 1400, minHeight: 900)
             .overlay(

@@ -1,7 +1,7 @@
 # GTNW - UI Improvements Guide
 
 **Date**: December 11, 2025
-**Author**: Jordan Koch (with Claude Code)
+**Author**: Jordan Koch
 **Status**: Requested improvements documented
 
 ---
