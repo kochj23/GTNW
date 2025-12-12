@@ -406,74 +406,12 @@ struct CommandView: View {
     private var mlxPanel: some View {
         print("[CommandView] mlxPanel getter called - isConnected: \(mlxManager.isConnected)")
 
-        return VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "brain.head.profile")
-                    .foregroundColor(.purple)
-                Text("MLX AI")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundColor(.purple)
-                Spacer()
-                Circle()
-                    .fill(mlxManager.isConnected ? Color.green : Color.red)
-                    .frame(width: 10, height: 10)
-                Text(mlxManager.isConnected ? "ONLINE" : "OFF")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(mlxManager.isConnected ? AppSettings.terminalGreen : AppSettings.terminalRed)
-            }
-            .padding()
-            .background(Color.black)
-            .border(Color.purple, width: 2)
+        // Use the full MLXInteractionPanel with performance metrics
+        return MLXInteractionPanel(mlxManager: mlxManager)
+            .environmentObject(gameEngine)
             .onAppear {
-                print("[CommandView] MLX panel header appeared!")
+                print("[CommandView] MLXInteractionPanel appeared!")
             }
-
-            if mlxManager.isConnected {
-                List {
-                    if !mlxManager.lastResponse.isEmpty {
-                        Section("Latest") {
-                            Text(mlxManager.lastResponse)
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundColor(AppSettings.terminalGreen)
-                        }
-                    }
-
-                    Section("History") {
-                        ForEach(mlxManager.interactionHistory.prefix(8)) { interaction in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(interaction.type)
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.purple)
-                                if let input = interaction.input {
-                                    Text("→ \(input)")
-                                        .font(.system(size: 9, design: .monospaced))
-                                        .foregroundColor(AppSettings.terminalAmber)
-                                }
-                                Text("✓ \(interaction.output)")
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundColor(AppSettings.terminalGreen)
-                            }
-                        }
-                    }
-                }
-                .listStyle(.sidebar)
-            } else {
-                VStack(spacing: 10) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 24))
-                        .foregroundColor(AppSettings.terminalAmber)
-                    Text("MLX OFFLINE")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                    Text("pip install mlx")
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(AppSettings.terminalGreen)
-                }
-                .frame(maxHeight: .infinity)
-                .padding()
-            }
-        }
-        .background(Color.black)
-        .border(Color.purple, width: 2)
     }
 }
 

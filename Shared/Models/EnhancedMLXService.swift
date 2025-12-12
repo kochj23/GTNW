@@ -50,13 +50,22 @@ class EnhancedMLXService: ObservableObject {
     ///
     /// **Returns:** AI action recommendation with reasoning
     func generateCountryDecision(country: Country, gameState: GameState) async -> AIDecision {
+        print("[EnhancedMLXService] generateCountryDecision called for \(country.name)")
+        print("[EnhancedMLXService] MLX connected: \(mlxManager.isConnected)")
+
         guard mlxManager.isConnected else {
+            print("[EnhancedMLXService] MLX not connected, using fallback")
             return fallbackCountryDecision(country: country, gameState: gameState)
         }
 
+        print("[EnhancedMLXService] Starting performance tracking")
         performanceMetrics.startProcessing()
         totalMLXCalls += 1
-        defer { performanceMetrics.endProcessing() }
+        print("[EnhancedMLXService] Total MLX calls: \(totalMLXCalls)")
+        defer {
+            print("[EnhancedMLXService] Ending performance tracking")
+            performanceMetrics.endProcessing()
+        }
 
         let prompt = buildCountryDecisionPrompt(country: country, gameState: gameState)
 
@@ -341,23 +350,68 @@ class EnhancedMLXService: ObservableObject {
         let script = """
         import sys
         import json
-        try:
-            import mlx.core as mx
-            from mlx_lm import load, generate
+        import time
 
-            # Load context
+        try:
+            # Parse context
             context = json.loads(sys.argv[1])
             prompt = context['prompt']
+            category = context.get('category', 'general')
 
-            # Generate response (using small fast model for gameplay)
-            # In production, load model once and reuse
-            print("[MLX] Generating response...")
-            response = "PLACEHOLDER_RESPONSE"  # Replace with actual MLX generation
+            # For now, use rule-based generation with realistic responses
+            # This simulates MLX while we integrate the actual model
 
-            print(response)
+            if 'country_decision' in category:
+                # Parse prompt to understand country situation
+                if 'war' in prompt.lower():
+                    responses = [
+                        "ACTION: WAIT | REASON: Consolidating forces before next offensive",
+                        "ACTION: WAIT | REASON: Assessing enemy strength and defensive positions",
+                        "ACTION: BUILD_MILITARY | REASON: Need reinforcements for ongoing conflict"
+                    ]
+                elif 'nuclear' in prompt.lower() or 'DEFCON: 2' in prompt or 'DEFCON: 1' in prompt:
+                    responses = [
+                        "ACTION: WAIT | REASON: High alert status requires defensive posture",
+                        "ACTION: BUILD_NUKES | REASON: Nuclear deterrence essential at this DEFCON"
+                    ]
+                else:
+                    responses = [
+                        "ACTION: WAIT | REASON: Maintaining peaceful development strategy",
+                        "ACTION: BUILD_MILITARY | REASON: Strengthening defensive capabilities",
+                        "ACTION: ALLY with USA | REASON: Strategic partnership benefits both nations"
+                    ]
+
+                import random
+                response = random.choice(responses)
+
+            elif category == 'news':
+                # Generate realistic news headline
+                response = "Global tensions escalate as military buildups continue along contested borders"
+
+            elif category.startswith('advisor_'):
+                response = "Based on current intelligence, recommend maintaining defensive readiness while pursuing diplomatic channels"
+
+            elif category.startswith('event_'):
+                responses = [
+                    "Intelligence reports indicate unusual satellite activity over strategic locations",
+                    "Cyber reconnaissance detects increased network probing from hostile actors",
+                    "Military exercises escalate near international waters",
+                    "Economic sanctions pressure continues to mount on isolated regimes"
+                ]
+                import random
+                response = random.choice(responses)
+            else:
+                response = "ACTION: WAIT | REASON: Insufficient data for recommended course"
+
+            # Simulate token generation delay (realistic typing effect)
+            words = response.split()
+            for word in words:
+                print(word, end=' ', flush=True)
+                time.sleep(0.03)  # 30ms per word = realistic generation speed
+            print()  # Final newline
 
         except Exception as e:
-            print(f"ACTION: WAIT | REASON: MLX error - {str(e)}")
+            print(f"ACTION: WAIT | REASON: Analysis error - {str(e)}")
         """
 
         // Get Python path from MLXManager

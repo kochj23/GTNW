@@ -16,6 +16,7 @@ struct MLXInteractionPanel: View {
     @ObservedObject var performanceMetrics = GTNWPerformanceMetrics.shared
     @EnvironmentObject var gameEngine: GameEngine
     @State private var showMetrics: Bool = true
+    @State private var showHistory: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,39 +74,68 @@ struct MLXInteractionPanel: View {
                 .padding()
             } else {
                 // MLX interaction log
-                ScrollView {
-                    ScrollViewReader { proxy in
-                        LazyVStack(alignment: .leading, spacing: 12) {
-                            // Processing indicator
-                            if mlxManager.isProcessing {
-                                processingIndicator
-                            }
+                VStack(spacing: 0) {
+                    // History header with collapse
+                    HStack {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .foregroundColor(GTNWColors.neonCyan)
+                        Text("INTERACTION HISTORY")
+                            .font(GTNWFonts.terminal(size: 12, weight: .bold))
+                            .foregroundColor(GTNWColors.neonCyan)
 
-                            // Last response
-                            if !mlxManager.lastResponse.isEmpty {
-                                lastResponseCard
-                            }
+                        Spacer()
 
-                            // Recent interactions
-                            ForEach(mlxManager.interactionHistory) { interaction in
-                                interactionCard(interaction)
-                                    .id(interaction.id)
+                        Button(action: {
+                            withAnimation {
+                                showHistory.toggle()
                             }
+                        }) {
+                            Image(systemName: showHistory ? "chevron.up" : "chevron.down")
+                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                         }
-                        .padding()
-                        .onChange(of: mlxManager.interactionHistory.count) { _ in
-                            if let latest = mlxManager.interactionHistory.first {
-                                withAnimation {
-                                    proxy.scrollTo(latest.id, anchor: .top)
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(GTNWColors.glassPanelDark.opacity(0.5))
+
+                    if showHistory {
+                        ScrollView {
+                            ScrollViewReader { proxy in
+                                LazyVStack(alignment: .leading, spacing: 12) {
+                                    // Processing indicator
+                                    if mlxManager.isProcessing {
+                                        processingIndicator
+                                    }
+
+                                    // Last response
+                                    if !mlxManager.lastResponse.isEmpty {
+                                        lastResponseCard
+                                    }
+
+                                    // Recent interactions (limit to 5 for UI space)
+                                    ForEach(mlxManager.interactionHistory.prefix(5)) { interaction in
+                                        interactionCard(interaction)
+                                            .id(interaction.id)
+                                    }
+                                }
+                                .padding()
+                                .onChange(of: mlxManager.interactionHistory.count) { _ in
+                                    if let latest = mlxManager.interactionHistory.first {
+                                        withAnimation {
+                                            proxy.scrollTo(latest.id, anchor: .top)
+                                        }
+                                    }
                                 }
                             }
                         }
+                        .frame(maxHeight: 300)  // Limit scroll area height
+                        .background(Color.black.opacity(0.3))
                     }
                 }
-                .background(Color.black.opacity(0.3))
             }
         }
-        .frame(minWidth: 350)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Performance Metrics
@@ -414,65 +444,7 @@ struct MLXInteractionPanel: View {
     }
 }
 
-// MARK: - MLX Interaction Model
-
-/// Represents an MLX AI interaction
-struct MLXInteraction: Identifiable {
-    let id = UUID()
-    let timestamp: Date
-    let type: String
-    let input: String?
-    let output: String
-
-    var icon: String {
-        switch type.lowercased() {
-        case "command": return "terminal.fill"
-        case "analysis": return "chart.bar.fill"
-        case "strategic": return "brain.head.profile"
-        case "prediction": return "crystal.ball.fill"
-        case "recommendation": return "lightbulb.fill"
-        default: return "cpu"
-        }
-    }
-
-    var color: Color {
-        switch type.lowercased() {
-        case "command": return GTNWColors.neonCyan
-        case "analysis": return GTNWColors.neonPurple
-        case "strategic": return GTNWColors.neonBlue
-        case "prediction": return GTNWColors.terminalAmber
-        case "recommendation": return GTNWColors.terminalGreen
-        default: return GTNWColors.terminalGreen
-        }
-    }
-}
-
-// MARK: - MLXManager Extension
-
-extension MLXManager {
-    @Published var interactionHistory: [MLXInteraction] = []
-    private let maxHistory = 20
-
-    /// Log an MLX interaction
-    func logInteraction(type: String, input: String? = nil, output: String) {
-        let interaction = MLXInteraction(
-            timestamp: Date(),
-            type: type,
-            input: input,
-            output: output
-        )
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.interactionHistory.insert(interaction, at: 0)
-
-            // Keep only recent interactions
-            if self.interactionHistory.count > self.maxHistory {
-                self.interactionHistory = Array(self.interactionHistory.prefix(self.maxHistory))
-            }
-        }
-    }
-}
+// Note: MLXInteraction and MLXManager extension are defined in MLXIntegration.swift
 
 #Preview {
     MLXInteractionPanel(mlxManager: MLXManager())
