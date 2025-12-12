@@ -10,6 +10,7 @@ import SwiftUI
 /// Simplified command-focused interface
 struct CommandView: View {
     @EnvironmentObject var gameEngine: GameEngine
+    @StateObject private var mlxManager = MLXManager()
     @State private var selectedTarget: String?
     @State private var selectedAlly: String?
     @State private var warheadCount: Int = 1
@@ -27,17 +28,29 @@ struct CommandView: View {
 
     var body: some View {
         if let gameState = gameEngine.gameState {
-            VStack(spacing: 0) {
-                // DEFCON + Player Status Bar (Fixed at top)
-                statusBar(gameState: gameState)
+            HSplitView {
+                VStack(spacing: 0) {
+                    // DEFCON + Player Status Bar
+                    statusBar(gameState: gameState)
 
-                // Command Panel (Fixed - no scrolling)
-                commandPanel(gameState: gameState)
+                    // Command Panel
+                    commandPanel(gameState: gameState)
 
-                // Log (scrollable bottom section)
-                logSection
+                    // Log
+                    logSection
+                }
+                .frame(minWidth: 800)
+
+                // MLX Panel
+                mlxPanel
+                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 400)
             }
             .background(AppSettings.terminalBackground)
+            .onAppear {
+                Task {
+                    await mlxManager.initialize()
+                }
+            }
         }
     }
 
@@ -141,6 +154,9 @@ struct CommandView: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: min(warheadCount, player.nuclearWarheads))
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -152,6 +168,9 @@ struct CommandView: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.declareWar(aggressor: player.id, defender: target)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -163,6 +182,9 @@ struct CommandView: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.formAlliance(country1: player.id, country2: target)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -175,6 +197,9 @@ struct CommandView: View {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         // $5 billion = Turn enemy into ally
                         gameEngine.economicDiplomacy(from: player.id, to: target, amount: 5_000_000_000)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -291,10 +316,18 @@ struct CommandView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 3) {
                     ForEach(gameEngine.logMessages.suffix(50)) { log in
-                        Text(log.message)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(logColor(for: log.type))
-                            .padding(.horizontal)
+                        HStack(spacing: 8) {
+                            // Icon
+                            Text(logIcon(for: log.type))
+                                .font(.system(size: 16))
+
+                            // Message
+                            Text(log.message)
+                                .font(.system(size: 14, design: .monospaced))
+                                .foregroundColor(logColor(for: log.type))
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 3)
                     }
                 }
             }
@@ -338,6 +371,86 @@ struct CommandView: View {
         case .error: return AppSettings.terminalRed
         case .critical: return AppSettings.terminalRed
         }
+    }
+
+    private func logIcon(for type: LogType) -> String {
+        switch type {
+        case .system: return "⚙️"
+        case .info: return "ℹ️"
+        case .warning: return "⚠️"
+        case .error: return "❌"
+        case .critical: return "🚨"
+        }
+    }
+
+    // MARK: - MLX Panel
+
+    private var mlxPanel: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Image(systemName: "brain.head.profile")
+                    .foregroundColor(.purple)
+                Text("MLX AI")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundColor(.purple)
+                Spacer()
+                Circle()
+                    .fill(mlxManager.isConnected ? Color.green : Color.red)
+                    .frame(width: 10, height: 10)
+                Text(mlxManager.isConnected ? "ONLINE" : "OFF")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundColor(mlxManager.isConnected ? AppSettings.terminalGreen : AppSettings.terminalRed)
+            }
+            .padding()
+            .background(Color.black)
+            .border(Color.purple, width: 2)
+
+            if mlxManager.isConnected {
+                List {
+                    if !mlxManager.lastResponse.isEmpty {
+                        Section("Latest") {
+                            Text(mlxManager.lastResponse)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(AppSettings.terminalGreen)
+                        }
+                    }
+
+                    Section("History") {
+                        ForEach(mlxManager.interactionHistory.prefix(8)) { interaction in
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(interaction.type)
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.purple)
+                                if let input = interaction.input {
+                                    Text("→ \(input)")
+                                        .font(.system(size: 9, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalAmber)
+                                }
+                                Text("✓ \(interaction.output)")
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundColor(AppSettings.terminalGreen)
+                            }
+                        }
+                    }
+                }
+                .listStyle(.sidebar)
+            } else {
+                VStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 24))
+                        .foregroundColor(AppSettings.terminalAmber)
+                    Text("MLX OFFLINE")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    Text("pip install mlx")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(AppSettings.terminalGreen)
+                }
+                .frame(maxHeight: .infinity)
+                .padding()
+            }
+        }
+        .background(Color.black)
+        .border(Color.purple, width: 2)
     }
 }
 
