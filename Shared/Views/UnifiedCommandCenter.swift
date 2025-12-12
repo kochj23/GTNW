@@ -11,7 +11,6 @@ import SwiftUI
 
 struct UnifiedCommandCenter: View {
     @EnvironmentObject var gameEngine: GameEngine
-    @StateObject private var mlxManager = MLXManager()
     @State private var selectedTarget: String?
     @State private var showingCountryPicker = false
     @State private var showingShadowMenu = false
@@ -46,7 +45,7 @@ struct UnifiedCommandCenter: View {
                 }
                 .onAppear {
                     Task {
-                        await mlxManager.initialize()
+                        await gameEngine.mlxManager.initialize()
                     }
                 }
             }
@@ -622,25 +621,25 @@ struct UnifiedCommandCenter: View {
                     .foregroundColor(.purple)
                 Spacer()
                 Circle()
-                    .fill(mlxManager.isConnected ? Color.green : Color.red)
+                    .fill(gameEngine.mlxManager.isConnected ? Color.green : Color.red)
                     .frame(width: 12, height: 12)
             }
             .padding()
             .background(Color.black)
             .border(Color.purple, width: 2)
 
-            if mlxManager.isConnected {
+            if gameEngine.mlxManager.isConnected {
                 List {
-                    if !mlxManager.lastResponse.isEmpty {
+                    if !gameEngine.mlxManager.lastResponse.isEmpty {
                         Section("Latest Analysis") {
-                            Text(mlxManager.lastResponse)
+                            Text(gameEngine.mlxManager.lastResponse)
                                 .font(GTNWFonts.terminal(size: 11))
                                 .foregroundColor(GTNWColors.terminalGreen)
                         }
                     }
 
                     Section("Interaction History") {
-                        ForEach(mlxManager.interactionHistory.prefix(10)) { interaction in
+                        ForEach(gameEngine.mlxManager.interactionHistory.prefix(10)) { interaction in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(interaction.type.uppercased())
                                     .font(GTNWFonts.terminal(size: 9, weight: .bold))
