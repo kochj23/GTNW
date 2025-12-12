@@ -27,30 +27,46 @@ struct CommandView: View {
     }
 
     var body: some View {
+        print("[CommandView] body called - gameState exists: \(gameEngine.gameState != nil)")
+
         if let gameState = gameEngine.gameState {
-            HSplitView {
-                VStack(spacing: 0) {
-                    // DEFCON + Player Status Bar
-                    statusBar(gameState: gameState)
+            print("[CommandView] Creating HSplitView with MLX panel")
 
-                    // Command Panel
-                    commandPanel(gameState: gameState)
+            return AnyView(
+                HSplitView {
+                    VStack(spacing: 0) {
+                        // DEFCON + Player Status Bar
+                        statusBar(gameState: gameState)
 
-                    // Log
-                    logSection
+                        // Command Panel
+                        commandPanel(gameState: gameState)
+
+                        // Log
+                        logSection
+                    }
+                    .frame(minWidth: 800)
+                    .onAppear {
+                        print("[CommandView] Left panel appeared")
+                    }
+
+                    // MLX Panel
+                    mlxPanel
+                        .frame(minWidth: 280, idealWidth: 320, maxWidth: 400)
+                        .onAppear {
+                            print("[CommandView] MLX panel appeared!")
+                        }
                 }
-                .frame(minWidth: 800)
-
-                // MLX Panel
-                mlxPanel
-                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 400)
-            }
-            .background(AppSettings.terminalBackground)
-            .onAppear {
-                Task {
-                    await mlxManager.initialize()
+                .background(AppSettings.terminalBackground)
+                .onAppear {
+                    print("[CommandView] HSplitView appeared - initializing MLX")
+                    Task {
+                        await mlxManager.initialize()
+                    }
                 }
-            }
+            )
+        } else {
+            print("[CommandView] No gameState - returning empty view")
+            return AnyView(EmptyView())
         }
     }
 
@@ -153,8 +169,10 @@ struct CommandView: View {
                     enabled: selectedTarget != nil && (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) > 0
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
+                        print("[CommandView] Nuclear strike launched - will auto-end turn in 0.3s")
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: min(warheadCount, player.nuclearWarheads))
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            print("[CommandView] Auto-ending turn after nuclear strike")
                             gameEngine.endTurn()
                         }
                     }
@@ -386,7 +404,9 @@ struct CommandView: View {
     // MARK: - MLX Panel
 
     private var mlxPanel: some View {
-        VStack(spacing: 0) {
+        print("[CommandView] mlxPanel getter called - isConnected: \(mlxManager.isConnected)")
+
+        return VStack(spacing: 0) {
             HStack {
                 Image(systemName: "brain.head.profile")
                     .foregroundColor(.purple)
@@ -404,6 +424,9 @@ struct CommandView: View {
             .padding()
             .background(Color.black)
             .border(Color.purple, width: 2)
+            .onAppear {
+                print("[CommandView] MLX panel header appeared!")
+            }
 
             if mlxManager.isConnected {
                 List {
