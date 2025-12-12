@@ -111,11 +111,15 @@ struct ContentView: View {
             }
             .padding(.bottom, 20)
 
-            // Start button
+            // Start button - Always start as USA
             Button(action: {
-                showingCountrySelection = true
+                gameEngine.startNewGame(
+                    playerCountryID: "USA",
+                    difficulty: selectedDifficulty,
+                    administration: selectedAdministration
+                )
             }) {
-                Text("INITIALIZE GAME")
+                Text("INITIALIZE GAME (AS USA)")
                     .font(.system(size: 20, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalBackground)
                     .padding()
@@ -132,13 +136,6 @@ struct ContentView: View {
                 .padding()
         }
         .padding()
-        .sheet(isPresented: $showingCountrySelection) {
-            CountrySelectionView(
-                selectedDifficulty: selectedDifficulty,
-                selectedAdministration: selectedAdministration
-            )
-            .environmentObject(gameEngine)
-        }
         .sheet(isPresented: $showingAdministrationSelection) {
             AdministrationSelectionView(selectedAdministration: $selectedAdministration)
         }

@@ -30,18 +30,23 @@ struct CommandView: View {
 
     var body: some View {
         if let gameState = gameEngine.gameState {
-            VStack(spacing: 0) {
-                // DEFCON + Player Status Bar (Fixed at top)
-                statusBar(gameState: gameState)
+            HSplitView {
+                // Main game area
+                VStack(spacing: 0) {
+                    // DEFCON + Player Status Bar
+                    statusBar(gameState: gameState)
 
-                // AI Stats Panel (collapsible)
+                    // Command Panel
+                    commandPanel(gameState: gameState)
+
+                    // Log
+                    logSection
+                }
+                .frame(minWidth: 600, maxWidth: .infinity)
+
+                // Stats Panel (right side)
                 aiStatsPanel
-
-                // Command Panel (Fixed - no scrolling)
-                commandPanel(gameState: gameState)
-
-                // Log (scrollable bottom section)
-                logSection
+                    .frame(minWidth: 300, idealWidth: 350, maxWidth: 450)
             }
             .background(AppSettings.terminalBackground)
         }
@@ -101,16 +106,14 @@ struct CommandView: View {
     // MARK: - AI Stats Panel
 
     private var aiStatsPanel: some View {
-        print("[CommandView] aiStatsPanel rendering - showingStatsPanel: \(showingStatsPanel)")
-
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             // Header with toggle
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .foregroundColor(.cyan)
-                    .font(.system(size: 16))
-                Text("📊 AI PERFORMANCE METRICS")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.system(size: 18))
+                Text("📊 AI STATS")
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(.cyan)
 
                 Spacer()
@@ -534,13 +537,21 @@ struct CommandView: View {
                 case "ATTACK":
                     if let target = parsed.target {
                         gameEngine.declareWar(aggressor: player.id, defender: target)
+                        gameEngine.endTurn()
                     }
                 case "NUKE":
                     if let target = parsed.target {
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
+                        gameEngine.endTurn()
+                    }
+                case "ALLY":
+                    if let target = parsed.target {
+                        gameEngine.formAlliance(country1: player.id, country2: target)
+                        gameEngine.endTurn()
                     }
                 case "BUILD_MILITARY", "BUILD_NUKES":
                     nlCommandResponse += "\n(Build actions happen automatically each turn)"
+                    gameEngine.endTurn()
                 default:
                     break
                 }
@@ -548,7 +559,7 @@ struct CommandView: View {
 
             nlCommandText = ""
         } else {
-            nlCommandResponse = "❌ Command not understood. Try: 'attack [country]', 'nuke [country]', 'build military'"
+            nlCommandResponse = "❌ Not understood. Try:\n  'attack Russia'\n  'nuke China'\n  'ally France'\n  'build military'"
         }
     }
 
