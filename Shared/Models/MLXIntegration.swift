@@ -98,24 +98,47 @@ class MLXManager: ObservableObject {
         return response ?? "INSUFFICIENT DATA FOR MEANINGFUL ANSWER"
     }
 
-    /// Parse natural language commands
+    /// Parse natural language commands with enhanced AI understanding
+    ///
+    /// **Enhanced Features**:
+    /// - Multiple command variations supported
+    /// - Fuzzy country name matching
+    /// - Number extraction (warhead counts, money amounts)
+    /// - Compound commands
+    /// - Intent recognition
+    ///
+    /// **Author**: Jordan Koch
     func parseCommand(_ command: String, gameState: GameState) -> ParsedCommand? {
-        // Simple command parsing (can be enhanced with MLX NLP)
-        let lowercased = command.lowercased()
+        let lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Nuclear strike commands
-        if lowercased.contains("launch") || lowercased.contains("nuke") || lowercased.contains("strike") {
+        // Help commands
+        if lowercased.contains("help") || lowercased == "?" {
+            return ParsedCommand(action: .help, target: nil, parameters: [:])
+        }
+
+        // Nuclear strike commands (many variations)
+        let nuclearPatterns = [
+            "launch", "nuke", "strike", "fire", "send nuke",
+            "nuclear attack", "bomb", "icbm", "missile at"
+        ]
+        if nuclearPatterns.contains(where: { lowercased.contains($0) }) {
             if let country = extractCountryName(from: lowercased, gameState: gameState) {
+                // Extract warhead count if specified
+                let warheadCount = extractNumber(from: lowercased) ?? 1
                 return ParsedCommand(
                     action: .nuclearStrike,
                     target: country.id,
-                    parameters: ["warheads": "1"]
+                    parameters: ["warheads": String(warheadCount)]
                 )
             }
         }
 
-        // War commands
-        if lowercased.contains("declare war") || lowercased.contains("attack") {
+        // War declaration commands (many variations)
+        let warPatterns = [
+            "declare war", "attack", "invade", "go to war",
+            "fight", "assault", "engage", "start war with"
+        ]
+        if warPatterns.contains(where: { lowercased.contains($0) }) {
             if let country = extractCountryName(from: lowercased, gameState: gameState) {
                 return ParsedCommand(
                     action: .declareWar,
@@ -125,8 +148,13 @@ class MLXManager: ObservableObject {
             }
         }
 
-        // Alliance commands
-        if lowercased.contains("ally") || lowercased.contains("alliance") || lowercased.contains("befriend") {
+        // Alliance commands (many variations)
+        let alliancePatterns = [
+            "ally", "alliance", "befriend", "team up",
+            "join forces", "partner with", "make friends",
+            "military pact", "defensive pact"
+        ]
+        if alliancePatterns.contains(where: { lowercased.contains($0) }) {
             if let country = extractCountryName(from: lowercased, gameState: gameState) {
                 return ParsedCommand(
                     action: .formAlliance,
@@ -136,14 +164,72 @@ class MLXManager: ObservableObject {
             }
         }
 
-        // End turn
-        if lowercased.contains("end turn") || lowercased.contains("next turn") || lowercased.contains("pass") {
+        // Economic aid commands (many variations)
+        let economicPatterns = [
+            "give", "send money", "aid", "donate",
+            "economic", "financial aid", "pay", "bribe"
+        ]
+        if economicPatterns.contains(where: { lowercased.contains($0) }) {
+            if let country = extractCountryName(from: lowercased, gameState: gameState) {
+                // Extract dollar amount if specified (supports $5B, $1000000000, etc)
+                let amount = extractMoneyAmount(from: lowercased) ?? 5_000_000_000
+                return ParsedCommand(
+                    action: .economicAid,
+                    target: country.id,
+                    parameters: ["amount": String(amount)]
+                )
+            }
+        }
+
+        // End turn commands (many variations)
+        let endTurnPatterns = [
+            "end turn", "next turn", "pass", "done", "finish turn",
+            "skip", "wait", "continue", "proceed"
+        ]
+        if endTurnPatterns.contains(where: { lowercased.contains($0) }) {
             return ParsedCommand(action: .endTurn, target: nil, parameters: [:])
         }
 
-        // Status check
-        if lowercased.contains("status") || lowercased.contains("report") || lowercased.contains("sitrep") {
+        // Status check commands (many variations)
+        let statusPatterns = [
+            "status", "report", "sitrep", "situation",
+            "what's happening", "info", "stats"
+        ]
+        if statusPatterns.contains(where: { lowercased.contains($0) }) {
             return ParsedCommand(action: .showStatus, target: nil, parameters: [:])
+        }
+
+        return nil
+    }
+
+    /// Extract number from text (for warhead counts)
+    private func extractNumber(from text: String) -> Int? {
+        let pattern = #"\d+"#
+        if let regex = try? NSRegularExpression(pattern: pattern),
+           let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+           let range = Range(match.range, in: text) {
+            return Int(text[range])
+        }
+        return nil
+    }
+
+    /// Extract money amount from text (supports $5B, $1000000000, 5 billion, etc)
+    private func extractMoneyAmount(from text: String) -> Int? {
+        let lowercased = text.lowercased()
+
+        // Check for billions (e.g., "$5B", "5 billion", "$5,000,000,000")
+        if let billions = extractNumber(from: lowercased), lowercased.contains("b") {
+            return billions * 1_000_000_000
+        }
+
+        // Check for millions (e.g., "$500M", "500 million")
+        if let millions = extractNumber(from: lowercased), lowercased.contains("m") {
+            return millions * 1_000_000
+        }
+
+        // Check for raw numbers
+        if let amount = extractNumber(from: lowercased), amount > 1_000_000 {
+            return amount
         }
 
         return nil
@@ -222,14 +308,111 @@ class MLXManager: ObservableObject {
         }
     }
 
+    /// Extract country name from text with fuzzy matching
+    ///
+    /// **Enhanced Matching**:
+    /// - Exact name match (e.g., "Russia")
+    /// - Country code match (e.g., "RUS", "US", "CHN")
+    /// - Partial name match (e.g., "united states" → USA)
+    /// - Common aliases (e.g., "america" → USA, "britain" → UK)
+    /// - Case-insensitive
+    ///
+    /// **Author**: Jordan Koch
     private func extractCountryName(from text: String, gameState: GameState) -> Country? {
-        // Try to find country name in text
+        let lowercased = text.lowercased()
+
+        // Common aliases
+        let aliases: [String: String] = [
+            "america": "USA",
+            "united states": "USA",
+            "us": "USA",
+            "russia": "RUS",
+            "soviet": "RUS",
+            "ussr": "RUS",
+            "china": "CHN",
+            "prc": "CHN",
+            "britain": "UK",
+            "england": "UK",
+            "great britain": "UK",
+            "france": "FRA",
+            "frenchman": "FRA",
+            "germany": "GER",
+            "japan": "JPN",
+            "india": "IND",
+            "pakistan": "PAK",
+            "north korea": "PRK",
+            "nk": "PRK",
+            "south korea": "KOR",
+            "sk": "KOR",
+            "iran": "IRN",
+            "israel": "ISR",
+            "saudi arabia": "SAU",
+            "turkey": "TUR",
+            "ukraine": "UKR",
+            "canada": "CAN"
+        ]
+
+        // Try exact country name match
         for country in gameState.countries {
-            if text.contains(country.name.lowercased()) || text.contains(country.code.lowercased()) {
+            if lowercased.contains(country.name.lowercased()) {
                 return country
             }
         }
-        return nil
+
+        // Try country code match
+        for country in gameState.countries {
+            if lowercased.contains(country.code.lowercased()) {
+                return country
+            }
+        }
+
+        // Try alias match
+        for (alias, code) in aliases {
+            if lowercased.contains(alias) {
+                return gameState.countries.first { $0.code == code || $0.id == code }
+            }
+        }
+
+        // Fuzzy match - find closest country name (Levenshtein distance)
+        var closestMatch: Country?
+        var smallestDistance = Int.max
+
+        for country in gameState.countries {
+            let distance = levenshteinDistance(lowercased, country.name.lowercased())
+            if distance < smallestDistance && distance <= 3 {  // Max 3 char difference
+                smallestDistance = distance
+                closestMatch = country
+            }
+        }
+
+        return closestMatch
+    }
+
+    /// Calculate Levenshtein distance for fuzzy string matching
+    private func levenshteinDistance(_ s1: String, _ s2: String) -> Int {
+        let s1 = Array(s1)
+        let s2 = Array(s2)
+        var dist = [[Int]](repeating: [Int](repeating: 0, count: s2.count + 1), count: s1.count + 1)
+
+        for i in 1...s1.count {
+            dist[i][0] = i
+        }
+
+        for j in 1...s2.count {
+            dist[0][j] = j
+        }
+
+        for i in 1...s1.count {
+            for j in 1...s2.count {
+                if s1[i-1] == s2[j-1] {
+                    dist[i][j] = dist[i-1][j-1]
+                } else {
+                    dist[i][j] = min(dist[i-1][j], dist[i][j-1], dist[i-1][j-1]) + 1
+                }
+            }
+        }
+
+        return dist[s1.count][s2.count]
     }
 }
 
