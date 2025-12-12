@@ -34,6 +34,8 @@ class GameState: ObservableObject, Codable {
     @Published var cyberIncidents: [CyberIncident]
     @Published var activeWeaponPrograms: [WeaponsDevelopmentProgram]
     @Published var advisors: [Advisor] = []
+    @Published var aiActionSummary: [String] = []
+    @Published var hasUsedActionThisTurn: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes

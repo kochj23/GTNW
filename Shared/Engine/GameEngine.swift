@@ -21,6 +21,7 @@ class GameEngine: ObservableObject {
     @Published var leaderboardManager = LeaderboardManager()
     @Published var eventLogger = EventLogger()
     @Published var mlxManager = MLXManager()
+    @Published var ollamaService = OllamaService.shared
     @Published var showingVictoryScreen = false
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
@@ -31,6 +32,11 @@ class GameEngine: ObservableObject {
         // Engine ready to start game
         // Initialize advisors
         advisors = Advisor.trumpCabinet()
+
+        // Initialize Ollama service
+        Task { @MainActor in
+            await OllamaService.shared.initialize()
+        }
     }
 
     // MARK: - Game Lifecycle
@@ -56,6 +62,10 @@ class GameEngine: ObservableObject {
 
         addLog("", type: .system)
         addLog("===== TURN \(gameState.turn + 1) =====", type: .system)
+
+        // Clear AI summary for new turn
+        gameState.aiActionSummary.removeAll()
+        gameState.hasUsedActionThisTurn = false
 
         // Increment turn
         self.gameState?.turn += 1
@@ -117,14 +127,139 @@ class GameEngine: ObservableObject {
     private func processAITurns() {
         guard let gameState = gameState else { return }
 
-        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
-            // AI decision making
-            let action = determineAIAction(for: country)
-            executeAIAction(action, for: country)
+        // Process AI turns asynchronously with Ollama
+        Task { @MainActor in
+            for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+                print("[GameEngine] Processing \(country.name)...")
+
+                // Try Ollama first if connected
+                if ollamaService.isConnected {
+                    if let response = await ollamaService.generateCountryDecision(country: country, gameState: gameState) {
+                        let action = parseOllamaDecision(response, country: country, gameState: gameState)
+                        executeAIAction(action, for: country, reason: response)
+                    } else {
+                        // Ollama failed, use enhanced fallback
+                        let action = determineAIActionEnhanced(for: country)
+                        executeAIAction(action, for: country, reason: nil)
+                    }
+                } else {
+                    // No Ollama, use enhanced fallback AI
+                    let action = determineAIActionEnhanced(for: country)
+                    executeAIAction(action, for: country, reason: nil)
+                }
+
+                // Small delay between countries
+                try? await Task.sleep(nanoseconds: 100_000_000)
+            }
+
+            // Show AI summary
+            if let gameState = self.gameState, !gameState.aiActionSummary.isEmpty {
+                self.addLog("", type: .system)
+                self.addLog("📊 AI TURN SUMMARY:", type: .info)
+                for summary in gameState.aiActionSummary {
+                    self.addLog("  • \(summary)", type: .info)
+                }
+            }
         }
     }
 
-    /// Determine what action the AI should take
+    /// Parse Ollama's decision response
+    private func parseOllamaDecision(_ response: String, country: Country, gameState: GameState) -> AIAction {
+        let parts = response.components(separatedBy: "|")
+        guard let actionPart = parts.first else { return .wait }
+
+        let actionText = actionPart.replacingOccurrences(of: "ACTION:", with: "").trimmingCharacters(in: .whitespaces)
+        let components = actionText.components(separatedBy: " ")
+        let verb = components.first?.uppercased() ?? "WAIT"
+
+        switch verb {
+        case "ATTACK":
+            if components.count > 1, let target = findCountryByName(components[1], in: gameState) {
+                return .declareWar(target: target.id)
+            }
+        case "NUKE":
+            if components.count > 1, let target = findCountryByName(components[1], in: gameState) {
+                return .launchNuclearStrike(target: target.id, warheads: min(3, country.nuclearWarheads))
+            }
+        case "ALLY":
+            if components.count > 1, let target = findCountryByName(components[1], in: gameState) {
+                return .seekAlliance
+            }
+        case "BUILD_MILITARY", "BUILD":
+            if actionText.contains("NUKE") {
+                return .wait // Will handle separately
+            }
+            return .wait // Will handle separately
+        case "BUILD_NUKES":
+            return .wait // Will handle separately
+        default:
+            break
+        }
+
+        return .wait
+    }
+
+    private func findCountryByName(_ name: String, in gameState: GameState) -> Country? {
+        return gameState.countries.first { $0.name.lowercased().contains(name.lowercased()) || $0.code.lowercased() == name.lowercased() }
+    }
+
+    /// Enhanced AI with 40% attack rates (fallback when Ollama unavailable)
+    private func determineAIActionEnhanced(for country: Country) -> AIAction {
+        guard let gameState = gameState else { return .wait }
+
+        // Difficulty scaling
+        let difficultyMultiplier = gameState.difficultyLevel == .hard ? 1.5 : gameState.difficultyLevel == .normal ? 1.0 : 0.7
+        let effectiveAggression = min(10, Int(Double(country.aggressionLevel) * difficultyMultiplier))
+
+        // If at war, focus on war
+        if !country.atWarWith.isEmpty {
+            if country.nuclearWarheads > 0 && gameState.defconLevel.rawValue <= 2 {
+                let roll = Int.random(in: 1...100)
+                if roll <= effectiveAggression * 5 {  // 40-50% for aggressive nations
+                    if let enemy = country.atWarWith.first {
+                        return .launchNuclearStrike(target: enemy, warheads: min(3, country.nuclearWarheads))
+                    }
+                }
+            }
+            return .continuousWar
+        }
+
+        // Not at war - decide action
+        let actionRoll = Int.random(in: 1...100)
+
+        // Very aggressive (8-10): 40% attack, 20% build military, 40% wait
+        if effectiveAggression >= 8 {
+            if actionRoll <= 40 {
+                if let target = findWeakTarget(for: country) {
+                    return .declareWar(target: target)
+                }
+            } else if actionRoll <= 60 {
+                return .wait // BUILD_MILITARY (handled in executeAIAction)
+            }
+        }
+        // Moderate (5-7): 25% attack
+        else if effectiveAggression >= 5 {
+            if actionRoll <= 25 {
+                if let target = findWeakTarget(for: country) {
+                    return .declareWar(target: target)
+                }
+            } else if actionRoll <= 50 {
+                return .wait // BUILD_MILITARY
+            }
+        }
+        // Peaceful (1-4): 10% attack
+        else {
+            if actionRoll <= 10 {
+                if let target = findWeakTarget(for: country) {
+                    return .declareWar(target: target)
+                }
+            }
+        }
+
+        return .wait
+    }
+
+    /// OLD Determine what action the AI should take (REPLACED)
     private func determineAIAction(for country: Country) -> AIAction {
         guard let gameState = gameState else { return .wait }
 
@@ -169,23 +304,44 @@ class GameEngine: ObservableObject {
     }
 
     /// Execute AI action
-    private func executeAIAction(_ action: AIAction, for country: Country) {
+    private func executeAIAction(_ action: AIAction, for country: Country, reason: String? = nil) {
         guard let gameState = gameState else { return }
 
         switch action {
         case .wait:
-            eventLogger.log("No action taken", type: .system, country: country.name, turn: gameState.turn)
+            // Check if should build military/nukes
+            let buildRoll = Int.random(in: 1...100)
+            if buildRoll <= 30 && country.gdp >= 0.5 {
+                // BUILD MILITARY
+                if let countryIndex = gameState.countries.firstIndex(where: { $0.id == country.id }) {
+                    gameState.countries[countryIndex].militaryStrength += 100_000
+                    gameState.countries[countryIndex].gdp -= 0.5
+                    gameState.aiActionSummary.append("\(country.flag) \(country.name) 🪖 built military (+100K)")
+                }
+            } else if buildRoll <= 40 && country.nuclearWarheads < 100 && country.gdp >= 1.0 {
+                // BUILD NUKES
+                if let countryIndex = gameState.countries.firstIndex(where: { $0.id == country.id }) {
+                    gameState.countries[countryIndex].nuclearWarheads += 5
+                    gameState.countries[countryIndex].gdp -= 1.0
+                    gameState.aiActionSummary.append("\(country.flag) \(country.name) ☢️ built 5 nukes")
+                    raiseDEFCON()
+                }
+            } else if let reason = reason {
+                gameState.aiActionSummary.append("\(country.flag) \(country.name): \(reason)")
+            }
 
         case .declareWar(let targetID):
             declareWar(aggressor: country.id, defender: targetID)
             if let target = getCountry(targetID) {
                 eventLogger.log("Declared war on \(target.name)", type: .war, country: country.name, turn: gameState.turn)
+                gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(target.flag) \(target.name)")
             }
 
         case .launchNuclearStrike(let targetID, let warheads):
             launchNuclearStrike(from: country.id, to: targetID, warheads: warheads)
             if let target = getCountry(targetID) {
                 eventLogger.log("Launched \(warheads) nuclear warheads at \(target.name)", type: .nuclear, country: country.name, turn: gameState.turn)
+                gameState.aiActionSummary.append("\(country.flag) \(country.name) ☢️ launched \(warheads) nukes at \(target.flag) \(target.name)")
             }
 
         case .threatenNuclearStrike(let targetID):
