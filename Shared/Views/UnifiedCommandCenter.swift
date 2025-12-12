@@ -97,12 +97,12 @@ struct UnifiedCommandCenter: View {
 
                 Spacer()
 
-                if gameEngine.mlxManager.isConnected {
+                if gameEngine.ollamaService.isConnected {
                     HStack(spacing: 4) {
                         Circle()
                             .fill(GTNWColors.terminalGreen)
                             .frame(width: 8, height: 8)
-                        Text("MLX AI")
+                        Text("OLLAMA AI")
                             .font(GTNWFonts.caption())
                             .foregroundColor(GTNWColors.terminalGreen)
                     }
@@ -457,16 +457,48 @@ struct UnifiedCommandCenter: View {
         let input = commandText
         gameEngine.eventLogger.log("COMMAND: \(input)", type: .system, country: nil, turn: gameState.turn)
 
-        if let parsed = gameEngine.mlxManager.parseCommand(input, gameState: gameState) {
-            executeTextCommand(parsed, gameState: gameState)
+        // Use new Safe NLP Processor (no MLX dependency)
+        if let parsed = gameEngine.nlpProcessor.parseCommand(input, gameState: gameState) {
+            // Execute parsed command
+            if let player = gameState.getPlayerCountry() {
+                switch parsed.action {
+                case "ATTACK":
+                    if let target = parsed.target {
+                        gameEngine.declareWar(aggressor: player.id, defender: target)
+                        responseMessage = "✓ WAR DECLARED: \(parsed.reason)"
+                    }
+                case "NUKE":
+                    if let target = parsed.target {
+                        gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
+                        responseMessage = "✓ NUCLEAR STRIKE LAUNCHED: \(parsed.reason)"
+                    }
+                case "BUILD_MILITARY":
+                    responseMessage = "✓ BUILD MILITARY: \(parsed.reason)\n(Will execute automatically each turn)"
+                case "BUILD_NUKES":
+                    responseMessage = "✓ BUILD NUKES: \(parsed.reason)\n(Will execute automatically each turn)"
+                default:
+                    responseMessage = "✓ Command understood: \(parsed.reason)"
+                }
+            }
         } else if input.lowercased().contains("help") {
             showHelp()
         } else if input.lowercased().contains("what") || input.lowercased().contains("should") {
-            Task {
-                let advice = await gameEngine.mlxManager.getStrategicAdvice(situation: input, gameState: gameState)
-                await MainActor.run {
-                    responseMessage = "WOPR ANALYSIS:\n\n\(advice)"
+            // Use Ollama for strategic advice if connected
+            if gameEngine.ollamaService.isConnected {
+                Task {
+                    let prompt = "As WOPR from WarGames, analyze this situation and provide strategic advice in 2-3 sentences: \(input)\n\nCurrent DEFCON: \(gameState.defconLevel.rawValue)"
+                    if let advice = await gameEngine.ollamaService.generate(prompt: prompt, maxTokens: 80) {
+                        await MainActor.run {
+                            responseMessage = "WOPR ANALYSIS:\n\n\(advice)"
+                        }
+                    } else {
+                        await MainActor.run {
+                            responseMessage = "ANALYSIS UNAVAILABLE\nOllama not responding"
+                        }
+                    }
                 }
+            } else {
+                responseMessage = "STRATEGIC ADVICE:\n\nOllama AI offline. Run 'ollama serve' for LLM-powered analysis."
             }
         } else {
             responseMessage = "UNRECOGNIZED COMMAND\nType 'help' for commands"
