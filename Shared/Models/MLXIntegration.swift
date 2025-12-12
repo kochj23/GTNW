@@ -15,10 +15,12 @@ class MLXManager: ObservableObject {
     @Published var isConnected = false
     @Published var lastResponse: String = ""
     @Published var isProcessing = false
+    @Published var interactionHistory: [MLXInteraction] = []
 
     private let pythonPath = "/opt/homebrew/bin/python3"
     private let mlxScriptPath = "/Users/kochj/.mlx/gtnw_advisor.py"
     private var process: Process?
+    private let maxHistory = 20
 
     /// Initialize MLX connection
     func initialize() async {
@@ -111,8 +113,12 @@ class MLXManager: ObservableObject {
     func parseCommand(_ command: String, gameState: GameState) -> ParsedCommand? {
         let lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // Log command parsing
+        logInteraction(type: "Command", input: command, output: "Parsing...")
+
         // Help commands
         if lowercased.contains("help") || lowercased == "?" {
+            logInteraction(type: "Command", input: command, output: "✅ Parsed: HELP")
             return ParsedCommand(action: .help, target: nil, parameters: [:])
         }
 
@@ -125,6 +131,7 @@ class MLXManager: ObservableObject {
             if let country = extractCountryName(from: lowercased, gameState: gameState) {
                 // Extract warhead count if specified
                 let warheadCount = extractNumber(from: lowercased) ?? 1
+                logInteraction(type: "Command", input: command, output: "✅ Nuclear Strike: \(country.name) (\(warheadCount) warheads)")
                 return ParsedCommand(
                     action: .nuclearStrike,
                     target: country.id,
@@ -413,6 +420,61 @@ class MLXManager: ObservableObject {
         }
 
         return dist[s1.count][s2.count]
+    }
+
+    // MARK: - Interaction Logging
+
+    /// Log an MLX interaction for the interaction panel
+    func logInteraction(type: String, input: String? = nil, output: String) {
+        let interaction = MLXInteraction(
+            timestamp: Date(),
+            type: type,
+            input: input,
+            output: output
+        )
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.interactionHistory.insert(interaction, at: 0)
+
+            // Keep only recent interactions
+            if self.interactionHistory.count > self.maxHistory {
+                self.interactionHistory = Array(self.interactionHistory.prefix(self.maxHistory))
+            }
+        }
+    }
+}
+
+// MARK: - MLX Interaction Model
+
+/// Represents an MLX AI interaction
+struct MLXInteraction: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let type: String
+    let input: String?
+    let output: String
+
+    var icon: String {
+        switch type.lowercased() {
+        case "command": return "terminal.fill"
+        case "analysis": return "chart.bar.fill"
+        case "strategic": return "brain.head.profile"
+        case "prediction": return "crystal.ball.fill"
+        case "recommendation": return "lightbulb.fill"
+        default: return "cpu"
+        }
+    }
+
+    var color: Color {
+        switch type.lowercased() {
+        case "command": return GTNWColors.neonCyan
+        case "analysis": return GTNWColors.neonPurple
+        case "strategic": return GTNWColors.neonBlue
+        case "prediction": return GTNWColors.terminalAmber
+        case "recommendation": return GTNWColors.terminalGreen
+        default: return GTNWColors.terminalGreen
+        }
     }
 }
 

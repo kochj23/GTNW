@@ -57,6 +57,10 @@ class GameEngine: ObservableObject {
         addLog("", type: .system)
         addLog("===== TURN \(gameState.turn + 1) =====", type: .system)
 
+        // Reset action flag for new turn
+        gameState.hasUsedActionThisTurn = false
+        gameState.aiActionSummary.removeAll()
+
         // Increment turn
         self.gameState?.turn += 1
 
@@ -71,8 +75,19 @@ class GameEngine: ObservableObject {
         // Process weapons programs
         processWeaponsPrograms()
 
-        // Process AI turns
+        // Process AI turns with summary
+        addLog("", type: .system)
+        addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
         processAITurns()
+
+        // Show AI summary
+        if !gameState.aiActionSummary.isEmpty {
+            addLog("", type: .system)
+            addLog("📊 AI TURN SUMMARY:", type: .info)
+            for summary in gameState.aiActionSummary {
+                addLog("  • \(summary)", type: .info)
+            }
+        }
 
         // Update DEFCON level
         updateDEFCON()
@@ -188,41 +203,40 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Execute AI action
+    /// Execute AI action with concise summary
     private func executeAIAction(_ action: AIAction, for country: Country) {
         guard let gameState = gameState else { return }
 
         switch action {
         case .wait:
-            eventLogger.log("No action taken", type: .system, country: country.name, turn: gameState.turn)
+            // Don't log waiting - too verbose
+            break
 
         case .declareWar(let targetID):
             declareWar(aggressor: country.id, defender: targetID)
             if let target = getCountry(targetID) {
-                eventLogger.log("Declared war on \(target.name)", type: .war, country: country.name, turn: gameState.turn)
+                gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(target.flag) \(target.name)")
             }
 
         case .launchNuclearStrike(let targetID, let warheads):
             launchNuclearStrike(from: country.id, to: targetID, warheads: warheads)
             if let target = getCountry(targetID) {
-                eventLogger.log("Launched \(warheads) nuclear warheads at \(target.name)", type: .nuclear, country: country.name, turn: gameState.turn)
+                gameState.aiActionSummary.append("\(country.flag) \(country.name) ☢️ launched \(warheads) nukes at \(target.flag) \(target.name)")
             }
 
         case .threatenNuclearStrike(let targetID):
-            addLog("\(country.flag) \(country.name) threatens \(getCountry(targetID)?.name ?? "unknown") with nuclear strike!", type: .warning)
             modifyDiplomaticRelation(from: country.id, to: targetID, by: -20)
             raiseDEFCON()
             if let target = getCountry(targetID) {
-                eventLogger.log("Threatened \(target.name) with nuclear strike", type: .intel, country: country.name, turn: gameState.turn)
+                gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚠️ threatened \(target.flag) \(target.name) with nukes")
             }
 
         case .improveDiplomacy:
             // Find country with mediocre relations and improve them
             if let targetID = country.diplomaticRelations.filter({ $0.value > -50 && $0.value < 50 }).keys.randomElement() {
                 modifyDiplomaticRelation(from: country.id, to: targetID, by: 10)
-                addLog("\(country.flag) \(country.name) improves relations with \(getCountry(targetID)?.name ?? "unknown")", type: .info)
                 if let target = getCountry(targetID) {
-                    eventLogger.log("Improved relations with \(target.name)", type: .diplomacy, country: country.name, turn: gameState.turn)
+                    gameState.aiActionSummary.append("\(country.flag) \(country.name) 🤝 improved relations with \(target.flag) \(target.name) (+10)")
                 }
             }
 
@@ -232,12 +246,13 @@ class GameEngine: ObservableObject {
                !country.alliances.contains(targetID) {
                 formAlliance(country1: country.id, country2: targetID)
                 if let target = getCountry(targetID) {
-                    eventLogger.log("Formed alliance with \(target.name)", type: .diplomacy, country: country.name, turn: gameState.turn)
+                    gameState.aiActionSummary.append("\(country.flag) \(country.name) 🤝 formed alliance with \(target.flag) \(target.name)")
                 }
             }
 
         case .continuousWar:
-            eventLogger.log("Continuing war operations", type: .war, country: country.name, turn: gameState.turn)
+            // Don't log continuous war - too verbose
+            break
         }
     }
 
@@ -266,6 +281,13 @@ class GameEngine: ObservableObject {
     /// Launch nuclear strike
     func launchNuclearStrike(from attackerID: String, to targetID: String, warheads: Int) {
         guard let gameState = gameState else { return }
+
+        // ONE ACTION PER TURN LIMIT
+        if attackerID == gameState.playerCountryID && gameState.hasUsedActionThisTurn {
+            addLog("❌ Only ONE action per turn allowed! End turn to continue.", type: .error)
+            return
+        }
+
         guard let attackerIndex = gameState.countries.firstIndex(where: { $0.id == attackerID }),
               let targetIndex = gameState.countries.firstIndex(where: { $0.id == targetID }) else { return }
 
@@ -276,6 +298,11 @@ class GameEngine: ObservableObject {
         guard attacker.nuclearWarheads >= warheads else {
             addLog("❌ \(attacker.name) doesn't have enough warheads!", type: .error)
             return
+        }
+
+        // Mark action as used (if player)
+        if attackerID == gameState.playerCountryID {
+            gameState.hasUsedActionThisTurn = true
         }
 
         // Calculate SDI interception if target has defensive system
@@ -389,8 +416,20 @@ class GameEngine: ObservableObject {
     /// Declare war between countries
     func declareWar(aggressor: String, defender: String) {
         guard let gameState = gameState else { return }
+
+        // ONE ACTION PER TURN LIMIT
+        if aggressor == gameState.playerCountryID && gameState.hasUsedActionThisTurn {
+            addLog("❌ Only ONE action per turn allowed! End turn to continue.", type: .error)
+            return
+        }
+
         guard let aggressorCountry = getCountry(aggressor),
               let defenderCountry = getCountry(defender) else { return }
+
+        // Mark action as used (if player)
+        if aggressor == gameState.playerCountryID {
+            gameState.hasUsedActionThisTurn = true
+        }
 
         // Update countries
         if let aggressorIndex = gameState.countries.firstIndex(where: { $0.id == aggressor }) {
@@ -417,7 +456,19 @@ class GameEngine: ObservableObject {
     /// Form alliance between two countries
     func formAlliance(country1: String, country2: String) {
         guard let gameState = gameState else { return }
+
+        // ONE ACTION PER TURN LIMIT
+        if country1 == gameState.playerCountryID && gameState.hasUsedActionThisTurn {
+            addLog("❌ Only ONE action per turn allowed! End turn to continue.", type: .error)
+            return
+        }
+
         guard let c1 = getCountry(country1), let c2 = getCountry(country2) else { return }
+
+        // Mark action as used (if player)
+        if country1 == gameState.playerCountryID {
+            gameState.hasUsedActionThisTurn = true
+        }
 
         // Update countries
         if let index1 = gameState.countries.firstIndex(where: { $0.id == country1 }) {
@@ -446,7 +497,19 @@ class GameEngine: ObservableObject {
     /// Economic diplomacy - Turn enemy into ally with money
     func economicDiplomacy(from fromID: String, to toID: String, amount: Int) {
         guard let gameState = gameState else { return }
+
+        // ONE ACTION PER TURN LIMIT
+        if fromID == gameState.playerCountryID && gameState.hasUsedActionThisTurn {
+            addLog("❌ Only ONE action per turn allowed! End turn to continue.", type: .error)
+            return
+        }
+
         guard let fromCountry = getCountry(fromID), let toCountry = getCountry(toID) else { return }
+
+        // Mark action as used (if player)
+        if fromID == gameState.playerCountryID {
+            gameState.hasUsedActionThisTurn = true
+        }
 
         // Calculate diplomatic improvement based on amount
         let relationBoost = amount / 10_000_000 // $10M = +1 relation, $1B = +100

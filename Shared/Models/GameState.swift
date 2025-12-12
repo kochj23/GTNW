@@ -34,6 +34,8 @@ class GameState: ObservableObject, Codable {
     @Published var cyberIncidents: [CyberIncident]
     @Published var activeWeaponPrograms: [WeaponsDevelopmentProgram]
     @Published var advisors: [Advisor] = []
+    @Published var hasUsedActionThisTurn: Bool = false
+    @Published var aiActionSummary: [String] = []
 
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes
@@ -41,6 +43,7 @@ class GameState: ObservableObject, Codable {
         case gameOverReason, difficultyLevel, turnHistory, peaceTurns
         case isMultiplayer, currentPlayerIndex, playerCountries
         case activeCyberOperations, cyberIncidents, activeWeaponPrograms, advisors
+        case hasUsedActionThisTurn, aiActionSummary
     }
 
     init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil) {

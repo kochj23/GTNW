@@ -111,16 +111,30 @@ struct ContentView: View {
             }
             .padding(.bottom, 20)
 
-            // Start button
+            // Start button - Auto-start as USA
             Button(action: {
-                showingCountrySelection = true
+                gameEngine.startNewGame(
+                    playerCountryID: "USA",
+                    difficulty: selectedDifficulty,
+                    administration: selectedAdministration
+                )
             }) {
-                Text("INITIALIZE GAME")
+                Text("INITIALIZE GAME (AS USA)")
                     .font(.system(size: 20, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalBackground)
                     .padding()
                     .frame(maxWidth: 300)
                     .background(AppSettings.terminalGreen)
+            }
+
+            // Optional: Choose different nation
+            Button(action: {
+                showingCountrySelection = true
+            }) {
+                Text("Choose Different Nation")
+                    .font(.system(size: 14, design: .monospaced))
+                    .foregroundColor(AppSettings.terminalGreen)
+                    .padding(.vertical, 8)
             }
 
             Spacer()
