@@ -132,7 +132,27 @@ class GameEngine: ObservableObject {
         if !country.atWarWith.isEmpty {
             // Check if should escalate to nuclear
             if gameState.defconLevel.rawValue <= 2 && country.nuclearWarheads > 0 {
-                let shouldLaunch = Int.random(in: 1...100) <= (country.aggressionLevel / 2)
+                // CRITICAL FIX: Reduced from /2 to /20 (90% reduction)
+                // Added turn-based protection (no nukes before turn 20)
+                // Only escalate if losing badly or nukes already used
+                var baseProbability: Double = 0
+
+                if gameState.turn >= 20 {  // No early-game nukes
+                    baseProbability = Double(country.aggressionLevel) / 20.0  // Was /2
+
+                    // Reduce if no nukes launched yet (peaceful game)
+                    if gameState.nuclearStrikes.isEmpty {
+                        baseProbability *= 0.3  // 70% reduction
+                    }
+
+                    // Increase if nation is losing war badly (desperate measures)
+                    // Check if population is below 50% or under multiple attacks
+                    if country.population < 50_000_000 || country.atWarWith.count >= 3 {
+                        baseProbability *= 3.0  // Desperate nations more likely to use nukes
+                    }
+                }
+
+                let shouldLaunch = Int.random(in: 1...100) <= Int(baseProbability)
                 if shouldLaunch {
                     if let target = country.atWarWith.first {
                         return .launchNuclearStrike(target: target, warheads: min(5, country.nuclearWarheads))
@@ -1205,22 +1225,35 @@ class GameEngine: ObservableObject {
     }
 
     /// Update DEFCON based on world situation
+    ///
+    /// **CRITICAL FIX**: More realistic escalation thresholds
+    /// Minor wars don't automatically trigger DEFCON 3
     private func updateDEFCON() {
         guard let gameState = gameState else { return }
 
         let warCount = gameState.activeWars.count
         let nuclearStrikes = gameState.nuclearStrikes.count
+        let majorPowerWars = countMajorPowerWars()
 
         let targetDEFCON: DefconLevel
         if nuclearStrikes > 0 {
+            // Nuclear weapons used = DEFCON 1
             targetDEFCON = .defcon1
-        } else if warCount >= 3 {
+        } else if warCount >= 3 && majorPowerWars >= 2 {
+            // Multiple wars involving major powers = DEFCON 2
             targetDEFCON = .defcon2
-        } else if warCount >= 1 {
+        } else if majorPowerWars >= 2 || warCount >= 5 {
+            // Two major power wars OR many regional wars = DEFCON 3
             targetDEFCON = .defcon3
+        } else if majorPowerWars >= 1 {
+            // Single major power war = DEFCON 4
+            targetDEFCON = .defcon4
+        } else if warCount >= 1 {
+            // Minor regional wars = Stay at DEFCON 5
+            targetDEFCON = .defcon5
         } else {
-            // Gradually return to peace
-            if gameState.defconLevel.rawValue < 5 && gameState.turn % 5 == 0 {
+            // Peace - gradually return to DEFCON 5
+            if gameState.defconLevel.rawValue < 5 && gameState.peaceTurns >= 3 {
                 let newLevel = DefconLevel(rawValue: min(5, gameState.defconLevel.rawValue + 1)) ?? .defcon5
                 gameState.defconLevel = newLevel
                 addLog("DEFCON lowered to: \(newLevel.description)", type: .info)
@@ -1235,6 +1268,17 @@ class GameEngine: ObservableObject {
             addLog("⚠️  DEFCON changed to: \(targetDEFCON.description)", type: .warning)
             self.gameState = gameState
         }
+    }
+
+    /// Count wars involving major nuclear powers
+    private func countMajorPowerWars() -> Int {
+        guard let gameState = gameState else { return 0 }
+
+        let majorPowers: Set<String> = ["USA", "RUS", "CHN", "UK", "FRA"]
+
+        return gameState.activeWars.filter { war in
+            majorPowers.contains(war.aggressor) || majorPowers.contains(war.defender)
+        }.count
     }
 
     // MARK: - Game Over
