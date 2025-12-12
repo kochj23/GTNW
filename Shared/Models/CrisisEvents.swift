@@ -643,12 +643,217 @@ class CrisisManager: ObservableObject {
     // Stub implementations for remaining crisis types
     private func createMilitaryCoupCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isPlayerControlled }.randomElement()!
-        return createSimpleCrisis(type: .militaryCoup, title: "Military Coup in \(country.name)", country: country, gameState: gameState)
+        let generalNames = ["General Alexei Volkov", "Colonel Chen Zhao", "General Hassan Al-Sayed", "Marshal Kim Yong-chol", "General Dmitri Petrov"]
+        let general = generalNames.randomElement()!
+        let units = ["3rd Mechanized Division", "Strategic Rocket Forces", "Republican Guard", "82nd Airborne Brigade", "Naval Infantry Brigade"]
+        let unit = units.randomElement()!
+        let demands = ["democratic elections", "removal of corrupt officials", "military control", "expulsion of foreign forces", "redistribution of wealth"]
+        let demand = demands.randomElement()!
+
+        return CrisisEvent(
+            type: .militaryCoup,
+            severity: .catastrophic,
+            title: "⚔️ MILITARY COUP IN \(country.name.uppercased())",
+            description: """
+            URGENT: Military coup underway in \(country.name).
+
+            Coup Leader: \(general)
+            Forces: \(unit) (\(Int.random(in: 5000...50000)) troops)
+            Status: Capital surrounded, president trapped
+            Demands: \(demand.capitalized)
+
+            Nuclear Situation:
+            • \(country.nuclearWarheads) warheads
+            • Launch authority disputed
+            • Coup forces control \(Int.random(in: 2...8)) ICBM silos
+            • Risk of unauthorized launch HIGH
+
+            International Response:
+            • UN Security Council emergency session
+            • Neighboring countries mobilizing
+            • Markets in free-fall
+            • Refugees fleeing borders
+
+            \(general) has made no statements. Intentions unclear.
+            """,
+            affectedCountries: [country.id],
+            turn: gameState.turn,
+            timeLimit: 90,
+            options: [
+                CrisisOption(
+                    title: "Support Existing Government",
+                    description: "Military aid to help president",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 20],
+                        approvalChange: 10,
+                        economicImpact: -2000,
+                        message: "Your support tips balance. Coup fails. Government restored. Relations excellent."
+                    ),
+                    successChance: 0.65
+                ),
+                CrisisOption(
+                    title: "Recognize Coup Government",
+                    description: "Pragmatic: work with whoever wins",
+                    advisorRecommendation: "Tulsi Gabbard",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 15],
+                        approvalChange: -15,
+                        message: "Coup succeeds. New regime appreciates early recognition. Domestic criticism severe."
+                    ),
+                    successChance: 0.80
+                ),
+                CrisisOption(
+                    title: "Negotiate with Both Sides",
+                    description: "Mediate power-sharing agreement",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 25],
+                        approvalChange: 20,
+                        message: "Negotiation successful. Coalition government formed. Civil war averted."
+                    ),
+                    successChance: 0.55
+                ),
+                CrisisOption(
+                    title: "Secure Nuclear Weapons Only",
+                    description: "Special forces seize nuclear sites, ignore politics",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -40],
+                        approvalChange: 15,
+                        message: "Warheads secured. Both sides furious at interference. No nukes launched."
+                    ),
+                    successChance: 0.75
+                ),
+                CrisisOption(
+                    title: "Economic Sanctions on Coup Leaders",
+                    description: "Freeze assets, pressure resignation",
+                    advisorRecommendation: "Scott Bessent",
+                    consequences: CrisisConsequences(
+                        approvalChange: 8,
+                        message: "Sanctions bite. Coup leaders negotiate. Peaceful transition achieved."
+                    ),
+                    successChance: 0.60
+                ),
+                CrisisOption(
+                    title: "Wait and Observe",
+                    description: "Let internal politics play out",
+                    advisorRecommendation: "Tulsi Gabbard",
+                    consequences: CrisisConsequences(
+                        defconChange: -1,
+                        message: "Coup succeeds violently. \(Int.random(in: 5000...50000)) dead. New regime anti-Western."
+                    ),
+                    successChance: 1.0
+                )
+            ]
+        )
     }
 
     private func createEspionageCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
-        return createSimpleCrisis(type: .espionageDiscovered, title: "Spy Ring Discovered", country: country, gameState: gameState)
+        let agentNames = ["Sarah Chen", "Viktor Sokolov", "Abdul Rahman", "Li Wei", "Maria Volkov", "Hassan Al-Din"]
+        let agent = agentNames.randomElement()!
+        let coverJobs = ["embassy attaché", "trade representative", "journalist", "NGO worker", "academic researcher", "tech company employee"]
+        let coverJob = coverJobs.randomElement()!
+        let classified = ["nuclear launch codes", "ICBM deployment plans", "SDI technology", "submarine patrol routes", "CIA NOC list", "NSA encryption keys"]
+        let documents = classified.randomElement()!
+        let yearsActive = Int.random(in: 2...15)
+
+        return CrisisEvent(
+            type: .espionageDiscovered,
+            severity: .serious,
+            title: "🕵️ MAJOR SPY RING UNCOVERED IN \(country.name.uppercased())",
+            description: """
+            FBI arrests \(agent), deep-cover \(country.name) spy operating as \(coverJob).
+
+            Spy Details:
+            • Real name: \(agent)
+            • Cover identity: \(Int.random(in: 3...7)) years established
+            • Years active: \(yearsActive)
+            • Handler: \(country.name) GRU/SVR officer
+            • Documents stolen: \(documents)
+
+            Network Extent:
+            • \(Int.random(in: 5...20)) co-conspirators identified
+            • Penetration of \(["Pentagon", "CIA", "NSA", "State Department", "DOE"].randomElement()!)
+            • Damage assessment: SEVERE
+            • Ongoing investigation
+
+            \(country.name) denies everything. Ambassador recalled.
+
+            This is the worst intelligence breach since Aldrich Ames.
+            """,
+            affectedCountries: [country.id],
+            turn: gameState.turn,
+            timeLimit: nil,
+            options: [
+                CrisisOption(
+                    title: "Public Trial and Execution",
+                    description: "Make example of \(agent), deter future spies",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -40],
+                        approvalChange: 15,
+                        message: "Trial televised. \(agent) executed. \(country.name) retaliates by arresting your citizens."
+                    ),
+                    successChance: 1.0
+                ),
+                CrisisOption(
+                    title: "Prisoner Exchange Negotiation",
+                    description: "Trade \(agent) for your captured agents",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 10],
+                        approvalChange: -5,
+                        message: "Exchange successful. 3 of your agents returned. Intelligence community furious."
+                    ),
+                    successChance: 0.85
+                ),
+                CrisisOption(
+                    title: "Turn \(agent) Into Double Agent",
+                    description: "Feed false information through spy network",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        approvalChange: 20,
+                        message: "\(agent) agrees to cooperate. Feed false intel to \(country.name) for 5 turns. Major advantage."
+                    ),
+                    successChance: 0.70
+                ),
+                CrisisOption(
+                    title: "Massive Counterintelligence Sweep",
+                    description: "Dismantle entire \(country.name) spy network",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -30],
+                        approvalChange: 25,
+                        message: "Sweep successful. \(Int.random(in: 12...35)) \(country.name) agents arrested. Network destroyed."
+                    ),
+                    successChance: 0.80
+                ),
+                CrisisOption(
+                    title: "Quiet Deportation",
+                    description: "Expel spy quietly, avoid diplomatic incident",
+                    advisorRecommendation: "Tulsi Gabbard",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -5],
+                        approvalChange: -10,
+                        message: "Quiet resolution. Public angry about weakness. \(country.name) continues spying."
+                    ),
+                    successChance: 1.0
+                ),
+                CrisisOption(
+                    title: "Cyber Retaliation Against \(country.name)",
+                    description: "Hack their intelligence services",
+                    advisorRecommendation: "Mike Waltz",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -35],
+                        approvalChange: 18,
+                        message: "Cyber strike steals their entire spy database. You now know all their agents."
+                    ),
+                    successChance: 0.75
+                )
+            ]
+        )
     }
 
     private func createDiplomaticIncidentCrisis(gameState: GameState) -> CrisisEvent {
@@ -686,7 +891,109 @@ class CrisisManager: ObservableObject {
 
     private func createAssassinationCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
-        return createSimpleCrisis(type: .assassinationAttempt, title: "Assassination Attempt", country: country, gameState: gameState)
+        let leaders = ["Prime Minister", "President", "Supreme Leader", "Chancellor", "King", "General Secretary"]
+        let leaderTitle = leaders.randomElement()!
+        let leaderNames = ["Vladimir Ivanov", "Chen Wei", "Mohammad Al-Rashid", "Kim Jong-nam", "Dmitri Volkov", "Hassan Rouhani", "Viktor Orban"]
+        let leaderName = leaderNames.randomElement()!
+        let locations = ["state dinner", "military parade", "UN General Assembly", "peace summit", "nuclear facility inspection", "aircraft carrier visit"]
+        let eventLocation = locations.randomElement()!
+        let methods = ["sniper", "poison", "car bomb", "insider threat", "drone strike"]
+        let attackMethod = methods.randomElement()!
+
+        return CrisisEvent(
+            type: .assassinationAttempt,
+            severity: .catastrophic,
+            title: "🎯 ASSASSINATION ATTEMPT ON \(country.name.uppercased()) LEADER",
+            description: """
+            BREAKING: Assassination attempt on \(country.name) \(leaderTitle) \(leaderName).
+
+            Location: \(eventLocation.capitalized)
+            Method: \(attackMethod.capitalized)
+            Status: Leader wounded, condition critical
+            Suspects: Unknown, investigation ongoing
+
+            Intelligence Assessment:
+            • \(country.name) security forces in chaos
+            • Hardliners demanding retaliation
+            • Nuclear command authority unclear
+            • Some officers calling for immediate strikes
+
+            \(country.name) requesting international assistance but threatening "consequences" if Western involvement discovered.
+
+            CIA believes this may be internal power struggle, NOT foreign attack.
+            """,
+            affectedCountries: [country.id],
+            turn: gameState.turn,
+            timeLimit: 75,
+            options: [
+                CrisisOption(
+                    title: "Offer Intelligence Assistance",
+                    description: "Share CIA findings, help investigation",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 25],
+                        approvalChange: 10,
+                        message: "Intelligence sharing identifies conspirators. \(leaderName) survives. \(country.name) grateful."
+                    ),
+                    successChance: 0.75
+                ),
+                CrisisOption(
+                    title: "Send Medical Team",
+                    description: "Emergency trauma surgeons and equipment",
+                    advisorRecommendation: "Robert F. Kennedy Jr.",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 30],
+                        approvalChange: 15,
+                        economicImpact: -200,
+                        message: "Medical team saves \(leaderName)'s life. \(country.name) eternally grateful."
+                    ),
+                    successChance: 0.80
+                ),
+                CrisisOption(
+                    title: "Exploit the Chaos",
+                    description: "Launch covert operation during instability",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -60],
+                        approvalChange: -15,
+                        message: "Operation detected. \(country.name) knows you exploited crisis. Relations destroyed."
+                    ),
+                    successChance: 0.60
+                ),
+                CrisisOption(
+                    title: "Express Condolences, Remain Neutral",
+                    description: "Diplomatic statement only, no involvement",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 5],
+                        message: "\(leaderName) dies. Hardliners seize power. New regime hostile."
+                    ),
+                    successChance: 1.0
+                ),
+                CrisisOption(
+                    title: "Blame Rival Nation",
+                    description: "Suggest \(gameState.countries.filter { $0.id != country.id && !$0.isPlayerControlled }.randomElement()?.name ?? "enemy") responsible",
+                    advisorRecommendation: "Mike Waltz",
+                    consequences: CrisisConsequences(
+                        approvalChange: -10,
+                        message: "Accusation creates diplomatic incident. No proof. Relations worsen across board."
+                    ),
+                    successChance: 0.30
+                ),
+                CrisisOption(
+                    title: "Deploy Peacekeeping Force",
+                    description: "Stabilize situation with military presence",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -20],
+                        approvalChange: 8,
+                        economicImpact: -1500,
+                        message: "Peacekeepers prevent civil war. \(country.name) resents occupation but stabilized."
+                    ),
+                    successChance: 0.70
+                )
+            ]
+        )
     }
 
     private func createSimpleCrisis(type: CrisisEventType, title: String, country: Country?, gameState: GameState) -> CrisisEvent {
