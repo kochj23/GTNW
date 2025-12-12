@@ -26,6 +26,11 @@ class GameEngine: ObservableObject {
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
 
+    // Safe feature systems (thread-safe implementations)
+    @Published var intelService = SafeIntelligenceService.shared
+    @Published var diplomacyService = SafeDiplomacyService.shared
+    @Published var nlpProcessor = SafeNLPProcessor.shared
+
     private var cancellables = Set<AnyCancellable>()
 
     init() {
@@ -36,6 +41,17 @@ class GameEngine: ObservableObject {
         // Initialize Ollama service
         Task { @MainActor in
             await OllamaService.shared.initialize()
+
+            // Log connection status
+            if OllamaService.shared.isConnected {
+                addLog("🤖 OLLAMA AI: CONNECTED", type: .system)
+                addLog("   Model: \(OllamaService.shared.currentModel)", type: .info)
+                addLog("   Available models: \(OllamaService.shared.availableModels.count)", type: .info)
+            } else {
+                addLog("⚪ OLLAMA AI: OFFLINE", type: .system)
+                addLog("   Using enhanced fallback AI (still challenging!)", type: .info)
+                addLog("   To enable: Run 'ollama serve' in terminal", type: .info)
+            }
         }
     }
 
@@ -109,8 +125,28 @@ class GameEngine: ObservableObject {
         // Generate news headlines
         generateNews()
 
+        // Process feature systems
+        intelService.processTurn()
+        diplomacyService.processTurn(countries: gameState.countries, turn: gameState.turn)
+
+        // Log new notifications
+        logFeatureNotifications()
+
         // Log system updates
         logSystemUpdates()
+    }
+
+    private func logFeatureNotifications() {
+        // Intel operations
+        if intelService.activeOperations.count > 0 {
+            addLog("🕵️ Active Intelligence Operations: \(intelService.activeOperations.count)", type: .info)
+        }
+
+        // New diplomatic messages
+        let unreadMessages = diplomacyService.messages.filter { !$0.read }.count
+        if unreadMessages > 0 {
+            addLog("📨 New Diplomatic Messages: \(unreadMessages)", type: .info)
+        }
     }
 
     /// Process AI turns synchronously (Ollama in background)

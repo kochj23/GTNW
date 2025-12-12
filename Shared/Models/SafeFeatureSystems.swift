@@ -19,7 +19,7 @@ class SafeIntelligenceService: ObservableObject {
 
     private init() {}
 
-    nonisolated func launch Operation(type: String, target: String, turn: Int) {
+    nonisolated func launchOperation(type: String, target: String, turn: Int) {
         Task { @MainActor in
             let op = SafeSpyOperation(type: type, target: target, startTurn: turn)
             activeOperations.append(op)

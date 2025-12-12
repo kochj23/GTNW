@@ -20,6 +20,8 @@ struct CommandView: View {
     @State private var showingWeaponsMenu = false
     @State private var showingSystemsView = false
     @State private var showingStatsPanel = true
+    @State private var nlCommandText = ""
+    @State private var nlCommandResponse = ""
     @State private var pickerMode: PickerMode = .target
 
     enum PickerMode {
@@ -99,7 +101,9 @@ struct CommandView: View {
     // MARK: - AI Stats Panel
 
     private var aiStatsPanel: some View {
-        VStack(spacing: 0) {
+        print("[CommandView] aiStatsPanel rendering - showingStatsPanel: \(showingStatsPanel)")
+
+        return VStack(spacing: 0) {
             // Header with toggle
             HStack {
                 Image(systemName: "chart.bar.fill")
@@ -132,8 +136,15 @@ struct CommandView: View {
                 .buttonStyle(.plain)
             }
             .padding(12)
-            .background(Color.blue.opacity(0.3))  // BRIGHT BLUE for visibility testing
-            .border(Color.cyan, width: 3)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.cyan.opacity(0.3), Color.blue.opacity(0.2)]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .border(Color.cyan, width: 4)
+            .shadow(color: Color.cyan.opacity(0.5), radius: 10)
 
             if showingStatsPanel {
                 // Metrics content
@@ -270,6 +281,68 @@ struct CommandView: View {
                     .border(AppSettings.terminalGreen, width: 2)
                 }
             }
+
+            Divider().background(AppSettings.terminalGreen)
+
+            // NEW FEATURES: Natural Language & Feature Access
+            VStack(spacing: 10) {
+                // Natural Language Command Input
+                HStack(spacing: 8) {
+                    TextField("Type command: 'attack Russia', 'build military'", text: $nlCommandText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundColor(AppSettings.terminalGreen)
+                        .padding(10)
+                        .background(Color.black)
+                        .border(Color.cyan, width: 2)
+                        .onSubmit {
+                            processNLCommand()
+                        }
+
+                    Button(action: processNLCommand) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.cyan)
+                    }
+                    .disabled(nlCommandText.isEmpty)
+                    .buttonStyle(.plain)
+                }
+
+                if !nlCommandResponse.isEmpty {
+                    Text(nlCommandResponse)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(AppSettings.terminalGreen)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.black.opacity(0.5))
+                        .border(Color.cyan, width: 1)
+                }
+
+                // Feature status badges
+                HStack(spacing: 8) {
+                    featureBadge(
+                        icon: "envelope.fill",
+                        label: "MESSAGES",
+                        count: gameEngine.diplomacyService.messages.count,
+                        color: .purple
+                    )
+
+                    featureBadge(
+                        icon: "binoculars.fill",
+                        label: "INTEL OPS",
+                        count: gameEngine.intelService.activeOperations.count,
+                        color: .cyan
+                    )
+
+                    featureBadge(
+                        icon: "key.fill",
+                        label: "SPY POINTS",
+                        count: gameEngine.intelService.spyPoints,
+                        color: .orange
+                    )
+                }
+            }
+            .padding(.vertical, 8)
 
             Divider().background(AppSettings.terminalGreen)
 
@@ -448,6 +521,50 @@ struct CommandView: View {
     }
 
     // MARK: - Helper Components
+
+    private func processNLCommand() {
+        guard let gameState = gameEngine.gameState else { return }
+
+        if let parsed = gameEngine.nlpProcessor.parseCommand(nlCommandText, gameState: gameState) {
+            nlCommandResponse = "✓ Parsed: \(parsed.reason)"
+
+            // Execute command
+            if let player = gameState.getPlayerCountry() {
+                switch parsed.action {
+                case "ATTACK":
+                    if let target = parsed.target {
+                        gameEngine.declareWar(aggressor: player.id, defender: target)
+                    }
+                case "NUKE":
+                    if let target = parsed.target {
+                        gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
+                    }
+                case "BUILD_MILITARY", "BUILD_NUKES":
+                    nlCommandResponse += "\n(Build actions happen automatically each turn)"
+                default:
+                    break
+                }
+            }
+
+            nlCommandText = ""
+        } else {
+            nlCommandResponse = "❌ Command not understood. Try: 'attack [country]', 'nuke [country]', 'build military'"
+        }
+    }
+
+    private func featureBadge(icon: String, label: String, count: Int, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+            Text("\(label): \(count)")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+        }
+        .foregroundColor(count > 0 ? color : AppSettings.terminalAmber.opacity(0.5))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(count > 0 ? color.opacity(0.1) : Color.clear)
+        .border(count > 0 ? color : AppSettings.terminalAmber.opacity(0.3), width: 1)
+    }
 
     private func actionButton(title: String, color: Color, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
