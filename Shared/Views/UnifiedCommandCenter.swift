@@ -91,22 +91,124 @@ struct UnifiedCommandCenter: View {
 
     private func rightTerminalPanel(gameState: GameState) -> some View {
         VStack(spacing: 0) {
+            // AI STATS PANEL - TOP OF RIGHT SIDE
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Image(systemName: "chart.bar.fill")
+                        .foregroundColor(.cyan)
+                        .font(.system(size: 18))
+                    Text("📊 AI PERFORMANCE")
+                        .font(GTNWFonts.terminal(size: 16, weight: .bold))
+                        .foregroundColor(.cyan)
+
+                    Spacer()
+
+                    if gameEngine.ollamaService.isConnected {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(GTNWColors.terminalGreen)
+                                .frame(width: 8, height: 8)
+                            Text("OLLAMA")
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalGreen)
+                        }
+                    } else {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(GTNWColors.terminalAmber)
+                                .frame(width: 8, height: 8)
+                            Text("LOCAL")
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalAmber)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(GTNWColors.glassPanelDark)
+
+                // Stats metrics
+                VStack(spacing: 12) {
+                    HStack(spacing: 15) {
+                        // Current tokens/sec
+                        VStack(spacing: 4) {
+                            Text("CURRENT")
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalAmber)
+                            Text(String(format: "%.1f", gameEngine.ollamaService.tokensPerSecond))
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(.cyan)
+                            Text("tok/sec")
+                                .font(GTNWFonts.caption())
+                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                        }
+                        .padding()
+                        .background(Color.cyan.opacity(0.1))
+                        .border(Color.cyan, width: 2)
+
+                        VStack(spacing: 8) {
+                            // Average
+                            HStack {
+                                Text("AVG:")
+                                    .font(GTNWFonts.caption())
+                                    .foregroundColor(GTNWColors.terminalAmber)
+                                Text(String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond))
+                                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                                    .foregroundColor(GTNWColors.terminalGreen)
+                            }
+                            .padding(8)
+                            .background(GTNWColors.terminalGreen.opacity(0.1))
+                            .border(GTNWColors.terminalGreen, width: 1)
+
+                            // Peak
+                            HStack {
+                                Text("PEAK:")
+                                    .font(GTNWFonts.caption())
+                                    .foregroundColor(GTNWColors.terminalAmber)
+                                Text(String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond))
+                                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                                    .foregroundColor(GTNWColors.terminalRed)
+                            }
+                            .padding(8)
+                            .background(GTNWColors.terminalRed.opacity(0.1))
+                            .border(GTNWColors.terminalRed, width: 1)
+                        }
+                    }
+
+                    // Total tokens and requests
+                    HStack(spacing: 15) {
+                        statBadge(label: "TOTAL", value: "\(gameEngine.ollamaService.totalTokens)", color: .purple)
+                        statBadge(label: "REQUESTS", value: "\(gameEngine.ollamaService.totalRequests)", color: .orange)
+
+                        if gameEngine.ollamaService.isGenerating {
+                            HStack(spacing: 4) {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
+                                    .scaleEffect(0.7)
+                                Text("PROCESSING")
+                                    .font(GTNWFonts.caption())
+                                    .foregroundColor(.cyan)
+                            }
+                            .padding(8)
+                            .background(Color.cyan.opacity(0.1))
+                            .border(Color.cyan, width: 1)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(Color.black.opacity(0.5))
+            }
+            .background(GTNWColors.glassPanelDark)
+            .border(Color.cyan, width: 3)
+
+            Divider()
+                .background(GTNWColors.neonCyan)
+
             // Header
             HStack {
                 SectionHeader("💻 TERMINAL & EVENT LOG", icon: "terminal.fill", color: GTNWColors.neonCyan)
 
                 Spacer()
-
-                if gameEngine.ollamaService.isConnected {
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(GTNWColors.terminalGreen)
-                            .frame(width: 8, height: 8)
-                        Text("OLLAMA AI")
-                            .font(GTNWFonts.caption())
-                            .foregroundColor(GTNWColors.terminalGreen)
-                    }
-                }
             }
             .padding()
             .background(GTNWColors.glassPanelDark)
@@ -302,6 +404,9 @@ struct UnifiedCommandCenter: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -313,6 +418,9 @@ struct UnifiedCommandCenter: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.declareWar(aggressor: player.id, defender: target)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -576,6 +684,19 @@ struct UnifiedCommandCenter: View {
                     .fill(color.opacity(0.2))
                     .overlay(Capsule().stroke(color.opacity(0.5), lineWidth: 1))
             )
+    }
+    private func statBadge(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(GTNWFonts.caption())
+                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+            Text(value)
+                .font(GTNWFonts.terminal(size: 16, weight: .bold))
+                .foregroundColor(color)
+        }
+        .padding(8)
+        .background(color.opacity(0.1))
+        .border(color, width: 1)
     }
 }
 

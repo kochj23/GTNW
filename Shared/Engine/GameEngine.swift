@@ -74,7 +74,13 @@ class GameEngine: ObservableObject {
 
     /// End the current turn and process AI moves
     func endTurn() {
-        guard let gameState = gameState, !gameState.gameOver else { return }
+        print("[GameEngine] ========== END TURN CALLED ==========")
+        guard let gameState = gameState, !gameState.gameOver else {
+            print("[GameEngine] endTurn aborted - no gameState or game over")
+            return
+        }
+
+        print("[GameEngine] Current turn: \(gameState.turn), incrementing to \(gameState.turn + 1)")
 
         addLog("", type: .system)
         addLog("===== TURN \(gameState.turn + 1) =====", type: .system)
@@ -85,6 +91,7 @@ class GameEngine: ObservableObject {
 
         // Increment turn
         self.gameState?.turn += 1
+        print("[GameEngine] Turn incremented to: \(self.gameState?.turn ?? -1)")
 
         // Process all game systems
         if let gs = self.gameState {
@@ -102,12 +109,18 @@ class GameEngine: ObservableObject {
         processAITurnsSync()
 
         // Show AI summary
+        print("[GameEngine] AI summary has \(gameState.aiActionSummary.count) items")
         if !gameState.aiActionSummary.isEmpty {
+            print("[GameEngine] Adding AI summary to log")
             addLog("", type: .system)
             addLog("📊 AI TURN SUMMARY:", type: .info)
             for summary in gameState.aiActionSummary {
                 addLog("  • \(summary)", type: .info)
             }
+            print("[GameEngine] AI summary logged successfully")
+        } else {
+            print("[GameEngine] WARNING: AI summary is EMPTY!")
+            addLog("⚠️ AI TURN SUMMARY: No actions taken (investigating...)", type: .warning)
         }
 
         // Update DEFCON level
