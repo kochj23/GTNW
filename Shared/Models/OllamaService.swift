@@ -84,38 +84,46 @@ class OllamaService: ObservableObject {
 
         guard let url = URL(string: "\(baseURL)/api/generate") else { return nil }
 
-        isGenerating = true
+        await MainActor.run {
+            isGenerating = true
+            print("[Ollama] 🎬 Starting generation...")
+        }
+
         let startTime = Date()
         let tokensAtStart = totalTokens
 
         defer {
-            isGenerating = false
-            totalRequests += 1
+            Task { @MainActor in
+                isGenerating = false
+                totalRequests += 1
 
-            let elapsed = Date().timeIntervalSince(startTime)
-            let tokensGenerated = totalTokens - tokensAtStart
+                let elapsed = Date().timeIntervalSince(startTime)
+                let tokensGenerated = totalTokens - tokensAtStart
 
-            if elapsed > 0 && tokensGenerated > 0 {
-                // Current speed for this request
-                tokensPerSecond = Double(tokensGenerated) / elapsed
+                print("[Ollama] 📊 Defer block - elapsed: \(elapsed)s, tokens: \(tokensGenerated)")
 
-                // Update history
-                tokenHistory.append(tokensPerSecond)
-                if tokenHistory.count > maxHistory {
-                    tokenHistory.removeFirst()
+                if elapsed > 0 && tokensGenerated > 0 {
+                    // Current speed for this request
+                    tokensPerSecond = Double(tokensGenerated) / elapsed
+
+                    // Update history
+                    tokenHistory.append(tokensPerSecond)
+                    if tokenHistory.count > maxHistory {
+                        tokenHistory.removeFirst()
+                    }
+
+                    // Calculate average
+                    if !tokenHistory.isEmpty {
+                        averageTokensPerSecond = tokenHistory.reduce(0, +) / Double(tokenHistory.count)
+                    }
+
+                    // Track peak
+                    if tokensPerSecond > peakTokensPerSecond {
+                        peakTokensPerSecond = tokensPerSecond
+                    }
+
+                    print("[Ollama] 📈 Updated stats - Current: \(String(format: "%.1f", tokensPerSecond)) t/s, Avg: \(String(format: "%.1f", averageTokensPerSecond)) t/s, Peak: \(String(format: "%.1f", peakTokensPerSecond)) t/s")
                 }
-
-                // Calculate average
-                if !tokenHistory.isEmpty {
-                    averageTokensPerSecond = tokenHistory.reduce(0, +) / Double(tokenHistory.count)
-                }
-
-                // Track peak
-                if tokensPerSecond > peakTokensPerSecond {
-                    peakTokensPerSecond = tokensPerSecond
-                }
-
-                print("[Ollama] Speed: \(String(format: "%.1f", tokensPerSecond)) t/s, Avg: \(String(format: "%.1f", averageTokensPerSecond)) t/s, Peak: \(String(format: "%.1f", peakTokensPerSecond)) t/s")
             }
         }
 
@@ -154,10 +162,12 @@ class OllamaService: ObservableObject {
 
             // Count tokens for metrics
             let tokens = responseText.split(separator: " ").count
-            totalTokens += tokens
-
-            lastResponse = responseText
-            print("[Ollama] Generated \(tokens) tokens, total: \(totalTokens)")
+            await MainActor.run {
+                totalTokens += tokens
+                lastResponse = responseText
+                print("[Ollama] ✅ Generated \(tokens) tokens, total now: \(totalTokens)")
+                print("[Ollama] ✅ Stats - Current: \(tokensPerSecond) t/s, Avg: \(averageTokensPerSecond) t/s, Peak: \(peakTokensPerSecond) t/s")
+            }
 
             return responseText.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -247,10 +257,13 @@ class OllamaService: ObservableObject {
     // MARK: - GPU Monitoring
 
     private func startGPUMonitoring() {
-        // Update GPU stats every 1 second
-        gpuMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.updateGPUUtilization()
+        print("[Ollama] Starting GPU monitoring...")
+        // Update GPU stats every 1 second on main run loop
+        DispatchQueue.main.async { [weak self] in
+            self?.gpuMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    await self?.updateGPUUtilization()
+                }
             }
         }
     }
@@ -276,7 +289,10 @@ class OllamaService: ObservableObject {
                     if let valueRange = match.range(of: #"(\d+)"#, options: .regularExpression) {
                         let valueStr = String(match[valueRange])
                         if let value = Double(valueStr) {
-                            gpuUtilization = value
+                            await MainActor.run {
+                                gpuUtilization = value
+                                print("[Ollama] 🖥️ GPU: \(value)%")
+                            }
                             return
                         }
                     }
@@ -284,10 +300,13 @@ class OllamaService: ObservableObject {
             }
 
             // Fallback if parsing fails
-            gpuUtilization = 0.0
+            await MainActor.run {
+                if gpuUtilization == 0 {  // Only set to 0 if not previously set
+                    print("[Ollama] ⚠️ Could not parse GPU stats")
+                }
+            }
         } catch {
-            print("[Ollama] GPU monitoring error: \(error)")
-            gpuUtilization = 0.0
+            print("[Ollama] ❌ GPU monitoring error: \(error)")
         }
     }
 
