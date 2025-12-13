@@ -70,6 +70,19 @@ class GameEngine: ObservableObject {
         addLog("Game started as \(playerCountryID)", type: .info)
         addLog("Difficulty: \(difficulty.rawValue)", type: .info)
         addLog("DEFCON Level: \(gameState!.defconLevel.description)", type: .info)
+        addLog("", type: .system)
+        addLog("═══════════════════════════════════════", type: .system)
+        addLog("📖 HOW TO PLAY:", type: .info)
+        addLog("", type: .system)
+        addLog("1. SELECT TARGET: Pick a country from dropdown", type: .info)
+        addLog("2. CHOOSE ACTION: Click button (Nuke, War, Alliance, etc.)", type: .info)
+        addLog("3. AUTO-END TURN: Action executes and turn ends automatically", type: .info)
+        addLog("4. AI RESPONDS: Watch AI countries take their actions", type: .info)
+        addLog("5. NEW TURN: Starts automatically, repeat!", type: .info)
+        addLog("", type: .system)
+        addLog("💡 TIP: Actions auto-end turn. No need to click END TURN!", type: .info)
+        addLog("═══════════════════════════════════════", type: .system)
+        addLog("", type: .system)
     }
 
     /// End the current turn and process AI moves
@@ -83,7 +96,11 @@ class GameEngine: ObservableObject {
         print("[GameEngine] Current turn: \(gameState.turn), incrementing to \(gameState.turn + 1)")
 
         addLog("", type: .system)
+        addLog("", type: .system)
+        addLog("═══════════════════════════════════════", type: .system)
         addLog("===== TURN \(gameState.turn + 1) =====", type: .system)
+        addLog("═══════════════════════════════════════", type: .system)
+        addLog("", type: .system)
 
         // Clear AI summary for new turn
         gameState.aiActionSummary.removeAll()

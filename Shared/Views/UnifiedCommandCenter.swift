@@ -412,13 +412,21 @@ struct UnifiedCommandCenter: View {
                 }
 
                 ModernButton(
-                    title: "END\nTURN",
+                    title: "END TURN\n(MANUAL)",
                     icon: "arrow.right.circle.fill",
                     color: GTNWColors.terminalGreen,
                     enabled: true
                 ) {
+                    print("[Manual END TURN clicked]")
                     gameEngine.endTurn()
                 }
+
+                // Info about auto-end turn
+                Text("ℹ️ Actions auto-end turn - this button optional")
+                    .font(GTNWFonts.caption())
+                    .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
             }
         }
     }
