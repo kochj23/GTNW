@@ -691,11 +691,28 @@ struct UnifiedCommandCenter: View {
                         responseMessage = "✓ NUCLEAR STRIKE LAUNCHED: \(parsed.reason)"
                     }
                 case "BUILD_MILITARY":
-                    responseMessage = "✓ BUILD MILITARY: \(parsed.reason)\n(Will execute automatically each turn)"
+                    responseMessage = "✓ BUILD MILITARY: \(parsed.reason)\nProcessing turn..."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        gameEngine.endTurn()
+                    }
                 case "BUILD_NUKES":
-                    responseMessage = "✓ BUILD NUKES: \(parsed.reason)\n(Will execute automatically each turn)"
+                    responseMessage = "✓ BUILD NUKES: \(parsed.reason)\nProcessing turn..."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        gameEngine.endTurn()
+                    }
+                case "ALLY":
+                    if let target = parsed.target {
+                        gameEngine.formAlliance(country1: player.id, country2: target)
+                        responseMessage = "✓ ALLIANCE FORMED: \(parsed.reason)"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
+                    }
                 default:
-                    responseMessage = "✓ Command understood: \(parsed.reason)"
+                    responseMessage = "✓ Command understood: \(parsed.reason)\nProcessing turn..."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        gameEngine.endTurn()
+                    }
                 }
             }
         } else if input.lowercased().contains("help") {
