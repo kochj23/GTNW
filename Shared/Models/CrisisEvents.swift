@@ -858,30 +858,72 @@ class CrisisManager: ObservableObject {
 
     private func createDiplomaticIncidentCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
-        return createSimpleCrisis(type: .diplomaticIncident, title: "Embassy Attack", country: country, gameState: gameState)
+        return createSimpleCrisis(type: .diplomaticIncident, title: "🏛️ Embassy Attack in \(country.name)", country: country, gameState: gameState)
     }
 
     private func createEconomicCollapseCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
-        return createSimpleCrisis(type: .economicCollapse, title: "Economic Collapse", country: country, gameState: gameState)
+        let debtB = Int.random(in: 50...500)
+        let unemployment = Int.random(in: 25...60)
+        return createDetailedCrisis(
+            type: .economicCollapse,
+            title: "💰 \(country.name) Economic Collapse",
+            description: "\(country.name) economy in free-fall. National debt: $\(debtB)B. Unemployment: \(unemployment)%. Currency worthless. \(Int.random(in: 100...500))K refugees fleeing. Government requesting emergency aid. Risk of state failure.",
+            country: country,
+            gameState: gameState
+        )
     }
 
     private func createSatelliteFailureCrisis(gameState: GameState) -> CrisisEvent {
-        return createSimpleCrisis(type: .satelliteFailure, title: "Satellite Failure", country: nil, gameState: gameState)
+        let country = gameState.countries.filter { $0.nuclearWarheads > 10 }.randomElement()!
+        let satellites = ["DSP-23", "SBIRS GEO-5", "NRO L-82", "Oko-7"]
+        let sat = satellites.randomElement()!
+        return createDetailedCrisis(
+            type: .satelliteFailure,
+            title: "🛰️ \(country.name) Satellite \(sat) Failed",
+            description: "\(country.name) early warning satellite \(sat) has failed. Orbit: \(Int.random(in: 500...35000))km. Telemetry lost. \(country.name) blind to missile launches. Early warning time reduced 15min → 5min. Risk of false alarm DRAMATICALLY increased.",
+            country: country,
+            gameState: gameState
+        )
     }
 
     private func createCivilUnrestCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
-        return createSimpleCrisis(type: .civilUnrest, title: "Civil Unrest", country: country, gameState: gameState)
+        let protesters = Int.random(in: 50_000...1_000_000)
+        let deaths = Int.random(in: 10...500)
+        return createDetailedCrisis(
+            type: .civilUnrest,
+            title: "🔥 Massive Unrest in \(country.name)",
+            description: "Civil unrest in \(country.name) capital. \(protesters.formatted()) protesters demanding reforms. Turned violent. \(deaths) dead, \(deaths * 3) injured. \(country.name) has \(country.nuclearWarheads) warheads. Military loyalty uncertain. Risk of coup.",
+            country: country,
+            gameState: gameState
+        )
     }
 
     private func createWeaponsMalfunctionCrisis(gameState: GameState) -> CrisisEvent {
-        return createSimpleCrisis(type: .weaponsMalfunction, title: "Weapons Malfunction", country: nil, gameState: gameState)
+        let country = gameState.countries.filter { $0.nuclearWarheads > 5 }.randomElement()!
+        let weaponType = ["ICBM", "SLBM", "tactical nuke"].randomElement()!
+        let warheads = Int.random(in: 1...5)
+        return createDetailedCrisis(
+            type: .weaponsMalfunction,
+            title: "⚠️ \(country.name) Weapons Malfunction",
+            description: "\(country.name) \(weaponType) malfunction. \(warheads) warheads. Launch sequence activated accidentally. Countdown: T-minus \(Int.random(in: 5...15)) minutes. Abort codes not responding. Target: UNKNOWN. Accidental launch imminent. This is BROKEN ARROW.",
+            country: country,
+            gameState: gameState
+        )
     }
 
     private func createRadiationLeakCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { $0.nuclearWarheads > 0 }.randomElement()!
-        return createSimpleCrisis(type: .radiationLeak, title: "Radiation Leak", country: country, gameState: gameState)
+        let facility = ["\(country.name) Nuclear Lab", "Weapons Facility", "Enrichment Plant"].randomElement()!
+        let leakAmount = Int.random(in: 100...5000)
+        return createDetailedCrisis(
+            type: .radiationLeak,
+            title: "☢️ Radiation Leak at \(facility)",
+            description: "Critical radiation leak at \(facility), \(country.name). \(leakAmount) mSv detected (\(leakAmount > 1000 ? "LETHAL" : "DANGEROUS")). \(Int.random(in: 50...500)) workers exposed. \(Int.random(in: 10_000...500_000).formatted()) population at risk. Containment FAILED. \(country.name) requesting help.",
+            country: country,
+            gameState: gameState
+        )
     }
 
     private func createSpyRingCrisis(gameState: GameState) -> CrisisEvent {
@@ -991,6 +1033,89 @@ class CrisisManager: ObservableObject {
                         message: "Peacekeepers prevent civil war. \(country.name) resents occupation but stabilized."
                     ),
                     successChance: 0.70
+                )
+            ]
+        )
+    }
+
+    private func createDetailedCrisis(type: CrisisEventType, title: String, description: String, country: Country, gameState: GameState) -> CrisisEvent {
+        return CrisisEvent(
+            type: type,
+            severity: .serious,
+            title: title,
+            description: description,
+            affectedCountries: [country.id],
+            turn: gameState.turn,
+            timeLimit: nil,
+            options: [
+                CrisisOption(
+                    title: "Military Response",
+                    description: "Deploy forces to address situation",
+                    advisorRecommendation: "Pete Hegseth",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -10],
+                        approvalChange: 8,
+                        economicImpact: -500,
+                        message: "Military intervention successful. \(country.name) resents show of force but crisis resolved."
+                    ),
+                    successChance: 0.75
+                ),
+                CrisisOption(
+                    title: "Diplomatic Resolution",
+                    description: "Negotiate peaceful solution",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 20],
+                        approvalChange: 12,
+                        message: "Diplomatic solution reached. Crisis averted peacefully. \(country.name) appreciates mediation."
+                    ),
+                    successChance: 0.65
+                ),
+                CrisisOption(
+                    title: "Economic Aid Package",
+                    description: "Provide financial assistance",
+                    advisorRecommendation: "Scott Bessent",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 25],
+                        approvalChange: 5,
+                        economicImpact: -5000,
+                        message: "Aid stabilizes situation. \(country.name) grateful. Crisis resolved."
+                    ),
+                    successChance: 0.80
+                ),
+                CrisisOption(
+                    title: "Covert Operation",
+                    description: "CIA handles quietly",
+                    advisorRecommendation: "John Ratcliffe",
+                    consequences: CrisisConsequences(
+                        approvalChange: 15,
+                        economicImpact: -200,
+                        message: "Covert operation successful. Crisis resolved with no public knowledge."
+                    ),
+                    successChance: 0.60
+                ),
+                CrisisOption(
+                    title: "UN/International Coalition",
+                    description: "Build multilateral response",
+                    advisorRecommendation: "Marco Rubio",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: 15],
+                        approvalChange: 18,
+                        economicImpact: -300,
+                        message: "Coalition response legitimizes action. Crisis resolved with international support."
+                    ),
+                    successChance: 0.70
+                ),
+                CrisisOption(
+                    title: "Monitor and Wait",
+                    description: "Observe, avoid commitment",
+                    advisorRecommendation: "Tulsi Gabbard",
+                    consequences: CrisisConsequences(
+                        relationshipChanges: [country.id: -10],
+                        approvalChange: -5,
+                        message: "Situation deteriorates without intervention. Crisis worsens."
+                    ),
+                    successChance: 0.80
                 )
             ]
         )
