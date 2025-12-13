@@ -207,14 +207,14 @@ class GameEngine: ObservableObject {
         if !gameState.aiActionSummary.isEmpty {
             print("[GameEngine] Adding AI summary to log")
             addLog("", type: .system)
-            addLog("📊 AI TURN SUMMARY:", type: .info)
+            addLog("📊 AI ACTIONS (\(gameState.aiActionSummary.count) countries active):", type: .info)
             for summary in gameState.aiActionSummary {
                 addLog("  • \(summary)", type: .info)
             }
             print("[GameEngine] AI summary logged successfully")
         } else {
-            print("[GameEngine] WARNING: AI summary is EMPTY!")
-            addLog("⚠️ No AI actions this turn", type: .warning)
+            print("[GameEngine] No significant AI actions this turn")
+            addLog("⚪ AI countries monitoring situation (no major actions)", type: .info)
         }
     }
 
@@ -403,9 +403,8 @@ class GameEngine: ObservableObject {
                     gameState.aiActionSummary.append("\(country.flag) \(country.name) ☢️ built 5 nukes")
                     raiseDEFCON()
                 }
-            } else if let reason = reason {
-                gameState.aiActionSummary.append("\(country.flag) \(country.name): \(reason)")
             }
+            // Don't add to summary if just waiting/monitoring - reduces noise
 
         case .declareWar(let targetID):
             declareWar(aggressor: country.id, defender: targetID)
