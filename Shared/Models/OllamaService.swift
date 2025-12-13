@@ -26,15 +26,17 @@ class OllamaService: ObservableObject {
     @Published var peakTokensPerSecond: Double = 0.0
     @Published var totalRequests: Int = 0
     @Published var gpuUtilization: Double = 0.0
+    @Published var cpuUtilization: Double = 0.0
+    @Published var memoryUsageGB: Double = 0.0
 
     private let baseURL = "http://localhost:11434"
     private var tokenHistory: [Double] = []
     private let maxHistory = 50
-    private var gpuMonitorTimer: Timer?
+    private var systemMonitorTimer: Timer?
 
     private init() {
-        // Start GPU monitoring
-        startGPUMonitoring()
+        // Start system monitoring
+        startSystemMonitoring()
     }
 
     /// Check if Ollama is running and list available models
@@ -254,18 +256,25 @@ class OllamaService: ObservableObject {
         }
     }
 
-    // MARK: - GPU Monitoring
+    // MARK: - System Monitoring (GPU, CPU, Memory)
 
-    private func startGPUMonitoring() {
-        print("[Ollama] Starting GPU monitoring...")
-        // Update GPU stats every 1 second on main run loop
+    private func startSystemMonitoring() {
+        print("[Ollama] Starting system monitoring (GPU, CPU, Memory)...")
+        // Update system stats every 1 second on main run loop
         DispatchQueue.main.async { [weak self] in
-            self?.gpuMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.systemMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
                 Task { @MainActor in
-                    await self?.updateGPUUtilization()
+                    await self?.updateSystemUtilization()
                 }
             }
         }
+    }
+
+    private func updateSystemUtilization() async {
+        // Update all three metrics in parallel
+        await updateGPUUtilization()
+        await updateCPUUtilization()
+        await updateMemoryUtilization()
     }
 
     private func updateGPUUtilization() async {
@@ -310,8 +319,92 @@ class OllamaService: ObservableObject {
         }
     }
 
+    private func updateCPUUtilization() async {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/top")
+        task.arguments = ["-l", "1", "-n", "0", "-stats", "cpu"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                // Parse CPU idle percentage and calculate utilization
+                if let range = output.range(of: #"(\d+\.\d+)%\s+idle"#, options: .regularExpression) {
+                    let match = String(output[range])
+                    if let valueRange = match.range(of: #"(\d+\.\d+)"#, options: .regularExpression) {
+                        let valueStr = String(match[valueRange])
+                        if let idle = Double(valueStr) {
+                            let utilization = 100.0 - idle
+                            await MainActor.run {
+                                cpuUtilization = utilization
+                            }
+                            return
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("[Ollama] CPU monitoring error: \(error)")
+        }
+    }
+
+    private func updateMemoryUtilization() async {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/vm_stat")
+        task.arguments = []
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                // Parse memory statistics
+                var pagesUsed = 0.0
+
+                if let activeRange = output.range(of: #"Pages active:\s+(\d+)"#, options: .regularExpression) {
+                    let match = String(output[activeRange])
+                    if let valueRange = match.range(of: #"(\d+)"#, options: .regularExpression) {
+                        if let value = Double(String(match[valueRange])) {
+                            pagesUsed += value
+                        }
+                    }
+                }
+
+                if let wiredRange = output.range(of: #"Pages wired down:\s+(\d+)"#, options: .regularExpression) {
+                    let match = String(output[wiredRange])
+                    if let valueRange = match.range(of: #"(\d+)"#, options: .regularExpression) {
+                        if let value = Double(String(match[valueRange])) {
+                            pagesUsed += value
+                        }
+                    }
+                }
+
+                // Convert pages to GB (page size = 4096 bytes on M3)
+                let bytesUsed = pagesUsed * 4096.0
+                let gbUsed = bytesUsed / 1_073_741_824.0
+
+                await MainActor.run {
+                    memoryUsageGB = gbUsed
+                }
+            }
+        } catch {
+            print("[Ollama] Memory monitoring error: \(error)")
+        }
+    }
+
     deinit {
-        gpuMonitorTimer?.invalidate()
+        systemMonitorTimer?.invalidate()
     }
 }
 

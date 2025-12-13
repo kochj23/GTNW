@@ -25,6 +25,7 @@ class GameEngine: ObservableObject {
     @Published var showingVictoryScreen = false
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
+    @Published var isProcessingAITurn = false  // Prevent actions during AI processing
 
     // Safe feature systems (thread-safe implementations)
     @Published var intelService = SafeIntelligenceService.shared
@@ -123,6 +124,7 @@ class GameEngine: ObservableObject {
 
         // Process AI turns
         addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
+        isProcessingAITurn = true
 
         // Check Ollama status and process accordingly
         Task { @MainActor in
@@ -132,6 +134,7 @@ class GameEngine: ObservableObject {
                 processAITurnsSync()
             }
             showAISummary()
+            isProcessingAITurn = false  // Allow actions again
         }
 
         // Update DEFCON level

@@ -154,12 +154,28 @@ struct UnifiedCommandCenter: View {
 
                 // Stats metrics - SINGLE TABLE
                 VStack(spacing: 0) {
-                    // GPU Utilization (Top priority - real-time hardware metric)
+                    // Hardware Metrics (Real-time system monitoring)
                     statsRow(
                         label: "GPU",
                         value: String(format: "%.0f%%", gameEngine.ollamaService.gpuUtilization),
                         color: gameEngine.ollamaService.gpuUtilization > 80 ? GTNWColors.terminalRed :
                                gameEngine.ollamaService.gpuUtilization > 50 ? GTNWColors.terminalAmber :
+                               GTNWColors.terminalGreen
+                    )
+
+                    statsRow(
+                        label: "CPU",
+                        value: String(format: "%.0f%%", gameEngine.ollamaService.cpuUtilization),
+                        color: gameEngine.ollamaService.cpuUtilization > 80 ? GTNWColors.terminalRed :
+                               gameEngine.ollamaService.cpuUtilization > 50 ? GTNWColors.terminalAmber :
+                               GTNWColors.terminalGreen
+                    )
+
+                    statsRow(
+                        label: "MEMORY",
+                        value: String(format: "%.1f GB", gameEngine.ollamaService.memoryUsageGB),
+                        color: gameEngine.ollamaService.memoryUsageGB > 400 ? GTNWColors.terminalRed :
+                               gameEngine.ollamaService.memoryUsageGB > 200 ? GTNWColors.terminalAmber :
                                GTNWColors.terminalGreen
                     )
 
@@ -398,7 +414,7 @@ struct UnifiedCommandCenter: View {
                     title: "NUCLEAR\nSTRIKE",
                     icon: "flame.fill",
                     color: GTNWColors.terminalRed,
-                    enabled: selectedTarget != nil && (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) > 0
+                    enabled: !gameEngine.isProcessingAITurn && selectedTarget != nil && (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) > 0
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
