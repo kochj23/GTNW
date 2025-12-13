@@ -25,12 +25,17 @@ class OllamaService: ObservableObject {
     @Published var averageTokensPerSecond: Double = 0.0
     @Published var peakTokensPerSecond: Double = 0.0
     @Published var totalRequests: Int = 0
+    @Published var gpuUtilization: Double = 0.0
 
     private let baseURL = "http://localhost:11434"
     private var tokenHistory: [Double] = []
     private let maxHistory = 50
+    private var gpuMonitorTimer: Timer?
 
-    private init() {}
+    private init() {
+        // Start GPU monitoring
+        startGPUMonitoring()
+    }
 
     /// Check if Ollama is running and list available models
     func initialize() async {
@@ -237,6 +242,57 @@ class OllamaService: ObservableObject {
             print("[Ollama] Pull failed: \(error)")
             return false
         }
+    }
+
+    // MARK: - GPU Monitoring
+
+    private func startGPUMonitoring() {
+        // Update GPU stats every 1 second
+        gpuMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.updateGPUUtilization()
+            }
+        }
+    }
+
+    private func updateGPUUtilization() async {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
+        task.arguments = ["-r", "-d", "1", "-w", "0", "-c", "IOAccelerator"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                // Parse "Device Utilization %" from ioreg output
+                if let range = output.range(of: #""Device Utilization %"=(\d+)"#, options: .regularExpression) {
+                    let match = String(output[range])
+                    if let valueRange = match.range(of: #"(\d+)"#, options: .regularExpression) {
+                        let valueStr = String(match[valueRange])
+                        if let value = Double(valueStr) {
+                            gpuUtilization = value
+                            return
+                        }
+                    }
+                }
+            }
+
+            // Fallback if parsing fails
+            gpuUtilization = 0.0
+        } catch {
+            print("[Ollama] GPU monitoring error: \(error)")
+            gpuUtilization = 0.0
+        }
+    }
+
+    deinit {
+        gpuMonitorTimer?.invalidate()
     }
 }
 

@@ -129,7 +129,16 @@ struct UnifiedCommandCenter: View {
 
                 // Stats metrics - SINGLE TABLE
                 VStack(spacing: 0) {
-                    // Table rows
+                    // GPU Utilization (Top priority - real-time hardware metric)
+                    statsRow(
+                        label: "GPU",
+                        value: String(format: "%.0f%%", gameEngine.ollamaService.gpuUtilization),
+                        color: gameEngine.ollamaService.gpuUtilization > 80 ? GTNWColors.terminalRed :
+                               gameEngine.ollamaService.gpuUtilization > 50 ? GTNWColors.terminalAmber :
+                               GTNWColors.terminalGreen
+                    )
+
+                    // Token metrics
                     statsRow(label: "CURRENT", value: String(format: "%.1f t/s", gameEngine.ollamaService.tokensPerSecond), color: .cyan)
                     statsRow(label: "AVERAGE", value: String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond), color: GTNWColors.terminalGreen)
                     statsRow(label: "PEAK", value: String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond), color: GTNWColors.terminalRed)
