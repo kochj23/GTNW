@@ -104,23 +104,17 @@ class GameEngine: ObservableObject {
         // Process weapons programs
         processWeaponsPrograms()
 
-        // Process AI turns (synchronous with enhanced fallback)
+        // Process AI turns
         addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
-        processAITurnsSync()
 
-        // Show AI summary
-        print("[GameEngine] AI summary has \(gameState.aiActionSummary.count) items")
-        if !gameState.aiActionSummary.isEmpty {
-            print("[GameEngine] Adding AI summary to log")
-            addLog("", type: .system)
-            addLog("📊 AI TURN SUMMARY:", type: .info)
-            for summary in gameState.aiActionSummary {
-                addLog("  • \(summary)", type: .info)
+        // Check Ollama status and process accordingly
+        Task { @MainActor in
+            if ollamaService.isConnected {
+                await processAITurnsWithOllama()
+            } else {
+                processAITurnsSync()
             }
-            print("[GameEngine] AI summary logged successfully")
-        } else {
-            print("[GameEngine] WARNING: AI summary is EMPTY!")
-            addLog("⚠️ AI TURN SUMMARY: No actions taken (investigating...)", type: .warning)
+            showAISummary()
         }
 
         // Update DEFCON level
@@ -162,22 +156,66 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Process AI turns synchronously (Ollama in background)
+    /// Process AI turns with Ollama (async)
+    private func processAITurnsWithOllama() async {
+        guard let gameState = gameState else { return }
+
+        print("[GameEngine] ===== Processing AI Turns with OLLAMA =====")
+        addLog("🤖 Using OLLAMA AI (Real LLM decisions)...", type: .info)
+
+        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+            print("[GameEngine] 🤖 Calling Ollama for \(country.name)...")
+
+            if let response = await ollamaService.generateCountryDecision(country: country, gameState: gameState) {
+                print("[GameEngine] 🤖 OLLAMA response: \(response)")
+                let action = parseOllamaDecision(response, country: country, gameState: gameState)
+                executeAIAction(action, for: country, reason: response)
+            } else {
+                print("[GameEngine] ⚠️ Ollama failed for \(country.name), using fallback")
+                let action = determineAIActionEnhanced(for: country)
+                executeAIAction(action, for: country, reason: nil)
+            }
+
+            // Small delay between countries
+            try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+        }
+
+        print("[GameEngine] ===== Ollama AI Turns Complete =====")
+    }
+
+    /// Process AI turns with fallback (synchronous)
     private func processAITurnsSync() {
         guard let gameState = gameState else { return }
 
-        print("[GameEngine] ===== Processing AI Turns =====")
+        print("[GameEngine] ===== Processing AI Turns with FALLBACK =====")
+        addLog("⚪ Using local AI (enhanced rule-based)", type: .info)
 
         for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
-            print("[GameEngine] Processing \(country.name) (Aggression: \(country.aggressionLevel), At War: \(country.atWarWith.count))...")
-
-            // Use enhanced fallback AI with 40% attack rates
             let action = determineAIActionEnhanced(for: country)
-            print("[GameEngine] \(country.name) decided: \(action)")
+            print("[GameEngine] ⚪ FALLBACK decision for \(country.name): \(action)")
             executeAIAction(action, for: country, reason: nil)
         }
 
-        print("[GameEngine] ===== AI Turns Complete ===== (\(gameState.aiActionSummary.count) actions)")
+        print("[GameEngine] ===== Fallback AI Turns Complete =====")
+    }
+
+    /// Show AI summary in log
+    private func showAISummary() {
+        guard let gameState = gameState else { return }
+
+        print("[GameEngine] AI summary has \(gameState.aiActionSummary.count) items")
+        if !gameState.aiActionSummary.isEmpty {
+            print("[GameEngine] Adding AI summary to log")
+            addLog("", type: .system)
+            addLog("📊 AI TURN SUMMARY:", type: .info)
+            for summary in gameState.aiActionSummary {
+                addLog("  • \(summary)", type: .info)
+            }
+            print("[GameEngine] AI summary logged successfully")
+        } else {
+            print("[GameEngine] WARNING: AI summary is EMPTY!")
+            addLog("⚠️ No AI actions this turn", type: .warning)
+        }
     }
 
     /// Generate news headlines for this turn
