@@ -168,23 +168,25 @@ struct UnifiedCommandCenter: View {
             .padding()
             .background(GTNWColors.glassPanelDark)
 
-            // Event Log (scrollable) - NEWEST AT TOP
+            // Event Log (scrollable) - NEWEST AT TOP, ENHANCED VISIBILITY
             ScrollView {
                 ScrollViewReader { proxy in
-                    LazyVStack(alignment: .leading, spacing: 2) {
+                    LazyVStack(alignment: .leading, spacing: 6) {
                         // Game engine logs (reversed = newest first)
                         ForEach(gameEngine.logMessages.reversed()) { log in
-                            // Only show turn markers and summaries (not unrecognized commands)
-                            if !log.message.contains("UNRECOGNIZED") && !log.message.contains("Type 'help'") {
+                            // Only show meaningful messages (not errors)
+                            if !log.message.contains("UNRECOGNIZED") &&
+                               !log.message.contains("Type 'help'") &&
+                               !log.message.isEmpty {
                                 logRow(log)
                             }
                         }
                     }
-                    .padding()
+                    .padding(16)
                     .onChange(of: gameEngine.logMessages.count) { _ in
                         // Auto-scroll to top (newest)
                         if let first = gameEngine.logMessages.reversed().first {
-                            withAnimation {
+                            withAnimation(.easeInOut) {
                                 proxy.scrollTo(first.id, anchor: .top)
                             }
                         }
@@ -192,7 +194,16 @@ struct UnifiedCommandCenter: View {
                 }
             }
             .frame(minHeight: 300)
-            .background(Color.black.opacity(0.5))
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black.opacity(0.8),
+                        Color.black.opacity(0.6)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
 
             // Response area (only show success messages)
             if !responseMessage.isEmpty && !responseMessage.contains("UNRECOGNIZED") && !responseMessage.contains("Type 'help'") {
@@ -476,19 +487,134 @@ struct UnifiedCommandCenter: View {
             if log.message.contains("=====") {
                 Rectangle()
                     .fill(GTNWColors.neonCyan)
-                    .frame(height: 3)
-                    .padding(.vertical, 8)
+                    .frame(height: 4)
+                    .padding(.vertical, 10)
             }
 
-            HStack(alignment: .top, spacing: 8) {
-                Text(log.message)
-                    .font(log.message.contains("TURN") ? GTNWFonts.terminal(size: 13, weight: .bold) : GTNWFonts.terminal(size: 11))
-                    .foregroundColor(logColor(log.type))
+            HStack(alignment: .top, spacing: 12) {
+                // Icon badge for log type
+                logIcon(log.type, message: log.message)
+                    .font(.system(size: 20))
+                    .frame(width: 30)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    // Main message with dynamic sizing
+                    Text(log.message)
+                        .font(
+                            log.message.contains("=====") && log.message.contains("TURN") ?
+                                .system(size: 18, weight: .black, design: .monospaced) :
+                            log.message.contains("AI TURN SUMMARY") || log.message.contains("OLLAMA") ?
+                                .system(size: 15, weight: .bold, design: .monospaced) :
+                            log.message.starts(with: "  •") ?
+                                .system(size: 14, design: .monospaced) :
+                                .system(size: 13, weight: .medium, design: .monospaced)
+                        )
+                        .foregroundColor(logColor(log.type))
+                        .shadow(color: logColor(log.type).opacity(0.4), radius: 3)
+                        .lineSpacing(2)
+
+                    // Add type badge for warnings/errors (more visible)
+                    if log.type == .warning || log.type == .error || log.type == .critical {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 10))
+                            Text(logTypeLabel(log.type))
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(logColor(log.type))
+                        .cornerRadius(4)
+                    }
+                }
+
+                Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
-            .background(log.message.contains("TURN") ? GTNWColors.neonCyan.opacity(0.15) : Color.black.opacity(0.2))
-            .cornerRadius(4)
+            .padding(14)
+            .background(
+                Group {
+                    if log.message.contains("=====") && log.message.contains("TURN") {
+                        // Turn markers: Extra prominent
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                GTNWColors.neonCyan.opacity(0.25),
+                                GTNWColors.neonCyan.opacity(0.15)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    } else if log.message.contains("AI TURN SUMMARY") {
+                        // AI summary: Highlighted
+                        GTNWColors.terminalGreen.opacity(0.18)
+                    } else if log.message.contains("OLLAMA") || log.message.contains("AI NATIONS") {
+                        // AI status: Subtle highlight
+                        GTNWColors.neonPurple.opacity(0.12)
+                    } else {
+                        // Regular messages
+                        Color.black.opacity(0.35)
+                    }
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(
+                        log.message.contains("=====") && log.message.contains("TURN") ?
+                            GTNWColors.neonCyan :
+                        log.message.contains("AI TURN SUMMARY") ?
+                            GTNWColors.terminalGreen :
+                        log.type == .critical || log.type == .error ?
+                            GTNWColors.terminalRed :
+                        log.type == .warning ?
+                            GTNWColors.terminalAmber :
+                            Color.clear,
+                        lineWidth: log.message.contains("TURN") ? 3 : 1.5
+                    )
+            )
+            .cornerRadius(8)
+            .shadow(
+                color: log.message.contains("TURN") ?
+                    GTNWColors.neonCyan.opacity(0.3) :
+                    Color.clear,
+                radius: 8
+            )
+        }
+    }
+
+    private func logIcon(_ type: LogType, message: String) -> some View {
+        Group {
+            if message.contains("TURN") {
+                Image(systemName: "arrow.clockwise.circle.fill")
+                    .foregroundColor(GTNWColors.neonCyan)
+            } else if message.contains("AI") {
+                Image(systemName: "brain.head.profile")
+                    .foregroundColor(GTNWColors.neonPurple)
+            } else if message.contains("OLLAMA") {
+                Image(systemName: "cpu.fill")
+                    .foregroundColor(GTNWColors.terminalGreen)
+            } else {
+                Image(systemName: logIconName(type))
+                    .foregroundColor(logColor(type))
+            }
+        }
+    }
+
+    private func logIconName(_ type: LogType) -> String {
+        switch type {
+        case .system: return "circle.fill"
+        case .info: return "info.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .error, .critical: return "xmark.octagon.fill"
+        }
+    }
+
+    private func logTypeLabel(_ type: LogType) -> String {
+        switch type {
+        case .system: return "SYSTEM"
+        case .info: return "INFO"
+        case .warning: return "WARNING"
+        case .error, .critical: return "CRITICAL"
         }
     }
 
