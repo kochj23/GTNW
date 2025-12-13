@@ -127,76 +127,31 @@ struct UnifiedCommandCenter: View {
                 .padding(12)
                 .background(GTNWColors.glassPanelDark)
 
-                // Stats metrics
-                VStack(spacing: 12) {
-                    HStack(spacing: 15) {
-                        // Current tokens/sec
-                        VStack(spacing: 4) {
-                            Text("CURRENT")
-                                .font(GTNWFonts.caption())
-                                .foregroundColor(GTNWColors.terminalAmber)
-                            Text(String(format: "%.1f", gameEngine.ollamaService.tokensPerSecond))
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                // Stats metrics - SINGLE TABLE
+                VStack(spacing: 0) {
+                    // Table rows
+                    statsRow(label: "CURRENT", value: String(format: "%.1f t/s", gameEngine.ollamaService.tokensPerSecond), color: .cyan)
+                    statsRow(label: "AVERAGE", value: String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond), color: GTNWColors.terminalGreen)
+                    statsRow(label: "PEAK", value: String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond), color: GTNWColors.terminalRed)
+                    statsRow(label: "TOTAL TOKENS", value: "\(gameEngine.ollamaService.totalTokens)", color: .purple)
+                    statsRow(label: "REQUESTS", value: "\(gameEngine.ollamaService.totalRequests)", color: .orange)
+
+                    if gameEngine.ollamaService.isGenerating {
+                        HStack {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
+                                .scaleEffect(0.7)
+                            Text("PROCESSING...")
+                                .font(GTNWFonts.terminal(size: 12, weight: .bold))
                                 .foregroundColor(.cyan)
-                            Text("tok/sec")
-                                .font(GTNWFonts.caption())
-                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                            Spacer()
                         }
-                        .padding()
+                        .padding(8)
                         .background(Color.cyan.opacity(0.1))
-                        .border(Color.cyan, width: 2)
-
-                        VStack(spacing: 8) {
-                            // Average
-                            HStack {
-                                Text("AVG:")
-                                    .font(GTNWFonts.caption())
-                                    .foregroundColor(GTNWColors.terminalAmber)
-                                Text(String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond))
-                                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
-                                    .foregroundColor(GTNWColors.terminalGreen)
-                            }
-                            .padding(8)
-                            .background(GTNWColors.terminalGreen.opacity(0.1))
-                            .border(GTNWColors.terminalGreen, width: 1)
-
-                            // Peak
-                            HStack {
-                                Text("PEAK:")
-                                    .font(GTNWFonts.caption())
-                                    .foregroundColor(GTNWColors.terminalAmber)
-                                Text(String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond))
-                                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
-                                    .foregroundColor(GTNWColors.terminalRed)
-                            }
-                            .padding(8)
-                            .background(GTNWColors.terminalRed.opacity(0.1))
-                            .border(GTNWColors.terminalRed, width: 1)
-                        }
-                    }
-
-                    // Total tokens and requests
-                    HStack(spacing: 15) {
-                        statBadge(label: "TOTAL", value: "\(gameEngine.ollamaService.totalTokens)", color: .purple)
-                        statBadge(label: "REQUESTS", value: "\(gameEngine.ollamaService.totalRequests)", color: .orange)
-
-                        if gameEngine.ollamaService.isGenerating {
-                            HStack(spacing: 4) {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
-                                    .scaleEffect(0.7)
-                                Text("PROCESSING")
-                                    .font(GTNWFonts.caption())
-                                    .foregroundColor(.cyan)
-                            }
-                            .padding(8)
-                            .background(Color.cyan.opacity(0.1))
-                            .border(Color.cyan, width: 1)
-                        }
                     }
                 }
                 .padding(12)
-                .background(Color.black.opacity(0.5))
+                .background(Color.black.opacity(0.7))
             }
             .background(GTNWColors.glassPanelDark)
             .border(Color.cyan, width: 3)
@@ -213,24 +168,22 @@ struct UnifiedCommandCenter: View {
             .padding()
             .background(GTNWColors.glassPanelDark)
 
-            // Event Log (scrollable)
+            // Event Log (scrollable) - NEWEST AT TOP
             ScrollView {
                 ScrollViewReader { proxy in
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        // Event logger events
-                        ForEach(gameEngine.eventLogger.events) { event in
-                            eventRow(event)
-                                .id(event.id)
-                        }
-
-                        // Game engine logs
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        // Game engine logs (reversed = newest first)
                         ForEach(gameEngine.logMessages.reversed()) { log in
-                            logRow(log)
+                            // Only show turn markers and summaries (not unrecognized commands)
+                            if !log.message.contains("UNRECOGNIZED") && !log.message.contains("Type 'help'") {
+                                logRow(log)
+                            }
                         }
                     }
                     .padding()
-                    .onChange(of: gameEngine.eventLogger.events.count) { _ in
-                        if let first = gameEngine.eventLogger.events.first {
+                    .onChange(of: gameEngine.logMessages.count) { _ in
+                        // Auto-scroll to top (newest)
+                        if let first = gameEngine.logMessages.reversed().first {
                             withAnimation {
                                 proxy.scrollTo(first.id, anchor: .top)
                             }
@@ -241,8 +194,8 @@ struct UnifiedCommandCenter: View {
             .frame(minHeight: 300)
             .background(Color.black.opacity(0.5))
 
-            // Response area (if command generates response)
-            if !responseMessage.isEmpty {
+            // Response area (only show success messages)
+            if !responseMessage.isEmpty && !responseMessage.contains("UNRECOGNIZED") && !responseMessage.contains("Type 'help'") {
                 ScrollView {
                     Text(responseMessage)
                         .font(GTNWFonts.terminal(size: 13))
@@ -250,7 +203,7 @@ struct UnifiedCommandCenter: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
                 }
-                .frame(height: 150)
+                .frame(height: 120)
                 .background(Color.black.opacity(0.7))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -432,6 +385,9 @@ struct UnifiedCommandCenter: View {
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.formAlliance(country1: player.id, country2: target)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            gameEngine.endTurn()
+                        }
                     }
                 }
 
@@ -515,14 +471,25 @@ struct UnifiedCommandCenter: View {
     }
 
     private func logRow(_ log: LogMessage) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(log.message)
-                .font(GTNWFonts.terminal(size: 11))
-                .foregroundColor(logColor(log.type))
+        VStack(spacing: 0) {
+            // Add thick divider before turn markers for clear separation
+            if log.message.contains("=====") {
+                Rectangle()
+                    .fill(GTNWColors.neonCyan)
+                    .frame(height: 3)
+                    .padding(.vertical, 8)
+            }
+
+            HStack(alignment: .top, spacing: 8) {
+                Text(log.message)
+                    .font(log.message.contains("TURN") ? GTNWFonts.terminal(size: 13, weight: .bold) : GTNWFonts.terminal(size: 11))
+                    .foregroundColor(logColor(log.type))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(8)
+            .background(log.message.contains("TURN") ? GTNWColors.neonCyan.opacity(0.15) : Color.black.opacity(0.2))
+            .cornerRadius(4)
         }
-        .padding(8)
-        .background(Color.black.opacity(0.2))
-        .cornerRadius(4)
     }
 
     private func logColor(_ type: LogType) -> Color {
@@ -697,6 +664,30 @@ struct UnifiedCommandCenter: View {
         .padding(8)
         .background(color.opacity(0.1))
         .border(color, width: 1)
+    }
+
+    private func statsRow(label: String, value: String, color: Color) -> some View {
+        HStack {
+            Text(label)
+                .font(GTNWFonts.terminal(size: 11, weight: .bold))
+                .foregroundColor(GTNWColors.terminalAmber)
+                .frame(width: 100, alignment: .leading)
+
+            Spacer()
+
+            Text(value)
+                .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(color.opacity(0.1))
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(color.opacity(0.3)),
+            alignment: .bottom
+        )
     }
 }
 
