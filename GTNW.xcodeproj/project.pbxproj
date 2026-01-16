@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
+		03E52911A7DE17E85DD58483 /* ModernDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CF53E773D67381802521E1 /* ModernDesign.swift */; };
 		0F4B5D2A37DF76925230F475 /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
 		0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */; };
 		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
@@ -38,6 +39,7 @@
 		7494639D7337DF87DC04D621 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
 		74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */; };
 		75F82511211E162114221744 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94847C472F1566DF6947C4A3 /* CommandView.swift */; };
+		76E331A448D43D60424EEA18 /* ModernDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CF53E773D67381802521E1 /* ModernDesign.swift */; };
 		7ABDEF5D1B4F33715640E692 /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		7B58B87BA586678F7FB2A833 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
 		7C21F19C72C2D2CC41B19895 /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
@@ -88,6 +90,7 @@
 		2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernCountryPicker.swift; sourceTree = "<group>"; };
 		2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalAdministrations.swift; sourceTree = "<group>"; };
 		3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPresidentMenu.swift; sourceTree = "<group>"; };
+		34CF53E773D67381802521E1 /* ModernDesign.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ModernDesign.swift; path = Design/ModernDesign.swift; sourceTree = "<group>"; };
 		390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPresidentActions.swift; sourceTree = "<group>"; };
 		3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScoringSystem.swift; sourceTree = "<group>"; };
 		4F961F9A3D52CD1EC10D97CF /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
@@ -199,8 +202,17 @@
 				043BE2917C5EFDDA9B60A658 /* Engine */,
 				234E6E439315FD7A21B29A77 /* Models */,
 				5AAFDB281FC0C39239A8BED1 /* Views */,
+				ED20795E531974451D544AC8 /* Design */,
 			);
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		ED20795E531974451D544AC8 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				34CF53E773D67381802521E1 /* ModernDesign.swift */,
+			);
+			name = Design;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -335,6 +347,7 @@
 				0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */,
 				A805574C98D7029B6797909D /* OllamaService.swift in Sources */,
 				C9E23AEBA65601DEC8F23E91 /* SafeFeatureSystems.swift in Sources */,
+				76E331A448D43D60424EEA18 /* ModernDesign.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,6 +387,7 @@
 				1CDE37637B9A36E743BA1063 /* UnifiedCommandCenter.swift in Sources */,
 				99DA140B585F4996F4A27B2D /* OllamaService.swift in Sources */,
 				1AC0A967F83425FFA2E1E57B /* SafeFeatureSystems.swift in Sources */,
+				03E52911A7DE17E85DD58483 /* ModernDesign.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

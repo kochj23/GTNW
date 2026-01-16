@@ -16,15 +16,19 @@ struct ContentView: View {
     @State private var selectedAdministration: Administration? = nil
 
     var body: some View {
-        Group {
-            if gameEngine.gameState == nil {
-                startScreen
-            } else {
-                gameScreen
+        ZStack {
+            // Glassmorphic background
+            GlassmorphicBackground()
+
+            Group {
+                if gameEngine.gameState == nil {
+                    startScreen
+                } else {
+                    gameScreen
+                }
             }
         }
-        .background(AppSettings.terminalBackground)
-        .foregroundColor(AppSettings.terminalGreen)
+        .foregroundColor(ModernColors.textPrimary)
     }
 
     // MARK: - Start Screen
@@ -37,15 +41,17 @@ struct ContentView: View {
             VStack(spacing: 10) {
                 Text("W.O.P.R")
                     .font(.system(size: 60, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalGreen)
+                    .foregroundColor(ModernColors.cyan)
+                    .shadow(color: ModernColors.cyan.opacity(0.5), radius: 20)
 
                 Text("War Operation Plan Response")
                     .font(.system(size: 18, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalAmber)
+                    .foregroundColor(ModernColors.yellow)
 
                 Text("GLOBAL THERMAL NUCLEAR WAR")
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalRed)
+                    .foregroundColor(ModernColors.statusCritical)
+                    .shadow(color: ModernColors.statusCritical.opacity(0.5), radius: 10)
                     .padding(.top, 10)
             }
 
@@ -56,11 +62,11 @@ struct ContentView: View {
                 Text("\"Shall we play a game?\"")
                     .font(.system(size: 20, design: .monospaced))
                     .italic()
-                    .foregroundColor(AppSettings.terminalGreen)
+                    .foregroundColor(ModernColors.cyan)
 
                 Text("- WOPR, 1983")
                     .font(.system(size: 14, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalAmber)
+                    .foregroundColor(ModernColors.yellow)
             }
             .padding(.bottom, 30)
 
@@ -68,7 +74,7 @@ struct ContentView: View {
             VStack(spacing: 15) {
                 Text("SELECT DIFFICULTY")
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalAmber)
+                    .foregroundColor(ModernColors.yellow)
 
                 ForEach(DifficultyLevel.allCases, id: \.self) { difficulty in
                     Button(action: {
@@ -79,11 +85,17 @@ struct ContentView: View {
                             Text(difficulty.rawValue.uppercased())
                                 .font(.system(size: 16, weight: .semibold, design: .monospaced))
                         }
-                        .foregroundColor(selectedDifficulty == difficulty ? AppSettings.terminalAmber : AppSettings.terminalGreen)
+                        .foregroundColor(selectedDifficulty == difficulty ? ModernColors.yellow : ModernColors.cyan)
                         .padding()
                         .frame(maxWidth: 300)
-                        .background(selectedDifficulty == difficulty ? AppSettings.terminalGreen.opacity(0.1) : Color.clear)
-                        .border(AppSettings.terminalGreen, width: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedDifficulty == difficulty ? ModernColors.cyan.opacity(0.15) : Color.white.opacity(0.05))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(ModernColors.cyan, lineWidth: 1)
+                        )
                     }
                 }
             }
@@ -93,7 +105,7 @@ struct ContentView: View {
             VStack(spacing: 15) {
                 Text("SELECT ADMINISTRATION")
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalAmber)
+                    .foregroundColor(ModernColors.yellow)
 
                 Button(action: {
                     showingAdministrationSelection = true
@@ -103,10 +115,17 @@ struct ContentView: View {
                         Text(selectedAdministration?.description ?? "Trump 2025 (Default)")
                             .font(.system(size: 14, design: .monospaced))
                     }
-                    .foregroundColor(AppSettings.terminalGreen)
+                    .foregroundColor(ModernColors.cyan)
                     .padding()
                     .frame(maxWidth: 300)
-                    .border(AppSettings.terminalGreen, width: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(0.05))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(ModernColors.cyan, lineWidth: 1)
+                    )
                 }
             }
             .padding(.bottom, 20)
@@ -121,10 +140,14 @@ struct ContentView: View {
             }) {
                 Text("INITIALIZE GAME (AS USA)")
                     .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalBackground)
+                    .foregroundColor(.black)
                     .padding()
                     .frame(maxWidth: 300)
-                    .background(AppSettings.terminalGreen)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(ModernColors.cyan)
+                    )
+                    .shadow(color: ModernColors.cyan.opacity(0.5), radius: 10)
             }
 
             Spacer()
@@ -132,7 +155,7 @@ struct ContentView: View {
             // Warning
             Text("⚠️  WARNING: THE ONLY WINNING MOVE IS NOT TO PLAY  ⚠️")
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(AppSettings.terminalRed)
+                .foregroundColor(ModernColors.statusCritical)
                 .padding()
         }
         .padding()
@@ -246,31 +269,36 @@ struct ContentView: View {
                     // DEFCON Level
                     defconDisplay(gameState.defconLevel)
 
-                    Divider().background(AppSettings.terminalGreen)
+                    Divider().background(ModernColors.cyan)
 
                     // Player info
                     if let playerCountry = gameState.getPlayerCountry() {
                         playerInfoSection(playerCountry)
                     }
 
-                    Divider().background(AppSettings.terminalGreen)
+                    Divider().background(ModernColors.cyan)
 
                     // Nuclear powers
                     nuclearPowersSection(gameState.countries)
 
-                    Divider().background(AppSettings.terminalGreen)
+                    Divider().background(ModernColors.cyan)
 
                     // Global stats
                     globalStatsSection(gameState)
 
                     // Actions
-                    Divider().background(AppSettings.terminalGreen)
+                    Divider().background(ModernColors.cyan)
                     actionButtons
                 }
             }
             .padding()
         }
-        .background(AppSettings.panelBackground)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+                .background(.ultraThinMaterial.opacity(0.8))
+        )
+        .padding(8)
     }
 
     private var centerPanel: some View {
@@ -279,14 +307,19 @@ struct ContentView: View {
                 WorldMapView(gameState: gameState)
             }
         }
-        .background(AppSettings.panelBackground)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+                .background(.ultraThinMaterial.opacity(0.8))
+        )
+        .padding(8)
     }
 
     private var rightPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SYSTEM LOG")
                 .font(.system(size: 18, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalAmber)
+                .foregroundColor(ModernColors.yellow)
                 .padding(.bottom, 5)
 
             ScrollView {
@@ -298,7 +331,12 @@ struct ContentView: View {
             }
         }
         .padding()
-        .background(AppSettings.panelBackground)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+                .background(.ultraThinMaterial.opacity(0.8))
+        )
+        .padding(8)
     }
 
     // MARK: - Components
@@ -307,15 +345,27 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 5) {
             Text("DEFCON LEVEL")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalAmber)
+                .foregroundColor(ModernColors.yellow)
 
             Text("\(defcon.rawValue)")
                 .font(.system(size: 60, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.color(for: defcon))
+                .foregroundColor(defconColor(defcon))
+                .shadow(color: defconColor(defcon).opacity(0.5), radius: 15)
 
             Text(defcon.description)
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(AppSettings.color(for: defcon))
+                .foregroundColor(defconColor(defcon))
+        }
+    }
+
+    private func defconColor(_ defcon: DefconLevel) -> Color {
+        switch defcon.rawValue {
+        case 5: return ModernColors.statusLow
+        case 4: return ModernColors.statusMedium
+        case 3: return ModernColors.statusHigh
+        case 2: return ModernColors.orange
+        case 1: return ModernColors.statusCritical
+        default: return ModernColors.statusLow
         }
     }
 
@@ -323,7 +373,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("YOUR NATION")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalAmber)
+                .foregroundColor(ModernColors.yellow)
 
             HStack {
                 Text(country.flag)
@@ -347,7 +397,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("NUCLEAR POWERS")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalAmber)
+                .foregroundColor(ModernColors.yellow)
 
             ForEach(countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.sorted(by: { $0.nuclearWarheads > $1.nuclearWarheads })) { country in
                 HStack {
@@ -357,7 +407,7 @@ struct ContentView: View {
                     Spacer()
                     Text("\(country.nuclearWarheads)")
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(country.isPlayerControlled ? AppSettings.terminalAmber : AppSettings.terminalGreen)
+                        .foregroundColor(country.isPlayerControlled ? ModernColors.yellow : ModernColors.cyan)
                 }
             }
         }
@@ -367,7 +417,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("GLOBAL STATUS")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalAmber)
+                .foregroundColor(ModernColors.yellow)
 
             statRow("Turn:", "\(gameState.turn)")
             statRow("Active Wars:", "\(gameState.activeWars.count)")
@@ -385,10 +435,14 @@ struct ContentView: View {
             }) {
                 Text("END TURN")
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalBackground)
+                    .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppSettings.terminalGreen)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(ModernColors.cyan)
+                    )
+                    .shadow(color: ModernColors.cyan.opacity(0.5), radius: 8)
             }
 
             Button(action: {
@@ -396,11 +450,17 @@ struct ContentView: View {
             }) {
                 Text("NEW GAME")
                     .font(.system(size: 14, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalGreen)
+                    .foregroundColor(ModernColors.cyan)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.clear)
-                    .border(AppSettings.terminalGreen, width: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(0.05))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(ModernColors.cyan, lineWidth: 1)
+                    )
             }
         }
     }
@@ -409,11 +469,11 @@ struct ContentView: View {
         HStack {
             Text(label)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(AppSettings.terminalAmber)
+                .foregroundColor(ModernColors.yellow)
             Spacer()
             Text(value)
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalGreen)
+                .foregroundColor(ModernColors.cyan)
         }
     }
 
@@ -441,11 +501,11 @@ struct ContentView: View {
 
     private func logColor(for type: LogType) -> Color {
         switch type {
-        case .system: return AppSettings.terminalGreen
-        case .info: return AppSettings.terminalGreen
-        case .warning: return AppSettings.terminalAmber
-        case .error: return AppSettings.terminalRed
-        case .critical: return AppSettings.terminalRed
+        case .system: return ModernColors.cyan
+        case .info: return ModernColors.cyan
+        case .warning: return ModernColors.yellow
+        case .error: return ModernColors.statusCritical
+        case .critical: return ModernColors.statusCritical
         }
     }
 }
@@ -472,57 +532,67 @@ struct CountrySelectionView: View {
     }
 
     var body: some View {
-        VStack {
-            Text("SELECT YOUR NATION")
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
-                .foregroundColor(AppSettings.terminalGreen)
-                .padding()
+        ZStack {
+            // Glassmorphic background
+            GlassmorphicBackground()
 
-            #if !os(tvOS)
-            TextField("Search countries...", text: $searchText)
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal)
-            #endif
+            VStack {
+                Text("SELECT YOUR NATION")
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundColor(ModernColors.cyan)
+                    .padding()
 
-            List(filteredCountries) { country in
-                Button(action: {
-                    selectedCountry = country.id
-                }) {
-                    HStack {
-                        Text(country.flag)
-                            .font(.system(size: 30))
+                #if !os(tvOS)
+                TextField("Search countries...", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .padding(.horizontal)
+                #endif
 
-                        VStack(alignment: .leading) {
-                            Text(country.name)
-                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                            Text("\(country.nuclearStatus.rawValue) • \(country.government.rawValue)")
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundColor(.secondary)
-                        }
+                List(filteredCountries) { country in
+                    Button(action: {
+                        selectedCountry = country.id
+                    }) {
+                        HStack {
+                            Text(country.flag)
+                                .font(.system(size: 30))
 
-                        Spacer()
+                            VStack(alignment: .leading) {
+                                Text(country.name)
+                                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(ModernColors.textPrimary)
+                                Text("\(country.nuclearStatus.rawValue) • \(country.government.rawValue)")
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundColor(ModernColors.textSecondary)
+                            }
 
-                        if country.id == selectedCountry {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(AppSettings.terminalGreen)
+                            Spacer()
+
+                            if country.id == selectedCountry {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(ModernColors.cyan)
+                            }
                         }
                     }
                 }
-            }
+                .scrollContentBackground(.hidden)
 
-            Button(action: {
-                gameEngine.startNewGame(playerCountryID: selectedCountry, difficulty: selectedDifficulty, administration: selectedAdministration)
-                dismiss()
-            }) {
-                Text("START GAME")
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppSettings.terminalBackground)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(AppSettings.terminalGreen)
+                Button(action: {
+                    gameEngine.startNewGame(playerCountryID: selectedCountry, difficulty: selectedDifficulty, administration: selectedAdministration)
+                    dismiss()
+                }) {
+                    Text("START GAME")
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .foregroundColor(.black)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(ModernColors.cyan)
+                        )
+                        .shadow(color: ModernColors.cyan.opacity(0.5), radius: 10)
+                }
+                .padding()
             }
-            .padding()
         }
-        .background(AppSettings.terminalBackground)
     }
 }
