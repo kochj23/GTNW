@@ -1,5 +1,7 @@
 # GTNW - Global Thermal Nuclear War
 
+![GTNW Game Interface](Documentation/screenshots/game-interface.png)
+
 ## ✅ Project Status: VERSION 2.0 - MAJOR EXPANSION IN PROGRESS
 
 **Build Status**: ✅ **BUILD SUCCEEDED**
