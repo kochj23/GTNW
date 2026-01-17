@@ -11,6 +11,7 @@ import SwiftUI
 @main
 struct GlobalThermalNuclearWarApp: App {
     @StateObject private var gameEngine = GameEngine()
+    @State private var showingAISettings = false
 
     var body: some Scene {
         WindowGroup {
@@ -27,6 +28,24 @@ struct GlobalThermalNuclearWarApp: App {
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
+
+            CommandMenu("AI") {
+                Button("AI Backend Settings...") {
+                    showingAISettings = true
+                }
+                .keyboardShortcut("a", modifiers: [.command, .option])
+
+                Divider()
+
+                Text("Active: \(AIBackendManager.shared.activeBackend?.rawValue ?? "None")")
+                    .disabled(true)
+            }
+        }
+        #endif
+
+        #if os(macOS)
+        Settings {
+            AIBackendSettingsView()
         }
         #endif
     }

@@ -20,8 +20,7 @@ class GameEngine: ObservableObject {
     @Published var newsManager = NewsManager()
     @Published var leaderboardManager = LeaderboardManager()
     @Published var eventLogger = EventLogger()
-    @Published var mlxManager = MLXManager()
-    @Published var ollamaService = OllamaService.shared
+    @Published var aiBackend = AIBackendManager.shared
     @Published var showingVictoryScreen = false
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
@@ -39,19 +38,23 @@ class GameEngine: ObservableObject {
         // Initialize advisors
         advisors = Advisor.trumpCabinet()
 
-        // Initialize Ollama service
+        // Initialize AI Backend Manager
         Task { @MainActor in
-            await OllamaService.shared.initialize()
+            await AIBackendManager.shared.checkBackendAvailability()
 
             // Log connection status
-            if OllamaService.shared.isConnected {
-                addLog("🤖 OLLAMA AI: CONNECTED", type: .system)
-                addLog("   Model: \(OllamaService.shared.currentModel)", type: .info)
-                addLog("   Available models: \(OllamaService.shared.availableModels.count)", type: .info)
+            if let backend = AIBackendManager.shared.activeBackend {
+                addLog("🤖 AI BACKEND: \(backend.rawValue.uppercased())", type: .system)
+                if backend == .ollama, !AIBackendManager.shared.ollamaModels.isEmpty {
+                    addLog("   Model: \(AIBackendManager.shared.selectedOllamaModel)", type: .info)
+                    addLog("   Available models: \(AIBackendManager.shared.ollamaModels.count)", type: .info)
+                } else if backend == .mlx {
+                    addLog("   Python MLX Toolkit active", type: .info)
+                }
             } else {
-                addLog("⚪ OLLAMA AI: OFFLINE", type: .system)
+                addLog("⚪ AI BACKEND: OFFLINE", type: .system)
                 addLog("   Using enhanced fallback AI (still challenging!)", type: .info)
-                addLog("   To enable: Run 'ollama serve' in terminal", type: .info)
+                addLog("   To enable: Install Ollama or configure MLX", type: .info)
             }
         }
     }
@@ -126,10 +129,10 @@ class GameEngine: ObservableObject {
         addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
         isProcessingAITurn = true
 
-        // Check Ollama status and process accordingly
+        // Check AI Backend status and process accordingly
         Task { @MainActor in
-            if ollamaService.isConnected {
-                await processAITurnsWithOllama()
+            if aiBackend.activeBackend != nil {
+                await processAITurnsWithAI()
             } else {
                 processAITurnsSync()
             }
@@ -176,22 +179,24 @@ class GameEngine: ObservableObject {
         }
     }
 
-    /// Process AI turns with Ollama (async)
-    private func processAITurnsWithOllama() async {
+    /// Process AI turns with AI Backend (async)
+    @MainActor
+    private func processAITurnsWithAI() async {
         guard let gameState = gameState else { return }
+        guard let backend = aiBackend.activeBackend else { return }
 
-        print("[GameEngine] ===== Processing AI Turns with OLLAMA =====")
-        addLog("🤖 Using OLLAMA AI (Real LLM decisions)...", type: .info)
+        print("[GameEngine] ===== Processing AI Turns with \(backend.rawValue.uppercased()) =====")
+        addLog("🤖 Using \(backend.rawValue.uppercased()) AI (Real LLM decisions)...", type: .info)
 
         for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
-            print("[GameEngine] 🤖 Calling Ollama for \(country.name)...")
+            print("[GameEngine] 🤖 Calling AI backend for \(country.name)...")
 
-            if let response = await ollamaService.generateCountryDecision(country: country, gameState: gameState) {
-                print("[GameEngine] 🤖 OLLAMA response: \(response)")
+            if let response = await generateCountryDecisionWithAI(country: country, gameState: gameState) {
+                print("[GameEngine] 🤖 AI response: \(response)")
                 let action = parseOllamaDecision(response, country: country, gameState: gameState)
                 executeAIAction(action, for: country, reason: response)
             } else {
-                print("[GameEngine] ⚠️ Ollama failed for \(country.name), using fallback")
+                print("[GameEngine] ⚠️ AI backend failed for \(country.name), using fallback")
                 let action = determineAIActionEnhanced(for: country)
                 executeAIAction(action, for: country, reason: nil)
             }
@@ -200,7 +205,55 @@ class GameEngine: ObservableObject {
             try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
         }
 
-        print("[GameEngine] ===== Ollama AI Turns Complete =====")
+        print("[GameEngine] ===== AI Turns Complete =====")
+    }
+
+    /// Generate country decision using AI Backend Manager
+    @MainActor
+    private func generateCountryDecisionWithAI(country: Country, gameState: GameState) async -> String? {
+        let wars = Array(country.atWarWith).joined(separator: ", ")
+        let allies = Array(country.alliances).joined(separator: ", ")
+        let otherCountries = gameState.countries
+            .filter { !$0.isPlayerControlled && !$0.isDestroyed && $0.id != country.id }
+            .prefix(8)
+            .map { $0.name }
+            .joined(separator: ", ")
+
+        let systemPrompt = "You are \(country.name)'s strategic AI in a Cold War simulation."
+
+        let prompt = """
+        YOUR STATUS:
+        - Alignment: \(country.alignment.rawValue)
+        - Military: \(Int(country.militaryStrength))
+        - Nukes: \(country.nuclearWarheads)
+        - At War: \(wars.isEmpty ? "None" : wars)
+        - Allies: \(allies.isEmpty ? "None" : allies)
+        - Aggression: \(country.aggressionLevel)/10
+
+        WORLD:
+        - DEFCON: \(gameState.defconLevel.rawValue)
+        - Turn: \(gameState.turn)
+        - Wars: \(gameState.activeWars.count)
+        - Other nations: \(otherCountries)
+
+        Choose ONE action (respond ONLY in this exact format):
+        ACTION: [WAIT / BUILD_MILITARY / BUILD_NUKES / ATTACK [country] / NUKE [country] / ALLY [country]] | REASON: [brief reason]
+
+        Decision:
+        """
+
+        do {
+            let response = try await aiBackend.generate(
+                prompt: prompt,
+                systemPrompt: systemPrompt,
+                temperature: 0.8,
+                maxTokens: 150
+            )
+            return response
+        } catch {
+            print("[GameEngine] AI Backend error: \(error)")
+            return nil
+        }
     }
 
     /// Process AI turns with fallback (synchronous)

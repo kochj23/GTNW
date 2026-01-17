@@ -51,12 +51,14 @@
 		948B3C658864BE9FC3F88C4C /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		99DA140B585F4996F4A27B2D /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81E03C944B7130DB24D3B19 /* OllamaService.swift */; };
+		64633366336537652D616334332D343061352D626336662D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		9A97F22D5B4A34C796C91BA2 /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		9B6EDDFB99BB9370BBAE9C2F /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
 		9DC12054C5A84DD1809A0902 /* ModernDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */; };
 		A2E0F2B1CD4B7389BE51392A /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */; };
 		A7CC75F8CE70E5B15D7D71CF /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		A805574C98D7029B6797909D /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81E03C944B7130DB24D3B19 /* OllamaService.swift */; };
+		36666231626265322D343961382D346433652D393032302D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		A9D02ACB1A124DDD9347432B /* CrisisEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17109F6B50FA8125C522471 /* CrisisEvents.swift */; };
 		AAF17D0470F8F9CD9C403056 /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */; };
 		B3A56622AE3C641209272325 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
@@ -113,6 +115,7 @@
 		CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernDesignSystem.swift; sourceTree = "<group>"; };
 		D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D81E03C944B7130DB24D3B19 /* OllamaService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OllamaService.swift; sourceTree = "<group>"; };
+		38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackendManager.swift; sourceTree = "<group>"; };
 		DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnifiedCommandCenter.swift; sourceTree = "<group>"; };
 		E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
 		E7840FA926BF3040BC40D754 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -148,6 +151,7 @@
 				82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */,
 				390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */,
 				D81E03C944B7130DB24D3B19 /* OllamaService.swift */,
+				38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */,
 				7BD985DE7EFE89ACB8056982 /* SafeFeatureSystems.swift */,
 			);
 			path = Models;
@@ -346,6 +350,7 @@
 				A7CC75F8CE70E5B15D7D71CF /* ShadowPresidentMenu.swift in Sources */,
 				0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */,
 				A805574C98D7029B6797909D /* OllamaService.swift in Sources */,
+				36666231626265322D343961382D346433652D393032302D /* AIBackendManager.swift in Sources */,
 				C9E23AEBA65601DEC8F23E91 /* SafeFeatureSystems.swift in Sources */,
 				76E331A448D43D60424EEA18 /* ModernDesign.swift in Sources */,
 			);
@@ -386,6 +391,7 @@
 				0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */,
 				1CDE37637B9A36E743BA1063 /* UnifiedCommandCenter.swift in Sources */,
 				99DA140B585F4996F4A27B2D /* OllamaService.swift in Sources */,
+				64633366336537652D616334332D343061352D626336662D /* AIBackendManager.swift in Sources */,
 				1AC0A967F83425FFA2E1E57B /* SafeFeatureSystems.swift in Sources */,
 				03E52911A7DE17E85DD58483 /* ModernDesign.swift in Sources */,
 			);

@@ -99,14 +99,14 @@ struct CommandView: View {
 
                 Spacer()
 
-                // Connection status
+                // AI Backend status
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(gameEngine.ollamaService.isConnected ? Color.green : Color.gray)
+                        .fill(gameEngine.aiBackend.activeBackend != nil ? Color.green : Color.gray)
                         .frame(width: 8, height: 8)
-                    Text(gameEngine.ollamaService.isConnected ? "OLLAMA" : "LOCAL")
+                    Text(gameEngine.aiBackend.activeBackend?.rawValue.uppercased() ?? "LOCAL")
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(gameEngine.ollamaService.isConnected ? AppSettings.terminalGreen : AppSettings.terminalAmber)
+                        .foregroundColor(gameEngine.aiBackend.activeBackend != nil ? AppSettings.terminalGreen : AppSettings.terminalAmber)
                 }
 
                 Button(action: {
