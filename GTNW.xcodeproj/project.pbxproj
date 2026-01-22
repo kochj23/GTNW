@@ -38,7 +38,6 @@
 		6E86CE8949A90F2E6B6ECABC /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */; };
 		6EB415D2D4186D38A3616E76 /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
 		6FC58C6C449B38D80847C955 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
-		70F52A18B443F830EF91E664 /* ImageGenerationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6839B6D99AFF2718C2B7D3DB /* ImageGenerationView.swift */; };
 		7494639D7337DF87DC04D621 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
 		74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */; };
 		75F82511211E162114221744 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94847C472F1566DF6947C4A3 /* CommandView.swift */; };
@@ -50,7 +49,6 @@
 		83B159532906E78B9953F22F /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		854167CE65FCF346BA800663 /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F2CAFFC239692E6D4C5120 /* GameEngine.swift */; };
 		871F3746E1D5AA2E551969F2 /* Advisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DCC47475BC4E6E381CED1 /* Advisor.swift */; };
-		88262A60FF497F6251E67703 /* ImageGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201D6240F0C8DA0C02CABC9E /* ImageGenerationService.swift */; };
 		8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */; };
 		948B3C658864BE9FC3F88C4C /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
@@ -90,7 +88,6 @@
 		0D125C47BA1FCDB0CEAA7177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisView.swift; sourceTree = "<group>"; };
-		201D6240F0C8DA0C02CABC9E /* ImageGenerationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ImageGenerationService.swift; path = ../ImageGenerationService.swift; sourceTree = "<group>"; };
 		204DCC47475BC4E6E381CED1 /* Advisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Advisor.swift; sourceTree = "<group>"; };
 		2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernCountryPicker.swift; sourceTree = "<group>"; };
 		2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalAdministrations.swift; sourceTree = "<group>"; };
@@ -103,7 +100,6 @@
 		5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProhibitedWeapons.swift; sourceTree = "<group>"; };
 		5EFC468BB40351CE42893C87 /* NewsFeed.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewsFeed.swift; sourceTree = "<group>"; };
 		60D0B51B989A94270AE3580D /* AdvisorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorViews.swift; sourceTree = "<group>"; };
-		6839B6D99AFF2718C2B7D3DB /* ImageGenerationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImageGenerationView.swift; sourceTree = "<group>"; };
 		75BFDEE85E6AE222B571791D /* ModernCommandView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernCommandView.swift; sourceTree = "<group>"; };
 		79F2CAFFC239692E6D4C5120 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
 		7BD985DE7EFE89ACB8056982 /* SafeFeatureSystems.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafeFeatureSystems.swift; sourceTree = "<group>"; };
@@ -180,7 +176,6 @@
 				0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */,
 				3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */,
 				DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */,
-				6839B6D99AFF2718C2B7D3DB /* ImageGenerationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -212,7 +207,6 @@
 				234E6E439315FD7A21B29A77 /* Models */,
 				5AAFDB281FC0C39239A8BED1 /* Views */,
 				ED20795E531974451D544AC8 /* Design */,
-				201D6240F0C8DA0C02CABC9E /* ImageGenerationService.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -359,8 +353,6 @@
 				36666231626265322D343961382D346433652D393032302D /* AIBackendManager.swift in Sources */,
 				C9E23AEBA65601DEC8F23E91 /* SafeFeatureSystems.swift in Sources */,
 				76E331A448D43D60424EEA18 /* ModernDesign.swift in Sources */,
-				70F52A18B443F830EF91E664 /* ImageGenerationView.swift in Sources */,
-				88262A60FF497F6251E67703 /* ImageGenerationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
