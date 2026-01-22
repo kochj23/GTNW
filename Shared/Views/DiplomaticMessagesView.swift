@@ -11,6 +11,7 @@ import SwiftUI
 /// Diplomatic message inbox view
 struct DiplomaticMessagesView: View {
     @ObservedObject var diplomacyService: SafeDiplomacyService
+    @ObservedObject var gameEngine: GameEngine
     let gameState: GameState
     @Environment(\.dismiss) var dismiss
 
@@ -72,7 +73,7 @@ struct DiplomaticMessagesView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(diplomacyService.messages) { message in
-                            MessageCard(message: message, gameState: gameState)
+                            MessageCard(message: message, gameEngine: gameEngine, gameState: gameState)
                                 .onAppear {
                                     markAsRead(message)
                                 }
@@ -101,10 +102,28 @@ struct DiplomaticMessagesView: View {
 /// Individual message card
 struct MessageCard: View {
     let message: SafeDiplomaticMessage
+    @ObservedObject var gameEngine: GameEngine
     let gameState: GameState
+    @Environment(\.dismiss) var dismiss
 
     var fromCountry: Country? {
         gameState.countries.first { $0.id == message.from }
+    }
+
+    var messageType: MessageType {
+        let content = message.content.lowercased()
+        if content.contains("request") || content.contains("aid") {
+            return .request
+        } else if content.contains("propose") || content.contains("pact") {
+            return .proposal
+        } else if content.contains("demand") || content.contains("cease") {
+            return .demand
+        }
+        return .statement
+    }
+
+    enum MessageType {
+        case request, proposal, demand, statement
     }
 
     var body: some View {
@@ -168,33 +187,22 @@ struct MessageCard: View {
 
             // Action buttons
             HStack(spacing: 12) {
-                // Send Aid button (if they're requesting help)
-                if message.content.contains("aid") || message.content.contains("request") || message.content.contains("help") {
-                    ActionButton(
-                        title: "Send Aid ($5B)",
-                        icon: "dollarsign.circle.fill",
-                        color: GTNWColors.terminalGreen
-                    ) {
-                        // TODO: Execute economic aid action
-                    }
-                }
-
-                // Diplomatic Response button
+                // Accept button - context-sensitive
                 ActionButton(
-                    title: "Diplomatic Response",
-                    icon: "hand.raised.fill",
-                    color: GTNWColors.neonCyan
+                    title: acceptButtonTitle,
+                    icon: "checkmark.circle.fill",
+                    color: GTNWColors.terminalGreen
                 ) {
-                    // TODO: Open Shadow President filtered to diplomatic
+                    acceptMessage()
                 }
 
-                // Ignore button
+                // Decline button
                 ActionButton(
-                    title: "Ignore",
+                    title: "Decline",
                     icon: "xmark.circle.fill",
-                    color: GTNWColors.terminalRed.opacity(0.7)
+                    color: GTNWColors.terminalRed
                 ) {
-                    // Just mark as read, no action
+                    declineMessage()
                 }
 
                 Spacer()
@@ -210,6 +218,74 @@ struct MessageCard: View {
                         .stroke(message.read ? GTNWColors.terminalAmber.opacity(0.3) : GTNWColors.neonCyan, lineWidth: message.read ? 1 : 2)
                 )
         )
+    }
+
+    private var acceptButtonTitle: String {
+        switch messageType {
+        case .request:
+            return "Accept & Send Aid ($5B)"
+        case .proposal:
+            return "Accept Proposal"
+        case .demand:
+            return "Comply with Demand"
+        case .statement:
+            return "Acknowledge"
+        }
+    }
+
+    private func acceptMessage() {
+        guard let playerCountry = gameState.getPlayerCountry(),
+              let fromCountry = fromCountry else { return }
+
+        switch messageType {
+        case .request:
+            // Send economic aid
+            if playerCountry.gdp >= 5 {
+                // Deduct $5B from player GDP
+                gameEngine.modifyDiplomaticRelation(from: playerCountry.id, to: fromCountry.id, by: 30)
+                gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: 30)
+                gameEngine.addLog("✓ Sent $5B aid to \(fromCountry.name). Relations improved (+30).", type: .info)
+            }
+
+        case .proposal:
+            // Form alliance or treaty
+            gameEngine.formAlliance(country1: playerCountry.id, country2: fromCountry.id)
+            gameEngine.addLog("✓ Accepted proposal from \(fromCountry.name). Alliance formed.", type: .info)
+
+        case .demand:
+            // Comply - improve relations but show weakness
+            gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: 20)
+            gameEngine.addLog("✓ Complied with \(fromCountry.name)'s demands. Relations improved (+20).", type: .info)
+
+        case .statement:
+            // Just improve relations slightly
+            gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: 10)
+            gameEngine.addLog("✓ Acknowledged message from \(fromCountry.name). Relations +10.", type: .info)
+        }
+
+        // Auto-end turn
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            gameEngine.endTurn()
+        }
+
+        dismiss()
+    }
+
+    private func declineMessage() {
+        guard let playerCountry = gameState.getPlayerCountry(),
+              let fromCountry = fromCountry else { return }
+
+        // Decline worsens relations
+        let relationChange = messageType == .demand ? -20 : -10
+        gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: relationChange)
+        gameEngine.addLog("✗ Declined message from \(fromCountry.name). Relations \(relationChange).", type: .warning)
+
+        // Auto-end turn
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            gameEngine.endTurn()
+        }
+
+        dismiss()
     }
 
     private func relationColor(_ value: Int) -> Color {

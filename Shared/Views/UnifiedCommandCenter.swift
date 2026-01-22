@@ -85,7 +85,7 @@ struct UnifiedCommandCenter: View {
             //     ImageGenerationView(isPresented: $showingImageGeneration)
             // }
             .sheet(isPresented: $showingDiplomaticMessages) {
-                DiplomaticMessagesView(diplomacyService: gameEngine.diplomacyService, gameState: gameState)
+                DiplomaticMessagesView(diplomacyService: gameEngine.diplomacyService, gameEngine: gameEngine, gameState: gameState)
             }
         }
     }
