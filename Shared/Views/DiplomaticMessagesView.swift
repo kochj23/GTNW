@@ -165,6 +165,41 @@ struct MessageCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.white.opacity(0.03))
                 .cornerRadius(8)
+
+            // Action buttons
+            HStack(spacing: 12) {
+                // Send Aid button (if they're requesting help)
+                if message.content.contains("aid") || message.content.contains("request") || message.content.contains("help") {
+                    ActionButton(
+                        title: "Send Aid ($5B)",
+                        icon: "dollarsign.circle.fill",
+                        color: GTNWColors.terminalGreen
+                    ) {
+                        // TODO: Execute economic aid action
+                    }
+                }
+
+                // Diplomatic Response button
+                ActionButton(
+                    title: "Diplomatic Response",
+                    icon: "hand.raised.fill",
+                    color: GTNWColors.neonCyan
+                ) {
+                    // TODO: Open Shadow President filtered to diplomatic
+                }
+
+                // Ignore button
+                ActionButton(
+                    title: "Ignore",
+                    icon: "xmark.circle.fill",
+                    color: GTNWColors.terminalRed.opacity(0.7)
+                ) {
+                    // Just mark as read, no action
+                }
+
+                Spacer()
+            }
+            .padding(.top, 8)
         }
         .padding()
         .background(
@@ -182,5 +217,32 @@ struct MessageCard: View {
         if value >= 0 { return GTNWColors.terminalAmber }
         if value >= -50 { return GTNWColors.terminalAmber }
         return GTNWColors.terminalRed
+    }
+}
+
+// MARK: - Action Button Component
+
+struct ActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(color)
+            .cornerRadius(6)
+            .shadow(color: color.opacity(0.5), radius: 4)
+        }
+        .buttonStyle(.plain)
     }
 }
