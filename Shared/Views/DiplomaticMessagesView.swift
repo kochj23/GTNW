@@ -73,7 +73,7 @@ struct DiplomaticMessagesView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(diplomacyService.messages) { message in
-                            MessageCard(message: message, gameEngine: gameEngine, gameState: gameState)
+                            MessageCard(message: message, diplomacyService: diplomacyService, gameEngine: gameEngine, gameState: gameState)
                                 .onAppear {
                                     markAsRead(message)
                                 }
@@ -102,6 +102,7 @@ struct DiplomaticMessagesView: View {
 /// Individual message card
 struct MessageCard: View {
     let message: SafeDiplomaticMessage
+    @ObservedObject var diplomacyService: SafeDiplomacyService
     @ObservedObject var gameEngine: GameEngine
     let gameState: GameState
     @Environment(\.dismiss) var dismiss
@@ -263,7 +264,8 @@ struct MessageCard: View {
             gameEngine.addLog("✓ Acknowledged message from \(fromCountry.name). Relations +10.", type: .info)
         }
 
-        // Don't auto-end turn or close inbox - let player respond to multiple messages!
+        // Delete message after responding
+        deleteMessage()
     }
 
     private func declineMessage() {
@@ -275,7 +277,15 @@ struct MessageCard: View {
         gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: relationChange)
         gameEngine.addLog("✗ Declined message from \(fromCountry.name). Relations \(relationChange).", type: .warning)
 
-        // Don't auto-end turn or close inbox - let player respond to multiple messages!
+        // Delete message after responding
+        deleteMessage()
+    }
+
+    private func deleteMessage() {
+        // Remove message from inbox
+        if let index = diplomacyService.messages.firstIndex(where: { $0.id == message.id }) {
+            diplomacyService.messages.remove(at: index)
+        }
     }
 
     private func relationColor(_ value: Int) -> Color {

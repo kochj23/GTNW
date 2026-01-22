@@ -92,10 +92,16 @@ struct MainTabView: View {
                             gameEngine.startNewGame()
                         },
                         onViewLeaderboard: {
-                            // TODO: Show leaderboard
+                            gameEngine.showingVictoryScreen = false
+                            gameEngine.showingLeaderboard = true
                         }
                     )
+                    .interactiveDismissDisabled()  // Prevent accidental dismissal - must click button
                 }
+            }
+            .sheet(isPresented: $gameEngine.showingLeaderboard) {
+                LeaderboardView()
+                    .environmentObject(gameEngine)
             }
         }
     }

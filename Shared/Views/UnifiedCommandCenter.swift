@@ -15,6 +15,7 @@ struct UnifiedCommandCenter: View {
     @State private var showingCountryPicker = false
     @State private var showingShadowMenu = false
     @State private var warheadCount: Int = 1
+    @State private var showingWarheadPicker = false
     @State private var commandText = ""
     @State private var responseMessage = ""
     @FocusState private var isCommandFocused: Bool
@@ -371,15 +372,8 @@ struct UnifiedCommandCenter: View {
 
             // Critical Actions - Just 2 buttons (streamlined!)
             HStack(spacing: 12) {
-                // Nuclear Strike (large, prominent)
-                Button(action: {
-                    if let target = selectedTarget, let player = gameState.getPlayerCountry() {
-                        gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            gameEngine.endTurn()
-                        }
-                    }
-                }) {
+                // Nuclear Strike (large, prominent) - with warhead count
+                Button(action: { showingWarheadPicker = true }) {
                     VStack(spacing: 8) {
                         Image(systemName: "flame.fill")
                             .font(.system(size: 32))
@@ -389,6 +383,13 @@ struct UnifiedCommandCenter: View {
                             .font(.system(size: 13, weight: .bold, design: .monospaced))
                             .foregroundColor(GTNWColors.terminalRed)
                             .multilineTextAlignment(.center)
+
+                        // Show available warheads
+                        if let player = gameState.getPlayerCountry(), player.nuclearWarheads > 0 {
+                            Text("\(player.nuclearWarheads) available")
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -404,6 +405,36 @@ struct UnifiedCommandCenter: View {
                 .buttonStyle(.plain)
                 .disabled(selectedTarget == nil || (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) == 0)
                 .opacity((selectedTarget == nil || (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) == 0) ? 0.4 : 1.0)
+                .alert("Nuclear Strike", isPresented: $showingWarheadPicker) {
+                    Button("Cancel", role: .cancel) {}
+                    Button("Launch 1 Warhead", role: .destructive) {
+                        launchNuclearStrike(warheads: 1, gameState: gameState)
+                    }
+                    if let player = gameState.getPlayerCountry(), player.nuclearWarheads >= 5 {
+                        Button("Launch 5 Warheads", role: .destructive) {
+                            launchNuclearStrike(warheads: 5, gameState: gameState)
+                        }
+                    }
+                    if let player = gameState.getPlayerCountry(), player.nuclearWarheads >= 10 {
+                        Button("Launch 10 Warheads", role: .destructive) {
+                            launchNuclearStrike(warheads: 10, gameState: gameState)
+                        }
+                    }
+                    if let player = gameState.getPlayerCountry(), player.nuclearWarheads >= 25 {
+                        Button("Launch 25 Warheads (Massive)", role: .destructive) {
+                            launchNuclearStrike(warheads: 25, gameState: gameState)
+                        }
+                    }
+                    if let player = gameState.getPlayerCountry(), player.nuclearWarheads >= 50 {
+                        Button("Launch 50 Warheads (Devastating)", role: .destructive) {
+                            launchNuclearStrike(warheads: 50, gameState: gameState)
+                        }
+                    }
+                } message: {
+                    if let target = selectedTarget, let targetCountry = gameState.getCountry(id: target) {
+                        Text("Select number of warheads to launch at \(targetCountry.name). This will end your turn and trigger massive retaliation.")
+                    }
+                }
 
                 // Declare War
                 Button(action: {
@@ -709,6 +740,17 @@ struct UnifiedCommandCenter: View {
     }
 
     // MARK: - Actions
+
+    private func launchNuclearStrike(warheads: Int, gameState: GameState) {
+        guard let target = selectedTarget, let player = gameState.getPlayerCountry() else { return }
+
+        let actualWarheads = min(warheads, player.nuclearWarheads)
+        gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: actualWarheads)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            gameEngine.endTurn()
+        }
+    }
 
     private func openAISettings() {
         let settingsView = AIBackendSettingsView()

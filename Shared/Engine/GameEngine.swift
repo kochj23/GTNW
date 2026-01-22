@@ -22,6 +22,7 @@ class GameEngine: ObservableObject {
     @Published var eventLogger = EventLogger()
     @Published var aiBackend = AIBackendManager.shared
     @Published var showingVictoryScreen = false
+    @Published var showingLeaderboard = false
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
     @Published var isProcessingAITurn = false  // Prevent actions during AI processing
