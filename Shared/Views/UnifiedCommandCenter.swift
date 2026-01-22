@@ -25,7 +25,6 @@ struct UnifiedCommandCenter: View {
     @State private var showingWarsDetails = false
     @State private var showingTreatiesDetails = false
     @State private var showingRadiationDetails = false
-    @State private var showingImageGeneration = false
     @State private var showingDiplomaticMessages = false
 
     var body: some View {
@@ -80,10 +79,6 @@ struct UnifiedCommandCenter: View {
             .sheet(isPresented: $showingRadiationDetails) {
                 RadiationDetailView(gameState: gameState)
             }
-            // Image generation disabled - file removed
-            // .sheet(isPresented: $showingImageGeneration) {
-            //     ImageGenerationView(isPresented: $showingImageGeneration)
-            // }
             .sheet(isPresented: $showingDiplomaticMessages) {
                 DiplomaticMessagesView(diplomacyService: gameEngine.diplomacyService, gameEngine: gameEngine, gameState: gameState)
             }
