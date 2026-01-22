@@ -56,6 +56,10 @@ struct UnifiedCommandCenter: View {
                         gameState: gameState,
                         onExecute: { action in
                             gameEngine.executeShadowPresidentAction(action, from: player.id, to: target.id)
+                            // Auto-end turn after action
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                gameEngine.endTurn()
+                            }
                         }
                     )
                 }
@@ -121,45 +125,17 @@ struct UnifiedCommandCenter: View {
 
     private func rightTerminalPanel(gameState: GameState) -> some View {
         VStack(spacing: 0) {
-            // TODO: AI STATS PANEL - DISABLED (ollamaService not implemented in GameEngine)
-            /*
-            // AI STATS PANEL - TOP OF RIGHT SIDE
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Image(systemName: "chart.bar.fill")
-                        .foregroundColor(.cyan)
-                        .font(.system(size: 18))
-                    Text("📊 AI PERFORMANCE")
-                        .font(GTNWFonts.terminal(size: 16, weight: .bold))
-                        .foregroundColor(.cyan)
-
-                    Spacer()
-                }
-                .padding(12)
-                .background(GTNWColors.glassPanelDark)
-
-                // Stats metrics - SINGLE TABLE
-                VStack(spacing: 0) {
-                    // Placeholder
-                    Text("AI Performance Monitoring Disabled")
-                        .foregroundColor(.secondary)
-                }
-                .padding(12)
-                .background(Color.black.opacity(0.7))
-            }
-            .background(GTNWColors.glassPanelDark)
-            .border(Color.cyan, width: 3)
-            */
-
             Divider()
                 .background(GTNWColors.neonCyan)
 
-            // Header
+            // Header with AI settings
             HStack {
                 SectionHeader("💻 TERMINAL & EVENT LOG", icon: "terminal.fill", color: GTNWColors.neonCyan)
 
                 Spacer()
+
+                // AI Backend & Model Selector
+                aiBackendSelector
             }
             .padding()
             .background(GTNWColors.glassPanelDark)
@@ -546,6 +522,83 @@ struct UnifiedCommandCenter: View {
                         .stroke(event.color.opacity(0.3), lineWidth: 1)
                 )
         )
+    }
+
+    // MARK: - AI Backend Selector
+
+    private var aiBackendSelector: some View {
+        HStack(spacing: 12) {
+            // Backend picker
+            Menu {
+                ForEach([AIBackend.ollama, .mlx, .tinyLLM, .tinyChat, .openWebUI, .auto], id: \.self) { backend in
+                    Button(action: {
+                        AIBackendManager.shared.selectedBackend = backend
+                        AIBackendManager.shared.saveSettings()
+                    }) {
+                        HStack {
+                            Text(backend.rawValue)
+                            if AIBackendManager.shared.selectedBackend == backend {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 12))
+                    Text(AIBackendManager.shared.selectedBackend.rawValue)
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                }
+                .foregroundColor(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed, lineWidth: 1)
+                )
+            }
+            .help("AI Backend: \(AIBackendManager.shared.activeBackend?.rawValue ?? "None Available")")
+
+            // Ollama model picker (if Ollama selected)
+            if AIBackendManager.shared.selectedBackend == .ollama && AIBackendManager.shared.isOllamaAvailable {
+                Menu {
+                    ForEach(AIBackendManager.shared.ollamaModels, id: \.self) { model in
+                        Button(action: {
+                            AIBackendManager.shared.selectedOllamaModel = model
+                            AIBackendManager.shared.saveSettings()
+                        }) {
+                            HStack {
+                                Text(model)
+                                if AIBackendManager.shared.selectedOllamaModel == model {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "cpu")
+                            .font(.system(size: 12))
+                        Text(AIBackendManager.shared.selectedOllamaModel)
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .lineLimit(1)
+                    }
+                    .foregroundColor(GTNWColors.neonCyan)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(GTNWColors.neonCyan, lineWidth: 1)
+                    )
+                }
+                .help("Ollama Model")
+            }
+        }
     }
 
     // MARK: - Helper Functions
