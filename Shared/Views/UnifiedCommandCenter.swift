@@ -331,181 +331,238 @@ struct UnifiedCommandCenter: View {
 
     private func actionButtons(gameState: GameState) -> some View {
         VStack(spacing: 16) {
-            // Primary: Shadow President Actions
-            ModernButton(
-                title: "SHADOW PRESIDENT ACTIONS",
-                icon: "list.bullet.rectangle.fill",
-                color: GTNWColors.neonPurple,
-                enabled: selectedTarget != nil
-            ) {
-                showingShadowMenu = true
-            }
+            // PRIMARY ACTION - Shadow President (Large glass card)
+            Button(action: { showingShadowMenu = true }) {
+                VStack(spacing: 12) {
+                    Image(systemName: "list.bullet.rectangle.fill")
+                        .font(.system(size: 36))
+                        .foregroundColor(GTNWColors.neonPurple)
 
-            Text("132 diplomatic, military, economic, & covert actions")
-                .font(GTNWFonts.caption())
-                .foregroundColor(GTNWColors.terminalAmber)
-                .padding(.bottom, 8)
+                    Text("SHADOW PRESIDENT")
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .foregroundColor(GTNWColors.terminalGreen)
 
-            // Category Quick Buttons
-            HStack(spacing: 8) {
-                CategoryButton(title: "Diplomatic", icon: "hand.raised.fill", color: GTNWColors.terminalGreen) {
-                    showingShadowMenu = true
-                    // TODO: Pre-filter to diplomatic
+                    Text("132 Actions")
+                        .font(GTNWFonts.caption())
+                        .foregroundColor(GTNWColors.terminalAmber)
                 }
-                CategoryButton(title: "Military", icon: "shield.fill", color: GTNWColors.terminalRed) {
-                    showingShadowMenu = true
-                }
-                CategoryButton(title: "Covert", icon: "eye.slash.fill", color: GTNWColors.neonPurple) {
-                    showingShadowMenu = true
-                }
-                CategoryButton(title: "Economic", icon: "dollarsign.circle.fill", color: GTNWColors.neonCyan) {
-                    showingShadowMenu = true
-                }
+                .frame(maxWidth: .infinity)
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(GTNWColors.neonPurple, lineWidth: 2)
+                        )
+                        .shadow(color: GTNWColors.neonPurple.opacity(0.3), radius: 8)
+                )
             }
-            .padding(.bottom, 8)
+            .buttonStyle(.plain)
+            .disabled(selectedTarget == nil)
+            .opacity(selectedTarget == nil ? 0.5 : 1.0)
 
             Divider().background(GTNWColors.terminalGreen.opacity(0.3))
 
-            Text("QUICK ACTIONS")
+            Text("CRITICAL ACTIONS")
                 .font(GTNWFonts.caption())
                 .foregroundColor(GTNWColors.terminalAmber)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Quick actions grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ModernButton(
-                    title: "NUCLEAR\nSTRIKE",
-                    icon: "flame.fill",
-                    color: GTNWColors.terminalRed,
-                    enabled: !gameEngine.isProcessingAITurn && selectedTarget != nil && (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) > 0
-                ) {
+            // Critical Actions - Just 2 buttons (streamlined!)
+            HStack(spacing: 12) {
+                // Nuclear Strike (large, prominent)
+                Button(action: {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             gameEngine.endTurn()
                         }
                     }
-                }
+                }) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(GTNWColors.terminalRed)
 
-                ModernButton(
-                    title: "DECLARE\nWAR",
-                    icon: "exclamationmark.triangle.fill",
-                    color: GTNWColors.terminalAmber,
-                    enabled: selectedTarget != nil
-                ) {
+                        Text("NUCLEAR\nSTRIKE")
+                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .foregroundColor(GTNWColors.terminalRed)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(GTNWColors.terminalRed.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(GTNWColors.terminalRed, lineWidth: 2)
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(selectedTarget == nil || (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) == 0)
+                .opacity((selectedTarget == nil || (gameState.getPlayerCountry()?.nuclearWarheads ?? 0) == 0) ? 0.4 : 1.0)
+
+                // Declare War
+                Button(action: {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.declareWar(aggressor: player.id, defender: target)
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             gameEngine.endTurn()
                         }
                     }
-                }
+                }) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(GTNWColors.terminalAmber)
 
-                ModernButton(
-                    title: "FORM\nALLIANCE",
-                    icon: "hand.raised.fill",
-                    color: GTNWColors.terminalGreen,
-                    enabled: selectedTarget != nil
-                ) {
-                    if let target = selectedTarget, let player = gameState.getPlayerCountry() {
-                        gameEngine.formAlliance(country1: player.id, country2: target)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            gameEngine.endTurn()
-                        }
+                        Text("DECLARE\nWAR")
+                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .foregroundColor(GTNWColors.terminalAmber)
+                            .multilineTextAlignment(.center)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(GTNWColors.terminalAmber.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(GTNWColors.terminalAmber, lineWidth: 2)
+                            )
+                    )
                 }
-
-                ModernButton(
-                    title: "END TURN\n(MANUAL)",
-                    icon: "arrow.right.circle.fill",
-                    color: GTNWColors.terminalGreen,
-                    enabled: true
-                ) {
-                    print("[Manual END TURN clicked]")
-                    gameEngine.endTurn()
-                }
-
-                ModernButton(
-                    title: "DIPLOMATIC\nMESSAGES",
-                    icon: "envelope.fill",
-                    color: GTNWColors.neonCyan,
-                    enabled: true
-                ) {
-                    showingDiplomaticMessages = true
-                }
-
-                ModernButton(
-                    title: "AI\nSETTINGS",
-                    icon: "gearshape.fill",
-                    color: GTNWColors.neonPurple,
-                    enabled: true
-                ) {
-                    openAISettings()
-                }
-
-                // Info about auto-end turn
-                Text("ℹ️ Actions auto-end turn - this button optional")
-                    .font(GTNWFonts.caption())
-                    .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
+                .buttonStyle(.plain)
+                .disabled(selectedTarget == nil)
+                .opacity(selectedTarget == nil ? 0.4 : 1.0)
             }
         }
     }
 
     private func quickStatsGrid(gameState: GameState) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            Button(action: { showingNuclearPowersDetails = true }) {
-                StatCard(
-                    title: "Nuclear Powers",
-                    value: "\(gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.count)",
-                    icon: "flame.fill",
-                    color: GTNWColors.terminalRed
-                )
-            }
-            .buttonStyle(.plain)
+        VStack(spacing: 12) {
+            // Top row - Most important stats (larger)
+            HStack(spacing: 12) {
+                Button(action: { showingNuclearPowersDetails = true }) {
+                    CompactStatCard(
+                        title: "Nuclear",
+                        value: "\(gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.count)",
+                        icon: "flame.fill",
+                        color: GTNWColors.terminalRed
+                    )
+                }
+                .buttonStyle(.plain)
 
-            Button(action: { showingWarsDetails = true }) {
-                StatCard(
-                    title: "Active Wars",
-                    value: "\(gameState.activeWars.count)",
-                    icon: "exclamationmark.triangle.fill",
-                    color: .orange
-                )
+                Button(action: { showingWarsDetails = true }) {
+                    CompactStatCard(
+                        title: "Wars",
+                        value: "\(gameState.activeWars.count)",
+                        icon: "exclamationmark.triangle.fill",
+                        color: gameState.activeWars.count > 0 ? GTNWColors.terminalRed : GTNWColors.terminalGreen
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
-            Button(action: { showingTreatiesDetails = true }) {
-                StatCard(
-                    title: "Treaties",
-                    value: "\(gameState.treaties.count)",
-                    icon: "doc.text.fill",
-                    color: GTNWColors.terminalGreen
-                )
+            // Bottom row - Secondary stats
+            HStack(spacing: 12) {
+                Button(action: { showingTreatiesDetails = true }) {
+                    CompactStatCard(
+                        title: "Treaties",
+                        value: "\(gameState.treaties.count)",
+                        icon: "doc.text.fill",
+                        color: GTNWColors.terminalGreen
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { showingDiplomaticMessages = true }) {
+                    let unreadCount = gameEngine.diplomacyService.messages.filter { !$0.read }.count
+                    CompactStatCard(
+                        title: "Messages",
+                        value: unreadCount > 0 ? "\(unreadCount)" : "\(gameEngine.diplomacyService.messages.count)",
+                        icon: "envelope.fill",
+                        color: unreadCount > 0 ? GTNWColors.neonCyan : GTNWColors.terminalAmber,
+                        badge: unreadCount > 0
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
+            // Radiation - Full width (important)
             Button(action: { showingRadiationDetails = true }) {
-                StatCard(
-                    title: "Radiation",
-                    value: "\(gameState.globalRadiation)",
-                    icon: "radiation",
-                    color: gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen
-                )
-            }
-            .buttonStyle(.plain)
+                HStack(spacing: 12) {
+                    Image(systemName: "radiation")
+                        .font(.system(size: 24))
+                        .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
 
-            Button(action: { showingDiplomaticMessages = true }) {
-                let unreadCount = gameEngine.diplomacyService.messages.filter { !$0.read }.count
-                StatCard(
-                    title: unreadCount > 0 ? "Messages (\(unreadCount) New)" : "Messages",
-                    value: "\(gameEngine.diplomacyService.messages.count)",
-                    icon: "envelope.fill",
-                    color: unreadCount > 0 ? GTNWColors.neonCyan : GTNWColors.terminalAmber
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Global Radiation")
+                            .font(GTNWFonts.caption())
+                            .foregroundColor(GTNWColors.terminalAmber)
+                        Text("\(gameState.globalRadiation)")
+                            .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+                    }
+
+                    Spacer()
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white.opacity(0.03))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke((gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen).opacity(0.5), lineWidth: 1)
+                        )
                 )
             }
             .buttonStyle(.plain)
         }
+    }
+
+    // New compact stat card for dashboard style
+    private func CompactStatCard(title: String, value: String, icon: String, color: Color, badge: Bool = false) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(color)
+                .shadow(color: color.opacity(0.5), radius: 4)
+
+            if badge {
+                ZStack {
+                    Text(value)
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .foregroundColor(color)
+
+                    Circle()
+                        .fill(GTNWColors.terminalRed)
+                        .frame(width: 12, height: 12)
+                        .offset(x: 15, y: -10)
+                }
+            } else {
+                Text(value)
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .foregroundColor(color)
+            }
+
+            Text(title)
+                .font(GTNWFonts.caption())
+                .foregroundColor(GTNWColors.terminalAmber.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(color.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
     private func eventRow(_ event: GameEvent) -> some View {
@@ -543,27 +600,45 @@ struct UnifiedCommandCenter: View {
         )
     }
 
-    // MARK: - AI Backend Selector
+    // MARK: - AI Backend Selector with Availability Indicators
 
     private var aiBackendSelector: some View {
         HStack(spacing: 12) {
-            // Backend picker
+            // Backend picker with availability dots
             Menu {
                 ForEach([AIBackend.ollama, .mlx, .tinyLLM, .tinyChat, .openWebUI, .auto], id: \.self) { backend in
                     Button(action: {
                         AIBackendManager.shared.selectedBackend = backend
                         AIBackendManager.shared.saveSettings()
+                        Task {
+                            await AIBackendManager.shared.checkBackendAvailability()
+                        }
                     }) {
-                        HStack {
+                        HStack(spacing: 8) {
+                            // Availability indicator (green dot like TopGUI)
+                            Circle()
+                                .fill(isBackendAvailable(backend) ? Color.green : Color.gray)
+                                .frame(width: 8, height: 8)
+
                             Text(backend.rawValue)
+
+                            Spacer()
+
                             if AIBackendManager.shared.selectedBackend == backend {
                                 Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
                             }
                         }
                     }
                 }
             } label: {
                 HStack(spacing: 6) {
+                    // Status dot
+                    Circle()
+                        .fill(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
+                        .frame(width: 8, height: 8)
+                        .shadow(color: AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed, radius: 3)
+
                     Image(systemName: "brain.head.profile")
                         .font(.system(size: 12))
                     Text(AIBackendManager.shared.selectedBackend.rawValue)
@@ -591,8 +666,10 @@ struct UnifiedCommandCenter: View {
                         }) {
                             HStack {
                                 Text(model)
+                                Spacer()
                                 if AIBackendManager.shared.selectedOllamaModel == model {
                                     Image(systemName: "checkmark")
+                                        .foregroundColor(.blue)
                                 }
                             }
                         }
@@ -617,6 +694,17 @@ struct UnifiedCommandCenter: View {
                 }
                 .help("Ollama Model")
             }
+        }
+    }
+
+    private func isBackendAvailable(_ backend: AIBackend) -> Bool {
+        switch backend {
+        case .ollama: return AIBackendManager.shared.isOllamaAvailable
+        case .mlx: return AIBackendManager.shared.isMLXAvailable
+        case .tinyLLM: return AIBackendManager.shared.isTinyLLMAvailable
+        case .tinyChat: return AIBackendManager.shared.isTinyChatAvailable
+        case .openWebUI: return AIBackendManager.shared.isOpenWebUIAvailable
+        case .auto: return AIBackendManager.shared.activeBackend != nil
         }
     }
 
