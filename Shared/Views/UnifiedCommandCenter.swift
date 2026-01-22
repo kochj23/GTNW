@@ -163,27 +163,51 @@ struct UnifiedCommandCenter: View {
             .padding()
             .background(GTNWColors.glassPanelDark)
 
-            // Event Log (scrollable) - NEWEST AT TOP, ENHANCED VISIBILITY
+            // Event Log (scrollable) - NEWEST AT TOP with CLEAR INDICATORS
             ScrollView {
                 ScrollViewReader { proxy in
-                    LazyVStack(alignment: .leading, spacing: 6) {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        // LATEST INDICATOR - Makes it crystal clear which end is current
+                        HStack {
+                            Circle()
+                                .fill(GTNWColors.terminalGreen)
+                                .frame(width: 12, height: 12)
+                                .shadow(color: GTNWColors.terminalGreen, radius: 4)
+
+                            Text("🟢 LATEST EVENTS")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundColor(GTNWColors.terminalGreen)
+
+                            Text("(Turn \(gameEngine.gameState?.turn ?? 0))")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(GTNWColors.terminalAmber)
+
+                            Spacer()
+
+                            Text("↓ Scroll for History")
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.6))
+                        }
+                        .padding(12)
+                        .background(GTNWColors.terminalGreen.opacity(0.15))
+                        .border(GTNWColors.terminalGreen, width: 2)
+                        .id("latest-marker")
+
                         // Game engine logs (reversed = newest first)
                         ForEach(gameEngine.logMessages.reversed()) { log in
                             // Only show meaningful messages (not errors)
                             if !log.message.contains("UNRECOGNIZED") &&
                                !log.message.contains("Type 'help'") &&
                                !log.message.isEmpty {
-                                logRow(log)
+                                enhancedLogRow(log)
                             }
                         }
                     }
                     .padding(16)
                     .onChange(of: gameEngine.logMessages.count) { _ in
-                        // Auto-scroll to top (newest)
-                        if let first = gameEngine.logMessages.reversed().first {
-                            withAnimation(.easeInOut) {
-                                proxy.scrollTo(first.id, anchor: .top)
-                            }
+                        // Auto-scroll to latest marker (fixed to always target stable ID)
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo("latest-marker", anchor: .top)
                         }
                     }
                 }
@@ -523,6 +547,84 @@ struct UnifiedCommandCenter: View {
         )
     }
 
+    // Enhanced log row with timestamps, turn numbers, and TopGUI-style glass cards
+    private func enhancedLogRow(_ log: LogMessage) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Turn marker gets special treatment
+            if log.message.contains("=====") && log.message.contains("TURN") {
+                Rectangle()
+                    .fill(GTNWColors.neonCyan.opacity(0.5))
+                    .frame(height: 3)
+
+                Text(log.message)
+                    .font(.system(size: 18, weight: .black, design: .monospaced))
+                    .foregroundColor(GTNWColors.neonCyan)
+                    .shadow(color: GTNWColors.neonCyan, radius: 6)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 8)
+
+                Rectangle()
+                    .fill(GTNWColors.neonCyan.opacity(0.5))
+                    .frame(height: 3)
+            } else {
+                HStack(alignment: .top, spacing: 12) {
+                    // Icon badge
+                    logIcon(log.type, message: log.message)
+                        .font(.system(size: 18))
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        // Metadata row: Turn + Timestamp + Type
+                        HStack(spacing: 8) {
+                            // Turn indicator
+                            Text("[T\(extractTurnNumber(from: log) ?? gameEngine.gameState?.turn ?? 0)]")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(GTNWColors.neonCyan)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(GTNWColors.neonCyan.opacity(0.2))
+                                .cornerRadius(3)
+
+                            // Timestamp
+                            Text(formatTimestamp(log.timestamp))
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
+
+                            // Type badge for warnings/errors
+                            if log.type != .info && log.type != .system {
+                                Text(logTypeLabel(log.type))
+                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(logColor(log.type))
+                                    .cornerRadius(3)
+                            }
+
+                            Spacer()
+                        }
+
+                        // Main message
+                        Text(log.message)
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(logColor(log.type))
+                            .lineSpacing(2)
+                    }
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.03))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(logColor(log.type).opacity(0.3), lineWidth: 1)
+                        )
+                )
+            }
+        }
+    }
+
+    // Original log row (kept for compatibility)
     private func logRow(_ log: LogMessage) -> some View {
         VStack(spacing: 0) {
             // Add thick divider before turn markers for clear separation
@@ -1269,6 +1371,25 @@ struct RadiationDetailView: View {
                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
             }
         }
+    }
+
+    // Helper function to format timestamp
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(from: date)
+    }
+
+    // Helper function to extract turn number from log message
+    private func extractTurnNumber(from log: LogMessage) -> Int? {
+        // Try to extract turn from messages like "TURN 5" or "[Turn 5]"
+        let pattern = #"(?:TURN|Turn)\s*(\d+)"#
+        if let regex = try? NSRegularExpression(pattern: pattern),
+           let match = regex.firstMatch(in: log.message, range: NSRange(log.message.startIndex..., in: log.message)),
+           let range = Range(match.range(at: 1), in: log.message) {
+            return Int(log.message[range])
+        }
+        return nil
     }
 }
 
