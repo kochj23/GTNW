@@ -263,12 +263,7 @@ struct MessageCard: View {
             gameEngine.addLog("✓ Acknowledged message from \(fromCountry.name). Relations +10.", type: .info)
         }
 
-        // Auto-end turn
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            gameEngine.endTurn()
-        }
-
-        dismiss()
+        // Don't auto-end turn or close inbox - let player respond to multiple messages!
     }
 
     private func declineMessage() {
@@ -280,12 +275,7 @@ struct MessageCard: View {
         gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: relationChange)
         gameEngine.addLog("✗ Declined message from \(fromCountry.name). Relations \(relationChange).", type: .warning)
 
-        // Auto-end turn
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            gameEngine.endTurn()
-        }
-
-        dismiss()
+        // Don't auto-end turn or close inbox - let player respond to multiple messages!
     }
 
     private func relationColor(_ value: Int) -> Color {
