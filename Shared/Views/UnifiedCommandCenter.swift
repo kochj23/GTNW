@@ -431,12 +431,21 @@ struct UnifiedCommandCenter: View {
                 }
 
                 ModernButton(
-                    title: "IMAGE\nGENERATION",
-                    icon: "photo.fill",
+                    title: "DIPLOMATIC\nMESSAGES",
+                    icon: "envelope.fill",
+                    color: GTNWColors.neonCyan,
+                    enabled: true
+                ) {
+                    showingDiplomaticMessages = true
+                }
+
+                ModernButton(
+                    title: "AI\nSETTINGS",
+                    icon: "gearshape.fill",
                     color: GTNWColors.neonPurple,
                     enabled: true
                 ) {
-                    showingImageGeneration = true
+                    openAISettings()
                 }
 
                 // Info about auto-end turn
@@ -614,6 +623,20 @@ struct UnifiedCommandCenter: View {
                 .help("Ollama Model")
             }
         }
+    }
+
+    // MARK: - Actions
+
+    private func openAISettings() {
+        let settingsView = AIBackendSettingsView()
+        let hostingController = NSHostingController(rootView: settingsView)
+
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "AI Backend Settings"
+        window.styleMask = [.titled, .closable, .resizable]
+        window.setContentSize(NSSize(width: 600, height: 700))
+        window.center()
+        window.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - Helper Functions
