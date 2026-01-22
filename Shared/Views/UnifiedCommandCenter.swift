@@ -26,6 +26,7 @@ struct UnifiedCommandCenter: View {
     @State private var showingTreatiesDetails = false
     @State private var showingRadiationDetails = false
     @State private var showingImageGeneration = false
+    @State private var showingDiplomaticMessages = false
 
     var body: some View {
         if let gameState = gameEngine.gameState {
@@ -83,6 +84,9 @@ struct UnifiedCommandCenter: View {
             // .sheet(isPresented: $showingImageGeneration) {
             //     ImageGenerationView(isPresented: $showingImageGeneration)
             // }
+            .sheet(isPresented: $showingDiplomaticMessages) {
+                DiplomaticMessagesView(diplomacyService: gameEngine.diplomacyService, gameState: gameState)
+            }
         }
     }
 
@@ -483,6 +487,17 @@ struct UnifiedCommandCenter: View {
                     value: "\(gameState.globalRadiation)",
                     icon: "radiation",
                     color: gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { showingDiplomaticMessages = true }) {
+                let unreadCount = gameEngine.diplomacyService.messages.filter { !$0.read }.count
+                StatCard(
+                    title: unreadCount > 0 ? "Messages (\(unreadCount) New)" : "Messages",
+                    value: "\(gameEngine.diplomacyService.messages.count)",
+                    icon: "envelope.fill",
+                    color: unreadCount > 0 ? GTNWColors.neonCyan : GTNWColors.terminalAmber
                 )
             }
             .buttonStyle(.plain)
