@@ -25,6 +25,7 @@ struct UnifiedCommandCenter: View {
     @State private var showingWarsDetails = false
     @State private var showingTreatiesDetails = false
     @State private var showingRadiationDetails = false
+    @State private var showingImageGeneration = false
 
     var body: some View {
         if let gameState = gameEngine.gameState {
@@ -74,6 +75,9 @@ struct UnifiedCommandCenter: View {
             .sheet(isPresented: $showingRadiationDetails) {
                 RadiationDetailView(gameState: gameState)
             }
+            .sheet(isPresented: $showingImageGeneration) {
+                ImageGenerationView(isPresented: $showingImageGeneration)
+            }
         }
     }
 
@@ -116,6 +120,8 @@ struct UnifiedCommandCenter: View {
 
     private func rightTerminalPanel(gameState: GameState) -> some View {
         VStack(spacing: 0) {
+            // TODO: AI STATS PANEL - DISABLED (ollamaService not implemented in GameEngine)
+            /*
             // AI STATS PANEL - TOP OF RIGHT SIDE
             VStack(spacing: 0) {
                 // Header
@@ -128,83 +134,22 @@ struct UnifiedCommandCenter: View {
                         .foregroundColor(.cyan)
 
                     Spacer()
-
-                    if gameEngine.ollamaService.isConnected {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(GTNWColors.terminalGreen)
-                                .frame(width: 8, height: 8)
-                            Text("OLLAMA")
-                                .font(GTNWFonts.caption())
-                                .foregroundColor(GTNWColors.terminalGreen)
-                        }
-                    } else {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(GTNWColors.terminalAmber)
-                                .frame(width: 8, height: 8)
-                            Text("LOCAL")
-                                .font(GTNWFonts.caption())
-                                .foregroundColor(GTNWColors.terminalAmber)
-                        }
-                    }
                 }
                 .padding(12)
                 .background(GTNWColors.glassPanelDark)
 
                 // Stats metrics - SINGLE TABLE
                 VStack(spacing: 0) {
-                    // Hardware Metrics (Real-time system monitoring)
-                    statsRow(
-                        label: "GPU",
-                        value: String(format: "%.0f%%", gameEngine.ollamaService.gpuUtilization),
-                        color: gameEngine.ollamaService.gpuUtilization > 80 ? GTNWColors.terminalRed :
-                               gameEngine.ollamaService.gpuUtilization > 50 ? GTNWColors.terminalAmber :
-                               GTNWColors.terminalGreen
-                    )
-
-                    statsRow(
-                        label: "CPU",
-                        value: String(format: "%.0f%%", gameEngine.ollamaService.cpuUtilization),
-                        color: gameEngine.ollamaService.cpuUtilization > 80 ? GTNWColors.terminalRed :
-                               gameEngine.ollamaService.cpuUtilization > 50 ? GTNWColors.terminalAmber :
-                               GTNWColors.terminalGreen
-                    )
-
-                    statsRow(
-                        label: "MEMORY",
-                        value: String(format: "%.1f GB", gameEngine.ollamaService.memoryUsageGB),
-                        color: gameEngine.ollamaService.memoryUsageGB > 400 ? GTNWColors.terminalRed :
-                               gameEngine.ollamaService.memoryUsageGB > 200 ? GTNWColors.terminalAmber :
-                               GTNWColors.terminalGreen
-                    )
-
-                    // Token metrics
-                    statsRow(label: "CURRENT", value: String(format: "%.1f t/s", gameEngine.ollamaService.tokensPerSecond), color: .cyan)
-                    statsRow(label: "AVERAGE", value: String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond), color: GTNWColors.terminalGreen)
-                    statsRow(label: "PEAK", value: String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond), color: GTNWColors.terminalRed)
-                    statsRow(label: "TOTAL TOKENS", value: "\(gameEngine.ollamaService.totalTokens)", color: .purple)
-                    statsRow(label: "REQUESTS", value: "\(gameEngine.ollamaService.totalRequests)", color: .orange)
-
-                    if gameEngine.ollamaService.isGenerating {
-                        HStack {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
-                                .scaleEffect(0.7)
-                            Text("PROCESSING...")
-                                .font(GTNWFonts.terminal(size: 12, weight: .bold))
-                                .foregroundColor(.cyan)
-                            Spacer()
-                        }
-                        .padding(8)
-                        .background(Color.cyan.opacity(0.1))
-                    }
+                    // Placeholder
+                    Text("AI Performance Monitoring Disabled")
+                        .foregroundColor(.secondary)
                 }
                 .padding(12)
                 .background(Color.black.opacity(0.7))
             }
             .background(GTNWColors.glassPanelDark)
             .border(Color.cyan, width: 3)
+            */
 
             Divider()
                 .background(GTNWColors.neonCyan)
@@ -460,6 +405,15 @@ struct UnifiedCommandCenter: View {
                 ) {
                     print("[Manual END TURN clicked]")
                     gameEngine.endTurn()
+                }
+
+                ModernButton(
+                    title: "IMAGE\nGENERATION",
+                    icon: "photo.fill",
+                    color: GTNWColors.neonPurple,
+                    enabled: true
+                ) {
+                    showingImageGeneration = true
                 }
 
                 // Info about auto-end turn
@@ -771,23 +725,8 @@ struct UnifiedCommandCenter: View {
         } else if input.lowercased().contains("help") {
             showHelp()
         } else if input.lowercased().contains("what") || input.lowercased().contains("should") {
-            // Use Ollama for strategic advice if connected
-            if gameEngine.ollamaService.isConnected {
-                Task {
-                    let prompt = "As WOPR from WarGames, analyze this situation and provide strategic advice in 2-3 sentences: \(input)\n\nCurrent DEFCON: \(gameState.defconLevel.rawValue)"
-                    if let advice = await gameEngine.ollamaService.generate(prompt: prompt, maxTokens: 80) {
-                        await MainActor.run {
-                            responseMessage = "WOPR ANALYSIS:\n\n\(advice)"
-                        }
-                    } else {
-                        await MainActor.run {
-                            responseMessage = "ANALYSIS UNAVAILABLE\nOllama not responding"
-                        }
-                    }
-                }
-            } else {
-                responseMessage = "STRATEGIC ADVICE:\n\nOllama AI offline. Run 'ollama serve' for LLM-powered analysis."
-            }
+            // TODO: Re-enable Ollama integration when ollamaService is implemented in GameEngine
+            responseMessage = "STRATEGIC ADVICE:\n\nAI analysis temporarily unavailable."
         } else {
             responseMessage = "UNRECOGNIZED COMMAND\nType 'help' for commands"
         }

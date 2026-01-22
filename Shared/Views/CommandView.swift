@@ -87,6 +87,9 @@ struct CommandView: View {
     // MARK: - AI Stats Panel
 
     private var aiStatsPanel: some View {
+        // TODO: Re-enable when ollamaService is implemented in GameEngine
+        EmptyView()
+        /*
         VStack(spacing: 0) {
             // Header with toggle
             HStack {
@@ -213,6 +216,7 @@ struct CommandView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
+        */
     }
 
     private func statBox(label: String, value: String, color: Color) -> some View {
