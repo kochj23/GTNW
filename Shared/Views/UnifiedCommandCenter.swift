@@ -346,6 +346,24 @@ struct UnifiedCommandCenter: View {
                 .foregroundColor(GTNWColors.terminalAmber)
                 .padding(.bottom, 8)
 
+            // Category Quick Buttons
+            HStack(spacing: 8) {
+                CategoryButton(title: "Diplomatic", icon: "hand.raised.fill", color: GTNWColors.terminalGreen) {
+                    showingShadowMenu = true
+                    // TODO: Pre-filter to diplomatic
+                }
+                CategoryButton(title: "Military", icon: "shield.fill", color: GTNWColors.terminalRed) {
+                    showingShadowMenu = true
+                }
+                CategoryButton(title: "Covert", icon: "eye.slash.fill", color: GTNWColors.neonPurple) {
+                    showingShadowMenu = true
+                }
+                CategoryButton(title: "Economic", icon: "dollarsign.circle.fill", color: GTNWColors.neonCyan) {
+                    showingShadowMenu = true
+                }
+            }
+            .padding(.bottom, 8)
+
             Divider().background(GTNWColors.terminalGreen.opacity(0.3))
 
             Text("QUICK ACTIONS")
@@ -1251,6 +1269,34 @@ struct RadiationDetailView: View {
                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
             }
         }
+    }
+}
+
+// MARK: - Category Button Component
+
+struct CategoryButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(title)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(color.opacity(0.2))
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(color, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
