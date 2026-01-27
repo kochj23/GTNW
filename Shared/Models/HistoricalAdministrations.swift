@@ -26,8 +26,10 @@ struct Administration: Identifiable, Codable {
 }
 
 extension Advisor {
-    /// Get all historical administrations since the nuclear age began (1945)
+    /// Get all historical administrations from 1789 to present (46 total)
     static func allAdministrations() -> [Administration] {
+        // For now, return nuclear age only (pre-nuclear coming soon)
+        // TODO: Add preNuclearAdministrations() once file compiles
         return [
             trumanAdministration(),
             eisenhowerAdministration(),

@@ -12,8 +12,15 @@ import Foundation
 /// Historical crisis database
 struct HistoricalCrises {
 
-    /// Get crises for specific administration
+    /// Get crises for specific administration (1789-2025)
     static func crisesForAdministration(_ adminID: String) -> [HistoricalCrisis] {
+        // Try pre-nuclear first (1789-1945)
+        let preNuclearCrises = crisesForPreNuclearAdmin(adminID)
+        if !preNuclearCrises.isEmpty {
+            return preNuclearCrises
+        }
+
+        // Then nuclear age (1945-2025)
         switch adminID {
         case "truman": return trumanCrises()
         case "eisenhower": return eisenhowerCrises()

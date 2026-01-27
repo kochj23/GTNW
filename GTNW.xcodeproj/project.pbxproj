@@ -25,6 +25,8 @@
 		30AC47C5322E7AA3441974EC /* VoiceUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0729AE0D1F2F929B3E8E26AB /* VoiceUnified.swift */; };
 		36666231626265322D343961382D346433652D393032302D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
+		38A4E12CF88174755CD44822 /* HistoricalAdministrations_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */; };
+		3D0B114CF010F97CE6D8C284 /* HistoricalCrises_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */; };
 		3E66D88CA341C393647721B0 /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		3F3776463616B38201BA5954 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
 		40BA548AC1F96838707E22F5 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
@@ -84,6 +86,7 @@
 		EF095B87A192355C459DBF6E /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
 		F22190179915148B3EA249D4 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
 		F3701B6CB75BB4A0C4845E5B /* DiplomaticMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E082C07AA705A6B4CA2D17B /* DiplomaticMessagesView.swift */; };
+		F8A2DDEBFDF6D0826EC04AB1 /* WorldCountriesDatabase_Complete.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */; };
 		FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
 /* End PBXBuildFile section */
 
@@ -91,6 +94,7 @@
 		00ED35FA1859FB798CDBD083 /* WorldMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMap.swift; sourceTree = "<group>"; };
 		07228E319CC144294BA9F6FA /* VictoryScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VictoryScreen.swift; sourceTree = "<group>"; };
 		0729AE0D1F2F929B3E8E26AB /* VoiceUnified.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceUnified.swift; path = GTNW/AICapabilities/VoiceUnified.swift; sourceTree = "<group>"; };
+		07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalAdministrations_PreNuclear.swift; sourceTree = "<group>"; };
 		0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextCommandInterface.swift; sourceTree = "<group>"; };
 		0D125C47BA1FCDB0CEAA7177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -118,6 +122,7 @@
 		94847C472F1566DF6947C4A3 /* CommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandView.swift; sourceTree = "<group>"; };
 		991630D748C5C7E56E47730C /* GTNW_macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GTNW_macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalThermalNuclearWarApp.swift; sourceTree = "<group>"; };
+		A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalCrises_PreNuclear.swift; sourceTree = "<group>"; };
 		A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnalysisUnified.swift; path = GTNW/AICapabilities/AnalysisUnified.swift; sourceTree = "<group>"; };
 		A998F3C744EB66ACE08758DF /* GameSystems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSystems.swift; sourceTree = "<group>"; };
 		AA12DC249885D2FDDED18F24 /* UnifiedAICapabilities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UnifiedAICapabilities.swift; path = GTNW/AICapabilities/UnifiedAICapabilities.swift; sourceTree = "<group>"; };
@@ -133,6 +138,7 @@
 		E7840FA926BF3040BC40D754 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GTNW_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE8EF3871D54AD759C686C04 /* SystemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemsView.swift; sourceTree = "<group>"; };
+		EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldCountriesDatabase_Complete.swift; sourceTree = "<group>"; };
 		F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SimpleModernWorldMap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -165,6 +171,9 @@
 				D81E03C944B7130DB24D3B19 /* OllamaService.swift */,
 				38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */,
 				7BD985DE7EFE89ACB8056982 /* SafeFeatureSystems.swift */,
+				07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */,
+				A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */,
+				EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -434,6 +443,9 @@
 				30AC47C5322E7AA3441974EC /* VoiceUnified.swift in Sources */,
 				2ECA3C78A7A69D26EF589671 /* AnalysisUnified.swift in Sources */,
 				58FD5AFE23CDED3D9C18D67C /* SecurityUnified.swift in Sources */,
+				38A4E12CF88174755CD44822 /* HistoricalAdministrations_PreNuclear.swift in Sources */,
+				3D0B114CF010F97CE6D8C284 /* HistoricalCrises_PreNuclear.swift in Sources */,
+				F8A2DDEBFDF6D0826EC04AB1 /* WorldCountriesDatabase_Complete.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
