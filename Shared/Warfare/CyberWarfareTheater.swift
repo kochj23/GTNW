@@ -211,56 +211,18 @@ class CyberWarfareTheater: ObservableObject {
 }
 
 // MARK: - Models
+// NOTE: Using existing types from GTNW:
+// - CyberAttackType (from CyberWarfare.swift)
+// - CyberOperation (from CyberWarfare.swift)
+// - CyberAttackEffect (from CyberWarfare.swift)
 
-struct CyberOperation: Identifiable {
-    let id: UUID
-    let attacker: String
-    let target: String
-    let type: CyberAttackType
-    let result: CyberAttackResult
-    let timestamp: Date
-}
-
-struct CyberAttackResult {
-    let attacker: Country
-    let target: Country
-    let attackType: CyberAttackType
+// Additional result type for enhanced theater
+struct CyberTheaterResult {
+    let operation: CyberOperation
     let success: Bool
-    let damage: CyberDamage
     let discovered: Bool
     let retaliationProbability: Double
     let timestamp: Date
-}
-
-enum CyberAttackType: String, CaseIterable {
-    case ddos = "DDoS Attack"
-    case powerGrid = "Power Grid Disruption"
-    case militaryComms = "Military Communications"
-    case nuclearSystems = "Nuclear Command & Control"
-    case financialCollapse = "Financial System Attack"
-    case infrastructureDisruption = "Infrastructure Sabotage"
-    case falseFlagOperation = "False Flag Cyber Attack"
-
-    var description: String {
-        switch self {
-        case .ddos: return "Overwhelm networks, temporary disruption"
-        case .powerGrid: return "Disable power infrastructure, massive impact"
-        case .militaryComms: return "Disrupt military command systems"
-        case .nuclearSystems: return "HIGH RISK: Target nuclear control systems"
-        case .financialCollapse: return "Crash banking and financial systems"
-        case .infrastructureDisruption: return "Sabotage critical infrastructure"
-        case .falseFlagOperation: return "Attack from spoofed source, blame others"
-        }
-    }
-
-    var risk: String {
-        switch self {
-        case .ddos: return "Low"
-        case .powerGrid, .infrastructureDisruption: return "Medium"
-        case .militaryComms, .financialCollapse: return "High"
-        case .nuclearSystems, .falseFlagOperation: return "Extreme"
-        }
-    }
 }
 
 struct CyberDamage {

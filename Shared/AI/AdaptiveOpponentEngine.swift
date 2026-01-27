@@ -454,34 +454,47 @@ extension Array where Element: Hashable {
 
 extension Country {
     var economicDiversification: Bool {
-        get { return true } // Placeholder
-        set { }
+        // Based on GDP and economic strength - stronger economies tend to be more diversified
+        return gdp > 1.0 && economicStrength > 60
     }
 
     var defensivePosture: Bool {
-        get { return false }
-        set { }
+        // Country is defensive if it has high stability, low aggression, and strong SDI
+        return stability > 60 && aggressionLevel < 40 && (hasSDI || militaryStrength > 70)
     }
 
     var nuclearFearFactor: Double {
-        get { return 1.0 }
-        set { }
+        // Higher fear factor for countries with fewer warheads (MAD protection lower)
+        // Also influenced by SDI coverage (less fear with better defenses)
+        let warheadFactor = nuclearWarheads < 100 ? 2.0 : (nuclearWarheads < 500 ? 1.5 : 1.0)
+        let sdiFactor = hasSDI ? (1.0 - Double(sdiCoverage) / 200.0) : 1.0
+        return warheadFactor * sdiFactor
     }
 
     var counterIntelligenceBudget: Double {
-        get { return 100.0 }
-        set { }
+        // Budget based on GDP and intelligence level
+        // Richer countries with better intelligence spend more
+        return gdp * Double(counterIntelligence) * 10.0 // In millions
     }
 
     var nuclearReadiness: NuclearReadiness {
-        get { return .normal }
-        set { }
+        // Readiness based on threat level and current conflicts
+        if threatLevel == .existential || !atWarWith.isEmpty {
+            return .maximum
+        } else if threatLevel == .critical || aggressionLevel > 70 {
+            return .high
+        } else if stability < 40 || damageLevel > 30 {
+            return .heightened
+        } else {
+            return .normal
+        }
     }
 }
 
 enum NuclearReadiness {
     case low
     case normal
+    case heightened
     case high
     case maximum
 }

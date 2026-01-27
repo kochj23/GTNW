@@ -405,11 +405,6 @@ struct PerspectiveCard: View {
     }
 }
 
-// MARK: - War Struct Extensions
-
-struct War: Codable {
-    let aggressor: Country
-    let defender: Country
-    let startYear: Int?
-    let description: String
-}
+// MARK: - War Extensions
+// NOTE: Using existing War struct from GameState.swift
+// This file extends War functionality, doesn't redefine it
