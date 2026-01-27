@@ -1085,43 +1085,216 @@ struct HistoricalCrises {
     }
 
     static func reaganCrises() -> [HistoricalCrisis] {
-        // TODO: Assassination attempt, PATCO strike, Lebanon bombing, Grenada invasion, Iran-Contra, Libya bombing, INF Treaty, SDI, challenger disaster, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "Reagan Assassination Attempt", year: 1981, month: 3, president: "Ronald Reagan",
+                description: "President Reagan shot by John Hinckley Jr. outside Washington Hilton. Press Secretary James Brady critically wounded. Vice President Bush returns from Texas. Questions about nuclear authority during surgery.",
+                category: .domestic, severity: .critical, timeToDecide: 24,
+                historicalDecision: "Reagan survives surgery. Security protocols strengthened. Brady later becomes gun control advocate.",
+                options: [
+                    CrisisOption(title: "Transfer power to VP temporarily", outcome: "Constitutional clarity. Smooth transition during recovery."),
+                    CrisisOption(title: "Reagan retains authority", outcome: "Public confidence maintained. Questions about fitness linger."),
+                    CrisisOption(title: "Invoke 25th Amendment", outcome: "Legal clarity but suggests weakness. Political fallout.")
+                ]),
+
+            HistoricalCrisis(title: "PATCO Strike", year: 1981, month: 8, president: "Ronald Reagan",
+                description: "13,000 air traffic controllers strike illegally. Federal employees cannot strike. Air travel system at risk. Union PATCO demands higher wages and reduced hours.",
+                category: .domestic, severity: .high, timeToDecide: 48,
+                historicalDecision: "Reagan fires all striking controllers. Hires replacements. Breaks union. Sends signal to labor movement.",
+                options: [
+                    CrisisOption(title: "Fire all strikers", outcome: "Union broken. Labor relations damaged. Air safety questioned."),
+                    CrisisOption(title: "Negotiate with union", outcome: "Strike ends but precedent set. Other unions emboldened."),
+                    CrisisOption(title: "Declare emergency, military ATC", outcome: "Temporary fix. Constitutional questions raised.")
+                ]),
+
+            HistoricalCrisis(title: "Beirut Barracks Bombing", year: 1983, month: 10, president: "Ronald Reagan",
+                description: "Suicide truck bomb kills 241 US Marines at barracks in Beirut, Lebanon. Simultaneous attack kills 58 French paratroopers. Deadliest day for Marines since Iwo Jima. US peacekeeping mission questioned.",
+                category: .military, severity: .critical, timeToDecide: 72,
+                historicalDecision: "Reagan initially vows to stay, then withdraws all Marines within 4 months. Critics call it retreat.",
+                options: [
+                    CrisisOption(title: "Immediate retaliation", outcome: "Strike Iranian/Syrian targets. Risk escalation in Middle East."),
+                    CrisisOption(title: "Withdraw from Lebanon", outcome: "Avoid further losses. Seen as defeat. Terrorists emboldened."),
+                    CrisisOption(title: "Fortify and continue mission", outcome: "Show resolve. More casualties likely. Long commitment.")
+                ]),
+
+            HistoricalCrisis(title: "Grenada Invasion", year: 1983, month: 10, president: "Ronald Reagan",
+                description: "Marxist coup in Grenada. 800 American medical students at risk. Caribbean nations request US intervention. Soviet and Cuban presence on island. Just days after Beirut bombing.",
+                category: .military, severity: .medium, timeToDecide: 48,
+                historicalDecision: "Operation Urgent Fury launched. 7,000 US troops invade. Quick victory. Students rescued. Critics cite illegal invasion.",
+                options: [
+                    CrisisOption(title: "Invade Grenada immediately", outcome: "Students rescued. Easy victory. International condemnation."),
+                    CrisisOption(title: "Diplomatic pressure only", outcome: "Slow process. Students possibly harmed. Coup solidifies."),
+                    CrisisOption(title: "Covert operation", outcome: "Extract students quietly. Coup remains. Limited success.")
+                ]),
+
+            HistoricalCrisis(title: "Iran-Contra Affair", year: 1986, month: 11, president: "Ronald Reagan",
+                description: "Secret arms sales to Iran to fund Nicaraguan Contras revealed. Violates arms embargo and Boland Amendment. National Security Advisor implicated. Reagan's knowledge questioned. Constitutional crisis brewing.",
+                category: .political, severity: .critical, timeToDecide: 168,
+                historicalDecision: "Tower Commission investigates. Oliver North testifies. Reagan says 'mistakes were made.' Avoids impeachment.",
+                options: [
+                    CrisisOption(title: "Take full responsibility", outcome: "Impeachment possible. Honesty respected. Presidency damaged."),
+                    CrisisOption(title: "Claim no knowledge", outcome: "Plausible deniability. Looks weak or dishonest. Aides take fall."),
+                    CrisisOption(title: "Pardon all involved", outcome: "Quick end. Looks like cover-up. Political firestorm.")
+                ])
+        ]
     }
 
     static func bushSrCrises() -> [HistoricalCrisis] {
-        // TODO: Panama invasion, Berlin Wall falls, Tiananmen Square, Kuwait invasion, Desert Storm, USSR collapse, Yugoslavia war, Somalia, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "Fall of Berlin Wall", year: 1989, month: 11, president: "George H.W. Bush",
+                description: "Berlin Wall falls. East Germans flood West. Soviet control crumbles. German reunification imminent. End of Cold War visible. Gorbachev's reforms accelerating. Historic moment for democracy.",
+                category: .diplomatic, severity: .critical, timeToDecide: 72,
+                historicalDecision: "Bush responds cautiously. Avoids triumphalism. Supports gradual German reunification. Maintains good relations with Gorbachev.",
+                options: [
+                    CrisisOption(title: "Celebrate publicly, claim victory", outcome: "Humiliates Soviets. Risks hard-liner coup. Cold War mentality persists."),
+                    CrisisOption(title: "Cautious support for change", outcome: "Smooth transition. German reunification proceeds. USSR dissolves peacefully."),
+                    CrisisOption(title: "Demand immediate reunification", outcome: "Forces Soviet hand. Possible military crackdown. NATO expansion accelerates.")
+                ]),
+
+            HistoricalCrisis(title: "Iraq Invades Kuwait", year: 1990, month: 8, president: "George H.W. Bush",
+                description: "Saddam Hussein invades Kuwait. Oil supply threatened. Saudi Arabia at risk. UN condemns invasion. US must respond or lose credibility. Coalition forming.",
+                category: .military, severity: .critical, timeToDecide: 168,
+                historicalDecision: "Build international coalition. Operation Desert Shield to protect Saudi. Desert Storm liberates Kuwait.",
+                options: [
+                    CrisisOption(title: "Immediate military action", outcome: "Quick response but no coalition. Seen as US aggression. Costly war."),
+                    CrisisOption(title: "Build coalition, then strike", outcome: "International support. UN backing. Shared costs. Takes time."),
+                    CrisisOption(title: "Sanctions and containment only", outcome: "Avoids war. Kuwait remains occupied. Saddam strengthened.")
+                ])
+        ]
     }
 
     static func clintonCrises() -> [HistoricalCrisis] {
-        // TODO: Mogadishu, Haiti intervention, Oklahoma City, Bosnia, Monica Lewinsky, impeachment, Kosovo, Rwanda genocide response, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "Battle of Mogadishu", year: 1993, month: 10, president: "Bill Clinton",
+                description: "Black Hawk down in Somalia. 18 US soldiers killed. Bodies dragged through streets. Humanitarian mission becomes combat. Public outrage. Withdraw or escalate decision.",
+                category: .military, severity: .high, timeToDecide: 72,
+                historicalDecision: "Clinton orders withdrawal within 6 months. Mission ends. Critics say it showed US weakness, emboldening terrorists.",
+                options: [
+                    CrisisOption(title: "Immediate withdrawal", outcome: "Lives saved. Mission failure. Warlords win. US looks weak."),
+                    CrisisOption(title: "Escalate and finish mission", outcome: "More troops. Higher casualties. Long commitment. Public backlash."),
+                    CrisisOption(title: "Gradual transition to UN", outcome: "Compromise. Face-saving exit. Somalia remains unstable.")
+                ]),
+
+            HistoricalCrisis(title: "Oklahoma City Bombing", year: 1995, month: 4, president: "Bill Clinton",
+                description: "Domestic terrorist Timothy McVeigh bombs federal building. 168 killed, 19 children. Deadliest terrorist attack on US soil. Anti-government extremism. Security questions.",
+                category: .domestic, severity: .critical, timeToDecide: 168,
+                historicalDecision: "Massive investigation. McVeigh captured and executed. Antiterrorism Act passed. Federal security increased.",
+                options: [
+                    CrisisOption(title: "Expand federal law enforcement", outcome: "Better security. Civil liberties concerns. Militia groups angered."),
+                    CrisisOption(title: "Focus on prosecution only", outcome: "Justice served. No prevention measures. Future attacks possible."),
+                    CrisisOption(title: "Major anti-terrorism legislation", outcome: "Enhanced powers. Privacy concerns. Prevents some future attacks.")
+                ])
+        ]
     }
 
     static func bushJrCrises() -> [HistoricalCrisis] {
-        // TODO: 9/11, Afghanistan invasion, Iraq WMD decision, Axis of Evil, Hurricane Katrina, Abu Ghraib, surge, financial crisis, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "September 11 Attacks", year: 2001, month: 9, president: "George W. Bush",
+                description: "Al-Qaeda hijacks 4 planes. Twin Towers destroyed. Pentagon hit. 2,977 killed. Worst attack on American soil. Nation in shock. Military response certain. Afghanistan harbors bin Laden.",
+                category: .military, severity: .existential, timeToDecide: 72,
+                historicalDecision: "War on Terror declared. Afghanistan invaded. Patriot Act passed. Department of Homeland Security created. 20-year war begins.",
+                options: [
+                    CrisisOption(title: "Invade Afghanistan immediately", outcome: "Taliban removed. Bin Laden escapes. Long occupation begins. Democracy attempted."),
+                    CrisisOption(title: "Covert operations only", outcome: "Smaller footprint. Taliban survives. Bin Laden harder to find. Fewer US casualties."),
+                    CrisisOption(title: "International law enforcement", outcome: "Legal approach. Slow. Terrorists regroup. Public demands action.")
+                ]),
+
+            HistoricalCrisis(title: "Iraq WMD Decision", year: 2003, month: 3, president: "George W. Bush",
+                description: "Intelligence suggests Saddam has WMDs. UN inspections inconclusive. Some allies skeptical. Neocons push regime change. Link to terrorism claimed. Credibility on the line.",
+                category: .military, severity: .critical, timeToDecide: 168,
+                historicalDecision: "Invade Iraq. Saddam toppled. No WMDs found. Insurgency erupts. Regional destabilization. Trillions spent. Legacy tarnished.",
+                options: [
+                    CrisisOption(title: "Invade Iraq", outcome: "Saddam removed. No WMDs. Insurgency. 8-year war. ISIS emerges later."),
+                    CrisisOption(title: "Continue inspections", outcome: "Delayed action. Saddam contained. Inspection regime strengthened. US credibility questioned."),
+                    CrisisOption(title: "Regime change via covert ops", outcome: "Lower profile. Uncertain success. Possible civil war anyway.")
+                ])
+        ]
     }
 
     static func obamaCrises() -> [HistoricalCrisis] {
-        // TODO: Bin Laden raid, Arab Spring, Syria red line, Crimea annexation, ISIS rise, Iran deal, Cuba opening, Benghazi, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "Bin Laden Raid", year: 2011, month: 5, president: "Barack Obama",
+                description: "CIA locates bin Laden compound in Pakistan. Risky helicopter raid proposed. Pakistan not informed. Could be foreign policy disaster if fails. Kill or capture decision.",
+                category: .military, severity: .high, timeToDecide: 48,
+                historicalDecision: "Obama authorizes raid. SEAL Team 6 kills bin Laden. Body buried at sea. Pakistan furious but bin Laden dead. Major victory.",
+                options: [
+                    CrisisOption(title: "Helicopter raid", outcome: "Bin Laden killed. Relations with Pakistan damaged. US sovereignty violation. Victory."),
+                    CrisisOption(title: "Drone strike", outcome: "Safer but no confirmation. Body lost. Victory uncertain. Pakistan still angry."),
+                    CrisisOption(title: "Inform Pakistan, joint raid", outcome: "Legal. Bin Laden likely escapes. Intelligence leak probable.")
+                ]),
+
+            HistoricalCrisis(title: "Syria Chemical Weapons", year: 2013, month: 8, president: "Barack Obama",
+                description: "Assad uses chemical weapons on civilians. Obama's 'red line' crossed. World watches US response. Russia supports Assad. Intervention could trigger wider war. Credibility at stake.",
+                category: .military, severity: .critical, timeToDecide: 72,
+                historicalDecision: "Obama threatens strike. Russia brokers deal. Assad gives up chemical weapons. No military action. Critics say weakness. Others cite diplomacy.",
+                options: [
+                    CrisisOption(title: "Military strikes on Assad", outcome: "Red line enforced. US drawn into Syrian war. No clear exit. Russia opposes."),
+                    CrisisOption(title: "Diplomatic solution", outcome: "Chemical weapons removed. No war. Critics say backing down. Credibility questioned."),
+                    CrisisOption(title: "Arm rebels instead", outcome: "Indirect action. Rebels empowered. Some join ISIS. Prolonged conflict.")
+                ])
+        ]
     }
 
     static func trumpFirstCrises() -> [HistoricalCrisis] {
-        // TODO: Charlottesville, North Korea threats, Iran deal withdrawal, COVID-19, Jan 6, impeachments, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "North Korea Nuclear Threats", year: 2017, month: 8, president: "Donald Trump",
+                description: "Kim Jong Un tests ICBMs. Threatens Guam. Trump promises 'fire and fury.' Nuclear exchange possible. Allies nervous. China watching. Miscalculation could start war.",
+                category: .military, severity: .critical, timeToDecide: 48,
+                historicalDecision: "Trump meets Kim in Singapore. First US-DPRK summit. Diplomacy tried. Nuclear program continues. No war.",
+                options: [
+                    CrisisOption(title: "Preventive military strike", outcome: "Destroys some nukes. North Korea retaliates. Seoul destroyed. Regional war."),
+                    CrisisOption(title: "Maximum pressure campaign", outcome: "Sanctions intensify. Kim negotiates. Nuclear program slows. Diplomatic opening."),
+                    CrisisOption(title: "Accept nuclear North Korea", outcome: "Containment strategy. Allies question commitment. Proliferation risk.")
+                ]),
+
+            HistoricalCrisis(title: "COVID-19 Pandemic", year: 2020, month: 3, president: "Donald Trump",
+                description: "Novel coronavirus from China spreads globally. US cases rising. Italy overwhelmed. Economic shutdown looming. Millions of deaths possible. Testing inadequate. Ventilator shortage.",
+                category: .domestic, severity: .existential, timeToDecide: 72,
+                historicalDecision: "Mixed response. Travel bans. Operation Warp Speed for vaccines. Masks politicized. 1 million+ Americans die. Economy devastated then rebounds.",
+                options: [
+                    CrisisOption(title: "Full national lockdown", outcome: "Fewer deaths. Economy crashes. Protests. Depression possible. Authoritarianism fears."),
+                    CrisisOption(title: "State-by-state response", outcome: "Inconsistent results. Economy partially functioning. More deaths. Federalism tested."),
+                    CrisisOption(title: "Sweden model, limited restrictions", outcome: "Economy stays open. Hospital overflow. Mass casualties. Herd immunity eventually.")
+                ])
+        ]
     }
 
     static func bidenCrises() -> [HistoricalCrisis] {
-        // TODO: Afghanistan withdrawal, Ukraine invasion, Gaza war, Iran tensions, China Taiwan, etc.
-        return []
+        return [
+            HistoricalCrisis(title: "Afghanistan Withdrawal", year: 2021, month: 8, president: "Joe Biden",
+                description: "Final US withdrawal from 20-year war. Taliban advancing. Kabul falling faster than expected. Embassy evacuation. Allies and interpreters trapped. Bagram abandoned. Chaos at airport.",
+                category: .military, severity: .critical, timeToDecide: 72,
+                historicalDecision: "Chaotic withdrawal. 13 troops killed at Abbey Gate. Thousands evacuated. Taliban takes Kabul. US credibility damaged. End of forever war.",
+                options: [
+                    CrisisOption(title: "Delay withdrawal", outcome: "More time for evacuation. Taliban angered. Possible renewed combat. No end in sight."),
+                    CrisisOption(title: "Accelerate evacuation", outcome: "Current chaos. Lives saved. Allies abandoned. Equipment seized. Legacy disaster."),
+                    CrisisOption(title: "Keep Bagram, limited presence", outcome: "Air bridge maintained. Regional base. Endless war continues. More casualties.")
+                ]),
+
+            HistoricalCrisis(title: "Russia Invades Ukraine", year: 2022, month: 2, president: "Joe Biden",
+                description: "Putin launches full-scale invasion of Ukraine. Kyiv under attack. Zelensky refuses to flee. NATO threatened. Nuclear weapons mentioned. Oil prices surge. SWIFT sanctions possible.",
+                category: .military, severity: .critical, timeToDecide: 48,
+                historicalDecision: "Massive weapons aid to Ukraine. Sanctions on Russia. No US troops. NATO unified. War continues years later. Nuclear threats persist.",
+                options: [
+                    CrisisOption(title: "Direct military intervention", outcome: "Ukraine saved quickly. World War III risk. Nuclear exchange possible."),
+                    CrisisOption(title: "Massive aid, no US troops", outcome: "Ukraine fights on. War prolonged. Russia weakened. Nuclear threats continue."),
+                    CrisisOption(title: "Diplomacy, accept Russian demands", outcome: "Quick peace. Ukraine loses territory. NATO credibility destroyed. Appeasement.")
+                ])
+        ]
     }
 
     static func trumpSecondCrises() -> [HistoricalCrisis] {
-        // TODO: Future scenarios (hypothetical)
-        return []
+        // NOTE: These are hypothetical scenarios for 2025-2029 administration
+        return [
+            HistoricalCrisis(title: "Taiwan Crisis Escalation", year: 2025, month: 6, president: "Donald Trump",
+                description: "China blockades Taiwan. US Navy challenged. Silicon chips supply threatened. Japan involved. Nuclear powers on brink. Economic catastrophe looms. Allies watch US response.",
+                category: .military, severity: .existential, timeToDecide: 72,
+                historicalDecision: "Hypothetical - Game simulation only",
+                options: [
+                    CrisisOption(title: "Break blockade militarily", outcome: "Defend Taiwan. War with China. Global economy collapses. Nuclear risk."),
+                    CrisisOption(title: "Negotiate, economic pressure", outcome: "Avoid war. Taiwan autonomy questions. US credibility tested. Chip shortage."),
+                    CrisisOption(title: "Accept Chinese reunification", outcome: "Peace maintained. Allies question commitment. CCP victorious. Democracy defeated.")
+                ])
+        ]
     }
 }
 

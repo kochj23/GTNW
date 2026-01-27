@@ -289,7 +289,12 @@ enum RecruitmentUrgency: String {
 extension War {
     func opponent(of country: Country) -> Country? {
         // Return the other country in the war
-        return nil // Placeholder - implement based on War struct
+        if aggressor.id == country.id {
+            return defender
+        } else if defender.id == country.id {
+            return aggressor
+        }
+        return nil
     }
 }
 
