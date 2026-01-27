@@ -320,20 +320,108 @@ class AchievementEngine: ObservableObject {
 
     private func shouldUnlock(_ achievement: Achievement, gameState: GameState) -> Bool {
         switch achievement.id {
+        // Founding Era
+        case "founding_father":
+            let foundingPresidents = ["washington", "adams", "jefferson", "madison", "monroe", "jq_adams"]
+            return Set(gameState.presidentsPlayed).intersection(foundingPresidents).count == 6
+
+        case "washington_complete":
+            return gameState.presidentsPlayed.contains("washington") && gameState.gameEnded
+
+        case "louisiana_purchase":
+            return gameState.presidentsPlayed.contains("jefferson") && gameState.crisisesCompleted.contains("jefferson_louisiana_1803")
+
+        // Civil War
+        case "preserve_union":
+            return gameState.presidentsPlayed.contains("lincoln") && gameState.civilWarWon == true
+
+        case "emancipation":
+            return gameState.crisisesCompleted.contains("lincoln_emancipation_1862")
+
+        // Peace Achievements
         case "peace_maker":
-            return gameState.turnNumber >= 20 && gameState.warsStarted == 0
+            return gameState.turnNumber >= 20 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0
+
+        case "master_diplomat":
+            let alliedCount = gameState.countries.filter { ($0.relations[gameState.playerCountryID] ?? 0) > 60 }.count
+            let totalCount = gameState.countries.count
+            return Double(alliedCount) / Double(totalCount) >= 0.8
+
+        case "mediator":
+            return gameState.conflictsMed != 0 && gameState.conflictsMediated >= 10
+
+        // War Achievements
+        case "warlord":
+            return gameState.warsWon >= 10
 
         case "nuclear_supremacy":
-            let nuclearPowers = gameState.countries.filter { $0.hasNuclearWeapons }
+            let nuclearPowers = gameState.countries.filter { $0.hasNuclearWeapons && !$0.isDestroyed }
             return nuclearPowers.count == 1 && nuclearPowers.first?.isPlayer == true
 
         case "dr_strangelove":
             return gameState.totalWarheadsLaunched >= 100
 
+        case "first_strike":
+            return gameState.nukesLaunched >= 1
+
+        // Covert Achievements
+        case "shadow_operator":
+            return gameState.successfulCovertOps >= 50
+
+        case "spymaster":
+            return gameState.spyNetworksEstablished >= 20
+
+        case "regime_change":
+            return gameState.successfulCoups >= 5
+
+        // Economic Achievements
+        case "economic_powerhouse":
+            let playerGDP = gameState.countries.first { $0.isPlayer }?.gdp ?? 0
+            let maxOtherGDP = gameState.countries.filter { !$0.isPlayer }.map { $0.gdp }.max() ?? 0
+            return playerGDP > maxOtherGDP
+
+        case "sanctions_master":
+            return gameState.sanctionsImposed >= 15
+
+        // Crisis Management
+        case "crisis_veteran":
+            return gameState.crisisesCompleted.count >= 50
+
+        case "cuban_missile_survivor":
+            return gameState.crisisesCompleted.contains("kennedy_cuban_missile_1962")
+
+        // Survival
+        case "nuclear_winter_survivor":
+            return gameState.nuclearWinterSurvived && gameState.gameEnded && gameState.victoryType != nil
+
+        case "defcon_1_escape":
+            return gameState.reachedDEFCON1 && gameState.defconLevel >= 4
+
+        // Collection
         case "time_traveler":
             return gameState.presidentsPlayed.count >= 47
 
-        // Add more checks for each achievement
+        case "cold_warrior":
+            let coldWarPresidents = ["truman", "eisenhower", "kennedy", "johnson", "nixon", "ford", "carter", "reagan", "bush_sr"]
+            return Set(gameState.presidentsPlayed).intersection(coldWarPresidents).count == 9
+
+        case "modern_president":
+            let modernPresidents = ["clinton", "bush_jr", "obama", "trump_first", "biden", "trump_second"]
+            return Set(gameState.presidentsPlayed).intersection(modernPresidents).count == 6
+
+        // Special
+        case "wopr_choice":
+            return gameState.turnNumber >= 50 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0 && gameState.defconLevel == 5
+
+        case "provocateur":
+            return gameState.warsStarted >= 3 && gameState.activeWars.count >= 2
+
+        case "betrayer":
+            return gameState.alliancesBroken >= 10
+
+        case "pacifist":
+            return gameState.gameEnded && gameState.militaryActionsUsed == 0 && gameState.victoryType != nil
+
         default:
             return false
         }
@@ -350,7 +438,7 @@ class AchievementEngine: ObservableObject {
 
         // Generate commemorative poster
         if let poster = try? await generateAchievementPoster(achievement) {
-            achievement.commemorativePoster = poster
+            achievementPosters[achievement.id] = poster
         }
 
         // Show unlock animation

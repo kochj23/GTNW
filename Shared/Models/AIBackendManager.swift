@@ -1177,6 +1177,7 @@ enum AIBackendError: LocalizedError {
     case mlxScriptNotConfigured
     case mlxExecutionFailed(String)
     case embeddingsNotSupported
+    case ethicalViolation(String)
 
     var errorDescription: String? {
         switch self {
@@ -1192,6 +1193,8 @@ enum AIBackendError: LocalizedError {
             return "MLX execution failed: \(message)"
         case .embeddingsNotSupported:
             return "Embeddings not supported with current backend."
+        case .ethicalViolation(let description):
+            return "Ethical AI policy violation: \(description)"
         }
     }
 }

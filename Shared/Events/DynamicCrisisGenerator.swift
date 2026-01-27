@@ -100,21 +100,61 @@ class DynamicCrisisGenerator: ObservableObject {
     // MARK: - Parse Crisis from LLM
 
     private func parseCrisisJSON(_ json: String) throws -> ParsedCrisis {
-        // Simple parsing (in production, use proper JSON decoder)
-        // For now, return template
+        // Try to parse JSON response
+        guard let jsonData = json.data(using: .utf8) else {
+            return parseFallback(json)
+        }
+
+        do {
+            let decoder = JSONDecoder()
+            let crisis = try decoder.decode(ParsedCrisisJSON.self, from: jsonData)
+
+            return ParsedCrisis(
+                title: crisis.title,
+                description: crisis.description,
+                countries: crisis.countries,
+                options: crisis.options,
+                severity: CrisisSeverity(rawValue: crisis.severity) ?? .medium
+            )
+        } catch {
+            // Fallback: Parse as structured text
+            return parseFallback(json)
+        }
+    }
+
+    private func parseFallback(_ text: String) -> ParsedCrisis {
+        // Extract title (first line or between quotes)
+        let lines = text.components(separatedBy: "\n")
+        let title = lines.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Crisis Alert"
+
+        // Use LLM response as description
+        let description = text.components(separatedBy: "\n\n").first ?? text
+
+        // Generate basic options
+        let options = [
+            CrisisOption(title: "Diplomatic approach", outcome: "Attempt to resolve through negotiation"),
+            CrisisOption(title: "Military response", outcome: "Show strength through military action"),
+            CrisisOption(title: "Economic pressure", outcome: "Use sanctions and economic tools"),
+            CrisisOption(title: "Covert operations", outcome: "Handle situation discretely through intelligence")
+        ]
+
         return ParsedCrisis(
-            title: "Dynamic Crisis Generated",
-            description: json,
-            countries: ["USA", "Russia"],
-            options: [
-                CrisisOption(title: "Option 1", outcome: "Outcome 1"),
-                CrisisOption(title: "Option 2", outcome: "Outcome 2"),
-                CrisisOption(title: "Option 3", outcome: "Outcome 3"),
-                CrisisOption(title: "Option 4", outcome: "Outcome 4")
-            ],
+            title: title,
+            description: description,
+            countries: ["USA"],
+            options: options,
             severity: .medium
         )
     }
+
+    struct ParsedCrisisJSON: Codable {
+        let title: String
+        let description: String
+        let countries: [String]
+        let options: [CrisisOption]
+        let severity: String
+    }
+}
 }
 
 // MARK: - Models

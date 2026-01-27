@@ -81,13 +81,7 @@ extension AIBackendManager {
 }
 
 // MARK: - Error Extension
-
-extension AIBackendError {
-    static func ethicalViolation(_ description: String) -> AIBackendError {
-        // Add new error case for ethical violations
-        return .invalidConfiguration // Placeholder
-    }
-}
+// ethicalViolation is now a proper case in AIBackendError enum
 
 // MARK: - Usage Context
 
