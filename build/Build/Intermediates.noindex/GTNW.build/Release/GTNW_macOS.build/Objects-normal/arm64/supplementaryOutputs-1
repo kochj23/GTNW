@@ -1,0 +1,12 @@
+{
+  "/Volumes/Data/xcode/GTNW/Shared/Models/Advisor.swift" : {
+    "abi-baseline-json" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW.abi.json",
+    "const-values" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW_macOS-primary.swiftconstvalues",
+    "dependencies" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW_macOS-primary.d",
+    "diagnostics" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW_macOS-primary.dia",
+    "objc-header" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW-Swift.h",
+    "swiftdoc" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW.swiftdoc",
+    "swiftmodule" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW.swiftmodule",
+    "swiftsourceinfo" : "/Volumes/Data/xcode/GTNW/build/Build/Intermediates.noindex/GTNW.build/Release/GTNW_macOS.build/Objects-normal/arm64/GTNW.swiftsourceinfo"
+  }
+}

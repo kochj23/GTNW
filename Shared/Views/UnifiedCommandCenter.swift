@@ -735,6 +735,11 @@ struct UnifiedCommandCenter: View {
         case .tinyLLM: return AIBackendManager.shared.isTinyLLMAvailable
         case .tinyChat: return AIBackendManager.shared.isTinyChatAvailable
         case .openWebUI: return AIBackendManager.shared.isOpenWebUIAvailable
+        case .openAI: return AIBackendManager.shared.isOpenAIAvailable
+        case .googleCloud: return AIBackendManager.shared.isGoogleCloudAvailable
+        case .azureCognitive: return AIBackendManager.shared.isAzureAvailable
+        case .awsAI: return AIBackendManager.shared.isAWSAvailable
+        case .ibmWatson: return AIBackendManager.shared.isIBMWatsonAvailable
         case .auto: return AIBackendManager.shared.activeBackend != nil
         }
     }
