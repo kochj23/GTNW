@@ -102,6 +102,12 @@
 		F8A2DDEBFDF6D0826EC04AB1 /* WorldCountriesDatabase_Complete.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */; };
 		FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
 		FDA0817763260DF5A2653FC1 /* EconomicWarfareSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */; };
+		WIDGET001A /* GTNWWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET001F /* GTNWWidget.swift */; };
+		WIDGET002A /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET002F /* WidgetData.swift */; };
+		WIDGET003A /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET003F /* SharedDataManager.swift */; };
+		WIDGET004A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = WIDGET004F /* Assets.xcassets */; };
+		WIDGET005A /* WidgetSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET005F /* WidgetSync.swift */; };
+		WIDGET006A /* WidgetSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET005F /* WidgetSync.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -168,6 +174,14 @@
 		EE8EF3871D54AD759C686C04 /* SystemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemsView.swift; sourceTree = "<group>"; };
 		EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldCountriesDatabase_Complete.swift; sourceTree = "<group>"; };
 		F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SimpleModernWorldMap.swift; sourceTree = "<group>"; };
+		WIDGET001F /* GTNWWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWWidget.swift; sourceTree = "<group>"; };
+		WIDGET002F /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
+		WIDGET003F /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDataManager.swift; sourceTree = "<group>"; };
+		WIDGET004F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		WIDGET005F /* WidgetSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSync.swift; sourceTree = "<group>"; };
+		WIDGET006F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		WIDGET007F /* GTNW_Widget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GTNW_Widget.entitlements; sourceTree = "<group>"; };
+		WIDGET_PRODUCT /* GTNW Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "GTNW Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -221,6 +235,7 @@
 				07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */,
 				A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */,
 				EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */,
+				WIDGET005F /* WidgetSync.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -291,6 +306,7 @@
 				AEBBDFE66417443EFF01F473 /* Shared */,
 				80335E74269385013821DC0D /* Products */,
 				854F628D7554D1E187C54898 /* GTNW */,
+				WIDGET_GROUP /* GTNW Widget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -308,6 +324,7 @@
 			children = (
 				EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */,
 				991630D748C5C7E56E47730C /* GTNW_macOS.app */,
+				WIDGET_PRODUCT /* GTNW Widget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -412,6 +429,19 @@
 			name = Design;
 			sourceTree = "<group>";
 		};
+		WIDGET_GROUP /* GTNW Widget */ = {
+			isa = PBXGroup;
+			children = (
+				WIDGET001F /* GTNWWidget.swift */,
+				WIDGET002F /* WidgetData.swift */,
+				WIDGET003F /* SharedDataManager.swift */,
+				WIDGET004F /* Assets.xcassets */,
+				WIDGET006F /* Info.plist */,
+				WIDGET007F /* GTNW_Widget.entitlements */,
+			);
+			path = "GTNW Widget";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -447,6 +477,22 @@
 			productReference = EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		WIDGET_TARGET /* GTNW Widget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = WIDGET_CONFIGLIST /* Build configuration list for PBXNativeTarget "GTNW Widget" */;
+			buildPhases = (
+				WIDGET_SOURCES /* Sources */,
+				WIDGET_RESOURCES /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "GTNW Widget";
+			productName = "GTNW Widget";
+			productReference = WIDGET_PRODUCT /* GTNW Widget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -460,7 +506,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					E42C02BEFB6D376D09825CF4 = {
-						DevelopmentTeam = "$(DEVELOPMENT_TEAM)";
+						DevelopmentTeam = QRRCB8HB3W;
+						ProvisioningStyle = Automatic;
+					};
+					WIDGET_TARGET = {
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -482,6 +531,7 @@
 			targets = (
 				E42C02BEFB6D376D09825CF4 /* GTNW_iOS */,
 				ABB94F1EC86B3E165928C70B /* GTNW_macOS */,
+				WIDGET_TARGET /* GTNW Widget */,
 			);
 		};
 /* End PBXProject section */
@@ -500,6 +550,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3A56622AE3C641209272325 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		WIDGET_RESOURCES /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WIDGET004A /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -561,6 +619,7 @@
 				FDA0817763260DF5A2653FC1 /* EconomicWarfareSimulator.swift in Sources */,
 				DDD016A15007CA796AB3C323 /* DynamicCrisisGenerator.swift in Sources */,
 				97396C9CA4C3021340306946 /* SentimentWorldMap.swift in Sources */,
+				WIDGET005A /* WidgetSync.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -610,6 +669,17 @@
 				38A4E12CF88174755CD44822 /* HistoricalAdministrations_PreNuclear.swift in Sources */,
 				3D0B114CF010F97CE6D8C284 /* HistoricalCrises_PreNuclear.swift in Sources */,
 				F8A2DDEBFDF6D0826EC04AB1 /* WorldCountriesDatabase_Complete.swift in Sources */,
+				WIDGET006A /* WidgetSync.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		WIDGET_SOURCES /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WIDGET001A /* GTNWWidget.swift in Sources */,
+				WIDGET002A /* WidgetData.swift in Sources */,
+				WIDGET003A /* SharedDataManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -622,7 +692,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shared/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = GTNW;
@@ -645,9 +715,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shared/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Global Thermal Nuclear War";
@@ -667,9 +738,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shared/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Global Thermal Nuclear War";
@@ -746,7 +818,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shared/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = GTNW;
@@ -827,6 +899,66 @@
 			};
 			name = Debug;
 		};
+		WIDGET_DEBUG /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GTNW Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "GTNW Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		WIDGET_RELEASE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GTNW Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "GTNW Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -853,6 +985,15 @@
 			buildConfigurations = (
 				C96597E07DE7EB42342E7701 /* Debug */,
 				A4CCF48BCCE1CE2F99F7CF8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		WIDGET_CONFIGLIST /* Build configuration list for PBXNativeTarget "GTNW Widget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				WIDGET_DEBUG /* Debug */,
+				WIDGET_RELEASE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

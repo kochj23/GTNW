@@ -155,7 +155,6 @@ class DynamicCrisisGenerator: ObservableObject {
         let severity: String
     }
 }
-}
 
 // MARK: - Models
 
