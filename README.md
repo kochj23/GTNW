@@ -571,3 +571,7 @@ MIT License - Copyright © 2026 Jordan Koch
 | [Bastion](https://github.com/kochj23/Bastion) | Authorized security testing and penetration toolkit |
 
 > **[View all projects](https://github.com/kochj23?tab=repositories)**
+
+---
+
+> **Disclaimer:** This is a personal project created on my own time. It is not affiliated with, endorsed by, or representative of my employer.
