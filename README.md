@@ -555,3 +555,17 @@ MIT License - Copyright © 2026 Jordan Koch
 
 *"The only winning move is not to play... but you're going to play anyway."*
 — WOPR, WarGames (1983)
+
+---
+
+## More Apps by Jordan Koch
+
+| App | Description |
+|-----|-------------|
+| [Blompie](https://github.com/kochj23/Blompie) | AI-powered text adventure game engine |
+| [MLXCode](https://github.com/kochj23/MLXCode) | Local AI coding assistant for Apple Silicon |
+| [NewsSummary](https://github.com/kochj23/NewsSummary) | AI-powered news aggregation and summarization |
+| [NMAPScanner](https://github.com/kochj23/NMAPScanner) | Network security scanner with AI threat detection |
+| [Bastion](https://github.com/kochj23/Bastion) | Authorized security testing and penetration toolkit |
+
+> **[View all projects](https://github.com/kochj23?tab=repositories)**
