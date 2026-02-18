@@ -1,5 +1,7 @@
 # 🏛️ GTNW - Global Thermal Nuclear War v1.3.0
 
+![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
+
 **The most comprehensive presidential strategy game ever created**
 
 Command America through 236 years of history (1789-2025) with voice-acted AI opponents, real-time generated propaganda, predictive intelligence, and 290+ historical crises.
