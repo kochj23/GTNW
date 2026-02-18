@@ -10,6 +10,8 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 ![Countries](https://img.shields.io/badge/countries-195-blue)
 ![AI Features](https://img.shields.io/badge/AI%20Features-14-purple)
 
+![GTNW](Screenshots/main-window.png)
+
 ---
 
 ## 🎮 What is GTNW?
