@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Security
 import SwiftUI
 import Combine
 
@@ -138,7 +139,7 @@ class AIBackendManager: ObservableObject {
     // OpenWebUI-specific
     @Published var openWebUIServerURL: String = "http://localhost:8080"
 
-    // Cloud AI Services - API Keys (WARNING: Use Keychain in production!)
+    // Cloud AI Services - API Keys (stored in Keychain)
     @Published var openAIAPIKey: String = ""
     @Published var googleCloudAPIKey: String = ""
     @Published var azureAPIKey: String = ""
@@ -169,7 +170,7 @@ class AIBackendManager: ObservableObject {
         static let tinyLLMServerURL = "AIBackendManager_TinyLLMServerURL"
         static let tinyChatServerURL = "AIBackendManager_TinyChatServerURL"
         static let openWebUIServerURL = "AIBackendManager_OpenWebUIServerURL"
-        // Cloud API Keys (WARNING: Store in Keychain for production!)
+        // Cloud API Keys (stored in Keychain)
         static let openAIAPIKey = "AIBackendManager_OpenAI_Key"
         static let googleCloudAPIKey = "AIBackendManager_GoogleCloud_Key"
         static let azureAPIKey = "AIBackendManager_Azure_Key"
@@ -181,9 +182,69 @@ class AIBackendManager: ObservableObject {
         static let ibmWatsonURL = "AIBackendManager_IBM_URL"
     }
 
+    // MARK: - Keychain Storage
+
+    private static let keychainServiceName = "com.jordankoch.GTNW"
+
+    private static func saveToKeychain(key: String, value: String, service: String) {
+        guard let data = value.data(using: .utf8) else { return }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrService as String: service,
+            kSecValueData as String: data
+        ]
+        SecItemDelete(query as CFDictionary)
+        SecItemAdd(query as CFDictionary, nil)
+    }
+
+    private static func loadFromKeychain(key: String, service: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrService as String: service,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func deleteFromKeychain(key: String, service: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrService as String: service
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+
+    private static func migrateAPIKeysFromUserDefaults(service: String) {
+        let defaults = UserDefaults.standard
+        let keysToMigrate = [
+            Keys.openAIAPIKey,
+            Keys.googleCloudAPIKey,
+            Keys.azureAPIKey,
+            Keys.azureEndpoint,
+            Keys.awsAccessKey,
+            Keys.awsSecretKey,
+            Keys.ibmWatsonAPIKey,
+            Keys.ibmWatsonURL
+        ]
+        for key in keysToMigrate {
+            if let value = defaults.string(forKey: key), !value.isEmpty {
+                saveToKeychain(key: key, value: value, service: service)
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+
     // MARK: - Initialization
 
     private init() {
+        Self.migrateAPIKeysFromUserDefaults(service: Self.keychainServiceName)
         loadSettings()
         Task {
             await checkBackendAvailability()
@@ -205,16 +266,16 @@ class AIBackendManager: ObservableObject {
         tinyChatServerURL = userDefaults.string(forKey: Keys.tinyChatServerURL) ?? "http://localhost:8000"
         openWebUIServerURL = userDefaults.string(forKey: Keys.openWebUIServerURL) ?? "http://localhost:8080"
 
-        // Cloud API Keys (WARNING: These should be in Keychain in production!)
-        openAIAPIKey = userDefaults.string(forKey: Keys.openAIAPIKey) ?? ""
-        googleCloudAPIKey = userDefaults.string(forKey: Keys.googleCloudAPIKey) ?? ""
-        azureAPIKey = userDefaults.string(forKey: Keys.azureAPIKey) ?? ""
-        azureEndpoint = userDefaults.string(forKey: Keys.azureEndpoint) ?? ""
-        awsAccessKey = userDefaults.string(forKey: Keys.awsAccessKey) ?? ""
-        awsSecretKey = userDefaults.string(forKey: Keys.awsSecretKey) ?? ""
+        // Cloud API Keys (stored securely in Keychain)
+        openAIAPIKey = Self.loadFromKeychain(key: Keys.openAIAPIKey, service: Self.keychainServiceName) ?? ""
+        googleCloudAPIKey = Self.loadFromKeychain(key: Keys.googleCloudAPIKey, service: Self.keychainServiceName) ?? ""
+        azureAPIKey = Self.loadFromKeychain(key: Keys.azureAPIKey, service: Self.keychainServiceName) ?? ""
+        azureEndpoint = Self.loadFromKeychain(key: Keys.azureEndpoint, service: Self.keychainServiceName) ?? ""
+        awsAccessKey = Self.loadFromKeychain(key: Keys.awsAccessKey, service: Self.keychainServiceName) ?? ""
+        awsSecretKey = Self.loadFromKeychain(key: Keys.awsSecretKey, service: Self.keychainServiceName) ?? ""
         awsRegion = userDefaults.string(forKey: Keys.awsRegion) ?? "us-east-1"
-        ibmWatsonAPIKey = userDefaults.string(forKey: Keys.ibmWatsonAPIKey) ?? ""
-        ibmWatsonURL = userDefaults.string(forKey: Keys.ibmWatsonURL) ?? ""
+        ibmWatsonAPIKey = Self.loadFromKeychain(key: Keys.ibmWatsonAPIKey, service: Self.keychainServiceName) ?? ""
+        ibmWatsonURL = Self.loadFromKeychain(key: Keys.ibmWatsonURL, service: Self.keychainServiceName) ?? ""
     }
 
     func saveSettings() {
@@ -226,16 +287,16 @@ class AIBackendManager: ObservableObject {
         userDefaults.set(tinyChatServerURL, forKey: Keys.tinyChatServerURL)
         userDefaults.set(openWebUIServerURL, forKey: Keys.openWebUIServerURL)
 
-        // Cloud API Keys (WARNING: These should be in Keychain in production!)
-        userDefaults.set(openAIAPIKey, forKey: Keys.openAIAPIKey)
-        userDefaults.set(googleCloudAPIKey, forKey: Keys.googleCloudAPIKey)
-        userDefaults.set(azureAPIKey, forKey: Keys.azureAPIKey)
-        userDefaults.set(azureEndpoint, forKey: Keys.azureEndpoint)
-        userDefaults.set(awsAccessKey, forKey: Keys.awsAccessKey)
-        userDefaults.set(awsSecretKey, forKey: Keys.awsSecretKey)
+        // Cloud API Keys (stored securely in Keychain)
+        Self.saveToKeychain(key: Keys.openAIAPIKey, value: openAIAPIKey, service: Self.keychainServiceName)
+        Self.saveToKeychain(key: Keys.googleCloudAPIKey, value: googleCloudAPIKey, service: Self.keychainServiceName)
+        Self.saveToKeychain(key: Keys.azureAPIKey, value: azureAPIKey, service: Self.keychainServiceName)
+        Self.saveToKeychain(key: Keys.azureEndpoint, value: azureEndpoint, service: Self.keychainServiceName)
+        Self.saveToKeychain(key: Keys.awsAccessKey, value: awsAccessKey, service: Self.keychainServiceName)
+        Self.saveToKeychain(key: Keys.awsSecretKey, value: awsSecretKey, service: Self.keychainServiceName)
         userDefaults.set(awsRegion, forKey: Keys.awsRegion)
-        userDefaults.set(ibmWatsonAPIKey, forKey: Keys.ibmWatsonAPIKey)
-        userDefaults.set(ibmWatsonURL, forKey: Keys.ibmWatsonURL)
+        Self.saveToKeychain(key: Keys.ibmWatsonAPIKey, value: ibmWatsonAPIKey, service: Self.keychainServiceName)
+        Self.saveToKeychain(key: Keys.ibmWatsonURL, value: ibmWatsonURL, service: Self.keychainServiceName)
     }
 
     // MARK: - Backend Availability Checking
@@ -400,6 +461,7 @@ class AIBackendManager: ObservableObject {
     }
 
     private func checkMLXAvailability() async -> Bool {
+        #if os(macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: pythonPath)
         task.arguments = ["-c", "import mlx.core as mx; print('OK')"]
@@ -415,6 +477,9 @@ class AIBackendManager: ObservableObject {
         } catch {
             return false
         }
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Unified AI Interface
@@ -559,6 +624,7 @@ class AIBackendManager: ObservableObject {
         temperature: Float,
         maxTokens: Int
     ) async throws -> String {
+        #if os(macOS)
         guard !mlxScriptPath.isEmpty else {
             throw AIBackendError.mlxScriptNotConfigured
         }
@@ -630,6 +696,9 @@ class AIBackendManager: ObservableObject {
         let output = String(data: outputData, encoding: .utf8) ?? ""
 
         return output.trimmingCharacters(in: .whitespacesAndNewlines)
+        #else
+        throw AIBackendError.mlxScriptNotConfigured
+        #endif
     }
 
     // MARK: - TinyLLM Implementation
