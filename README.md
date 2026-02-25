@@ -391,6 +391,7 @@ Putin: "You have shown you prefer force over reason.
 - **No Internet Required**: Play completely offline
 - **No Telemetry**: Zero tracking
 - **Private Games**: Your decisions stay private
+- **Keychain Storage**: API keys stored securely in macOS Keychain (not UserDefaults)
 
 ---
 
@@ -512,7 +513,64 @@ open "GTNW.xcodeproj"
 
 ---
 
+## macOS Desktop Widget
+
+GTNW includes a macOS WidgetKit widget that displays real-time game status on your desktop.
+
+### Widget Features
+
+**Small Widget:**
+- DEFCON level with color indicator (1-5)
+- Current war status (PEACE/AT WAR)
+- Turn counter
+
+**Medium Widget:**
+- DEFCON level display
+- President name and administration
+- Turn counter and war status
+- Casualty count and radiation level
+
+**Large Widget (Situation Room):**
+- Full command center-style dashboard
+- DEFCON gauge with progress indicator
+- President and administration info
+- Complete war status details
+- All key metrics (casualties, radiation, active wars)
+- Last updated timestamp
+
+### Widget Installation
+
+1. Build the GTNW app with the widget extension
+2. Install the app on your Mac
+3. Right-click on your desktop and select "Edit Widgets"
+4. Search for "GTNW" in the widget gallery
+5. Choose your preferred widget size (Small, Medium, or Large)
+6. Drag the widget to your desktop
+
+### App Group Configuration
+
+The widget uses App Groups for data sharing:
+- **App Group ID:** `group.com.jkoch.gtnw`
+- Game state syncs automatically when turns advance or DEFCON changes
+- Widget updates every 15 minutes or when game state changes
+
+### Technical Details
+
+Widget files are located in `/GTNW Widget/`:
+- `GTNWWidget.swift` - Main widget with Small/Medium/Large views
+- `WidgetData.swift` - Data models for widget display
+- `SharedDataManager.swift` - App Group data sharing
+- `WidgetSync.swift` - GameState extension for syncing to widget
+
+---
+
 ## Version History
+
+### v1.4.0 (February 2026) - "Desktop Commander Update"
+- macOS WidgetKit desktop widget
+- Real-time DEFCON level display
+- Game status at a glance
+- Three widget sizes (Small, Medium, Large)
 
 ### v1.3.0 (January 2026) - "The Legendary Update"
 - 14 revolutionary features added
@@ -549,7 +607,7 @@ MIT License - Copyright © 2026 Jordan Koch
 
 ---
 
-**Last Updated:** January 27, 2026
+**Last Updated:** February 4, 2026
 **Status:** ✅ Ready to Play
 **Rating:** Mature (17+) - War themes, political violence, nuclear weapons
 
