@@ -17,8 +17,10 @@ class MLXManager: ObservableObject {
     @Published var isProcessing = false
 
     private let pythonPath = "/opt/homebrew/bin/python3"
-    private let mlxScriptPath = "/Users/kochj/.mlx/gtnw_advisor.py"
+    private let mlxScriptPath = NSHomeDirectory() + "/.mlx/gtnw_advisor.py"
+    #if os(macOS)
     private var process: Process?
+    #endif
 
     /// Initialize MLX connection
     func initialize() async {
@@ -35,6 +37,7 @@ class MLXManager: ObservableObject {
 
     /// Check if MLX Python toolkit is available
     private func checkMLXAvailability() async -> Bool {
+        #if os(macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: pythonPath)
         task.arguments = ["-c", "import mlx.core as mx; print('OK')"]
@@ -50,6 +53,9 @@ class MLXManager: ObservableObject {
         } catch {
             return false
         }
+        #else
+        return false
+        #endif
     }
 
     /// Get AI recommendation for a country's action
@@ -201,6 +207,7 @@ class MLXManager: ObservableObject {
             print(f"ERROR: {e}")
         """
 
+        #if os(macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: pythonPath)
         task.arguments = ["-c", script, jsonString]
@@ -220,6 +227,9 @@ class MLXManager: ObservableObject {
             print("MLX call failed: \(error)")
             return nil
         }
+        #else
+        return nil
+        #endif
     }
 
     private func extractCountryName(from text: String, gameState: GameState) -> Country? {
