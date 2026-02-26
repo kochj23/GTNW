@@ -18,7 +18,7 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 
 ## 🎮 What is GTNW?
 
-**GTNW (Global Thermal Nuclear War)** is a grand strategy game where you play as the President of the United States navigating Cold War tensions, nuclear diplomacy, and global conflicts. Inspired by the WOPR computer from WarGames (1983), GTNW combines historical accuracy with AI-powered procedural gameplay to create the most sophisticated presidential simulator ever made.
+**GTNW (Global Thermal Nuclear War)** is a grand strategy game where you play as the President of the United States navigating Cold War tensions, nuclear diplomacy, and global conflicts. Inspired by the WOPR (War Operation Plan Response) computer from WarGames (1983), GTNW combines historical accuracy with AI-powered procedural gameplay to create the most sophisticated presidential simulator ever made.
 
 **You Are The President. The World Is Watching. One Wrong Move Could End Civilization.**
 
@@ -28,11 +28,11 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 - 🎙️ **Voice-Acted World Leaders** - Hear Putin, Xi, Kim Jong-un speak in their actual voices
 - 🖼️ **AI-Generated Propaganda** - Unique war posters for every playthrough
 - 💎 **The Living Room** - Real-time voice conversations with leaders (NEVER DONE BEFORE)
-- 🔮 **Predictive Intelligence** - Forecast wars 3-5 turns ahead with ML
+- 🔮 **Predictive Intelligence** - Forecast wars 3-5 turns ahead with ML (Machine Learning)
 - 🧠 **Adaptive AI** - Opponents learn YOUR playstyle and counter it
 - 🏛️ **236 Years of History** - All 47 US Presidents (Washington → Trump/Biden)
 - 📜 **290+ Historical Crises** - Plus infinite AI-generated scenarios
-- 🌍 **195 Countries** - Complete UN coverage with accurate geopolitics
+- 🌍 **195 Countries** - Complete UN (United Nations) coverage with accurate geopolitics
 - 🎬 **Hollywood Cinematics** - Nuclear strikes feel weighty and consequential
 - 🎓 **Educational Tool** - Classroom-ready for US History and Political Science
 
@@ -50,7 +50,7 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 3. **Diplomatic Actions**: Negotiate with world leaders
 4. **Military Decisions**: Deploy forces or launch strikes
 5. **Public Relations**: Manage domestic opinion and propaganda
-6. **Survive**: Keep DEFCON below 1 to avoid nuclear war
+6. **Survive**: Keep DEFCON (Defense Readiness Condition) below 1 to avoid nuclear war
 
 ### Victory Conditions
 
@@ -111,7 +111,7 @@ Imagine sitting across from Vladimir Putin, hearing his actual voice, as you neg
 You: "President Putin, we must discuss Ukraine immediately."
 
 Putin (in Russian-accented voice): "Ah, Mr. President. You Americans
-always rush. Perhaps we discuss NATO expansion first, yes?"
+always rush. Perhaps we discuss NATO (North Atlantic Treaty Organization) expansion first, yes?"
 
 You: "NATO is a defensive alliance. Your invasion violates international law."
 
@@ -234,7 +234,7 @@ Putin: "You have shown you prefer force over reason.
 
 **Scene 2 - The Launch:**
 - Missile silos opening
-- Minuteman III ICBMs igniting
+- Minuteman III ICBMs (Intercontinental Ballistic Missiles) igniting
 - "May God forgive us for what we're about to do..."
 - Missiles arc into atmosphere
 
@@ -327,7 +327,7 @@ Putin: "You have shown you prefer force over reason.
 
 **Diplomatic Actions:**
 - **Negotiate Treaties**: Peace, trade, nuclear arms control
-- **Form Alliances**: NATO, SEATO, bilateral agreements
+- **Form Alliances**: NATO, SEATO (Southeast Asia Treaty Organization), bilateral agreements
 - **Economic Sanctions**: Pressure adversaries
 - **Foreign Aid**: Win hearts and minds
 - **Summit Meetings**: Face-to-face with leaders
@@ -340,11 +340,11 @@ Putin: "You have shown you prefer force over reason.
 - **Special Operations**: Covert actions and assassinations
 - **Cyber Warfare**: Hack enemy infrastructure
 - **Proxy Wars**: Support insurgencies and rebels
-- **Nuclear Options**: Tactical or strategic strikes (MAD applies)
+- **Nuclear Options**: Tactical or strategic strikes (MAD (Mutually Assured Destruction) applies)
 
 ### Intelligence
 
-**CIA Operations:**
+**CIA (Central Intelligence Agency) Operations:**
 - **Espionage**: Steal enemy secrets
 - **Coups**: Overthrow unfriendly governments
 - **Assassination**: Eliminate threats
@@ -399,13 +399,13 @@ Putin: "You have shown you prefer force over reason.
 
 ### System Requirements
 - **macOS 13.0+** or **iOS 15.0+**
-- **8GB RAM** (16GB recommended)
+- **8GB RAM (Random Access Memory)** (16GB recommended)
 - **Architecture**: Universal (Apple Silicon recommended)
 
 ### AI Backend
 **Choose one:**
 - **Ollama**: `brew install ollama && ollama pull mistral`
-- **MLX**: `pip install mlx-lm` (Apple Silicon only)
+- **MLX (Machine Learning eXtensions)**: `pip install mlx-lm` (Apple Silicon only)
 
 ### Dependencies
 - SwiftUI, AppKit/UIKit, Foundation
@@ -601,7 +601,7 @@ MIT License - Copyright © 2026 Jordan Koch
 
 - **Author**: Jordan Koch
 - **Inspired By**: WarGames (1983), Def Con, Civilization
-- **Voice Cloning**: F5-TTS integration
+- **Voice Cloning**: F5-TTS (Text-to-Speech) integration
 - **AI**: Ollama, MLX
 - **Platform**: macOS 13.0+, iOS 15.0+
 
