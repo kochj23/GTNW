@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'GTNW_macOS' in project 'GTNW' (no dependencies)
