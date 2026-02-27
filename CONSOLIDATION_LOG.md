@@ -14,7 +14,7 @@ Consolidate all 10 feature systems into minimal code as requested by user.
 ### Files Changed
 
 #### Created
-- `/Users/kochj/Desktop/xcode/GTNW/Shared/Models/GameSystems.swift` (500 lines)
+- `~/Desktop/xcode/GTNW/Shared/Models/GameSystems.swift` (500 lines)
   - Unified protocol: `GameOperation` (ID, initiator, target, turn, success)
   - All 10 systems in one file with minimal duplication
   - Single `SystemsManager` class managing all state

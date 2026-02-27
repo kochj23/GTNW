@@ -180,8 +180,8 @@ let gameState = GameState(playerCountryID: "USA", scenario: scenario)
 
 ## Documentation
 All consolidation details logged in:
-- `/Users/kochj/Desktop/xcode/GTNW/CONSOLIDATION_LOG.md`
-- This summary: `/Users/kochj/Desktop/xcode/GTNW/CONSOLIDATION_SUMMARY.md`
+- `~/Desktop/xcode/GTNW/CONSOLIDATION_LOG.md`
+- This summary: `~/Desktop/xcode/GTNW/CONSOLIDATION_SUMMARY.md`
 
 ## Build Status
 ✅ **BUILD SUCCEEDED** - Zero errors, ready for integration

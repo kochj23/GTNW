@@ -87,7 +87,7 @@
 
 ### Launch GTNW:
 ```bash
-open "/Users/kochj/Applications/GTNW.app"
+open ~/Applications/GTNW.app
 ```
 
 ### New Features You Can Use:

@@ -8,7 +8,7 @@
 4. **Go to "Signing & Capabilities" tab**
 5. **Check "Automatically manage signing"**
 6. **Select your Team** from dropdown
-   - Should show: kochj@digitalnoise.net or similar
+   - Should show: your-apple-id@example.com or similar
 7. **Xcode will automatically create a provisioning profile**
 8. **Build and Run** (⌘R)
 

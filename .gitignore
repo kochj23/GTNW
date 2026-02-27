@@ -9,3 +9,5 @@ DerivedData/
 build/
 .build/
 *.xcuserstate
+*.bak
+*.bak[0-9]*
