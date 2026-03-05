@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.5.0
+# 🏛️ GTNW - Global Thermal Nuclear War v1.5.1
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,7 +16,7 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 
 ---
 
-## 🆕 What's New in v1.5.0
+## 🆕 What's New in v1.5.1
 
 **Full cabinet release** — every president now has their complete, historically accurate inner circle.
 
@@ -576,7 +576,7 @@ Widget files are located in `/GTNW Widget/`:
 
 ## Version History
 
-### v1.5.0 (February 2026) - "Desktop Commander Update"
+### v1.5.1 (February 2026) - "Desktop Commander Update"
 - macOS WidgetKit desktop widget
 - Real-time DEFCON level display
 - Game status at a glance

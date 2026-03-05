@@ -20,6 +20,10 @@ struct CommandView: View {
     @State private var showingWeaponsMenu = false
     @State private var showingSystemsView = false
     @State private var showingStatsPanel = true
+    // Presidential powers
+    @State private var showingExecutiveOrderMenu = false
+    @State private var showingPardonMenu = false
+    @State private var showingAddressMenu = false
     @State private var nlCommandText = ""
     @State private var nlCommandResponse = ""
     @State private var pickerMode: PickerMode = .target
@@ -426,6 +430,33 @@ struct CommandView: View {
                     showingSystemsView = true
                 }
 
+                // Executive Order
+                actionButton(
+                    title: "📜 EXEC\nORDER",
+                    color: .purple,
+                    enabled: true
+                ) {
+                    showingExecutiveOrderMenu = true
+                }
+
+                // Presidential Pardon
+                actionButton(
+                    title: "⚖️ GRANT\nPARDON",
+                    color: .teal,
+                    enabled: true
+                ) {
+                    showingPardonMenu = true
+                }
+
+                // Presidential Address
+                actionButton(
+                    title: "🎤 ADDRESS\nNATION",
+                    color: AppSettings.terminalAmber,
+                    enabled: true
+                ) {
+                    showingAddressMenu = true
+                }
+
                 // End Turn
                 actionButton(
                     title: "⏭️ END\nTURN",
@@ -479,6 +510,36 @@ struct CommandView: View {
         .sheet(isPresented: $showingSystemsView) {
             SystemsView(gameEngine: gameEngine)
                 .frame(minWidth: 800, minHeight: 600)
+        }
+        .sheet(isPresented: $showingExecutiveOrderMenu) {
+            if let gameState = gameEngine.gameState {
+                ExecutiveOrderMenuView(
+                    gameEngine: gameEngine,
+                    selectedTarget: selectedTarget,
+                    gameState: gameState
+                )
+                .frame(minWidth: 600, minHeight: 500)
+            }
+        }
+        .sheet(isPresented: $showingPardonMenu) {
+            if let gameState = gameEngine.gameState {
+                PardonMenuView(
+                    gameEngine: gameEngine,
+                    selectedTarget: selectedTarget,
+                    gameState: gameState
+                )
+                .frame(minWidth: 600, minHeight: 500)
+            }
+        }
+        .sheet(isPresented: $showingAddressMenu) {
+            if let gameState = gameEngine.gameState {
+                PresidentialAddressMenuView(
+                    gameEngine: gameEngine,
+                    selectedTarget: selectedTarget,
+                    gameState: gameState
+                )
+                .frame(minWidth: 600, minHeight: 500)
+            }
         }
     }
 

@@ -114,6 +114,7 @@ struct AdvisorDetailView: View {
     let advisor: Advisor
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var gameEngine: GameEngine
+    @State private var showFireConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -237,13 +238,11 @@ struct AdvisorDetailView: View {
                             // Action buttons
                             HStack(spacing: 16) {
                                 Button("ACCEPT ADVICE") {
-                                    // Accept action
                                     dismiss()
                                 }
                                 .buttonStyle(WOPRButtonStyle(color: AppSettings.terminalGreen))
 
                                 Button("REJECT ADVICE") {
-                                    // Reject action
                                     dismiss()
                                 }
                                 .buttonStyle(WOPRButtonStyle(color: AppSettings.terminalRed))
@@ -257,12 +256,48 @@ struct AdvisorDetailView: View {
                         .padding()
                     }
 
+                    // FIRE button — available for all cabinet members except the President
+                    if !advisor.title.contains("President") {
+                        VStack(spacing: 8) {
+                            Divider().background(AppSettings.terminalRed)
+
+                            Button(action: { showFireConfirmation = true }) {
+                                HStack {
+                                    Image(systemName: "person.fill.xmark")
+                                    Text("DISMISS FROM CABINET")
+                                }
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(12)
+                                .background(AppSettings.terminalRed)
+                            }
+                            .buttonStyle(.plain)
+
+                            Text("Firing \(advisor.title.lowercased()) will reduce cabinet morale and may affect public approval.")
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(AppSettings.terminalRed.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding()
+                    }
+
                     Spacer(minLength: 40)
                 }
             }
             .background(AppSettings.terminalBackground)
         }
         .background(AppSettings.terminalBackground)
+        .alert("Dismiss \(advisor.name)?", isPresented: $showFireConfirmation) {
+            Button("DISMISS", role: .destructive) {
+                gameEngine.fireAdvisor(advisorID: advisor.id)
+                dismiss()
+            }
+            Button("CANCEL", role: .cancel) {}
+        } message: {
+            Text("Firing \(advisor.title) \(advisor.name) will reduce cabinet morale and damage your approval rating. This cannot be undone.")
+        }
     }
 }
 

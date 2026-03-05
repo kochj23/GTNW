@@ -1505,7 +1505,7 @@ class GameEngine: ObservableObject {
     // MARK: - DEFCON Management
 
     /// Raise DEFCON level (lower number = higher alert)
-    private func raiseDEFCON() {
+    func raiseDEFCON() {
         guard let gameState = gameState else { return }
 
         if gameState.defconLevel.rawValue > 1 {
