@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.6.1
+# 🏛️ GTNW - Global Thermal Nuclear War v1.6.2
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,9 +16,17 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.6.1
+## 🆕 What's New in v1.6.2
 
-This release represents a complete overhaul of historical accuracy, scope, and depth.
+**Stability release** — critical crash fixes for pre-nuclear era gameplay.
+
+- **Fixed**: Pre-nuclear presidents (Van Buren, Lincoln, FDR, etc.) were incorrectly receiving atomic bombs. All eras before 1945 now correctly have zero nuclear weapons with era-appropriate conventional military and GDP.
+- **Fixed**: All 195 countries were defaulting to maximum aggression level, causing the AI to attempt dozens of simultaneous war declarations per turn and crash the game. Each country now uses its correct historical aggression level.
+- **Fixed**: Tiny island nations (Nauru, Vatican, Tuvalu) had population=0 which could cause divide-by-zero errors in certain calculations.
+
+---
+
+## Feature Overview (v1.6.x)
 
 ### All 47 Presidents (Washington → Trump)
 Play as any of America's 47 presidents — from George Washington navigating the Whiskey Rebellion (1794) to the modern era. The **32 pre-nuclear administrations** (1789–1945) are now fully playable with era-accurate gameplay, including:

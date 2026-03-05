@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-03-05
+
+### Fixed
+- **Pre-nuclear era atomic bombs** — `adjustCountriesForEra` was using `year <= 1945` for the USA nuclear case, giving ALL presidents before 1945 nine atomic bombs. Van Buren (1837), Lincoln (1861), FDR (1933) etc. now correctly have 0 nuclear weapons. The condition is now `year == 1945` for the initial 9 bombs, with a new `year < 1945` branch giving era-scaled conventional military and historically appropriate GDP ($0.01T in 1789 → $1.5T in 1944).
+- **All 195 countries defaulting to maximum aggression (crash cause)** — `CountryTemplate.toCountry()` was not passing `aggressionLevel` to `Country.init`, so every country got the default value of 50 (the maximum-aggressive tier). With 195 AI countries all at max aggression, ~78 tried to declare war simultaneously every turn, overwhelming state processing and causing `EXC_BREAKPOINT` crashes. Fixed by passing `aggressionLevel` from each template.
+- **Island nations with population=0** — `Int(0.01)` truncates to 0 for nations with <1M people (Nauru, Vatican, Tuvalu, etc.), potentially causing divide-by-zero. Fixed with `max(1, Int(populationMillions))`.
+
+*Released by Jordan Koch*
+
 ### Planned
 - Supreme Court nominations mechanic
 - Midterm elections / political calendar
