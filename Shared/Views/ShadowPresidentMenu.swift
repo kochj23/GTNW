@@ -20,7 +20,10 @@ struct ShadowPresidentMenu: View {
     @State private var selectedAction: PresidentialAction?
 
     private var filteredActions: [PresidentialAction] {
-        PresidentialAction.allCases.filter { $0.category == selectedCategory }
+        PresidentialAction.allCases.filter {
+            $0.category == selectedCategory &&
+            $0.eraAvailableYear <= gameState.eraStartYear
+        }
     }
 
     var body: some View {

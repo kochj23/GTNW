@@ -373,15 +373,14 @@ struct CommandView: View {
                     }
                 }
 
-                // Economic Diplomacy
+                // Economic Diplomacy — amount scales with era
                 actionButton(
-                    title: "💰 ECONOMIC\nDIPLOMACY",
+                    title: "💰 ECONOMIC\n\(gameState.eraDiplomacyAmountLabel)",
                     color: AppSettings.terminalGreen,
                     enabled: selectedTarget != nil
                 ) {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
-                        // $5 billion = Turn enemy into ally
-                        gameEngine.economicDiplomacy(from: player.id, to: target, amount: 5_000_000_000)
+                        gameEngine.economicDiplomacy(from: player.id, to: target, amount: gameState.eraDiplomacyAmount)
                     }
                 }
 

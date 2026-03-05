@@ -63,35 +63,115 @@ class SafeDiplomacyService: ObservableObject {
     }
 
     func processTurn(countries: [Country], turn: Int) {
-        // 10% chance per AI country to send message
+        // Identify the player country
+        guard let playerCountry = countries.first(where: { $0.isPlayerControlled }) else { return }
+        let playerID = playerCountry.id
+
+        // Pre-compute player's actual behaviour to make messages relevant
+        let playerAtWar = !playerCountry.atWarWith.isEmpty
+        let playerLaunchedNukes = playerCountry.nuclearWarheads < 50 && turn > 3  // rough proxy
+        let playerHasSanctions = !playerCountry.economicSanctions.isEmpty
+
         for country in countries where !country.isPlayerControlled && !country.isDestroyed {
-            if Double.random(in: 0...1) < 0.1 {
-                // Era-appropriate messages based on turn number
-                // turn 0 = eraStartYear; use country's actual situation for framing
-                let isModernEra = turn > 150   // rough proxy for post-WWII if started at Truman
-                let messages: [String]
-                if isModernEra {
-                    messages = [
-                        "We demand you cease military buildup immediately.",
-                        "Your actions are provocative. We propose a non-aggression pact.",
-                        "We request economic assistance to stabilize our nation.",
-                        "Our intelligence indicates hostile intentions. Stand down.",
-                        "We propose bilateral trade negotiations.",
-                        "Your sanctions are damaging our civilian population. Reconsider."
+            // 10% base chance — higher if country has reason to care
+            let relationToPlayer = country.diplomaticRelations[playerID] ?? 0
+            let isHostile = relationToPlayer < -40 || country.atWarWith.contains(playerID)
+            let isAlly    = relationToPlayer > 60
+            let messageChance = isHostile ? 0.20 : isAlly ? 0.05 : 0.08
+
+            guard Double.random(in: 0...1) < messageChance else { continue }
+
+            // Modern vs pre-modern tone
+            let isModernEra = turn > 0   // use actual era, not turn count
+
+            // Select message BASED ON ACTUAL GAME SITUATION
+            let message: String
+
+            if country.atWarWith.contains(playerID) {
+                // We are at war with the player
+                let warMessages = isModernEra ? [
+                    "This aggression will not stand. We will defend ourselves.",
+                    "Your forces have crossed the line. Prepare for full retaliation.",
+                    "We call on the international community to condemn this attack.",
+                    "Our military is at full readiness. Do not escalate further."
+                ] : [
+                    "Your armies have violated our sovereign territory. We shall resist.",
+                    "This unprovoked aggression will be met with righteous force.",
+                    "We appeal to all nations to condemn this act of war.",
+                    "Our forces stand ready. The blood of innocents is on your hands."
+                ]
+                message = warMessages.randomElement()!
+
+            } else if isHostile {
+                // Hostile but not at war — warn about ACTUAL player behavior
+                if playerAtWar {
+                    let messages = isModernEra ? [
+                        "Your warmongering threatens regional stability. We are watching.",
+                        "The wars you wage have consequences beyond your borders.",
+                        "We urge an immediate ceasefire before this conflict spreads."
+                    ] : [
+                        "Your military campaigns disturb the peace of our region.",
+                        "We counsel restraint before this conflict claims more lives.",
+                        "The nations of this region observe your actions with alarm."
                     ]
+                    message = messages.randomElement()!
+                } else if playerHasSanctions {
+                    let messages = isModernEra ? [
+                        "Your economic pressure on our allies is noted and condemned.",
+                        "Sanctions are an act of economic warfare. We stand in solidarity.",
+                        "These trade restrictions violate the norms of civilized relations."
+                    ] : [
+                        "Your trade embargoes harm innocent citizens and will be opposed.",
+                        "We protest your interference in the commerce of sovereign nations.",
+                        "Economic coercion is beneath the dignity of a great nation."
+                    ]
+                    message = messages.randomElement()!
                 } else {
-                    // Pre-modern: no billion-dollar references, period-appropriate tone
-                    messages = [
-                        "We demand you cease your military preparations at once.",
-                        "Your expansionist policies threaten regional stability.",
-                        "We propose a diplomatic congress to resolve our differences.",
-                        "Our nations have no quarrel. Let us maintain peaceful relations.",
-                        "We seek a formal treaty of friendship and commerce.",
-                        "Your territorial ambitions are noted and opposed."
+                    // Hostile relations but player hasn't done anything specific
+                    let messages = isModernEra ? [
+                        "Our nations have differences that require urgent diplomatic attention.",
+                        "We propose direct talks to reduce tensions between our peoples.",
+                        "The current state of our relations serves neither nation's interests."
+                    ] : [
+                        "The disputes between our nations demand the attention of wise counsel.",
+                        "We propose a congress of representatives to address our differences.",
+                        "No good shall come from continued estrangement between our peoples."
                     ]
+                    message = messages.randomElement()!
                 }
-                generateMessage(from: country.id, content: messages.randomElement()!, turn: turn)
+
+            } else if isAlly {
+                // Friendly — supportive messages
+                let messages = isModernEra ? [
+                    "Our alliance remains strong. You have our full support.",
+                    "We stand ready to assist should you require our cooperation.",
+                    "The bond between our nations is a cornerstone of stability.",
+                    "We look forward to expanding our partnership in the coming year."
+                ] : [
+                    "Our friendship is a lamp that shall not be extinguished.",
+                    "The ties of commerce and goodwill between our nations endure.",
+                    "We stand as true friends — in peace and in hardship alike.",
+                    "Your prosperity is our prosperity. Our cooperation continues."
+                ]
+                message = messages.randomElement()!
+
+            } else {
+                // Neutral — informational or general diplomatic contact
+                let messages = isModernEra ? [
+                    "We are open to formal diplomatic relations with your government.",
+                    "We propose an exchange of ambassadors to improve communication.",
+                    "Mutual recognition of our interests would benefit both nations.",
+                    "Our borders remain open to diplomatic contact at your discretion."
+                ] : [
+                    "We seek formal recognition and exchange of envoys.",
+                    "Our nation wishes to establish bonds of mutual commerce.",
+                    "We propose a treaty of amity and navigation between our peoples.",
+                    "Peaceful intercourse between neighboring nations is a virtue."
+                ]
+                message = messages.randomElement()!
             }
+
+            generateMessage(from: country.id, content: message, turn: turn)
         }
     }
 }

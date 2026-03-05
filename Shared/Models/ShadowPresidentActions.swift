@@ -202,6 +202,70 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
     case radioFree = "Radio Free"
     case ideological = "Ideological War"
 
+    /// Earliest year this action makes historical/technological sense.
+    /// Actions are hidden in ShadowPresidentMenu for eras before this year.
+    var eraAvailableYear: Int {
+        switch self {
+        // Air power — requires aircraft (Wright Brothers 1903, combat use 1914)
+        case .airPatrol, .bombardment:          return 1914  // WWI aerial warfare
+        case .airStrike:                         return 1914
+        case .noFlyZone:                         return 1991  // First used in Gulf War
+        case .amphAssault:                       return 1942  // WWII modern amphibious ops
+
+        // Special forces formalized in WWII
+        case .specialForces:                     return 1942
+
+        // Demilitarized zones — post WWII concept
+        case .dmz:                               return 1945
+
+        // Nuclear actions — only after Manhattan Project
+        case .launchNukes, .tacticalNuke, .strategicNuke,
+             .preemptive, .retaliate, .nuclearTest, .haltNukes,
+             .sellNukeTech, .demandInspect, .refuseInspect,
+             .deployMissiles, .removeMissiles, .nukeSharing,
+             .firstStrike, .noFirstUse, .sabotageNuke:    return 1945
+
+        // Arms control treaties — Cold War era
+        case .armsControl, .nonProliferation:   return 1960
+
+        // Satellite intelligence — Sputnik 1957
+        case .satellite, .imint:                return 1957
+
+        // Electronic/signals intelligence — WWII origin
+        case .sigint, .codeBreak:               return 1940
+
+        // Cyber operations — internet era
+        case .cyberAttack, .hackElection, .disruptComms:  return 1990
+
+        // Oil embargo — oil became strategic commodity
+        case .oilEmbargo:                        return 1900
+
+        // International asset freezing — post-WWII financial system
+        case .freezeAssets, .unfreezeAssets:    return 1945
+
+        // Economic sanctions as formal policy tool
+        case .sanctions, .liftSanctions:        return 1900
+
+        // Currency manipulation — modern currency markets
+        case .currencyManip:                     return 1900
+
+        // UN condemnation — UN founded 1945
+        case .unCondemn:                         return 1945
+
+        // Olympic boycott — first modern Olympics 1896
+        case .boycott:                           return 1896
+
+        // Radio propaganda — radio broadcasting 1920s
+        case .radioFree, .rebelBroadcast:       return 1920
+
+        // Mass media — 20th century
+        case .mediaBlackout:                    return 1900
+
+        // All other actions available in all eras
+        default:                                 return 1789
+        }
+    }
+
     var category: ActionCategory {
         let name = String(describing: self)
         

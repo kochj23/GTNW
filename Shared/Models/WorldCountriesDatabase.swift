@@ -226,45 +226,8 @@ struct WorldCountriesDatabase {
             countries.removeAll { $0.id == "XKX" }
         }
 
-        // Nuclear status cleanup: no country should show nuclear capability
-        // before their actual first test/development date
-        let nuclearFirstTest: [String: Int] = [
-            "USA": 1945, "RUS": 1949, "GBR": 1952, "FRA": 1960, "CHN": 1964,
-            "IND": 1974, "PAK": 1998, "PRK": 2006, "ISR": 1967
-        ]
-        let suspectedNuclearThreshold: [String: Int] = [
-            "SAU": 2000,  // Saudi suspected program is a modern phenomenon
-            "IRN": 1985,  // Iran's nuclear ambitions started post-revolution
-        ]
-        for i in countries.indices {
-            let id = countries[i].id
-            // Clear declared/undeclared status if before first test
-            if let testYear = nuclearFirstTest[id], year < testYear {
-                countries[i] = CountryTemplate(
-                    countries[i].id, countries[i].name, flag: countries[i].flag,
-                    capital: countries[i].capital,
-                    lat: countries[i].lat, lon: countries[i].lon,
-                    region: countries[i].region, gov: countries[i].government,
-                    align: countries[i].alignment,
-                    gdp: countries[i].gdpBillions, pop: countries[i].populationMillions,
-                    mil: countries[i].militaryStrength, aggr: countries[i].aggressionLevel,
-                    stab: countries[i].stability, nuke: .none
-                )
-            }
-            // Clear suspected/developing status if before plausible timeframe
-            if let threshold = suspectedNuclearThreshold[id], year < threshold {
-                countries[i] = CountryTemplate(
-                    countries[i].id, countries[i].name, flag: countries[i].flag,
-                    capital: countries[i].capital,
-                    lat: countries[i].lat, lon: countries[i].lon,
-                    region: countries[i].region, gov: countries[i].government,
-                    align: countries[i].alignment,
-                    gdp: countries[i].gdpBillions, pop: countries[i].populationMillions,
-                    mil: countries[i].militaryStrength, aggr: countries[i].aggressionLevel,
-                    stab: countries[i].stability, nuke: .none
-                )
-            }
-        }
+        // NOTE: Nuclear status cleanup is handled in GameState.adjustCountriesForEra()
+        // after conversion to Country objects, where direct mutation is safe.
 
         // Many African nations gained independence 1960s
         // Remove not-yet-independent nations

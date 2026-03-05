@@ -96,6 +96,36 @@ class GameState: ObservableObject, Codable {
         }
     }
 
+    // MARK: - Era-scaled economic amounts
+
+    /// Standard economic diplomacy amount for this era.
+    /// Historically appropriate: thousands in 1800s, billions today.
+    var eraDiplomacyAmount: Int {
+        switch eraStartYear {
+        case ..<1800: return 50_000           // $50K (1790s frontier economics)
+        case 1800..<1860: return 100_000      // $100K (ante-bellum era)
+        case 1860..<1900: return 500_000      // $500K (Gilded Age)
+        case 1900..<1920: return 2_000_000   // $2M (early 20th century)
+        case 1920..<1945: return 10_000_000  // $10M (interwar)
+        case 1945..<1960: return 50_000_000  // $50M (Marshall Plan era)
+        case 1960..<1980: return 250_000_000 // $250M (Cold War)
+        case 1980..<2000: return 1_000_000_000  // $1B (Reagan-Clinton)
+        default:          return 5_000_000_000  // $5B (modern)
+        }
+    }
+
+    /// Human-readable label for the era diplomacy amount.
+    var eraDiplomacyAmountLabel: String {
+        let amount = eraDiplomacyAmount
+        if amount >= 1_000_000_000 {
+            return "$\(amount / 1_000_000_000)B"
+        } else if amount >= 1_000_000 {
+            return "$\(amount / 1_000_000)M"
+        } else {
+            return "$\(amount / 1_000)K"
+        }
+    }
+
     // MARK: - Era-gated technology
 
     /// Returns true if cyber warfare capabilities existed in this era.
@@ -592,6 +622,29 @@ class GameState: ObservableObject, Codable {
             }
 
             countries[i] = country
+        }
+
+        // MARK: - Nuclear status cleanup (safe direct mutation on Country structs)
+        // Clear nuclear status for countries before their confirmed first test.
+        // This is done here (not in countriesForYear) so we work with Country structs
+        // which can be directly mutated, avoiding the CountryTemplate recreation crash.
+        let nuclearFirstTests: [String: Int] = [
+            "GBR": 1952, "FRA": 1960, "CHN": 1964, "IND": 1974, "PAK": 1998,
+            "ISR": 1967,  // PRK, USA, RUS handled above
+        ]
+        let suspectedThresholds: [String: Int] = [
+            "SAU": 2000,   // Saudi suspected program is entirely modern
+            "IRN": 1985,   // Iranian nuclear ambitions post-revolution
+        ]
+        for i in countries.indices {
+            let id = countries[i].id
+            if let testYear = nuclearFirstTests[id], year < testYear {
+                countries[i].nuclearStatus = .none
+                countries[i].nuclearWarheads = 0
+            }
+            if let threshold = suspectedThresholds[id], year < threshold {
+                countries[i].nuclearStatus = .none
+            }
         }
     }
 
