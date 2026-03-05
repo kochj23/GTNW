@@ -226,7 +226,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Launch Immediate Counterstrike",
                     description: "Launch all ICBMs before we're destroyed",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: -100],
                         approvalChange: -30,
@@ -239,7 +239,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Wait for Confirmation",
                     description: "Wait for ground radar confirmation (Petrov's choice)",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         approvalChange: 15,
                         message: "Ground radar confirms: FALSE ALARM. You saved the world by remaining calm. +15 approval."
@@ -249,7 +249,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Alert Allies, Prepare Response",
                     description: "Increase readiness, notify NATO, but don't launch",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         defconChange: -1,
                         message: "FALSE ALARM confirmed. Allies appreciate measured response."
@@ -258,7 +258,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Hotline to Enemy Leader",
                     description: "Use Moscow hotline to verify",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: 10],
                         message: "Hotline confirms no launch. Crisis averted through diplomacy."
@@ -268,7 +268,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Launch Limited Strike",
                     description: "Strike only military targets, hold reserves",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: -80],
                         approvalChange: -20,
@@ -281,7 +281,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Evacuate Cities, Await Intel",
                     description: "Civil defense activation, wait for more data",
-                    advisorRecommendation: "Kristi Noem",
+                    advisorRecommendation: "Secretary of Homeland Security",
                     consequences: CrisisConsequences(
                         approvalChange: 5,
                         economicImpact: -1000,
@@ -337,7 +337,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Remain Neutral",
                     description: "This is their problem, not ours",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -15],
                         message: "Meltdown occurs. International community criticizes your inaction."
@@ -346,7 +346,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Blame Enemy Sabotage",
                     description: "Claim this was hostile act",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -20],
                         approvalChange: -5,
@@ -357,7 +357,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Deploy Military Containment",
                     description: "Send troops to establish quarantine zone",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -10],
                         approvalChange: 8,
@@ -369,7 +369,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Demand UN Investigation",
                     description: "Call for international nuclear safety review",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         approvalChange: 3,
                         message: "UN investigation launched. Meltdown contained. Safety protocols strengthened globally."
@@ -403,7 +403,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Launch Special Forces Operation",
                     description: "SEAL Team 6 assault on suspected location",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         approvalChange: 25,
                         message: "Special forces recover device! Crisis averted. World celebrates."
@@ -423,7 +423,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Coordinate International Response",
                     description: "Share intelligence, coordinate with allies",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [target.id: 15],
                         approvalChange: 15,
@@ -434,7 +434,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Launch Cyber Operation",
                     description: "NSA tracks terrorist communications",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         approvalChange: 20,
                         message: "NSA intercepts communications, pinpoints location. Device recovered."
@@ -444,7 +444,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Offer Ransom Payment",
                     description: "Negotiate $100M payment for device return",
-                    advisorRecommendation: "Scott Bessent",
+                    advisorRecommendation: "Secretary of Treasury",
                     consequences: CrisisConsequences(
                         approvalChange: -15,
                         economicImpact: -10000,
@@ -455,7 +455,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Evacuate Major Cities",
                     description: "Emergency evacuation, hope they don't detonate",
-                    advisorRecommendation: "Kristi Noem",
+                    advisorRecommendation: "Secretary of Homeland Security",
                     consequences: CrisisConsequences(
                         approvalChange: -5,
                         economicImpact: -5000,
@@ -492,7 +492,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Neutralize with Military Strike",
                     description: "Destroy silo before he can launch",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -40],
                         approvalChange: 10,
@@ -503,7 +503,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Negotiate with Commander",
                     description: "Talk him down, de-escalate",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 5],
                         approvalChange: 15,
@@ -514,7 +514,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Support \(country.name) Forces",
                     description: "Provide intelligence, let them handle it",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 20],
                         message: "\(country.name) special forces secure silo. Crisis resolved."
@@ -533,7 +533,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Deploy Psychological Operations",
                     description: "Use psyops to confuse/delay commander",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         approvalChange: 18,
                         message: "Psyops successful. Commander becomes disoriented. \(country.name) forces regain control."
@@ -543,7 +543,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "EMP Strike on Silo",
                     description: "Disable electronics without destroying warheads",
-                    advisorRecommendation: "Elon Musk",
+                    advisorRecommendation: "Special Advisor",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -25],
                         approvalChange: 12,
@@ -579,7 +579,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Launch Immediate Counterattack",
                     description: "Cyber warfare against \(enemy.name)",
-                    advisorRecommendation: "Mike Waltz",
+                    advisorRecommendation: "National Security Advisor",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: -30],
                         message: "Counterattack successful. Their systems crippled. They retaliate conventionally."
@@ -589,7 +589,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Isolate Nuclear Systems",
                     description: "Air-gap critical infrastructure",
-                    advisorRecommendation: "Kristi Noem",
+                    advisorRecommendation: "Secretary of Homeland Security",
                     consequences: CrisisConsequences(
                         message: "Systems isolated. Attack contained. No damage."
                     ),
@@ -598,7 +598,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Public Attribution",
                     description: "Expose \(enemy.name) to world",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: -20],
                         approvalChange: 10,
@@ -608,7 +608,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Silent Defense",
                     description: "Repel attack, don't escalate",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         message: "Attack repelled quietly. No escalation."
                     ),
@@ -617,7 +617,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Launch Proportional Cyber Strike",
                     description: "Hit their infrastructure equally hard",
-                    advisorRecommendation: "Mike Waltz",
+                    advisorRecommendation: "National Security Advisor",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: -35],
                         approvalChange: 8,
@@ -628,7 +628,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Activate Cyber Defense Protocol Omega",
                     description: "NSA's most advanced countermeasures",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         approvalChange: 15,
                         economicImpact: -1000,
@@ -683,7 +683,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Support Existing Government",
                     description: "Military aid to help president",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 20],
                         approvalChange: 10,
@@ -695,7 +695,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Recognize Coup Government",
                     description: "Pragmatic: work with whoever wins",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 15],
                         approvalChange: -15,
@@ -706,7 +706,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Negotiate with Both Sides",
                     description: "Mediate power-sharing agreement",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 25],
                         approvalChange: 20,
@@ -717,7 +717,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Secure Nuclear Weapons Only",
                     description: "Special forces seize nuclear sites, ignore politics",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -40],
                         approvalChange: 15,
@@ -728,7 +728,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Economic Sanctions on Coup Leaders",
                     description: "Freeze assets, pressure resignation",
-                    advisorRecommendation: "Scott Bessent",
+                    advisorRecommendation: "Secretary of Treasury",
                     consequences: CrisisConsequences(
                         approvalChange: 8,
                         message: "Sanctions bite. Coup leaders negotiate. Peaceful transition achieved."
@@ -738,7 +738,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Wait and Observe",
                     description: "Let internal politics play out",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         defconChange: -1,
                         message: "Coup succeeds violently. \(Int.random(in: 5000...50000)) dead. New regime anti-Western."
@@ -790,7 +790,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Public Trial and Execution",
                     description: "Make example of \(agent), deter future spies",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -40],
                         approvalChange: 15,
@@ -801,7 +801,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Prisoner Exchange Negotiation",
                     description: "Trade \(agent) for your captured agents",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 10],
                         approvalChange: -5,
@@ -812,7 +812,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Turn \(agent) Into Double Agent",
                     description: "Feed false information through spy network",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         approvalChange: 20,
                         message: "\(agent) agrees to cooperate. Feed false intel to \(country.name) for 5 turns. Major advantage."
@@ -822,7 +822,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Massive Counterintelligence Sweep",
                     description: "Dismantle entire \(country.name) spy network",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -30],
                         approvalChange: 25,
@@ -833,7 +833,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Quiet Deportation",
                     description: "Expel spy quietly, avoid diplomatic incident",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -5],
                         approvalChange: -10,
@@ -844,7 +844,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Cyber Retaliation Against \(country.name)",
                     description: "Hack their intelligence services",
-                    advisorRecommendation: "Mike Waltz",
+                    advisorRecommendation: "National Security Advisor",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -35],
                         approvalChange: 18,
@@ -971,7 +971,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Offer Intelligence Assistance",
                     description: "Share CIA findings, help investigation",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 25],
                         approvalChange: 10,
@@ -982,7 +982,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Send Medical Team",
                     description: "Emergency trauma surgeons and equipment",
-                    advisorRecommendation: "Robert F. Kennedy Jr.",
+                    advisorRecommendation: "Secretary of Health",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 30],
                         approvalChange: 15,
@@ -994,7 +994,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Exploit the Chaos",
                     description: "Launch covert operation during instability",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -60],
                         approvalChange: -15,
@@ -1005,7 +1005,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Express Condolences, Remain Neutral",
                     description: "Diplomatic statement only, no involvement",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 5],
                         message: "\(leaderName) dies. Hardliners seize power. New regime hostile."
@@ -1015,7 +1015,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Blame Rival Nation",
                     description: "Suggest \(gameState.countries.filter { $0.id != country.id && !$0.isPlayerControlled }.randomElement()?.name ?? "enemy") responsible",
-                    advisorRecommendation: "Mike Waltz",
+                    advisorRecommendation: "National Security Advisor",
                     consequences: CrisisConsequences(
                         approvalChange: -10,
                         message: "Accusation creates diplomatic incident. No proof. Relations worsen across board."
@@ -1025,7 +1025,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Deploy Peacekeeping Force",
                     description: "Stabilize situation with military presence",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -20],
                         approvalChange: 8,
@@ -1051,7 +1051,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Military Response",
                     description: "Deploy forces to address situation",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -10],
                         approvalChange: 8,
@@ -1063,7 +1063,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Diplomatic Resolution",
                     description: "Negotiate peaceful solution",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 20],
                         approvalChange: 12,
@@ -1074,7 +1074,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Economic Aid Package",
                     description: "Provide financial assistance",
-                    advisorRecommendation: "Scott Bessent",
+                    advisorRecommendation: "Secretary of Treasury",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 25],
                         approvalChange: 5,
@@ -1086,7 +1086,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Covert Operation",
                     description: "CIA handles quietly",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         approvalChange: 15,
                         economicImpact: -200,
@@ -1097,7 +1097,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "UN/International Coalition",
                     description: "Build multilateral response",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 15],
                         approvalChange: 18,
@@ -1109,7 +1109,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Monitor and Wait",
                     description: "Observe, avoid commitment",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -10],
                         approvalChange: -5,
@@ -1137,7 +1137,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Military Response",
                     description: "Deploy military forces to address situation",
-                    advisorRecommendation: "Pete Hegseth",
+                    advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: countryID.map { [$0: -10] } ?? [:],
                         approvalChange: 5,
@@ -1149,7 +1149,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Diplomatic Resolution",
                     description: "Negotiate peaceful solution",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         relationshipChanges: countryID.map { [$0: 15] } ?? [:],
                         approvalChange: 10,
@@ -1160,7 +1160,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Economic Pressure",
                     description: "Apply sanctions or economic leverage",
-                    advisorRecommendation: "Scott Bessent",
+                    advisorRecommendation: "Secretary of Treasury",
                     consequences: CrisisConsequences(
                         relationshipChanges: countryID.map { [$0: -20] } ?? [:],
                         approvalChange: 8,
@@ -1171,7 +1171,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Covert Operation",
                     description: "CIA handles situation quietly",
-                    advisorRecommendation: "John Ratcliffe",
+                    advisorRecommendation: "CIA Director",
                     consequences: CrisisConsequences(
                         approvalChange: 12,
                         economicImpact: -200,
@@ -1182,7 +1182,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "International Coalition",
                     description: "Build UN/NATO consensus for action",
-                    advisorRecommendation: "Marco Rubio",
+                    advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
                         approvalChange: 15,
                         economicImpact: -300,
@@ -1193,7 +1193,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Monitor and Wait",
                     description: "Observe situation, avoid commitment",
-                    advisorRecommendation: "Tulsi Gabbard",
+                    advisorRecommendation: "Director of National Intelligence",
                     consequences: CrisisConsequences(
                         relationshipChanges: countryID.map { [$0: -5] } ?? [:],
                         approvalChange: -3,

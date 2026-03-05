@@ -137,11 +137,14 @@ struct DetailedCrisisView: View {
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundColor(selectedOption == index ? .black : AppSettings.terminalGreen.opacity(0.8))
 
-                // Advisor Recommendation
-                if let advisor = option.advisorRecommendation {
+                // Advisor Recommendation — resolve role title to actual name for current era
+                if let role = option.advisorRecommendation {
+                    let advisorName = gameState.advisors.first {
+                        $0.title == role || $0.title.contains(role) || role.contains($0.title)
+                    }?.name ?? role
                     HStack {
                         Image(systemName: "person.fill")
-                        Text("Recommended by: \(advisor)")
+                        Text("Recommended by: \(advisorName)")
                             .font(.system(size: 12, design: .monospaced))
                             .italic()
                     }

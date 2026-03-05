@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.3.1
+# 🏛️ GTNW - Global Thermal Nuclear War v1.3.2
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,16 +16,14 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 
 ---
 
-## 🆕 What's New in v1.3.1
+## 🆕 What's New in v1.3.2
 
-**Stability release** — comprehensive codebase audit and compile-error fix pass.
+**Historical accuracy release** — era-correct advisors and nuclear arsenals.
 
-- Resolved 331 compile errors from an incomplete data model refactor
-- Fixed all `Country`, `GameState`, and `War` property references across 15+ files
-- Added full stats tracking to `GameState` (powers the Achievement system)
-- Fixed duplicate type definitions causing ambiguous-type compiler errors
-- Corrected Xcode compilation batch isolation issues for `Shared/` vs app-level code
-- Both macOS and iOS targets build cleanly
+- **Correct advisors for every era** — Crisis options now show the right advisor for the active presidency. Dean Acheson advises Truman, Robert McNamara advises JFK, etc. No more Marco Rubio advising Truman.
+- **Era-accurate nuclear arsenals** — Countries start with historically correct warhead counts. The Soviet Union has zero nukes before 1949 (their first test), 5 by 1950, 120 by end of Truman's term. The US scales from 9 warheads in 1945 to thousands by the 1960s.
+- **Soviet Union rename** — Russia displays as "Soviet Union" for all pre-1991 administrations.
+- **Era-anchored year counter** — In-game year now correctly starts from the administration's actual start year.
 
 ---
 

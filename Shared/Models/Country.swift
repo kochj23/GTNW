@@ -45,9 +45,9 @@ struct Coordinates: Codable, Hashable {
 /// Represents a nation in the game
 struct Country: Identifiable, Codable, Hashable {
     let id: String
-    let name: String
-    let code: String // ISO 3166-1 alpha-3
-    let flag: String // Emoji flag
+    var name: String        // var to allow era-based renaming (e.g. Soviet Union)
+    let code: String        // ISO 3166-1 alpha-3
+    let flag: String        // Emoji flag
 
     // Geographic
     var capital: String

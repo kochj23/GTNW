@@ -60,7 +60,10 @@ class GameState: ObservableObject, Codable {
     var gameEnded: Bool { gameOver }
     var turnNumber: Int { turn }
     var recentEvents: [String] { turnHistory.suffix(20).map { $0.event } }
-    var currentYear: Int { 1945 + turn }
+
+    /// The in-game year, anchored to the era start year stored at init time.
+    @Published var eraStartYear: Int = 2025
+    var currentYear: Int { eraStartYear + turn }
 
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes
@@ -87,8 +90,11 @@ class GameState: ObservableObject, Codable {
         // Use selected administration or default to Trump 2025
         if let admin = administration {
             self.advisors = admin.advisors
+            self.eraStartYear = admin.startYear
+            adjustCountriesForEra(year: admin.startYear)
         } else {
             self.advisors = Advisor.trumpCabinet()
+            self.eraStartYear = 2025
         }
 
         if let s = scenario {
@@ -245,6 +251,251 @@ class GameState: ObservableObject, Codable {
     /// Get country by ID
     func getCountry(id: String) -> Country? {
         return countries.first { $0.id == id }
+    }
+
+    // MARK: - Historical Era Adjustment
+
+    /// Adjust country data to match a historical year.
+    /// Fixes nuclear arsenals, country names, and geopolitical alignment for the era.
+    private func adjustCountriesForEra(year: Int) {
+        for i in countries.indices {
+            var country = countries[i]
+
+            switch country.id {
+
+            // ── Soviet Union / Russia ───────────────────────────────────────
+            case "RUS":
+                if year < 1991 {
+                    // Soviet Union era
+                    country = adjustedCountry(country,
+                        name: "Soviet Union",
+                        nukes: historicalSovietNukes(year: year),
+                        icbm: historicalSovietICBMs(year: year),
+                        slbm: year >= 1960 ? 48 : 0,
+                        bombers: year >= 1955 ? 150 : 30,
+                        military: 90,
+                        gdp: year < 1960 ? 0.5 : year < 1980 ? 1.2 : 0.9,
+                        alignment: .eastern,
+                        government: .communist
+                    )
+                }
+
+            // ── China ───────────────────────────────────────────────────────
+            case "CHN":
+                if year < 1949 {
+                    // Civil War — Nationalist government
+                    country = adjustedCountry(country,
+                        name: "Republic of China",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 20,
+                        military: 40, gdp: 0.1,
+                        alignment: .western, government: .military
+                    )
+                } else if year < 1964 {
+                    // PRC before nuclear test
+                    country = adjustedCountry(country,
+                        name: "People's Republic of China",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 30,
+                        military: 65, gdp: 0.08,
+                        alignment: .eastern, government: .communist
+                    )
+                } else if year < 1980 {
+                    country = adjustedCountry(country,
+                        nukes: year < 1970 ? 5 : 75,
+                        icbm: year < 1970 ? 0 : 10,
+                        slbm: 0, bombers: 40,
+                        military: 72, gdp: 0.1,
+                        alignment: .independent, government: .communist
+                    )
+                }
+
+            // ── United Kingdom ───────────────────────────────────────────────
+            case "GBR":
+                if year < 1952 {
+                    // UK tested first nuke 1952
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 40,
+                        military: 70, gdp: 0.5,
+                        alignment: .western, government: .monarchy
+                    )
+                } else if year < 1970 {
+                    country = adjustedCountry(country,
+                        nukes: year < 1960 ? 15 : 80,
+                        icbm: 0, slbm: year >= 1960 ? 16 : 0, bombers: 50,
+                        military: 72, gdp: 0.6
+                    )
+                }
+
+            // ── France ───────────────────────────────────────────────────────
+            case "FRA":
+                if year < 1960 {
+                    // France tested first nuke 1960
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 30,
+                        military: 65, gdp: 0.3
+                    )
+                } else if year < 1980 {
+                    country = adjustedCountry(country,
+                        nukes: year < 1970 ? 30 : 100,
+                        icbm: 0, slbm: year >= 1970 ? 16 : 0, bombers: 40,
+                        military: 70, gdp: 0.4
+                    )
+                }
+
+            // ── India ────────────────────────────────────────────────────────
+            case "IND":
+                if year < 1974 {
+                    // India tested first nuke 1974
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 10,
+                        military: 50, gdp: 0.05
+                    )
+                }
+
+            // ── Pakistan ─────────────────────────────────────────────────────
+            case "PAK":
+                if year < 1998 {
+                    // Pakistan tested nukes 1998
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 5,
+                        military: 45, gdp: 0.03
+                    )
+                }
+
+            // ── North Korea ──────────────────────────────────────────────────
+            case "PRK":
+                if year < 2006 {
+                    // North Korea first nuclear test 2006
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 40, gdp: 0.01
+                    )
+                }
+
+            // ── Israel ───────────────────────────────────────────────────────
+            case "ISR":
+                if year < 1967 {
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 55, gdp: 0.03
+                    )
+                }
+
+            // ── United States ────────────────────────────────────────────────
+            case "USA":
+                if year <= 1945 {
+                    country = adjustedCountry(country,
+                        nukes: 9, icbm: 0, slbm: 0, bombers: 60,
+                        military: 95, gdp: 2.2
+                    )
+                } else if year <= 1953 {
+                    // End of Truman: ~1,169 warheads
+                    country = adjustedCountry(country,
+                        nukes: Int(Double(year - 1945) / 8.0 * 1169),
+                        icbm: 0, slbm: 0, bombers: 100,
+                        military: 100, gdp: 2.5
+                    )
+                } else if year <= 1961 {
+                    // Eisenhower buildup: peaked at ~22,000
+                    country = adjustedCountry(country,
+                        nukes: 5000 + (year - 1953) * 2000,
+                        icbm: year >= 1959 ? 60 : 0,
+                        slbm: year >= 1960 ? 48 : 0, bombers: 600,
+                        military: 100, gdp: 3.0
+                    )
+                } else if year <= 1970 {
+                    country = adjustedCountry(country,
+                        nukes: 28000, icbm: 1054, slbm: 160, bombers: 500,
+                        military: 100, gdp: 4.5
+                    )
+                } else if year <= 1991 {
+                    country = adjustedCountry(country,
+                        nukes: 24000, icbm: 1000, slbm: 640, bombers: 300,
+                        military: 100, gdp: 6.0
+                    )
+                }
+
+            default:
+                // Countries that didn't exist yet get reduced capabilities
+                if year < 1991 {
+                    // USSR satellite states had less independence
+                    if ["UKR", "BLR", "KAZ"].contains(country.id) {
+                        country = adjustedCountry(country,
+                            name: "Soviet Territory",
+                            nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                            military: 0, gdp: 0.0,
+                            alignment: .eastern, government: .communist
+                        )
+                    }
+                }
+            }
+
+            countries[i] = country
+        }
+    }
+
+    /// Returns a copy of a country with updated military/nuclear stats.
+    private func adjustedCountry(
+        _ country: Country,
+        name: String? = nil,
+        nukes: Int,
+        icbm: Int,
+        slbm: Int,
+        bombers: Int,
+        military: Int,
+        gdp: Double? = nil,
+        alignment: PoliticalAlignment? = nil,
+        government: GovernmentType? = nil
+    ) -> Country {
+        var c = country
+        if let name = name { c = renamedCountry(c, name: name) }
+        c.nuclearWarheads = max(0, nukes)
+        c.icbmCount = max(0, icbm)
+        c.submarineLaunchedMissiles = max(0, slbm)
+        c.bombers = max(0, bombers)
+        c.militaryStrength = max(1, min(100, military))
+        if let gdp = gdp { c.gdp = gdp }
+        if let alignment = alignment { c.alignment = alignment }
+        if let government = government { c.government = government }
+        // Derived fields
+        c.tacticalNukes = c.nuclearWarheads / 5
+        c.strategicNukes = c.nuclearWarheads - c.tacticalNukes
+        c.firstStrikeCapability = c.nuclearWarheads >= 100
+        c.secondStrikeCapability = c.submarineLaunchedMissiles > 0
+        c.nuclearStatus = c.nuclearWarheads > 0 ? .declared : .none
+        return c
+    }
+
+    /// Returns a copy of a country with a new name (id/code unchanged).
+    private func renamedCountry(_ country: Country, name: String) -> Country {
+        var c = country
+        c.name = name
+        return c
+    }
+
+    private func historicalSovietNukes(year: Int) -> Int {
+        switch year {
+        case ..<1949: return 0         // No nukes before first test
+        case 1949:    return 1         // First test
+        case 1950:    return 5
+        case 1951:    return 25
+        case 1952:    return 50
+        case 1953:    return 120
+        case 1954...1959: return 120 + (year - 1953) * 300
+        case 1960...1969: return 1600 + (year - 1960) * 700
+        case 1970...1979: return 11000 + (year - 1970) * 400
+        case 1980...1991: return 30000
+        default:      return 5977      // Post-Soviet modern numbers
+        }
+    }
+
+    private func historicalSovietICBMs(year: Int) -> Int {
+        switch year {
+        case ..<1957: return 0    // First ICBM test 1957
+        case 1957...1959: return 4
+        case 1960...1964: return 50 + (year - 1960) * 30
+        case 1965...1970: return 250 + (year - 1965) * 100
+        default: return 320
+        }
     }
 }
 

@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance improvements
 - Additional features based on community feedback
 
+## [1.3.2] - 2026-03-05
+
+### Fixed
+- **Historical anachronism: wrong advisors for era** — Crisis event options hardcoded Trump cabinet names (Marco Rubio, Pete Hegseth, Tulsi Gabbard, etc.) regardless of which administration was being played. All 59 advisor recommendation strings now use role titles (Secretary of State, Secretary of Defense, CIA Director, etc.) which resolve dynamically to the correct person for the active era. Playing as Truman shows Dean Acheson advising, not Marco Rubio.
+- **Historical anachronism: wrong country data for era** — Selecting a historical administration (e.g. Truman 1945) now adjusts all country data to match that year's geopolitical reality:
+  - Soviet nuclear arsenal set to 0 before 1949 (first test), then historically accurate counts through the Cold War
+  - USSR named "Soviet Union" for 1945-1991 eras
+  - UK, France, China, India, Pakistan, North Korea, Israel all get zero nukes until their actual first test date
+  - US nuclear arsenal scaled to historical levels (9 in 1945 → ~1,169 by end of Truman in 1953)
+  - In-game year (`currentYear`) now anchors to the era start year, not a hardcoded 1945
+- **Country.name** changed from `let` to `var` to allow era-based renaming
+
+*Released by Jordan Koch*
+
 ## [1.3.1] - 2026-03-05
 
 ### Fixed
