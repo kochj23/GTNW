@@ -8,8 +8,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Performance improvements
-- Additional features based on community feedback
+- Supreme Court nominations mechanic
+- Midterm elections / political calendar
+- Economic recession/boom cycles
+- Congressional approval gates for war declarations
+
+## [1.6.0] - 2026-03-05
+
+### Added — All 47 Presidents + Complete Historical Coverage
+- **32 pre-nuclear administrations** (Washington 1789 → FDR 1945) wired in and fully playable
+- **HistoricalCrises_PreNuclear.swift** + **HistoricalCrises.swift** added to build target
+- **20 missing crisis functions** written for lesser-known 19th century presidents (Van Buren Panic of 1837, Harrison's 31-day presidency, Lincoln assassination choice, etc.)
+- All 47 presidents sorted chronologically in the administration picker
+
+### Added — All 195 UN Member States + Territories
+- **WorldCountriesDatabase.swift** fully rewritten and wired into CountryFactory
+- All 54 African nations (was ~19), all Pacific island states (Solomon Islands, Samoa, Tonga, etc.)
+- All Caribbean island states, all Balkan nations, complete Middle East, Central Asian republics
+- Key territories: Taiwan, Kosovo, Hong Kong
+- Every country has accurate coordinates, capital, GDP, population, military stats
+
+### Added — Era-Accurate Country Sets
+- `countriesForYear(year)` returns historically correct countries: USSR pre-1991, East/West Germany pre-1990, North/South Vietnam pre-1975, Yugoslavia pre-1992, Czechoslovakia pre-1993
+- Countries absent before independence (Israel pre-1948, Bangladesh pre-1971)
+
+### Added — Complete Historical Cabinets (~80 members)
+- Every administration Truman → Trump II: VP, SecState, SecDef, CIA Director, NSA, SecTreasury
+- Era-specific roles: DNI (Bush Jr.+), DHS Secretary (Bush Jr.+), UN Ambassador (Reagan)
+- All with bios, personality stats, loyalty/expertise/hawkishness, and era-appropriate quotes
+- Notable additions: Alben Barkley, McGeorge Bundy, McGeorge Bundy, Zbigniew Brzezinski, Brent Scowcroft, Jeane Kirkpatrick, George Tenet, John Bolton, Gina Haspel, Avril Haines, and 70+ more
+
+### Added — NATO / Warsaw Pact Collective Defense
+- `MilitaryAllianceSystem.swift` with era-accurate membership (NATO 1949 → Sweden 2024, Warsaw Pact 1955–1991)
+- Article 5 triggers automatically when any alliance member is attacked
+- DEFCON raises when collective defense mobilizes
+- Warsaw Pact equivalent mechanic
+
+### Added — Nuclear Arms Race Dynamics
+- `ArmsRaceEngine` runs every turn — if one power leads by 40%+, lagging side builds
+- Era-accurate build rates: 20–80/turn (1950s) → 200–600/turn (1970s MIRV) → static post-Cold War
+- SALT I, START I, New START treaty caps reduce US/Russia arsenals naturally
+
+### Added — WOPR Secret Ending
+- `WOPRSecretEndingView`: full animated terminal sequence (38 scripted lines + timing)
+- WOPR simulates 2,005 war scenarios, all WINNER: NONE
+- Typewriter animation, era-accurate terminal colors, score reveal
+
+### Added — Presidential Powers
+- **Executive Orders** (10 types): bypass Congress, instant unilateral action
+- **Presidential Pardons** (6 types): from whistleblower pardons to diplomatic gestures
+- **Presidential Address** (6 types): State of the Union, Oval Office, Warning to Adversary, etc. with cooldowns
+- **Cabinet Firings**: dismiss any non-President advisor with cascading loyalty/approval effects
+
+### Fixed — Historical Accuracy
+- Crisis advisor names now use role titles (Secretary of State, CIA Director) that resolve to the actual person for the active era — no more Marco Rubio advising Truman
+- Nuclear arsenals set to historically accurate values per era (0 nukes for USSR before 1949)
+- `Country.name` changed `let` → `var` for era-based renaming (Soviet Union, East Germany, etc.)
+- Era-aware delivery system labels: "Atom Bombs" (pre-1957), "Missiles" (1957–59), "ICBMs" (1960+)
+- Polaris/Poseidon/SLBM label progression for submarine-launched missiles
+- Era-appropriate news outlets (no CNN before 1980, no Fox before 1996, no RT before 2005)
+- `eraDoctrine`, `primaryThreatLabel`, `intelMethodLabel` computed properties on GameState
+
+### Fixed — Build Health
+- Resolved 331 compile errors from incomplete data model refactor
+- Added `GameStats` tracking (warsStarted, nukesLaunched, presidentsPlayed, etc.) to GameState
+- Fixed duplicate type definitions: CrisisSeverity → DynamicSeverity, GameEvent → LiveNewsEvent, etc.
+- Removed app-layer AI types (AnalysisUnified, VoiceUnified) from Shared compilation batch
+- Moved SentimentResult/Sentiment to AppSettings.swift (Shared layer)
+
+*Released by Jordan Koch*
 
 ## [1.3.3] - 2026-03-05
 

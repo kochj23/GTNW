@@ -1,14 +1,14 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.5.1
+# 🏛️ GTNW - Global Thermal Nuclear War v1.6.0
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
 **The most comprehensive presidential strategy game ever created**
 
-Command America through 236 years of history (1789-2025) with voice-acted AI opponents, real-time generated propaganda, predictive intelligence, and 290+ historical crises.
+Command America through 236 years of history (1789-2025) as any of 47 presidents. Face historically accurate crises, manage your cabinet, navigate NATO collective defense, watch the nuclear arms race unfold in real time, and discover the WOPR secret ending.
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Presidents](https://img.shields.io/badge/presidents-47-red)
-![Crises](https://img.shields.io/badge/crises-290%2B%20%7C%20Infinite-yellow)
+![Crises](https://img.shields.io/badge/crises-750%2B%20%7C%20Infinite-yellow)
 ![Countries](https://img.shields.io/badge/countries-195-blue)
 ![AI Features](https://img.shields.io/badge/AI%20Features-14-purple)
 
@@ -16,13 +16,43 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 
 ---
 
-## 🆕 What's New in v1.5.1
+## 🆕 What's New in v1.6.0
 
-**Full cabinet release** — every president now has their complete, historically accurate inner circle.
+This release represents a complete overhaul of historical accuracy, scope, and depth.
 
-- **Complete cabinets for all 15 presidencies** — Every administration now has VP, Secretary of Defense, CIA Director, National Security Advisor, Secretary of Treasury, plus era-specific roles (DNI, Homeland Security) with historically accurate names, bios, personalities, and quotes
-- **~80 cabinet members added** — Truman through Biden, each with distinct hawkishness, interventionism, loyalty, and expertise stats
-- Includes: Alben Barkley, Walter Bedell Smith, Richard Nixon VP, McGeorge Bundy, John McCone, Spiro Agnew, Zbigniew Brzezinski, Nelson Rockefeller, Brent Scowcroft, Jeane Kirkpatrick, Colin Powell NSA, Dan Quayle, George Tenet, Tom Ridge, John Negroponte, Hank Paulson, John Brennan, James Clapper, Mike Pence, John Bolton, Gina Haspel, Kamala Harris, William Burns, Janet Yellen, Avril Haines, and more
+### All 47 Presidents (Washington → Trump)
+Play as any of America's 47 presidents — from George Washington navigating the Whiskey Rebellion (1794) to the modern era. The **32 pre-nuclear administrations** (1789–1945) are now fully playable with era-accurate gameplay, including:
+- No ICBMs before 1957 (they show as "Atom Bombs" in Truman's era)
+- No Soviet Union after 1991 (replaced by Russia and post-Soviet states)
+- East/West Germany split (pre-1990), North/South Vietnam split (pre-1975)
+- Yugoslavia and Czechoslovakia unified in their correct historical eras
+
+### All 195 Countries + Territories
+Every UN member state is now in the game, including all 54 African nations, all Pacific island states, all Caribbean nations, every Balkan country, the full Middle East, Central Asian republics, and key territories like Taiwan, Kosovo, and Hong Kong.
+
+### Complete Historical Cabinets (~80 members)
+Every administration from Truman to Trump II now has a full historically accurate cabinet: VP, Secretary of State, SecDef, CIA Director, National Security Advisor, Secretary of Treasury, and era-specific roles (DNI from Bush Jr., DHS from 2003). Names, bios, personality stats, and era-appropriate quotes for all.
+
+### NATO Article 5 & Warsaw Pact Collective Defense
+Attacking a NATO member triggers all alliance members to declare war simultaneously. Era-accurate membership from NATO's 1949 founding through Sweden's 2024 accession. Warsaw Pact active 1955–1991 with Albania's 1968 expulsion.
+
+### Nuclear Arms Race Dynamics
+Every turn, the nuclear balance is simulated. If one power pulls ahead by 40%+, the lagging side builds up at era-appropriate rates (explosive 1960s–70s MIRV era, declining post-Cold War). SALT I, START I, and New START treaty caps naturally reduce arsenals.
+
+### WOPR Secret Ending
+Reach turn 50 without starting any wars or launching any nuclear weapons. WOPR takes over, runs through 2,005 war scenarios (all ending in "WINNER: NONE"), and delivers its verdict: *"A strange game. The only winning move is not to play."* Full animated terminal sequence.
+
+### New Presidential Powers
+- **📜 Executive Orders** — 10 types, all bypass Congress (Emergency Powers, Civil Rights Order, Sanctions, Stimulus, etc.)
+- **⚖️ Presidential Pardons** — 6 types with real tradeoffs (whistleblower pardons vs. war criminal pardons)
+- **🎤 Presidential Address** — Bully pulpit with cooldowns (State of the Union, Peace Initiative, Warning to Adversary, etc.)
+- **Cabinet Firings** — Fire any cabinet member from their detail view; cascading loyalty and approval effects
+
+### Era-Accurate Labels
+- "ICBMs" → **"Atom Bombs"** during Truman/Eisenhower (before 1957 first test)
+- "SLBMs" → **"Polaris Missiles"** during Kennedy/Johnson era
+- News outlets filtered by era (no CNN before 1980, no Fox before 1996)
+- Era doctrine labels (Containment → Massive Retaliation → Détente → Evil Empire → etc.)
 
 ---
 
