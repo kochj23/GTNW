@@ -61,12 +61,13 @@ struct CountryTemplate {
             submarineLaunchedMissiles: 0,
             bombers: 0,
             militaryStrength: max(1, min(100, militaryStrength)),
-            gdp: gdpBillions / 1000.0,       // Country stores in trillions
-            population: Int(populationMillions),
+            gdp: gdpBillions / 1000.0,
+            population: max(1, Int(populationMillions)),   // min 1 to prevent divide-by-zero
             economicStrength: economicStrengthFromGDP(),
             government: government,
             alignment: alignment,
-            stability: stability
+            stability: max(0, min(100, stability)),
+            aggressionLevel: max(0, min(100, aggressionLevel))  // use actual value, not default 50
         )
     }
 

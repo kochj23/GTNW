@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.6.0
+# 🏛️ GTNW - Global Thermal Nuclear War v1.6.1
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,7 +16,7 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.6.0
+## 🆕 What's New in v1.6.1
 
 This release represents a complete overhaul of historical accuracy, scope, and depth.
 

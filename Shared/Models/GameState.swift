@@ -500,7 +500,24 @@ class GameState: ObservableObject, Codable {
 
             // ── United States ────────────────────────────────────────────────
             case "USA":
-                if year <= 1945 {
+                if year < 1945 {
+                    // Pre-atomic era: conventional military only, era-scaled GDP
+                    let eraGDP: Double
+                    switch year {
+                    case ..<1800: eraGDP = 0.01
+                    case 1800..<1860: eraGDP = 0.04
+                    case 1860..<1900: eraGDP = 0.12
+                    case 1900..<1920: eraGDP = 0.50
+                    case 1920..<1930: eraGDP = 0.80
+                    case 1930..<1940: eraGDP = 0.60   // Great Depression
+                    default: eraGDP = 1.50            // WWII production
+                    }
+                    country = adjustedCountry(country,
+                        nukes: 0, icbm: 0, slbm: 0, bombers: max(0, (year - 1910) / 3),
+                        military: min(95, 20 + (year - 1789) / 5), gdp: eraGDP
+                    )
+                } else if year == 1945 {
+                    // Manhattan Project complete — 9 atomic bombs by end of WW2
                     country = adjustedCountry(country,
                         nukes: 9, icbm: 0, slbm: 0, bombers: 60,
                         military: 95, gdp: 2.2
