@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance improvements
 - Additional features based on community feedback
 
+## [1.3.3] - 2026-03-05
+
+### Added
+- **Complete historical cabinets for all 15 presidencies (Truman through Biden)** — ~80 new cabinet members added with full stats, accurate bios, era-appropriate quotes, and distinct personalities:
+
+  | Administration | New Members Added |
+  |---|---|
+  | Truman | Alben Barkley (VP), Gen. Walter Bedell Smith (CIA), John Snyder (Treasury), Tom Clark (AG) |
+  | Eisenhower | Richard Nixon (VP), Charles Wilson (SecDef), Robert Cutler (NSA), George Humphrey (Treasury) |
+  | Kennedy | LBJ (VP), John McCone (CIA), McGeorge Bundy (NSA), Douglas Dillon (Treasury) |
+  | Johnson | Hubert Humphrey (VP), Dean Rusk (SecState), Richard Helms (CIA), Walt Rostow (NSA), Henry Fowler (Treasury) |
+  | Nixon | Spiro Agnew (VP), Melvin Laird (SecDef), Richard Helms (CIA), John Connally (Treasury) |
+  | Ford | Nelson Rockefeller (VP), Donald Rumsfeld (SecDef), George H.W. Bush (CIA), Brent Scowcroft (NSA), William Simon (Treasury) |
+  | Carter | Walter Mondale (VP), Harold Brown (SecDef), Stansfield Turner (CIA), Michael Blumenthal (Treasury) |
+  | Reagan | George H.W. Bush (VP), Colin Powell (NSA), James Baker (Treasury), Jeane Kirkpatrick (UN) |
+  | Bush Sr. | Dan Quayle (VP), William Webster (CIA), Brent Scowcroft (NSA), Nicholas Brady (Treasury) |
+  | Clinton | Al Gore (VP), William Cohen (SecDef), George Tenet (CIA), Sandy Berger (NSA), Robert Rubin (Treasury) |
+  | Bush Jr. | George Tenet (CIA), Tom Ridge (DHS), John Negroponte (DNI), Hank Paulson (Treasury) |
+  | Obama | John Brennan (CIA), Tom Donilon (NSA), Timothy Geithner (Treasury), James Clapper (DNI) |
+  | Trump First | Mike Pence (VP), John Bolton (NSA), Steven Mnuchin (Treasury), Gina Haspel (CIA) |
+  | Biden | Kamala Harris (VP), William Burns (CIA), Janet Yellen (Treasury), Avril Haines (DNI) |
+
+- Each advisor has unique: `hawkishness`, `interventionism`, `fiscalConservatism`, `expertise`, `loyalty`, `publicSupport`, era-accurate quote, and advice specialty areas
+
+*Released by Jordan Koch*
+
 ## [1.3.2] - 2026-03-05
 
 ### Fixed
