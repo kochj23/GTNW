@@ -171,10 +171,18 @@ class GameState: ObservableObject, Codable {
     /// The dominant adversary framing for this era.
     var primaryThreatLabel: String {
         switch eraStartYear {
-        case ..<1991: return "Soviet Union"
+        case ..<1815:     return "European Powers"
+        case 1815..<1861: return "Sectional Crisis / Manifest Destiny"
+        case 1861..<1865: return "Confederacy / Civil War"
+        case 1865..<1898: return "Reconstruction & Westward Expansion"
+        case 1898..<1917: return "Imperial Rivalries"
+        case 1917..<1922: return "Russian Revolution / World War I"
+        case 1922..<1939: return "Rising Fascism / Soviet Communism"
+        case 1939..<1945: return "Axis Powers (Nazi Germany, Imperial Japan)"
+        case 1945..<1991: return "Soviet Union"
         case 1991..<2001: return "Regional Instability"
         case 2001..<2021: return "International Terrorism"
-        default: return "China & Russia"
+        default:           return "China & Russia"
         }
     }
 
@@ -381,10 +389,29 @@ class GameState: ObservableObject, Codable {
 
             switch country.id {
 
-            // ── Soviet Union / Russia ───────────────────────────────────────
+            // ── Russia — correct name for each era ──────────────────────────
             case "RUS":
-                if year < 1991 {
-                    // Soviet Union era
+                if year < 1917 {
+                    // Tsarist Russian Empire (not communist, not "Soviet")
+                    country = adjustedCountry(country,
+                        name: "Russian Empire",
+                        nukes: 0, icbm: 0, slbm: 0,
+                        bombers: 0,
+                        military: year < 1855 ? 65 : year < 1900 ? 60 : 72,
+                        gdp: year < 1850 ? 0.05 : year < 1900 ? 0.09 : 0.20,
+                        alignment: .nonAligned,
+                        government: .authoritarian
+                    )
+                } else if year < 1922 {
+                    // Russian Revolution / Civil War
+                    country = adjustedCountry(country,
+                        name: "Russia",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 10,
+                        military: 35, gdp: 0.04,
+                        alignment: .nonAligned, government: .authoritarian
+                    )
+                } else if year < 1991 {
+                    // Soviet Union (founded 1922, dissolved 1991)
                     country = adjustedCountry(country,
                         name: "Soviet Union",
                         nukes: historicalSovietNukes(year: year),

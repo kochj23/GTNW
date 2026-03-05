@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.6.3] - 2026-03-05
+
+### Fixed
+- **Soviet Union appearing in the mid-1800s** — Russia is now correctly labeled by era:
+  - Pre-1917: **Russian Empire** (Tsarist autocracy, non-aligned, 0 nukes, era-scaled GDP/military)
+  - 1917–1921: **Russia** (Revolutionary/Civil War period, unstable)
+  - 1922–1991: **Soviet Union** (communist, eastern bloc, nuclear from 1949)
+- **Soviet Union flag showing US flag** — `ussr()` had `flag:"🇺🇸"` by mistake; fixed to `🇷🇺`
+- **South Korea and Saudi Arabia existing in the 1840s** — Countries now filtered out before their founding dates:
+  Saudi Arabia (1932), South Korea (1945), North Korea (1948), Pakistan (1947), Jordan (1946), Singapore (1965), UAE/Qatar/Bahrain/Kuwait (1971), Timor-Leste (2002), Kosovo (2008)
+- **African nations appearing before independence** — ~44 post-colonial African states removed from pre-1960 games
+- **Anachronistic nuclear status** — Nuclear capability now cleared for all countries before their first confirmed test (Saudi Arabia `.suspected` removed pre-2000; Iran `.developing` removed pre-1985)
+- **"$5B economic aid" request in the 1840s** — `SafeDiplomacyService` diplomatic messages are now era-appropriate: pre-modern presidents see period-correct diplomatic language ("We propose a formal treaty of friendship and commerce") instead of modern financial references
+- **`primaryThreatLabel`** — Now shows historically accurate threat framing per era: "European Powers" (pre-1815), "Civil War" (1861-1865), "Rising Fascism" (1922-1939), "Axis Powers" (1939-1945), "Soviet Union" (1945-1991), etc.
+
+*Released by Jordan Koch*
+
 ## [1.6.2] - 2026-03-05
 
 ### Fixed

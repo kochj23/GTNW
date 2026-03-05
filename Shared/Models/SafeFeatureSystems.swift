@@ -66,11 +66,30 @@ class SafeDiplomacyService: ObservableObject {
         // 10% chance per AI country to send message
         for country in countries where !country.isPlayerControlled && !country.isDestroyed {
             if Double.random(in: 0...1) < 0.1 {
-                let messages = [
-                    "We demand you cease military buildup immediately.",
-                    "Your actions are provocative. We propose non-aggression pact.",
-                    "We request $5B economic aid to stabilize our economy."
-                ]
+                // Era-appropriate messages based on turn number
+                // turn 0 = eraStartYear; use country's actual situation for framing
+                let isModernEra = turn > 150   // rough proxy for post-WWII if started at Truman
+                let messages: [String]
+                if isModernEra {
+                    messages = [
+                        "We demand you cease military buildup immediately.",
+                        "Your actions are provocative. We propose a non-aggression pact.",
+                        "We request economic assistance to stabilize our nation.",
+                        "Our intelligence indicates hostile intentions. Stand down.",
+                        "We propose bilateral trade negotiations.",
+                        "Your sanctions are damaging our civilian population. Reconsider."
+                    ]
+                } else {
+                    // Pre-modern: no billion-dollar references, period-appropriate tone
+                    messages = [
+                        "We demand you cease your military preparations at once.",
+                        "Your expansionist policies threaten regional stability.",
+                        "We propose a diplomatic congress to resolve our differences.",
+                        "Our nations have no quarrel. Let us maintain peaceful relations.",
+                        "We seek a formal treaty of friendship and commerce.",
+                        "Your territorial ambitions are noted and opposed."
+                    ]
+                }
                 generateMessage(from: country.id, content: messages.randomElement()!, turn: turn)
             }
         }

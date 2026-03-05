@@ -101,13 +101,25 @@ struct WorldCountriesDatabase {
     static func countriesForYear(_ year: Int) -> [CountryTemplate] {
         var countries = allCountries()
 
-        // Remove post-1991 successor states, add USSR
-        if year < 1991 {
-            let removeSoviet = ["RUS","UKR","BLR","MDA","EST","LVA","LTU",
-                                "GEO","ARM","AZE","KAZ","UZB","TKM","KGZ","TJK"]
+        // Russia / Soviet Union historical accuracy
+        // Russian Empire existed until the 1917 Revolution
+        // Soviet Union founded December 1922, dissolved December 1991
+        let removeSoviet = ["RUS","UKR","BLR","MDA","EST","LVA","LTU",
+                            "GEO","ARM","AZE","KAZ","UZB","TKM","KGZ","TJK"]
+        if year < 1917 {
+            // Pre-revolutionary Russia: Tsarist Russian Empire
+            countries.removeAll { removeSoviet.contains($0.id) }
+            countries.append(russianEmpire(year: year))
+        } else if year < 1922 {
+            // Revolutionary / Civil War period: just "Russia"
+            countries.removeAll { removeSoviet.contains($0.id) }
+            countries.append(revolutionaryRussia())
+        } else if year < 1991 {
+            // Soviet Union era
             countries.removeAll { removeSoviet.contains($0.id) }
             countries.append(ussr(year: year))
         }
+        // Post-1991: individual successor states already in allCountries()
 
         // Germany: split until 1990
         if year < 1990 {
@@ -150,6 +162,108 @@ struct WorldCountriesDatabase {
         // Bangladesh: independent from 1971
         if year < 1971 {
             countries.removeAll { $0.id == "BGD" }
+        }
+
+        // Saudi Arabia: unified Kingdom founded 1932
+        if year < 1932 {
+            countries.removeAll { $0.id == "SAU" }
+        }
+
+        // South Korea: established 1945 after Japanese surrender
+        if year < 1945 {
+            countries.removeAll { $0.id == "KOR" }
+        }
+
+        // North Korea: established 1948 after Soviet occupation
+        if year < 1948 {
+            countries.removeAll { $0.id == "PRK" }
+        }
+
+        // Singapore: independent 1965
+        if year < 1965 {
+            countries.removeAll { $0.id == "SGP" }
+        }
+
+        // UAE: independent 1971
+        if year < 1971 {
+            countries.removeAll { $0.id == "ARE" }
+        }
+
+        // Qatar, Bahrain, Kuwait: independent ~1971
+        if year < 1971 {
+            countries.removeAll { ["QAT","BHR","KWT"].contains($0.id) }
+        }
+
+        // Pakistan: independent 1947 (partition of India)
+        if year < 1947 {
+            countries.removeAll { $0.id == "PAK" }
+        }
+
+        // Jordan (Transjordan): independent 1946
+        if year < 1946 {
+            countries.removeAll { $0.id == "JOR" }
+        }
+
+        // Many African nations gained independence ~1960
+        // Remove the most historically significant absences before 1960
+        if year < 1960 {
+            let postColonialAfrica = ["NGA","ETH","KEN","TZA","GHA","CIV","SEN","CMR",
+                                      "ZMB","ZWE","MOZ","AGO","COD","COG","GAB","CAF",
+                                      "TCD","MLI","BFA","NER","GIN","GNB","SLE","LBR",
+                                      "GMB","TGO","BEN","RWA","BDI","SSD","ERI","DJI",
+                                      "SOM","UGA","MDG","MUS","SYC","COM","CPV","STP",
+                                      "NAM","BWA","LSO","SWZ","MWI"]
+            countries.removeAll { postColonialAfrica.contains($0.id) }
+        }
+
+        // Timor-Leste: independent 2002
+        if year < 2002 {
+            countries.removeAll { $0.id == "TLS" }
+        }
+
+        // Kosovo: declared independence 2008
+        if year < 2008 {
+            countries.removeAll { $0.id == "XKX" }
+        }
+
+        // Nuclear status cleanup: no country should show nuclear capability
+        // before their actual first test/development date
+        let nuclearFirstTest: [String: Int] = [
+            "USA": 1945, "RUS": 1949, "GBR": 1952, "FRA": 1960, "CHN": 1964,
+            "IND": 1974, "PAK": 1998, "PRK": 2006, "ISR": 1967
+        ]
+        let suspectedNuclearThreshold: [String: Int] = [
+            "SAU": 2000,  // Saudi suspected program is a modern phenomenon
+            "IRN": 1985,  // Iran's nuclear ambitions started post-revolution
+        ]
+        for i in countries.indices {
+            let id = countries[i].id
+            // Clear declared/undeclared status if before first test
+            if let testYear = nuclearFirstTest[id], year < testYear {
+                countries[i] = CountryTemplate(
+                    countries[i].id, countries[i].name, flag: countries[i].flag,
+                    capital: countries[i].capital,
+                    lat: countries[i].lat, lon: countries[i].lon,
+                    region: countries[i].region, gov: countries[i].government,
+                    align: countries[i].alignment,
+                    gdp: countries[i].gdpBillions, pop: countries[i].populationMillions,
+                    mil: countries[i].militaryStrength, aggr: countries[i].aggressionLevel,
+                    stab: countries[i].stability, nuke: .none
+                )
+            }
+            // Clear suspected/developing status if before plausible timeframe
+            if let threshold = suspectedNuclearThreshold[id], year < threshold {
+                countries[i] = CountryTemplate(
+                    countries[i].id, countries[i].name, flag: countries[i].flag,
+                    capital: countries[i].capital,
+                    lat: countries[i].lat, lon: countries[i].lon,
+                    region: countries[i].region, gov: countries[i].government,
+                    align: countries[i].alignment,
+                    gdp: countries[i].gdpBillions, pop: countries[i].populationMillions,
+                    mil: countries[i].militaryStrength, aggr: countries[i].aggressionLevel,
+                    stab: countries[i].stability, nuke: .none
+                )
+            }
         }
 
         // Many African nations gained independence 1960s
@@ -837,9 +951,37 @@ struct WorldCountriesDatabase {
 
     // MARK: - Historical Countries
 
+    // MARK: - Pre-Soviet Russia (1789–1916)
+
+    /// Tsarist Russian Empire — monarchy, no nuclear weapons, Eurasian great power
+    static func russianEmpire(year: Int) -> CountryTemplate {
+        let gdp: Double
+        let pop: Double
+        let mil: Int
+        let aggr: Int
+        switch year {
+        case ..<1800: gdp = 0.05; pop = 35; mil = 55; aggr = 45
+        case 1800..<1855: gdp = 0.08; pop = 60; mil = 65; aggr = 50   // Napoleonic + expansion
+        case 1855..<1870: gdp = 0.09; pop = 70; mil = 55; aggr = 40   // Crimean War aftermath
+        case 1870..<1900: gdp = 0.14; pop = 90; mil = 65; aggr = 55   // Industrialization begins
+        default:           gdp = 0.25; pop = 130; mil = 72; aggr = 60  // Pre-WW1 peak
+        }
+        return CountryTemplate("RUS","Russian Empire",flag:"🇷🇺",capital:"Saint Petersburg",
+            lat:59.9343,lon:30.3351,region:.europe,gov:.authoritarian,align:.nonAligned,
+            gdp:gdp,pop:pop,mil:mil,aggr:aggr,stab:60,nuke:.none,yearEnd:1917)
+    }
+
+    /// Russia 1917–1921 — Revolution and Civil War, unstable transitional state
+    static func revolutionaryRussia() -> CountryTemplate {
+        CountryTemplate("RUS","Russia",flag:"🇷🇺",capital:"Petrograd",
+            lat:59.9343,lon:30.3351,region:.europe,gov:.authoritarian,align:.nonAligned,
+            gdp:0.04,pop:140,mil:35,aggr:50,stab:15,nuke:.none,yearEnd:1922)
+    }
+
+    // MARK: - Soviet Union (1922–1991)
+
     static func ussr(year: Int) -> CountryTemplate {
-        let nukes = year < 1949 ? 0 : year < 1955 ? 30 : year < 1965 ? 500 : year < 1975 ? 8000 : 25000
-        return CountryTemplate("RUS","Soviet Union",flag:"🇺🇸",capital:"Moscow",
+        return CountryTemplate("RUS","Soviet Union",flag:"🇷🇺",capital:"Moscow",
             lat:55.7558,lon:37.6173,region:.europe,gov:.communist,align:.eastern,
             gdp:year < 1960 ? 600 : year < 1975 ? 1500 : 2200,
             pop:year < 1960 ? 200 : year < 1980 ? 240 : 280,
