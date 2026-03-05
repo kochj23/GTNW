@@ -96,6 +96,88 @@ class GameState: ObservableObject, Codable {
         }
     }
 
+    // MARK: - Era-gated technology
+
+    /// Returns true if cyber warfare capabilities existed in this era.
+    var cyberWarfareAvailable: Bool { eraStartYear >= 1990 }
+
+    /// Returns true if reconnaissance satellites were available.
+    var satelliteSurveillanceAvailable: Bool { eraStartYear >= 1957 }
+
+    /// Returns true if the SDI / Star Wars missile defense program existed.
+    var sdiAvailable: Bool { eraStartYear >= 1983 }
+
+    /// Returns true if precision-guided munitions (smart bombs) were available.
+    var precisionMunitionsAvailable: Bool { eraStartYear >= 1970 }
+
+    /// Returns true if drone strikes were a viable option.
+    var droneStrikesAvailable: Bool { eraStartYear >= 2001 }
+
+    /// Returns true if SLBM / Polaris submarines were operational.
+    var submarineLaunchAvailable: Bool { eraStartYear >= 1960 }
+
+    /// Human-readable label for the era's primary intelligence-gathering method.
+    var intelMethodLabel: String {
+        switch eraStartYear {
+        case ..<1957: return "Human Intelligence (HUMINT)"
+        case 1957..<1970: return "Satellite & HUMINT"
+        case 1970..<1990: return "SIGINT & Satellite"
+        default: return "NSA/SIGINT/Cyber Intelligence"
+        }
+    }
+
+    // MARK: - Era-appropriate news outlets
+
+    /// News outlets that existed and were relevant in this era.
+    var availableNewsOutlets: [String] {
+        var outlets: [String] = []
+        outlets.append("Associated Press")   // Founded 1846
+        outlets.append("Reuters")            // Founded 1851
+        if eraStartYear >= 1927 { outlets.append("BBC") }
+        if eraStartYear >= 1943 { outlets.append("TASS (Soviet)") }   // Cold War era
+        if eraStartYear >= 1950 { outlets.append("Voice of America") }
+        if eraStartYear >= 1960 { outlets.append("Pravda") }          // USSR state paper
+        if eraStartYear >= 1980 { outlets.append("CNN") }             // Founded 1980
+        if eraStartYear >= 1991 { outlets.append("C-SPAN") }
+        if eraStartYear >= 1996 { outlets.append("FOX News") }        // Founded 1996
+        if eraStartYear >= 1996 { outlets.append("Al Jazeera") }      // Founded 1996
+        if eraStartYear >= 2005 { outlets.append("RT (Russia Today)") } // Founded 2005
+        if eraStartYear >= 2006 { outlets.append("Twitter/X News") }
+        return outlets
+    }
+
+    // MARK: - Era flavor text
+
+    /// Key doctrine or slogan of the era, shown in briefing header.
+    var eraDoctrine: String {
+        switch eraStartYear {
+        case 1945..<1953: return "Containment Policy — Stop Soviet Expansion"
+        case 1953..<1961: return "Massive Retaliation — Any Attack Answered with Nuclear Force"
+        case 1961..<1963: return "Flexible Response — Proportional Military Options"
+        case 1963..<1969: return "Domino Theory — If One Falls, All Fall"
+        case 1969..<1977: return "Détente — Managed Competition with the Soviet Union"
+        case 1977..<1981: return "Human Rights & Containment — Carter Doctrine"
+        case 1981..<1989: return "Peace Through Strength — The Evil Empire Must Fall"
+        case 1989..<1993: return "New World Order — Post-Cold War Architecture"
+        case 1993..<2001: return "Engagement & Enlargement — Democracy & Markets"
+        case 2001..<2009: return "Global War on Terror — You're Either With Us or Against Us"
+        case 2009..<2017: return "Smart Power — Drone Strikes, Sanctions, Diplomacy"
+        case 2017..<2021: return "America First — Transactional Foreign Policy"
+        case 2021..<2025: return "Democracy Alliance — Rules-Based International Order"
+        default:           return "America First (II) — Maximum Pressure"
+        }
+    }
+
+    /// The dominant adversary framing for this era.
+    var primaryThreatLabel: String {
+        switch eraStartYear {
+        case ..<1991: return "Soviet Union"
+        case 1991..<2001: return "Regional Instability"
+        case 2001..<2021: return "International Terrorism"
+        default: return "China & Russia"
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes
         case globalRadiation, totalCasualties, playerCountryID, gameOver
@@ -107,7 +189,9 @@ class GameState: ObservableObject, Codable {
     init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil) {
         self.playerCountryID = playerCountryID
         self.difficultyLevel = difficultyLevel
-        self.countries = CountryFactory.createAllCountries()
+        // Use era-appropriate country list when playing as a historical administration
+        let eraYear = administration?.startYear ?? 2025
+        self.countries = CountryFactory.createCountriesForYear(eraYear)
         self.activeWars = []
         self.treaties = []
         self.nuclearStrikes = []
@@ -122,6 +206,9 @@ class GameState: ObservableObject, Codable {
         if let admin = administration {
             self.advisors = admin.advisors
             self.eraStartYear = admin.startYear
+            // Era country adjustments (nuclear arsenals, Soviet rename, etc.) are handled
+            // by WorldCountriesDatabase.countriesForYear() above.
+            // Apply additional fine-grained nuclear tweaks for the specific year:
             adjustCountriesForEra(year: admin.startYear)
         } else {
             self.advisors = Advisor.trumpCabinet()

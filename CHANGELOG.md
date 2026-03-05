@@ -95,3 +95,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **All display locations updated**: country stat panel, world map info popup, text command interface, crisis event descriptions, weapons malfunction event, coup crisis, espionage crisis, GameEngine build log
 
 *Released by Jordan Koch*
+
+## [1.4.0] - 2026-03-05
+
+### Added
+
+**All 195 UN Member States + Key Territories**
+Complete `WorldCountriesDatabase.swift` (was a stub, now fully integrated):
+- **54 African nations** — all UN members including previously missing: Mozambique, Zambia, Malawi, Rwanda, Burundi, Somalia, Eritrea, Djibouti, CAR, Chad, Gabon, Congo, Equatorial Guinea, São Tomé, South Sudan, Guinea-Bissau, Sierra Leone, Liberia, Gambia, Cape Verde, Mauritania, Togo, Benin, Comoros, Seychelles, Lesotho, Eswatini, Botswana, Namibia, Mauritius
+- **14 Pacific/Oceania nations** — Solomon Islands, Vanuatu, Samoa, Tonga, Kiribati, Micronesia, Marshall Islands, Palau, Nauru, Tuvalu
+- **All Caribbean island states** — Trinidad & Tobago, Barbados, St. Lucia, St. Vincent, Grenada, Antigua, St. Kitts, Dominica, Bahamas, Belize
+- **All Balkan states** — Serbia, Croatia, Bosnia, Slovenia, North Macedonia, Montenegro, Albania
+- **Central Asian + Caucasus** — Kazakhstan, Uzbekistan, Turkmenistan, Kyrgyzstan, Tajikistan, Georgia, Armenia, Azerbaijan  
+- **All Middle East states** — UAE, Iraq, Syria, Jordan, Lebanon, Yemen, Oman, Kuwait, Qatar, Bahrain, Palestine
+- Complete Western/Eastern Europe, all South & Southeast Asian nations
+- Key territories: Kosovo, Taiwan, Hong Kong
+
+**Era-Accurate Historical Country Sets (`countriesForYear()`)**
+- East/West Germany split (pre-1990)
+- North/South Vietnam split (pre-1975)
+- Yugoslavia unified (pre-1992)
+- Czechoslovakia unified (pre-1993)
+- USSR replaces Russia + all post-Soviet states (pre-1991)
+- Israel not present before 1948
+- Bangladesh not present before 1971
+
+**Era-Gated Technology Flags on `GameState`**
+Available to views and AI logic:
+- `cyberWarfareAvailable` — true from 1990
+- `satelliteSurveillanceAvailable` — true from 1957
+- `sdiAvailable` — true from 1983
+- `precisionMunitionsAvailable` — true from 1970
+- `droneStrikesAvailable` — true from 2001
+- `submarineLaunchAvailable` — true from 1960
+
+**Era-Appropriate News Outlets**
+`availableNewsOutlets` returns outlets that actually existed:
+- 1945+: AP, Reuters
+- 1927+: BBC; 1943+: TASS; 1950+: Voice of America
+- 1980+: CNN; 1996+: FOX News, Al Jazeera; 2005+: RT
+
+**Era Flavor Text**
+- `eraDoctrine` — key foreign policy doctrine per administration (Containment, Massive Retaliation, Détente, etc.)
+- `primaryThreatLabel` — Soviet Union / Terrorism / China+Russia
+- `intelMethodLabel` — HUMINT → Satellite → SIGINT/Cyber
+
+*Released by Jordan Koch*

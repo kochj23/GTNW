@@ -345,8 +345,12 @@ enum WorldRegion: String, Codable, CaseIterable {
 /// Factory for creating all countries in the game
 struct CountryFactory {
 
-    /// Create all countries with real-world data
+    /// Create all countries — delegates to WorldCountriesDatabase for full 195-nation coverage.
+    /// Falls back to hardcoded nuclear powers if database is unavailable.
     static func createAllCountries() -> [Country] {
+        let dbCountries = WorldCountriesDatabase.allCountries().map { $0.toCountry() }
+        if !dbCountries.isEmpty { return dbCountries }
+        // Hardcoded fallback (nuclear powers only) — should not normally be reached
         return [
             // ===== DECLARED NUCLEAR POWERS =====
 
@@ -733,6 +737,11 @@ struct CountryFactory {
                 government: .monarchy, alignment: .western, stability: 96,
                 threatLevel: .minimal, aggressionLevel: 2
             ),
-        ]
+        ] // end fallback list
+    }
+
+    /// Create countries for a specific historical year.
+    static func createCountriesForYear(_ year: Int) -> [Country] {
+        return WorldCountriesDatabase.countriesForYear(year).map { $0.toCountry() }
     }
 }
