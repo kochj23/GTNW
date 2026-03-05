@@ -148,7 +148,7 @@ struct WorldMapView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     infoRow("Nuclear Warheads", "\(country.nuclearWarheads)")
-                    infoRow("ICBMs", "\(country.icbmCount)")
+                    infoRow(gameState.deliverySystemLabel, "\(country.icbmCount)")
                     infoRow("Population", "\(country.population)M")
                     infoRow("GDP", "$\(String(format: "%.1f", country.gdp))T")
                 }

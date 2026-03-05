@@ -477,8 +477,8 @@ struct TextCommandInterface: View {
 
         NUCLEAR CAPABILITIES:
         • Warheads: \(player.nuclearWarheads)
-        • ICBMs: \(player.icbmCount)
-        • SLBMs: \(player.submarineLaunchedMissiles)
+        • \(gameState.deliverySystemLabel): \(player.icbmCount)
+        • \(gameState.slbmLabel): \(player.submarineLaunchedMissiles)
         • Bombers: \(player.bombers)
 
         GLOBAL STATUS:

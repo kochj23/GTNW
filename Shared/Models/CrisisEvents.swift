@@ -210,7 +210,7 @@ class CrisisManager: ObservableObject {
             severity: .critical,
             title: "🚨 FALSE ALARM DETECTED",
             description: """
-            NORAD has detected what appears to be \(Int.random(in: 50...500)) ICBMs launched from \(enemy.name).
+            NORAD has detected what appears to be \(Int.random(in: 50...500)) \(gameState.deliverySystemProse) launched from \(enemy.name).
 
             Early warning satellites show multiple launches.
             Ground radar is attempting confirmation.
@@ -225,7 +225,7 @@ class CrisisManager: ObservableObject {
             options: [
                 CrisisOption(
                     title: "Launch Immediate Counterstrike",
-                    description: "Launch all ICBMs before we're destroyed",
+                    description: "Launch all \(gameState.deliverySystemLabel) before we're destroyed",
                     advisorRecommendation: "Secretary of Defense",
                     consequences: CrisisConsequences(
                         relationshipChanges: [enemy.id: -100],
@@ -665,7 +665,7 @@ class CrisisManager: ObservableObject {
             Nuclear Situation:
             • \(country.nuclearWarheads) warheads
             • Launch authority disputed
-            • Coup forces control \(Int.random(in: 2...8)) ICBM silos
+            • Coup forces control \(Int.random(in: 2...8)) \(gameState.deliverySystemLabel) launch sites
             • Risk of unauthorized launch HIGH
 
             International Response:
@@ -755,7 +755,7 @@ class CrisisManager: ObservableObject {
         let agent = agentNames.randomElement()!
         let coverJobs = ["embassy attaché", "trade representative", "journalist", "NGO worker", "academic researcher", "tech company employee"]
         let coverJob = coverJobs.randomElement()!
-        let classified = ["nuclear launch codes", "ICBM deployment plans", "SDI technology", "submarine patrol routes", "CIA NOC list", "NSA encryption keys"]
+        let classified = ["nuclear launch codes", "\(gameState.deliverySystemLabel) deployment plans", "SDI technology", "submarine patrol routes", "CIA NOC list", "NSA encryption keys"]
         let documents = classified.randomElement()!
         let yearsActive = Int.random(in: 2...15)
 
@@ -902,7 +902,7 @@ class CrisisManager: ObservableObject {
 
     private func createWeaponsMalfunctionCrisis(gameState: GameState) -> CrisisEvent {
         let country = gameState.countries.filter { $0.nuclearWarheads > 5 }.randomElement()!
-        let weaponType = ["ICBM", "SLBM", "tactical nuke"].randomElement()!
+        let weaponType = [gameState.deliverySystemLabel, gameState.slbmLabel, "tactical nuke"].randomElement()!
         let warheads = Int.random(in: 1...5)
         return createDetailedCrisis(
             type: .weaponsMalfunction,

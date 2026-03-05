@@ -83,3 +83,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 *For detailed release notes, see [GitHub Releases](https://github.com/kochj23/GTNW/releases).*
+
+## [1.3.4] - 2026-03-05
+
+### Fixed
+- **Era-accurate delivery system labels** — "ICBMs" is now replaced with the historically correct term based on the active administration's era:
+  - **1945–1956** (Truman, Eisenhower early): **"Atom Bombs"** — nuclear gravity bombs delivered by B-29/B-47, no ballistic missiles existed yet
+  - **1957–1959** (Eisenhower late): **"Missiles"** — early Atlas/R-7 ballistic missiles just entering service
+  - **1960+**: **"ICBMs"** — Minuteman and beyond, the familiar term
+- **SLBM label also updated**: "Polaris Missiles" (1960–1971), "Poseidon Missiles" (1972–1989), "SLBMs" (modern)
+- **All display locations updated**: country stat panel, world map info popup, text command interface, crisis event descriptions, weapons malfunction event, coup crisis, espionage crisis, GameEngine build log
+
+*Released by Jordan Koch*

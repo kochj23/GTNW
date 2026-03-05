@@ -65,6 +65,37 @@ class GameState: ObservableObject, Codable {
     @Published var eraStartYear: Int = 2025
     var currentYear: Int { eraStartYear + turn }
 
+    // MARK: - Era-aware delivery system labels
+
+    /// Label for the icbmCount stat — changes based on what actually existed in the era.
+    var deliverySystemLabel: String {
+        switch eraStartYear {
+        case ..<1957: return "Atom Bombs"       // Gravity bombs on B-29/B-47, no ICBMs yet
+        case 1957..<1960: return "Missiles"     // Early Atlas/R-7 ballistic missiles
+        case 1960..<1970: return "ICBMs"        // Atlas, Titan, Minuteman operational
+        default:          return "ICBMs"
+        }
+    }
+
+    /// Label for submarineLaunchedMissiles — pre-Polaris eras had no SLBMs.
+    var slbmLabel: String {
+        switch eraStartYear {
+        case ..<1960: return "Sub-Launched Missiles" // Polaris first patrol Nov 1960
+        case 1960..<1972: return "Polaris Missiles"  // UGM-27 Polaris era
+        case 1972..<1990: return "Poseidon Missiles" // UGM-73 Poseidon era
+        default:          return "SLBMs"
+        }
+    }
+
+    /// Generic delivery system name for use in prose / crisis event text.
+    var deliverySystemProse: String {
+        switch eraStartYear {
+        case ..<1957: return "nuclear-armed bombers"
+        case 1957..<1960: return "ballistic missiles"
+        default: return "ICBMs"
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes
         case globalRadiation, totalCasualties, playerCountryID, gameOver

@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.3.3
+# 🏛️ GTNW - Global Thermal Nuclear War v1.3.4
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,7 +16,7 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 
 ---
 
-## 🆕 What's New in v1.3.3
+## 🆕 What's New in v1.3.4
 
 **Full cabinet release** — every president now has their complete, historically accurate inner circle.
 

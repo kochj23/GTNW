@@ -383,9 +383,11 @@ struct ContentView: View {
             }
 
             VStack(alignment: .leading, spacing: 5) {
+                let icbmLabel = gameEngine.gameState?.deliverySystemLabel ?? "ICBMs"
+                let slbmLabel = gameEngine.gameState?.slbmLabel ?? "SLBMs"
                 statRow("Nuclear Warheads:", "\(country.nuclearWarheads)")
-                statRow("ICBMs:", "\(country.icbmCount)")
-                statRow("SLBMs:", "\(country.submarineLaunchedMissiles)")
+                statRow("\(icbmLabel):", "\(country.icbmCount)")
+                statRow("\(slbmLabel):", "\(country.submarineLaunchedMissiles)")
                 statRow("Bombers:", "\(country.bombers)")
                 statRow("Damage:", "\(country.damageLevel)%")
                 statRow("Radiation:", "\(country.radiationLevel)")

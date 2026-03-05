@@ -1008,7 +1008,7 @@ class GameEngine: ObservableObject {
             addLog("🛰️ ASAT capability achieved", type: .info)
         case .heavyICBM:
             country.icbmCount += 30
-            addLog("🚀 Heavy ICBM silos constructed", type: .info)
+            addLog("🚀 Heavy \(gameState.deliverySystemLabel) silos constructed", type: .info)
         default:
             break
         }
