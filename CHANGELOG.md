@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-03-05
+
+### Fixed
+- **Crash in era-based gameplay** — The nuclear status cleanup loop added in v1.6.3 was recreating `CountryTemplate` objects without preserving their `yearEnd` field. Historical nations (Soviet Union, West Germany, Yugoslavia, etc.) lost their expiry dates and could persist into wrong eras, corrupting game state during AI turn processing. Nuclear status cleanup moved to `GameState.adjustCountriesForEra()` where Country structs can be safely and directly mutated.
+
+### Added
+- **Era-appropriate action gating** — `PresidentialAction.eraAvailableYear` property added; `ShadowPresidentMenu` now filters out actions before they historically existed:
+  - Air Patrol / Air Strike / Bombardment: 1914 (WWI)
+  - Amphibious Assault / Special Forces: 1942 (WWII)
+  - No-Fly Zone: 1991 (Gulf War)
+  - All nuclear actions: 1945 (Manhattan Project)
+  - Satellite Recon / IMINT: 1957 (Sputnik)
+  - SIGINT / Code Breaking: 1940
+  - Cyber Attack / Hack / Disrupt Comms: 1990
+  - UN Condemnation: 1945; Arms Control Treaties: 1960
+  - Asset Freezing: 1945; Oil Embargo: 1900; Olympic Boycott: 1896
+- **Era-scaled economic amounts** — `GameState.eraDiplomacyAmount` and `eraDiplomacyAmountLabel` provide historically appropriate values ($50K in 1790s → $5B modern). Economic Diplomacy button label and action now use era-scaled amounts.
+- **Context-aware diplomatic messages** — `SafeDiplomacyService.processTurn` now checks actual game state before generating messages:
+  - Countries at war with player send war-appropriate messages
+  - Hostile countries reference specific grievances (player's wars, sanctions)
+  - Allied countries send supportive/cooperative messages
+  - Neutral countries send formal diplomatic contact requests
+  - All messages use period-appropriate language (pre-modern vs modern tone)
+  - Random unprovoked "provocative actions" warnings no longer sent when player is peaceful
+
+*Released by Jordan Koch*
+
 
 ## [1.6.3] - 2026-03-05
 

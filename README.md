@@ -18,11 +18,32 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ## 🆕 What's New in v1.6.4
 
-**Stability release** — critical crash fixes for pre-nuclear era gameplay.
+**Era accuracy and gameplay quality** — three user-facing improvements plus a crash fix.
 
-- **Fixed**: Pre-nuclear presidents (Van Buren, Lincoln, FDR, etc.) were incorrectly receiving atomic bombs. All eras before 1945 now correctly have zero nuclear weapons with era-appropriate conventional military and GDP.
-- **Fixed**: All 195 countries were defaulting to maximum aggression level, causing the AI to attempt dozens of simultaneous war declarations per turn and crash the game. Each country now uses its correct historical aggression level.
-- **Fixed**: Tiny island nations (Nauru, Vatican, Tuvalu) had population=0 which could cause divide-by-zero errors in certain calculations.
+### Era-Appropriate Military Actions
+The Shadow President action menu now hides actions before they historically existed. Van Buren (1837) has no Air Strike option. Lincoln (1861) has no No-Fly Zone or Cyber Attack. Each action is gated to the year it became real:
+- Air Patrol / Air Strike / Bombardment → **1914** (WWI)
+- No-Fly Zone → **1991** (Gulf War)
+- All nuclear actions → **1945** (Manhattan Project)
+- Satellite Reconnaissance → **1957** (Sputnik)
+- Cyber Attack / Hack / Disrupt → **1990** (Internet era)
+
+### Era-Scaled Economic Amounts
+Economic diplomacy now uses historically appropriate dollar amounts — Van Buren spends **$100K**, not $5B:
+
+| Era | Amount |
+|-----|--------|
+| 1789–1860 | $50K–$100K |
+| 1860–1945 | $500K–$10M |
+| 1945–1980 | $50M–$250M |
+| 1980–2000 | $1B |
+| 2000+ | $5B |
+
+### Context-Aware Diplomatic Messages
+Countries now only send relevant messages based on what's actually happening in the game. If you're peaceful with good relations, you receive cooperative messages. If you're at war, you get war-appropriate reactions. No more random accusations of "provocative actions" when you haven't done anything.
+
+### Crash Fix
+Removed a dangerous `CountryTemplate` recreation loop from v1.6.3 that was stripping `yearEnd` dates from historical nations, causing the Soviet Union and others to persist beyond their correct historical end dates.
 
 ---
 
