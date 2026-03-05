@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.3.0
+# 🏛️ GTNW - Global Thermal Nuclear War v1.3.1
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -13,6 +13,19 @@ Command America through 236 years of history (1789-2025) with voice-acted AI opp
 ![AI Features](https://img.shields.io/badge/AI%20Features-14-purple)
 
 ![GTNW](Screenshots/main-window.png)
+
+---
+
+## 🆕 What's New in v1.3.1
+
+**Stability release** — comprehensive codebase audit and compile-error fix pass.
+
+- Resolved 331 compile errors from an incomplete data model refactor
+- Fixed all `Country`, `GameState`, and `War` property references across 15+ files
+- Added full stats tracking to `GameState` (powers the Achievement system)
+- Fixed duplicate type definitions causing ambiguous-type compiler errors
+- Corrected Xcode compilation batch isolation issues for `Shared/` vs app-level code
+- Both macOS and iOS targets build cleanly
 
 ---
 
