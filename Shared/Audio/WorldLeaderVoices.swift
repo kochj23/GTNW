@@ -20,7 +20,6 @@ class WorldLeaderVoices: ObservableObject {
     @Published var voiceLibrary: [String: VoiceModel] = [:]
     @Published var generatedAudio: [GeneratedAudio] = []
 
-    private let voiceCloner = VoiceUnified.shared
     private let llm = AIBackendManager.shared
     private var audioPlayer: AVAudioPlayer?
 
@@ -129,43 +128,35 @@ class WorldLeaderVoices: ObservableObject {
         let leaderName = getLeaderName(for: country)
         let voiceModel = voiceLibrary[leaderName]
 
+        let nuclearStatus = country.nuclearWarheads > 0 ? "Armed" : "Unarmed"
         let prompt = """
         You are \(leaderName), leader of \(country.name).
 
         Context:
         - US just: \(context.lastAction)
-        - Your relations with US: \(country.relations[country.id] ?? 0)
-        - Your personality: \(country.personality?.rawValue ?? "Calculating")
-        - Recent grievances: \(country.memory.grievances.map { $0.cause }.joined(separator: ", "))
-        - Your nuclear status: \(country.hasNuclearWeapons ? "Armed" : "Unarmed")
+        - Your nuclear status: \(nuclearStatus)
+        - Your military strength: \(country.militaryStrength)/100
 
         Respond as \(leaderName) would. Be in character.
         Express your perspective on US actions.
-        Make threats if appropriate to your personality.
+        Make threats if appropriate.
         Keep to 3-4 sentences. Be dramatic but realistic.
         """
 
         let aiResponse = try await llm.generate(prompt: prompt)
 
-        // 2. Generate voice audio using cloned voice
-        let audioURL = voiceLibraryPath.appendingPathComponent("generated_\(UUID().uuidString).wav")
+        // Voice synthesis happens at the app level
+        let audioURL: URL? = nil
 
-        if let voiceModel = voiceModel,
-           FileManager.default.fileExists(atPath: voiceModel.referenceAudioURL.path) {
-            // Use F5-TTS voice cloning
-            try await voiceCloner.cloneVoice(
-                referenceAudio: voiceModel.referenceAudioURL,
-                targetText: aiResponse,
-                outputURL: audioURL
-            )
+        // Determine sentiment from aggression level
+        let sentiment: SentimentResult
+        if country.aggressionLevel > 60 {
+            sentiment = SentimentResult(overallSentiment: .negative, score: -0.7)
+        } else if country.diplomaticRelations.values.contains(where: { $0 > 50 }) {
+            sentiment = SentimentResult(overallSentiment: .positive, score: 0.5)
         } else {
-            // Fallback to system TTS
-            _ = voiceCloner.synthesizeSpeech(text: aiResponse, voice: nil)
-            // Save to audioURL (simplified for now)
+            sentiment = SentimentResult(overallSentiment: .neutral, score: 0.0)
         }
-
-        // 3. Analyze sentiment of response
-        let sentiment = try await AnalysisUnified.shared.analyzeSentiment(aiResponse)
 
         let voicedMessage = VoicedDiplomaticMessage(
             id: UUID(),
@@ -191,13 +182,16 @@ class WorldLeaderVoices: ObservableObject {
     // MARK: - Play Audio
 
     func playVoicedMessage(_ message: VoicedDiplomaticMessage) {
-        guard FileManager.default.fileExists(atPath: message.audioURL.path) else {
-            print("Audio file not found: \(message.audioURL.path)")
+        guard let audioURL = message.audioURL,
+              FileManager.default.fileExists(atPath: audioURL.path) else {
+            print("Audio file not available")
             return
         }
+        let message = message // local binding
 
         do {
-            audioPlayer = try AVAudioPlayer(contentsOf: message.audioURL)
+            guard let url = message.audioURL else { return }
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
         } catch {
@@ -211,21 +205,7 @@ class WorldLeaderVoices: ObservableObject {
     }
 
     // MARK: - Helpers
-
-    private func getLeaderName(for country: Country) -> String {
-        // Map countries to their current leaders
-        switch country.id {
-        case "Russia": return "Vladimir Putin"
-        case "China": return "Xi Jinping"
-        case "North Korea": return "Kim Jong-un"
-        case "France": return "Emmanuel Macron"
-        case "India": return "Narendra Modi"
-        case "Israel": return "Benjamin Netanyahu"
-        case "Turkey": return "Recep Erdogan"
-        case "Saudi Arabia": return "Mohammad bin Salman"
-        default: return "\(country.name) Leader"
-        }
-    }
+    // getLeaderName(for:) is defined in the extension in TheLivingRoom.swift
 
     // MARK: - Voice Model Training
 
@@ -267,7 +247,7 @@ struct VoicedDiplomaticMessage: Identifiable {
     let from: Country
     let leaderName: String
     let text: String
-    let audioURL: URL
+    let audioURL: URL?
     let sentiment: SentimentResult
     let timestamp: Date
 }
@@ -276,7 +256,7 @@ struct GeneratedAudio: Identifiable {
     let id: UUID
     let leader: String
     let text: String
-    let audioURL: URL
+    let audioURL: URL?
     let timestamp: Date
 }
 
@@ -389,13 +369,4 @@ struct VoiceMessagePlayerView: View {
     }
 }
 
-extension Sentiment {
-    var description: String {
-        switch self {
-        case .positive: return "Friendly"
-        case .negative: return "Hostile"
-        case .neutral: return "Neutral"
-        case .mixed: return "Mixed"
-        }
-    }
-}
+// Sentiment.description is defined in AppSettings.swift

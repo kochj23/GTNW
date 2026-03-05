@@ -18,7 +18,6 @@ class PropagandaEngine: ObservableObject {
     @Published var propagandaGallery: [PropagandaPoster] = []
     @Published var lastError: String?
 
-    private let imageGen = ImageGenerationUnified.shared
     private let llm = AIBackendManager.shared
 
     private init() {
@@ -36,12 +35,13 @@ class PropagandaEngine: ObservableObject {
         defer { isGenerating = false }
 
         // 1. Generate propaganda prompt using AI
+        let opponentName = war.opponentName(of: perspective.id)
         let promptEnhancement = """
-        Create propaganda poster description for \(perspective.name) in war against \(war.opponent(of: perspective)?.name ?? "enemy").
+        Create propaganda poster description for \(perspective.name) in war against \(opponentName).
 
         Style: \(style.rawValue)
-        Era: \(war.startYear ?? 2025)
-        Perspective: \(perspective.governmentType.rawValue) nation
+        Era: Turn \(war.startTurn)
+        Perspective: \(perspective.government.rawValue) nation
 
         Include:
         - Patriotic slogan (bold text)
@@ -54,25 +54,17 @@ class PropagandaEngine: ObservableObject {
 
         let enhancedPrompt = try await llm.generate(prompt: promptEnhancement)
 
-        // 2. Generate image using SwarmUI/DALL-E
-        let imageData = try await imageGen.generateImage(
-            prompt: enhancedPrompt,
-            backend: .swarmui,
-            size: .portrait512x768,
-            style: .artistic
-        )
-
-        // 3. Create poster object
+        // 3. Create poster object (image generation happens at app level)
         let poster = PropagandaPoster(
             id: UUID(),
             type: .war,
             country: perspective,
             title: generatePosterTitle(war: war, perspective: perspective),
-            imageData: imageData,
+            imageData: nil,
             prompt: enhancedPrompt,
             style: style,
             timestamp: Date(),
-            event: "War: \(war.description)"
+            event: "War: \(war.aggressor) vs \(war.defender)"
         )
 
         // 4. Save to gallery
@@ -96,19 +88,12 @@ class PropagandaEngine: ObservableObject {
         jubilant crowd, flags waving, 1940s propaganda style
         """
 
-        let imageData = try await imageGen.generateImage(
-            prompt: prompt,
-            backend: .swarmui,
-            size: .portrait512x768,
-            style: .artistic
-        )
-
         let poster = PropagandaPoster(
             id: UUID(),
             type: .victory,
             country: winner,
             title: "\(victoryType.rawValue.uppercased()) VICTORY!",
-            imageData: imageData,
+            imageData: nil,
             prompt: prompt,
             style: .vintage,
             timestamp: Date(),
@@ -137,19 +122,12 @@ class PropagandaEngine: ObservableObject {
         respectful and haunting, black and white
         """
 
-        let imageData = try await imageGen.generateImage(
-            prompt: prompt,
-            backend: .swarmui,
-            size: .portrait512x768,
-            style: .realistic
-        )
-
         let poster = PropagandaPoster(
             id: UUID(),
             type: .memorial,
             country: target,
             title: "In Memory: \(target.name)",
-            imageData: imageData,
+            imageData: nil,
             prompt: prompt,
             style: .somber,
             timestamp: Date(),
@@ -178,19 +156,12 @@ class PropagandaEngine: ObservableObject {
         patriotic and stirring
         """
 
-        let imageData = try await imageGen.generateImage(
-            prompt: prompt,
-            backend: .swarmui,
-            size: .portrait512x768,
-            style: .artistic
-        )
-
         let poster = PropagandaPoster(
             id: UUID(),
             type: .recruitment,
             country: country,
             title: "\(country.name.uppercased()) NEEDS YOU!",
-            imageData: imageData,
+            imageData: nil,
             prompt: prompt,
             style: .vintage,
             timestamp: Date(),
@@ -228,14 +199,16 @@ class PropagandaEngine: ObservableObject {
             withIntermediateDirectories: true
         )
 
-        let posterPath = galleryPath.appendingPathComponent("\(poster.id.uuidString).jpg")
-        try? poster.imageData.write(to: posterPath)
+        if let imageData = poster.imageData {
+            let posterPath = galleryPath.appendingPathComponent("\(poster.id.uuidString).jpg")
+            try? imageData.write(to: posterPath)
+        }
     }
 
     // MARK: - Helpers
 
     private func generatePosterTitle(war: War, perspective: Country) -> String {
-        let opponent = war.opponent(of: perspective)?.name ?? "Enemy"
+        let opponent = war.opponentName(of: perspective.id)
         let templates = [
             "DEFEND \(perspective.name.uppercased())!",
             "VICTORY OVER \(opponent.uppercased())",
@@ -254,7 +227,7 @@ struct PropagandaPoster: Identifiable, Codable {
     let type: PropagandaType
     let country: Country
     let title: String
-    let imageData: Data
+    let imageData: Data?
     let prompt: String
     let style: PropagandaStyle
     let timestamp: Date
@@ -287,14 +260,11 @@ enum RecruitmentUrgency: String {
 // MARK: - War Extension
 
 extension War {
-    func opponent(of country: Country) -> Country? {
-        // Return the other country in the war
-        if aggressor.id == country.id {
-            return defender
-        } else if defender.id == country.id {
-            return aggressor
-        }
-        return nil
+    /// Returns the opponent's country ID given one side's country ID
+    func opponentName(of countryID: String) -> String {
+        if aggressor == countryID { return defender }
+        if defender == countryID { return aggressor }
+        return "Unknown"
     }
 }
 
@@ -335,7 +305,7 @@ struct PosterCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Poster image
-            if let nsImage = NSImage(data: poster.imageData) {
+            if let imageData = poster.imageData, let nsImage = NSImage(data: imageData) {
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

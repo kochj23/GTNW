@@ -17,21 +17,16 @@ class SentimentWorldMap: ObservableObject {
     @Published var countrySentiments: [String: NationalSentiment] = [:]
     @Published var isAnalyzing = false
 
-    private let sentiment = AnalysisUnified.shared
-
     private init() {}
 
     // MARK: - Analyze National Sentiments
 
-    func analyzeAllSentiments(gameState: GameState) async throws {
+    func analyzeAllSentiments(gameState: GameState) {
         isAnalyzing = true
         defer { isAnalyzing = false }
 
         for country in gameState.countries {
-            let sentiment = try await analyzeCountrySentiment(
-                country: country,
-                gameState: gameState
-            )
+            let sentiment = analyzeCountrySentiment(country: country, gameState: gameState)
             countrySentiments[country.id] = sentiment
         }
     }
@@ -39,47 +34,39 @@ class SentimentWorldMap: ObservableObject {
     private func analyzeCountrySentiment(
         country: Country,
         gameState: GameState
-    ) async throws -> NationalSentiment {
-        // Gather recent events affecting this country
-        let relevantEvents = gameState.recentEvents.filter { event in
-            event.contains(country.name)
-        }
-
-        // Analyze sentiment
-        let eventText = relevantEvents.joined(separator: ". ")
-        let sentimentResult = try await sentiment.analyzeSentiment(eventText)
-
-        // Determine primary emotion
-        let primaryEmotion = determinePrimaryEmotion(
-            country: country,
-            gameState: gameState,
-            sentimentResult: sentimentResult
-        )
+    ) -> NationalSentiment {
+        let intensity = computeSentimentIntensity(country: country, gameState: gameState)
+        let primaryEmotion = determinePrimaryEmotion(country: country, gameState: gameState)
 
         return NationalSentiment(
             country: country.id,
             primaryEmotion: primaryEmotion,
-            intensity: sentimentResult.score,
+            intensity: intensity,
             towards: analyzeTargetSentiments(country, gameState),
             factors: identifyEmotionalFactors(country, gameState),
             timestamp: Date()
         )
     }
 
-    private func determinePrimaryEmotion(
-        country: Country,
-        gameState: GameState,
-        sentimentResult: SentimentResult
-    ) -> NationalEmotion {
-        // Check game state for specific triggers
-        let inWar = gameState.activeWars.contains { $0.involves(country) }
-        let recentAttack = country.memory.grievances.contains { $0.turn > gameState.turnNumber - 3 }
-        let hasAllies = country.relations.values.filter { $0 > 60 }.count > 3
-        let isStrong = country.militaryStrength > 70
+    private func computeSentimentIntensity(country: Country, gameState: GameState) -> Double {
+        var score = 0.5
+        let inWar = gameState.activeWars.contains { $0.aggressor == country.id || $0.defender == country.id }
+        if inWar { score += 0.3 }
+        if country.damageLevel > 50 { score += 0.2 }
+        if country.stability < 40 { score += 0.1 }
+        return min(score, 1.0)
+    }
 
-        if recentAttack && country.hasNuclearWeapons {
+    private func determinePrimaryEmotion(country: Country, gameState: GameState) -> NationalEmotion {
+        let inWar = gameState.activeWars.contains { $0.aggressor == country.id || $0.defender == country.id }
+        let hasAllies = country.diplomaticRelations.values.filter { $0 > 60 }.count > 3
+        let isStrong = country.militaryStrength > 70
+        let isNuclear = country.nuclearWarheads > 0
+        let isUnderAttack = country.atWarWith.count > 0
+
+        if isUnderAttack && isNuclear {
             return .vengeful
-        } else if recentAttack {
+        } else if isUnderAttack && !isStrong {
             return .fearful
         } else if inWar && isStrong {
             return .emboldened
@@ -87,7 +74,7 @@ class SentimentWorldMap: ObservableObject {
             return .desperate
         } else if hasAllies && isStrong {
             return .confident
-        } else if country.personality?.personalityType == .unpredictable {
+        } else if country.aggressionLevel > 70 {
             return .paranoid
         } else {
             return .neutral
@@ -100,14 +87,15 @@ class SentimentWorldMap: ObservableObject {
     ) -> [String: EmotionalStance] {
         var sentiments: [String: EmotionalStance] = [:]
 
-        for (targetID, relations) in country.relations {
+        for (targetID, relations) in country.diplomaticRelations {
             let stance: EmotionalStance
+            let atWar = country.atWarWith.contains(targetID)
 
             if relations > 60 {
                 stance = .friendly
-            } else if relations < -60 {
+            } else if relations < -60 || atWar {
                 stance = .hostile
-            } else if country.memory.grievances.contains(where: { $0.against == targetID }) {
+            } else if relations < -20 {
                 stance = .resentful
             } else if relations > 20 {
                 stance = .cautious
@@ -127,19 +115,19 @@ class SentimentWorldMap: ObservableObject {
     ) -> [String] {
         var factors: [String] = []
 
-        if gameState.activeWars.contains(where: { $0.involves(country) }) {
+        if gameState.activeWars.contains(where: { $0.aggressor == country.id || $0.defender == country.id }) {
             factors.append("Currently at war")
         }
 
-        if country.memory.grievances.count > 3 {
-            factors.append("Multiple grievances")
+        if country.atWarWith.count > 3 {
+            factors.append("Multiple active conflicts")
         }
 
-        if (country.relations.values.filter { $0 > 60 }.count) > 5 {
+        if country.diplomaticRelations.values.filter({ $0 > 60 }).count > 5 {
             factors.append("Strong alliance network")
         }
 
-        if country.hasNuclearWeapons {
+        if country.nuclearWarheads > 0 {
             factors.append("Nuclear deterrent provides confidence")
         }
 
@@ -201,19 +189,6 @@ enum EmotionalStance: String, Codable {
     case resentful = "Resentful"
     case cautious = "Cautious"
     case neutral = "Neutral"
-}
-
-struct DynamicCrisis: Identifiable, Codable {
-    let id: UUID
-    let title: String
-    let description: String
-    let year: Int
-    let countries: [String]
-    let options: [CrisisOption]
-    let severity: CrisisSeverity
-    let imageData: Data?
-    let generatedBy: String // "AI" vs "Historical"
-    let timestamp: Date
 }
 
 // MARK: - Sentiment World Map View

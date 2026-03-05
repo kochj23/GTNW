@@ -147,6 +147,8 @@ enum AdviceArea: String, Codable, CaseIterable {
     case energy = "Energy & Nuclear"
     case legal = "Legal Matters"
     case media = "Media & Communications"
+    case economicAid = "Economic Aid"
+    case treaties = "Treaties"
 }
 
 /// Types of advice
@@ -157,6 +159,7 @@ enum AdviceType: String, Codable {
     case intelligence = "Intelligence"
     case domestic = "Domestic"
     case legal = "Legal"
+    case covert = "Covert"
 }
 
 /// Game situations that trigger advisor advice

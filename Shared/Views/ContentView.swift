@@ -574,7 +574,7 @@ struct CountrySelectionView: View {
                         }
                     }
                 }
-                .scrollContentBackground(.hidden)
+                .background(.clear)
 
                 Button(action: {
                     gameEngine.startNewGame(playerCountryID: selectedCountry, difficulty: selectedDifficulty, administration: selectedAdministration)

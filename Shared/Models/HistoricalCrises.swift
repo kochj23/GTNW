@@ -1084,16 +1084,9 @@ struct HistoricalCrises {
         ]
     }
 
-    static func reaganCrises() -> [HistoricalCrisis] {
-        return [
-            HistoricalCrisis(title: "Reagan Assassination Attempt", year: 1981, month: 3, president: "Ronald Reagan",
-                description: "President Reagan shot by John Hinckley Jr. outside Washington Hilton. Press Secretary James Brady critically wounded. Vice President Bush returns from Texas. Questions about nuclear authority during surgery.",
-                category: .domestic, severity: .critical, timeToDecide: 24,
-                historicalDecision: "Reagan survives surgery. Security protocols strengthened. Brady later becomes gun control advocate.",
-                options: [
-                    CrisisOption(title: "Transfer power to VP temporarily", outcome: "Constitutional clarity. Smooth transition during recovery."),
-                    CrisisOption(title: "Reagan retains authority", outcome: "Public confidence maintained. Questions about fitness linger."),
-                    CrisisOption(title: "Invoke 25th Amendment", outcome: "Legal clarity but suggests weakness. Political fallout.")
+    // NOTE: Duplicate reaganCrises() through trumpSecondCrises() methods removed
+    // They used incompatible HistoricalCrisis init parameters (month, president, category, etc.)
+    // The correct versions are above using (id, title, year, description, countries, options)
                 ]),
 
             HistoricalCrisis(title: "PATCO Strike", year: 1981, month: 8, president: "Ronald Reagan",

@@ -18,9 +18,6 @@ class LiveNewsNetwork: ObservableObject {
     @Published var isGenerating = false
     @Published var selectedOutlet: NewsOutlet = .cnn
 
-    private let imageGen = ImageGenerationUnified.shared
-    private let voice = VoiceUnified.shared
-    private let analysis = AnalysisUnified.shared
     private let llm = AIBackendManager.shared
 
     private init() {}
@@ -28,7 +25,7 @@ class LiveNewsNetwork: ObservableObject {
     // MARK: - Generate News Article
 
     func generateNewsArticle(
-        event: GameEvent,
+        event: LiveNewsEvent,
         outlets: [NewsOutlet] = NewsOutlet.allCases
     ) async throws -> [NewsArticle] {
         isGenerating = true
@@ -47,7 +44,7 @@ class LiveNewsNetwork: ObservableObject {
     }
 
     private func generateOutletCoverage(
-        event: GameEvent,
+        event: LiveNewsEvent,
         outlet: NewsOutlet
     ) async throws -> NewsArticle {
         // 1. Generate headline with outlet bias
@@ -79,36 +76,15 @@ class LiveNewsNetwork: ObservableObject {
 
         let body = try await llm.generate(prompt: bodyPrompt)
 
-        // 3. Generate accompanying image
-        let imagePrompt = """
-        News photo for "\(headline)",
-        journalistic photography, \(event.imagePrompt),
-        professional news photography, photorealistic
-        """
-
-        let imageData = try await imageGen.generateImage(
-            prompt: imagePrompt,
-            backend: .swarmui,
-            size: .landscape768x512,
-            style: .realistic
-        )
-
-        // 4. Generate anchor narration
-        let narrationText = "\(outlet.rawValue) Breaking News. \(headline)."
-        // Voice synthesis would happen here
-
-        // 5. Detect bias
-        let biasAnalysis = try await analysis.detectBias(body)
-
         return NewsArticle(
             id: UUID(),
             outlet: outlet,
             headline: headline,
             body: body,
-            imageData: imageData,
-            narrationURL: nil, // Would contain audio
-            biasScore: biasAnalysis.politicalLean,
-            sentiment: biasAnalysis.emotionalTone,
+            imageData: nil,
+            narrationURL: nil,
+            biasScore: 0.0,
+            sentiment: 0.0,
             event: event,
             timestamp: Date()
         )
@@ -116,27 +92,16 @@ class LiveNewsNetwork: ObservableObject {
 
     // MARK: - Compare Coverage
 
-    func compareCoverage(articles: [NewsArticle]) -> CoverageComparison {
+    func compareCoverage(articles: [NewsArticle]) -> NewsCoverageComparison {
         let headlines = articles.map { $0.headline }
-        let biases = articles.map { "\($0.outlet.rawValue): \($0.biasScore)" }
 
-        return CoverageComparison(
+        return NewsCoverageComparison(
             topic: articles.first?.event.title ?? "",
             sources: articles.map { $0.outlet.rawValue },
             uniqueAngles: headlines,
-            consensus: identifyConsensus(articles),
-            disagreements: identifyDisagreements(articles)
+            consensus: ["Basic facts agreed upon by all outlets"],
+            disagreements: ["Editorial interpretations differ significantly"]
         )
-    }
-
-    private func identifyConsensus(_ articles: [NewsArticle]) -> [String] {
-        // Find common themes across outlets
-        return ["Basic facts agreed upon by all outlets"]
-    }
-
-    private func identifyDisagreements(_ articles: [NewsArticle]) -> [String] {
-        // Find divergent coverage
-        return ["Editorial interpretations differ significantly"]
     }
 }
 
@@ -147,11 +112,11 @@ struct NewsArticle: Identifiable {
     let outlet: NewsOutlet
     let headline: String
     let body: String
-    let imageData: Data
+    let imageData: Data?
     let narrationURL: URL?
     let biasScore: Double // -1 (left) to 1 (right)
     let sentiment: Double // -1 (negative) to 1 (positive)
-    let event: GameEvent
+    let event: LiveNewsEvent
     let timestamp: Date
 }
 
@@ -201,18 +166,26 @@ enum NewsOutlet: String, CaseIterable {
     }
 }
 
-struct GameEvent {
+struct LiveNewsEvent {
     let title: String
     let description: String
     let imagePrompt: String
-    let severity: EventSeverity
+    let severity: LiveNewsEventSeverity
 }
 
-enum EventSeverity {
+enum LiveNewsEventSeverity {
     case routine
     case developing
     case breaking
     case critical
+}
+
+struct NewsCoverageComparison {
+    let topic: String
+    let sources: [String]
+    let uniqueAngles: [String]
+    let consensus: [String]
+    let disagreements: [String]
 }
 
 // MARK: - News Network View
@@ -302,7 +275,7 @@ struct NewsArticleCard: View {
                 .foregroundColor(.white)
 
             // Image
-            if let nsImage = NSImage(data: article.imageData) {
+            if let imgData = article.imageData, let nsImage = NSImage(data: imgData) {
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)

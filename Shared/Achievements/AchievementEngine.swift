@@ -19,8 +19,8 @@ class AchievementEngine: ObservableObject {
     @Published var recentUnlock: Achievement?
     @Published var showUnlockAnimation = false
 
-    private let imageGen = ImageGenerationUnified.shared
     private let storage = UserDefaults.standard
+    private var achievementPosters: [String: Data] = [:]
 
     private init() {
         loadUnlocked()
@@ -326,7 +326,7 @@ class AchievementEngine: ObservableObject {
             return Set(gameState.presidentsPlayed).intersection(foundingPresidents).count == 6
 
         case "washington_complete":
-            return gameState.presidentsPlayed.contains("washington") && gameState.gameEnded
+            return gameState.presidentsPlayed.contains("washington") && gameState.gameOver
 
         case "louisiana_purchase":
             return gameState.presidentsPlayed.contains("jefferson") && gameState.crisisesCompleted.contains("jefferson_louisiana_1803")
@@ -340,23 +340,23 @@ class AchievementEngine: ObservableObject {
 
         // Peace Achievements
         case "peace_maker":
-            return gameState.turnNumber >= 20 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0
+            return gameState.turn >= 20 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0
 
         case "master_diplomat":
-            let alliedCount = gameState.countries.filter { ($0.relations[gameState.playerCountryID] ?? 0) > 60 }.count
+            let alliedCount = gameState.countries.filter { ($0.diplomaticRelations[gameState.playerCountryID] ?? 0) > 60 }.count
             let totalCount = gameState.countries.count
             return Double(alliedCount) / Double(totalCount) >= 0.8
 
         case "mediator":
-            return gameState.conflictsMed != 0 && gameState.conflictsMediated >= 10
+            return gameState.conflictsMediated >= 10
 
         // War Achievements
         case "warlord":
             return gameState.warsWon >= 10
 
         case "nuclear_supremacy":
-            let nuclearPowers = gameState.countries.filter { $0.hasNuclearWeapons && !$0.isDestroyed }
-            return nuclearPowers.count == 1 && nuclearPowers.first?.isPlayer == true
+            let nuclearPowers = gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }
+            return nuclearPowers.count == 1 && nuclearPowers.first?.isPlayerControlled == true
 
         case "dr_strangelove":
             return gameState.totalWarheadsLaunched >= 100
@@ -376,8 +376,8 @@ class AchievementEngine: ObservableObject {
 
         // Economic Achievements
         case "economic_powerhouse":
-            let playerGDP = gameState.countries.first { $0.isPlayer }?.gdp ?? 0
-            let maxOtherGDP = gameState.countries.filter { !$0.isPlayer }.map { $0.gdp }.max() ?? 0
+            let playerGDP = gameState.countries.first { $0.isPlayerControlled }?.gdp ?? 0
+            let maxOtherGDP = gameState.countries.filter { !$0.isPlayerControlled }.map { $0.gdp }.max() ?? 0
             return playerGDP > maxOtherGDP
 
         case "sanctions_master":
@@ -392,10 +392,10 @@ class AchievementEngine: ObservableObject {
 
         // Survival
         case "nuclear_winter_survivor":
-            return gameState.nuclearWinterSurvived && gameState.gameEnded && gameState.victoryType != nil
+            return gameState.nuclearWinterSurvived && gameState.gameOver && gameState.victoryType != nil
 
         case "defcon_1_escape":
-            return gameState.reachedDEFCON1 && gameState.defconLevel >= 4
+            return gameState.reachedDEFCON1 && gameState.defconLevel.rawValue >= 4
 
         // Collection
         case "time_traveler":
@@ -411,7 +411,7 @@ class AchievementEngine: ObservableObject {
 
         // Special
         case "wopr_choice":
-            return gameState.turnNumber >= 50 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0 && gameState.defconLevel == 5
+            return gameState.turn >= 50 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0 && gameState.defconLevel == .defcon5
 
         case "provocateur":
             return gameState.warsStarted >= 3 && gameState.activeWars.count >= 2
@@ -420,7 +420,7 @@ class AchievementEngine: ObservableObject {
             return gameState.alliancesBroken >= 10
 
         case "pacifist":
-            return gameState.gameEnded && gameState.militaryActionsUsed == 0 && gameState.victoryType != nil
+            return gameState.gameOver && gameState.militaryActionsUsed == 0 && gameState.victoryType != nil
 
         default:
             return false
@@ -453,23 +453,9 @@ class AchievementEngine: ObservableObject {
     }
 
     private func generateAchievementPoster(_ achievement: Achievement) async throws -> Data {
-        let prompt = """
-        Achievement badge for "\(achievement.name)",
-        description: \(achievement.description),
-        rarity: \(achievement.rarity.rawValue),
-        category: \(achievement.category.rawValue),
-        golden trophy, presidential seal,
-        elegant design, commemorative style,
-        bold text "\(achievement.name.uppercased())",
-        achievement unlocked aesthetic
-        """
-
-        return try await imageGen.generateImage(
-            prompt: prompt,
-            backend: .dalle,
-            size: .square512,
-            style: .artistic
-        )
+        // Image generation is handled externally (app-level, not shared code)
+        // Return empty data as placeholder — the app layer can hook in image generation
+        throw AchievementError.imageGenerationUnavailable
     }
 
     // MARK: - Persistence
@@ -645,6 +631,10 @@ struct AchievementsView: View {
             .navigationTitle("🏆 Achievements")
         }
     }
+}
+
+enum AchievementError: Error {
+    case imageGenerationUnavailable
 }
 
 struct AchievementCardView: View {

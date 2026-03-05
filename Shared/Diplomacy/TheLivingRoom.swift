@@ -22,7 +22,6 @@ class TheLivingRoom: ObservableObject {
 
     private let voices = WorldLeaderVoices.shared
     private let llm = AIBackendManager.shared
-    private let sentiment = AnalysisUnified.shared
     private var audioPlayer: AVAudioPlayer?
 
     private init() {}
@@ -59,7 +58,7 @@ class TheLivingRoom: ObservableObject {
         conversationHistory.append(opening)
 
         // Play opening audio
-        await playAudio(opening.audioURL)
+        if let audioURL = opening.audioURL { await playAudio(audioURL) }
 
         return conversation
     }
@@ -136,18 +135,11 @@ class TheLivingRoom: ObservableObject {
         // Generate AI response
         let aiResponse = try await llm.generate(prompt: prompt)
 
-        // Clone leader's voice for response
-        let audioURL = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("living_room_\(UUID().uuidString).wav")
+        // Voice synthesis happens at app level
+        let audioURL: URL? = nil
 
-        try await voices.voiceCloner.cloneVoice(
-            referenceAudio: voices.voiceLibrary[leaderName]?.referenceAudioURL ?? URL(fileURLWithPath: "/"),
-            targetText: aiResponse,
-            outputURL: audioURL
-        )
-
-        // Analyze sentiment
-        let sentimentResult = try await sentiment.analyzeSentiment(aiResponse)
+        // Simple sentiment based on response keywords
+        let sentimentResult = deriveSentiment(from: aiResponse)
 
         return ConversationExchange(
             speaker: .leader,
@@ -173,9 +165,8 @@ class TheLivingRoom: ObservableObject {
         CONTEXT:
         - US President just: \(context.triggeringAction)
         - Your country's relations with US: \(context.currentRelations)
-        - Your personality: \(country.personality?.personalityType.rawValue ?? "Calculating")
-        - Recent grievances: \(country.memory.grievances.map { $0.cause }.joined(separator: "; "))
-        - Your nuclear status: \(country.hasNuclearWeapons ? "Nuclear-armed" : "Unarmed")
+        - Your aggression level: \(country.aggressionLevel)/100
+        - Your nuclear status: \(country.nuclearWarheads > 0 ? "Nuclear-armed" : "Unarmed")
         - Turn: \(context.turn)
         - DEFCON: \(context.defconLevel)
 
@@ -211,6 +202,18 @@ class TheLivingRoom: ObservableObject {
         }
 
         return prompt
+    }
+
+    private func deriveSentiment(from text: String) -> SentimentResult {
+        let lower = text.lowercased()
+        if lower.contains("threat") || lower.contains("war") || lower.contains("attack") || lower.contains("destroy") {
+            return SentimentResult(overallSentiment: .negative, score: -0.8)
+        } else if lower.contains("peace") || lower.contains("cooperat") || lower.contains("agree") || lower.contains("welcome") {
+            return SentimentResult(overallSentiment: .positive, score: 0.7)
+        } else if lower.contains("concern") || lower.contains("warning") {
+            return SentimentResult(overallSentiment: .mixed, score: -0.2)
+        }
+        return SentimentResult(overallSentiment: .neutral, score: 0.0)
     }
 
     private func interpretTone(from sentiment: SentimentResult) -> ConversationTone {
@@ -480,22 +483,22 @@ struct TheLivingRoomView: View {
 
             // Quick responses
             HStack(spacing: 8) {
-                QuickResponseButton("Comply", tone: .conciliatory) {
+                QuickResponseButton(label: "Comply", tone: .conciliatory) {
                     playerMessage = "We will comply with your request."
                     sendMessage()
                 }
 
-                QuickResponseButton("Refuse", tone: .defiant) {
+                QuickResponseButton(label: "Refuse", tone: .defiant) {
                     playerMessage = "We will not be intimidated."
                     sendMessage()
                 }
 
-                QuickResponseButton("Threaten", tone: .threatening) {
+                QuickResponseButton(label: "Threaten", tone: .threatening) {
                     playerMessage = "You will face severe consequences."
                     sendMessage()
                 }
 
-                QuickResponseButton("Negotiate", tone: .diplomatic) {
+                QuickResponseButton(label: "Negotiate", tone: .diplomatic) {
                     playerMessage = "Perhaps we can find a diplomatic solution."
                     sendMessage()
                 }

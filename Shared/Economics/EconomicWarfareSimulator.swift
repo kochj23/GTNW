@@ -17,8 +17,6 @@ class EconomicWarfareSimulator: ObservableObject {
     @Published var isSimulating = false
     @Published var lastSimulation: EconomicImpactSimulation?
 
-    private let analysis = AnalysisUnified.shared
-
     private init() {}
 
     // MARK: - Predict Sanction Impact
@@ -88,7 +86,7 @@ class EconomicWarfareSimulator: ObservableObject {
         // Simplified trade network
         for country in gameState.countries {
             let partners = gameState.countries.filter { other in
-                let relations = country.relations[other.id] ?? 0
+                let relations = country.diplomaticRelations[other.id] ?? 0
                 return relations > 20 && other.id != country.id
             }
 
@@ -108,7 +106,7 @@ class EconomicWarfareSimulator: ObservableObject {
 
     private func estimateTradeVolume(_ c1: Country, _ c2: Country) -> Double {
         // Simplified: Based on GDP and relations
-        let relations = c1.relations[c2.id] ?? 0
+        let relations = c1.diplomaticRelations[c2.id] ?? 0
         let baseVolume = min(c1.gdp, c2.gdp) * 0.05
         let relationsFactor = Double(relations + 100) / 200.0
         return baseVolume * relationsFactor

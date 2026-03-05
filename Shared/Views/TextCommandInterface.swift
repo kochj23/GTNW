@@ -27,6 +27,7 @@ struct TextCommandInterface: View {
                     // Header
                     commandHeader
 
+                    #if os(macOS)
                     HSplitView {
                         // Left: Event Log
                         eventLogPanel(gameState: gameState)
@@ -36,6 +37,17 @@ struct TextCommandInterface: View {
                         commandInputPanel(gameState: gameState)
                             .frame(minWidth: 500)
                     }
+                    #else
+                    HStack(spacing: 0) {
+                        // Left: Event Log
+                        eventLogPanel(gameState: gameState)
+                            .frame(minWidth: 200)
+
+                        // Right: Command Input
+                        commandInputPanel(gameState: gameState)
+                            .frame(minWidth: 200)
+                    }
+                    #endif
                 }
             }
             .onAppear {

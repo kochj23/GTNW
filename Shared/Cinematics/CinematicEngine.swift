@@ -18,8 +18,6 @@ class CinematicEngine: ObservableObject {
     @Published var isPlayingCinematic = false
     @Published var currentSequence: CinematicSequence?
 
-    private let imageGen = ImageGenerationUnified.shared
-    private let voice = VoiceUnified.shared
     private var audioPlayer: AVAudioPlayer?
 
     private init() {}
@@ -162,27 +160,13 @@ class CinematicEngine: ObservableObject {
         voiceText: String,
         duration: Double
     ) async throws -> CinematicScene {
-        // Generate image
-        let imageData = try await imageGen.generateImage(
-            prompt: imagePrompt,
-            backend: .swarmui,
-            size: .widescreen1024x576,
-            style: .realistic
-        )
-
-        // Generate voice narration
-        let audioURL = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("cinematic_\(UUID().uuidString).wav")
-
-        // Use system TTS for narration
-        _ = voice.synthesizeSpeech(text: voiceText, voice: "deep dramatic narrator")
-
+        // Image and voice generation happens at the app level
         return CinematicScene(
             id: UUID(),
             title: title,
             description: description,
-            imageData: imageData,
-            audioURL: audioURL,
+            imageData: nil,
+            audioURL: nil,
             voiceText: voiceText,
             duration: duration
         )
@@ -202,7 +186,7 @@ struct CinematicScene: Identifiable {
     let id: UUID
     let title: String
     let description: String
-    let imageData: Data
+    let imageData: Data?
     let audioURL: URL?
     let voiceText: String
     let duration: Double
@@ -232,7 +216,7 @@ struct CinematicPlayerView: View {
 
                 VStack(spacing: 0) {
                     // Scene image
-                    if let nsImage = NSImage(data: scene.imageData) {
+                    if let imgData = scene.imageData, let nsImage = NSImage(data: imgData) {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)

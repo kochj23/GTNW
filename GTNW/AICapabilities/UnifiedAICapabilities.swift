@@ -11,6 +11,21 @@
 import Foundation
 import SwiftUI
 import AVFoundation
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
+// MARK: - Cross-Platform Background Color
+
+private var controlBackgroundColor: Color {
+    #if os(macOS)
+    return Color(NSColor.controlBackgroundColor)
+    #else
+    return Color(UIColor.systemBackground)
+    #endif
+}
 
 // MARK: - Unified AI Capabilities Manager
 
@@ -642,7 +657,7 @@ struct UnifiedAIStatusView: View {
             }
             .padding()
         }
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(controlBackgroundColor)
     }
 
     private func statBox(_ label: String, _ value: String, _ color: Color) -> some View {
@@ -710,7 +725,7 @@ struct UnifiedAIStatusView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(controlBackgroundColor)
         .cornerRadius(6)
     }
 

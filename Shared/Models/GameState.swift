@@ -37,6 +37,31 @@ class GameState: ObservableObject, Codable {
     @Published var aiActionSummary: [String] = []
     @Published var hasUsedActionThisTurn: Bool = false
 
+    // MARK: - Stats tracking (for achievements, analytics)
+    @Published var presidentsPlayed: [String] = []
+    @Published var warsStarted: Int = 0
+    @Published var warsWon: Int = 0
+    @Published var nukesLaunched: Int = 0
+    @Published var totalWarheadsLaunched: Int = 0
+    @Published var conflictsMediated: Int = 0
+    @Published var successfulCovertOps: Int = 0
+    @Published var spyNetworksEstablished: Int = 0
+    @Published var successfulCoups: Int = 0
+    @Published var sanctionsImposed: Int = 0
+    @Published var alliancesBroken: Int = 0
+    @Published var militaryActionsUsed: Int = 0
+    @Published var crisisesCompleted: Set<String> = []
+    @Published var reachedDEFCON1: Bool = false
+    @Published var nuclearWinterSurvived: Bool = false
+    @Published var civilWarWon: Bool = false
+    @Published var victoryType: VictoryType?
+
+    // MARK: - Convenience computed properties
+    var gameEnded: Bool { gameOver }
+    var turnNumber: Int { turn }
+    var recentEvents: [String] { turnHistory.suffix(20).map { $0.event } }
+    var currentYear: Int { 1945 + turn }
+
     enum CodingKeys: String, CodingKey {
         case turn, defconLevel, countries, activeWars, treaties, nuclearStrikes
         case globalRadiation, totalCasualties, playerCountryID, gameOver

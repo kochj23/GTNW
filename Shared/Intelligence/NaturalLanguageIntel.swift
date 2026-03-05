@@ -95,7 +95,7 @@ class NaturalLanguageIntel: ObservableObject {
         ]
 
         // Context-specific suggestions
-        if gameState.defconLevel <= 2 {
+        if gameState.defconLevel.rawValue <= 2 {
             suggestions.insert("What are the chances of nuclear war?", at: 0)
         }
 
@@ -110,21 +110,22 @@ class NaturalLanguageIntel: ObservableObject {
 
     private func buildGameStateContext(_ gameState: GameState) -> String {
         var context = """
-        Turn: \(gameState.turnNumber)
-        DEFCON: \(gameState.defconLevel)
+        Turn: \(gameState.turn)
+        DEFCON: \(gameState.defconLevel.description)
         Active Wars: \(gameState.activeWars.count)
         """
 
         // Add country data
         context += "\n\nCOUNTRIES:\n"
         for country in gameState.countries.prefix(20) {
-            let relations = country.relations[gameState.playerCountryID] ?? 0
-            context += "- \(country.name): Relations=\(relations), Military=\(country.militaryStrength), Nuclear=\(country.hasNuclearWeapons)\n"
+            let relations = country.diplomaticRelations[gameState.playerCountryID] ?? 0
+            let hasNukes = country.nuclearWarheads > 0
+            context += "- \(country.name): Relations=\(relations), Military=\(country.militaryStrength), Nuclear=\(hasNukes)\n"
         }
 
         // Add recent events
         context += "\n\nRECENT EVENTS:\n"
-        for event in gameState.recentEvents.suffix(10) {
+        for event in gameState.turnHistory.suffix(10).map({ $0.event }) {
             context += "- \(event)\n"
         }
 
@@ -145,7 +146,7 @@ class NaturalLanguageIntel: ObservableObject {
 
     private func assessThreats(_ countries: [Country], gameState: GameState) -> [ThreatAssessment] {
         return countries.map { country in
-            let relations = country.relations[gameState.playerCountryID] ?? 0
+            let relations = country.diplomaticRelations[gameState.playerCountryID] ?? 0
             let threatLevel = calculateThreatLevel(country, relations: relations)
 
             return ThreatAssessment(
@@ -163,7 +164,7 @@ class NaturalLanguageIntel: ObservableObject {
             threat += 0.4
         }
 
-        if country.hasNuclearWeapons {
+        if country.nuclearWarheads > 0 {
             threat += 0.3
         }
 
@@ -171,7 +172,7 @@ class NaturalLanguageIntel: ObservableObject {
             threat += 0.2
         }
 
-        if let personality = country.personality, personality.aggressionMultiplier > 1.2 {
+        if country.aggressionLevel > 70 {
             threat += 0.1
         }
 
@@ -185,7 +186,7 @@ class NaturalLanguageIntel: ObservableObject {
             reasons.append("Hostile diplomatic relations")
         }
 
-        if country.hasNuclearWeapons {
+        if country.nuclearWarheads > 0 {
             reasons.append("Nuclear-armed nation")
         }
 

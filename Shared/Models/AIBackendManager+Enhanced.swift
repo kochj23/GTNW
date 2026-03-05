@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import SwiftUI
 import Combine
@@ -281,13 +282,11 @@ extension AIBackendManager {
     private func sendNotification(title: String, message: String) {
         // For macOS, use NSUserNotification or UNUserNotificationCenter
         // This is a simplified version
-        #if os(macOS)
         let notification = NSUserNotification()
         notification.title = title
         notification.informativeText = message
         notification.soundName = NSUserNotificationDefaultSoundName
         NSUserNotificationCenter.default.deliver(notification)
-        #endif
 
         print("📢 \(title): \(message)")
     }
@@ -344,7 +343,6 @@ extension AIBackendManager {
 
 // MARK: - Keyboard Shortcut Support
 
-#if os(macOS)
 import AppKit
 
 extension AIBackendManager {

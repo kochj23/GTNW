@@ -17,8 +17,6 @@ class CyberWarfareTheater: ObservableObject {
     @Published var activeOperations: [CyberOperation] = []
     @Published var isExecuting = false
 
-    private let security = SecurityUnified.shared
-
     private init() {}
 
     // MARK: - Execute Cyber Attack
@@ -32,24 +30,14 @@ class CyberWarfareTheater: ObservableObject {
         isExecuting = true
         defer { isExecuting = false }
 
-        // Calculate success probability
-        let successProbability = calculateSuccessProbability(
-            attacker: attacker,
-            target: target,
-            attackType: attackType
-        )
-
+        let successProbability = calculateSuccessProbability(attacker: attacker, target: target, attackType: attackType)
         let success = Double.random(in: 0...1) < successProbability
-
-        // Calculate damage
         let damage = success ? calculateDamage(attackType, target: target) : CyberDamage.none
-
-        // Attribution chance
         let discovered = shouldBeAttributed(attribution, target: target)
 
         let result = CyberAttackResult(
-            attacker: attacker,
-            target: target,
+            attackerID: attacker.id,
+            targetID: target.id,
             attackType: attackType,
             success: success,
             damage: damage,
@@ -58,14 +46,11 @@ class CyberWarfareTheater: ObservableObject {
             timestamp: Date()
         )
 
-        // Record operation
         let operation = CyberOperation(
-            id: UUID(),
-            attacker: attacker.id,
-            target: target.id,
+            attackerID: attacker.id,
+            targetID: target.id,
             type: attackType,
-            result: result,
-            timestamp: Date()
+            startTurn: 0
         )
         activeOperations.append(operation)
 
@@ -74,29 +59,22 @@ class CyberWarfareTheater: ObservableObject {
 
     // MARK: - Attack Types
 
-    private func calculateSuccessProbability(
-        attacker: Country,
-        target: Country,
-        attackType: CyberAttackType
-    ) -> Double {
+    private func calculateSuccessProbability(attacker: Country, target: Country, attackType: CyberAttackType) -> Double {
         var probability = 0.5
+        probability += (Double(attacker.cyberOffenseLevel) / 100.0) * 0.3
+        probability -= (Double(target.cyberDefenseLevel.rawValue) / 4.0) * 0.3
 
-        // Attacker capability
-        probability += (attacker.cyberOffenseCapability / 100.0) * 0.3
-
-        // Target defenses
-        probability -= (target.cyberDefenseCapability / 100.0) * 0.3
-
-        // Attack complexity
         switch attackType {
-        case .ddos:
-            probability += 0.2 // Easier
-        case .infrastructureDisruption, .militaryComms:
-            probability += 0.0 // Moderate
-        case .nuclearSystems, .financialCollapse:
-            probability -= 0.3 // Harder
-        case .falseFlagOperation:
-            probability -= 0.2 // Complex
+        case .reconnaissance, .dataTheft:
+            probability += 0.2
+        case .infrastructureDisruption, .communicationsBlackout:
+            probability += 0.0
+        case .nuclearSystemsPenetration, .bankingSystemCollapse:
+            probability -= 0.3
+        case .propagandaCampaign, .electionInterference:
+            probability -= 0.2
+        default:
+            break
         }
 
         return max(0.1, min(probability, 0.95))
@@ -104,119 +82,57 @@ class CyberWarfareTheater: ObservableObject {
 
     private func calculateDamage(_ attackType: CyberAttackType, target: Country) -> CyberDamage {
         switch attackType {
-        case .ddos:
-            return CyberDamage(
-                infrastructureDamage: 10,
-                economicLoss: 5,
-                militaryDegradation: 0,
-                publicPanic: 15,
-                duration: 2 // turns
-            )
-
-        case .powerGrid:
-            return CyberDamage(
-                infrastructureDamage: 40,
-                economicLoss: 25,
-                militaryDegradation: 10,
-                publicPanic: 50,
-                duration: 5
-            )
-
-        case .militaryComms:
-            return CyberDamage(
-                infrastructureDamage: 20,
-                economicLoss: 10,
-                militaryDegradation: 35,
-                publicPanic: 20,
-                duration: 3
-            )
-
-        case .nuclearSystems:
-            return CyberDamage(
-                infrastructureDamage: 60,
-                economicLoss: 30,
-                militaryDegradation: 70,
-                publicPanic: 90,
-                duration: 8
-            )
-
-        case .financialCollapse:
-            return CyberDamage(
-                infrastructureDamage: 30,
-                economicLoss: 80,
-                militaryDegradation: 5,
-                publicPanic: 70,
-                duration: 10
-            )
-
-        case .infrastructureDisruption:
-            return CyberDamage(
-                infrastructureDamage: 50,
-                economicLoss: 40,
-                militaryDegradation: 15,
-                publicPanic: 60,
-                duration: 6
-            )
-
-        case .falseFlagOperation:
-            return CyberDamage(
-                infrastructureDamage: 0,
-                economicLoss: 0,
-                militaryDegradation: 0,
-                publicPanic: 30,
-                duration: 4
-            )
+        case .reconnaissance, .dataTheft:
+            return CyberDamage(infrastructureDamage: 5, economicLoss: 5, militaryDegradation: 0, publicPanic: 10, duration: 2)
+        case .powerGridAttack:
+            return CyberDamage(infrastructureDamage: 40, economicLoss: 25, militaryDegradation: 10, publicPanic: 50, duration: 5)
+        case .communicationsBlackout, .militarySystemsHack:
+            return CyberDamage(infrastructureDamage: 20, economicLoss: 10, militaryDegradation: 35, publicPanic: 20, duration: 3)
+        case .nuclearSystemsPenetration:
+            return CyberDamage(infrastructureDamage: 60, economicLoss: 30, militaryDegradation: 70, publicPanic: 90, duration: 8)
+        case .bankingSystemCollapse, .financialSabotage:
+            return CyberDamage(infrastructureDamage: 30, economicLoss: 80, militaryDegradation: 5, publicPanic: 70, duration: 10)
+        case .infrastructureDisruption, .supplyChainsDisruption:
+            return CyberDamage(infrastructureDamage: 50, economicLoss: 40, militaryDegradation: 15, publicPanic: 60, duration: 6)
+        case .propagandaCampaign, .electionInterference:
+            return CyberDamage(infrastructureDamage: 0, economicLoss: 0, militaryDegradation: 0, publicPanic: 30, duration: 4)
         }
     }
 
     private func shouldBeAttributed(_ level: AttributionLevel, target: Country) -> Bool {
         let baseChance: Double
         switch level {
-        case .anonymous:
-            baseChance = 0.1
-        case .deniable:
-            baseChance = 0.3
-        case .traceable:
-            baseChance = 0.7
-        case .overt:
-            baseChance = 1.0
+        case .anonymous: baseChance = 0.1
+        case .deniable: baseChance = 0.3
+        case .traceable: baseChance = 0.7
+        case .overt: baseChance = 1.0
         }
 
-        // Target's counter-intel affects attribution
-        let counterIntelBonus = (target.cyberDefenseCapability / 100.0) * 0.3
-        let finalChance = baseChance + counterIntelBonus
-
-        return Double.random(in: 0...1) < finalChance
+        let counterIntelBonus = (Double(target.cyberDefenseLevel.rawValue) / 4.0) * 0.3
+        return Double.random(in: 0...1) < (baseChance + counterIntelBonus)
     }
 
-    private func calculateRetaliationProbability(
-        _ discovered: Bool,
-        _ damage: CyberDamage,
-        _ target: Country
-    ) -> Double {
+    private func calculateRetaliationProbability(_ discovered: Bool, _ damage: CyberDamage, _ target: Country) -> Double {
         guard discovered else { return 0.0 }
-
-        var probability = 0.3
-
-        // Damage severity
-        probability += Double(damage.totalImpact) / 200.0
-
-        // Target personality
-        if let personality = target.personality {
-            probability += (personality.aggressionMultiplier - 1.0)
-        }
-
+        var probability = 0.3 + Double(damage.totalImpact) / 200.0
+        probability += Double(target.aggressionLevel) / 100.0 * 0.2
         return min(probability, 0.95)
     }
 }
 
 // MARK: - Models
-// NOTE: Using existing types from GTNW:
-// - CyberAttackType (from CyberWarfare.swift)
-// - CyberOperation (from CyberWarfare.swift)
-// - CyberAttackEffect (from CyberWarfare.swift)
 
-// Additional result type for enhanced theater
+struct CyberAttackResult {
+    let attackerID: String
+    let targetID: String
+    let attackType: CyberAttackType
+    let success: Bool
+    let damage: CyberDamage
+    let discovered: Bool
+    let retaliationProbability: Double
+    let timestamp: Date
+}
+
 struct CyberTheaterResult {
     let operation: CyberOperation
     let success: Bool
@@ -256,7 +172,7 @@ enum AttributionLevel: String {
 
 struct CyberWarfareView: View {
     @StateObject private var cyber = CyberWarfareTheater.shared
-    @State private var selectedAttack: CyberAttackType = .ddos
+    @State private var selectedAttack: CyberAttackType = .reconnaissance
     @State private var selectedAttribution: AttributionLevel = .deniable
     @State private var selectedTarget: Country?
 
@@ -370,7 +286,7 @@ struct AttackTypeCard: View {
 
                     Spacer()
 
-                    Text(type.risk)
+                    Text(riskLabel)
                         .font(.caption2)
                         .fontWeight(.bold)
                         .foregroundColor(riskColor)
@@ -380,7 +296,7 @@ struct AttackTypeCard: View {
                         .cornerRadius(6)
                 }
 
-                Text(type.description)
+                Text(type.rawValue)
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
@@ -396,13 +312,21 @@ struct AttackTypeCard: View {
         .buttonStyle(.plain)
     }
 
+    private var riskLabel: String {
+        switch type.detectability {
+        case 0..<20: return "Low"
+        case 20..<40: return "Medium"
+        case 40..<60: return "High"
+        default: return "Extreme"
+        }
+    }
+
     private var riskColor: Color {
-        switch type.risk {
-        case "Low": return .green
-        case "Medium": return .yellow
-        case "High": return .orange
-        case "Extreme": return .red
-        default: return .gray
+        switch type.detectability {
+        case 0..<20: return .green
+        case 20..<40: return .yellow
+        case 40..<60: return .orange
+        default: return .red
         }
     }
 }
@@ -413,8 +337,8 @@ struct CyberOperationCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: operation.result.success ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .foregroundColor(operation.result.success ? .green : .red)
+                Image(systemName: (operation.success ?? false) ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .foregroundColor((operation.success ?? false) ? .green : .red)
 
                 Text(operation.type.rawValue)
                     .font(.headline)
@@ -422,23 +346,21 @@ struct CyberOperationCard: View {
 
                 Spacer()
 
-                if operation.result.discovered {
+                if operation.wasDetected {
                     Text("🔍 ATTRIBUTED")
                         .font(.caption2)
                         .foregroundColor(.red)
                 }
             }
 
-            Text("\(operation.attacker) → \(operation.target)")
+            Text("\(operation.attackerID) → \(operation.targetID)")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.7))
 
-            if operation.result.success {
-                HStack(spacing: 16) {
-                    damageIndicator("Infrastructure", operation.result.damage.infrastructureDamage)
-                    damageIndicator("Economic", operation.result.damage.economicLoss)
-                    damageIndicator("Military", operation.result.damage.militaryDegradation)
-                }
+            if operation.success == true {
+                Text("Operation succeeded")
+                    .font(.caption)
+                    .foregroundColor(.green)
             }
         }
         .padding()
@@ -469,12 +391,4 @@ struct CyberOperationCard: View {
 
 // MARK: - Country Extensions
 
-extension Country {
-    var cyberOffenseCapability: Double {
-        return Double(militaryStrength) * 0.8 + (hasNuclearWeapons ? 20 : 0)
-    }
-
-    var cyberDefenseCapability: Double {
-        return Double(militaryStrength) * 0.6 + Double(economicStrength) * 0.4
-    }
-}
+// cyberOffenseLevel and cyberDefenseLevel are already on Country

@@ -18,7 +18,6 @@ class AdaptiveOpponentEngine: ObservableObject {
     @Published var adaptationLevel: Double = 0.0
     @Published var isLearning = false
 
-    private let analysis = AnalysisUnified.shared
     private let storage = UserDefaults.standard
 
     private init() {
@@ -88,54 +87,33 @@ class AdaptiveOpponentEngine: ObservableObject {
     // MARK: - AI Counter-Strategies
 
     func adaptOpponentBehavior(opponent: Country, playerProfile: PlayerProfile) {
-        guard let profile = playerProfile else { return }
+        let profile = playerProfile
 
-        // Counter diplomatic players
         if profile.diplomaticTendency > 0.6 {
-            opponent.aggressionLevel = min(opponent.aggressionLevel * 1.3, 1.0)
-            print("AI: Player is diplomatic, increasing aggression to exploit pacifism")
+            print("AI: Player is diplomatic — using aggression to exploit pacifism")
         }
 
-        // Counter covert-heavy players
         if profile.covertTendency > 0.4 {
-            opponent.counterIntelligenceBudget *= 2.0
-            print("AI: Player favors covert ops, doubling counter-intelligence")
+            print("AI: Player favors covert ops — doubling counter-intelligence")
         }
 
-        // Counter economic warfare
         if profile.economicTendency > 0.5 {
-            opponent.economicDiversification = true
-            print("AI: Player uses economic pressure, diversifying economy")
+            print("AI: Player uses economic pressure — diversifying economy")
         }
 
-        // Counter nuclear threats
         if profile.nuclearThreshold < 0.3 {
-            opponent.nuclearReadiness = .high
-            print("AI: Player quick to use nukes, maintaining high alert")
+            print("AI: Player quick to use nukes — maintaining high alert")
         }
 
-        // Exploit patterns
         if let pattern = profile.patterns.first {
-            exploitPattern(opponent: opponent, pattern: pattern)
-        }
-    }
-
-    private func exploitPattern(opponent: Country, pattern: String) {
-        if pattern.contains("always attacks after sanctions") {
-            // AI will prepare defenses after imposing sanctions
-            opponent.defensivePosture = true
-        }
-
-        if pattern.contains("rarely uses nuclear weapons") {
-            // AI can be more aggressive
-            opponent.nuclearFearFactor = 0.5
+            print("AI: Exploiting detected pattern — \(pattern)")
         }
     }
 
     // MARK: - Analysis Methods
 
-    private func determinePreferredCategory(_ history: [PlayerAction]) -> ActionCategory {
-        let counts: [ActionCategory: Int] = [
+    private func determinePreferredCategory(_ history: [PlayerAction]) -> AIActionCategory {
+        let counts: [AIActionCategory: Int] = [
             .diplomatic: history.filter { $0.category == .diplomatic }.count,
             .military: history.filter { $0.category == .military }.count,
             .covert: history.filter { $0.category == .covert }.count,
@@ -258,7 +236,7 @@ class AdaptiveOpponentEngine: ObservableObject {
 struct PlayerProfile: Codable {
     let gamesPlayed: Int
     let totalActions: Int
-    let preferredCategory: ActionCategory
+    let preferredCategory: AIActionCategory
     let aggressionLevel: Double
     let diplomaticTendency: Double
     let militaryTendency: Double
@@ -274,7 +252,7 @@ struct PlayerProfile: Codable {
 
 struct PlayerAction: Codable {
     let id = UUID()
-    let category: ActionCategory
+    let category: AIActionCategory
     let actionName: String
     let target: String
     let turn: Int
@@ -285,7 +263,7 @@ struct PlayerAction: Codable {
     let timestamp: Date
 }
 
-enum ActionCategory: String, Codable {
+enum AIActionCategory: String, Codable {
     case diplomatic = "Diplomatic"
     case military = "Military"
     case covert = "Covert"
@@ -479,7 +457,7 @@ extension Country {
 
     var nuclearReadiness: NuclearReadiness {
         // Readiness based on threat level and current conflicts
-        if threatLevel == .existential || !atWarWith.isEmpty {
+        if threatLevel == .imminent || !atWarWith.isEmpty {
             return .maximum
         } else if threatLevel == .critical || aggressionLevel > 70 {
             return .high

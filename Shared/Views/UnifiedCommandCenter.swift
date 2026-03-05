@@ -34,6 +34,7 @@ struct UnifiedCommandCenter: View {
                 GTNWColors.spaceBackground
                     .overlay(ScanlineOverlay().opacity(0.3))
 
+                #if os(macOS)
                 HSplitView {
                     // LEFT: Command Panel
                     leftCommandPanel(gameState: gameState)
@@ -43,6 +44,17 @@ struct UnifiedCommandCenter: View {
                     rightTerminalPanel(gameState: gameState)
                         .frame(minWidth: 500)
                 }
+                #else
+                HStack(spacing: 0) {
+                    // LEFT: Command Panel
+                    leftCommandPanel(gameState: gameState)
+                        .frame(minWidth: 200)
+
+                    // RIGHT: Event Log + Terminal
+                    rightTerminalPanel(gameState: gameState)
+                        .frame(minWidth: 200)
+                }
+                #endif
             }
             .sheet(isPresented: $showingCountryPicker) {
                 ModernCountryPicker(gameState: gameState, selectedCountry: $selectedTarget)
@@ -758,6 +770,7 @@ struct UnifiedCommandCenter: View {
     }
 
     private func openAISettings() {
+        #if os(macOS)
         let settingsView = AIBackendSettingsView()
         let hostingController = NSHostingController(rootView: settingsView)
 
@@ -767,6 +780,7 @@ struct UnifiedCommandCenter: View {
         window.setContentSize(NSSize(width: 600, height: 700))
         window.center()
         window.makeKeyAndOrderFront(nil)
+        #endif
     }
 
     // MARK: - Helper Functions

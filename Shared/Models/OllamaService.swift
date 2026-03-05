@@ -278,6 +278,7 @@ class OllamaService: ObservableObject {
     }
 
     private func updateGPUUtilization() async {
+        #if os(macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
         task.arguments = ["-r", "-d", "1", "-w", "0", "-c", "IOAccelerator"]
@@ -300,7 +301,7 @@ class OllamaService: ObservableObject {
                         if let value = Double(valueStr) {
                             await MainActor.run {
                                 gpuUtilization = value
-                                print("[Ollama] 🖥️ GPU: \(value)%")
+                                print("[Ollama] GPU: \(value)%")
                             }
                             return
                         }
@@ -311,15 +312,17 @@ class OllamaService: ObservableObject {
             // Fallback if parsing fails
             await MainActor.run {
                 if gpuUtilization == 0 {  // Only set to 0 if not previously set
-                    print("[Ollama] ⚠️ Could not parse GPU stats")
+                    print("[Ollama] Could not parse GPU stats")
                 }
             }
         } catch {
-            print("[Ollama] ❌ GPU monitoring error: \(error)")
+            print("[Ollama] GPU monitoring error: \(error)")
         }
+        #endif
     }
 
     private func updateCPUUtilization() async {
+        #if os(macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/top")
         task.arguments = ["-l", "1", "-n", "0", "-stats", "cpu"]
@@ -352,9 +355,11 @@ class OllamaService: ObservableObject {
         } catch {
             print("[Ollama] CPU monitoring error: \(error)")
         }
+        #endif
     }
 
     private func updateMemoryUtilization() async {
+        #if os(macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/vm_stat")
         task.arguments = []
@@ -401,6 +406,7 @@ class OllamaService: ObservableObject {
         } catch {
             print("[Ollama] Memory monitoring error: \(error)")
         }
+        #endif
     }
 
     deinit {

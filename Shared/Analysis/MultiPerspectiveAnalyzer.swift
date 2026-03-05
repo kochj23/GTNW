@@ -17,7 +17,6 @@ class MultiPerspectiveAnalyzer: ObservableObject {
     @Published var isAnalyzing = false
     @Published var currentAnalysis: WarPerspectiveAnalysis?
 
-    private let analysis = AnalysisUnified.shared
     private let llm = AIBackendManager.shared
 
     private init() {}
@@ -33,33 +32,36 @@ class MultiPerspectiveAnalyzer: ObservableObject {
 
         // Perspective 1: Aggressor
         let aggressorView = try await generatePerspective(
-            country: war.aggressor,
-            opponent: war.defender,
+            countryID: war.aggressor,
+            opponentID: war.defender,
             role: .aggressor,
-            war: war
+            war: war,
+            gameState: gameState
         )
         perspectives.append(aggressorView)
 
         // Perspective 2: Defender
         let defenderView = try await generatePerspective(
-            country: war.defender,
-            opponent: war.aggressor,
+            countryID: war.defender,
+            opponentID: war.aggressor,
             role: .defender,
-            war: war
+            war: war,
+            gameState: gameState
         )
         perspectives.append(defenderView)
 
         // Perspective 3: Major Powers
         let majorPowers = gameState.countries.filter {
-            $0.militaryStrength > 70 && $0.id != war.aggressor.id && $0.id != war.defender.id
+            $0.militaryStrength > 70 && $0.id != war.aggressor && $0.id != war.defender
         }.prefix(3)
 
         for power in majorPowers {
             let powerView = try await generatePerspective(
-                country: power,
-                opponent: nil,
+                countryID: power.id,
+                opponentID: nil,
                 role: .observer,
-                war: war
+                war: war,
+                gameState: gameState
             )
             perspectives.append(powerView)
         }
@@ -72,17 +74,14 @@ class MultiPerspectiveAnalyzer: ObservableObject {
         let mediaView = await generateMediaPerspective(war: war)
         perspectives.append(mediaView)
 
-        // Compare and contrast
-        let comparison = try await analysis.compareCoverage(
-            war.description,
-            sources: perspectives.map { $0.country }
-        )
+        // Identify key disagreements
+        let highPropaganda = perspectives.filter { $0.propagandaLevel > 0.5 }.map { $0.country }
 
         let warAnalysis = WarPerspectiveAnalysis(
             war: war,
             perspectives: perspectives,
-            consensus: comparison.consensus,
-            keyDisagreements: comparison.disagreements,
+            consensus: ["All parties seek resolution"],
+            keyDisagreements: highPropaganda,
             propagandaVsFacts: identifyPropaganda(perspectives),
             timestamp: Date()
         )
@@ -94,22 +93,28 @@ class MultiPerspectiveAnalyzer: ObservableObject {
     // MARK: - Generate Individual Perspective
 
     private func generatePerspective(
-        country: Country,
-        opponent: Country?,
+        countryID: String,
+        opponentID: String?,
         role: PerspectiveRole,
-        war: War
+        war: War,
+        gameState: GameState
     ) async throws -> WarPerspective {
+        let countryName = gameState.countries.first { $0.id == countryID }?.name ?? countryID
+        let aggressorName = gameState.countries.first { $0.id == war.aggressor }?.name ?? war.aggressor
+        let defenderName = gameState.countries.first { $0.id == war.defender }?.name ?? war.defender
+        let countryRelations = gameState.countries.first { $0.id == countryID }?.diplomaticRelations
+
         let prompt = """
-        You are spokesperson for \(country.name).
+        You are spokesperson for \(countryName).
 
         WAR SITUATION:
-        - Aggressor: \(war.aggressor.name)
-        - Defender: \(war.defender.name)
+        - Aggressor: \(aggressorName)
+        - Defender: \(defenderName)
         - Your role: \(role.rawValue)
-        - Your relations with aggressor: \(country.relations[war.aggressor.id] ?? 0)
-        - Your relations with defender: \(country.relations[war.defender.id] ?? 0)
+        - Your relations with aggressor: \(countryRelations?[war.aggressor] ?? 0)
+        - Your relations with defender: \(countryRelations?[war.defender] ?? 0)
 
-        Provide \(country.name)'s perspective on this war:
+        Provide \(countryName)'s perspective on this war:
         1. How does your country justify its position?
         2. What are your strategic interests?
         3. What outcome do you seek?
@@ -121,7 +126,7 @@ class MultiPerspectiveAnalyzer: ObservableObject {
         let justification = try await llm.generate(prompt: prompt)
 
         return WarPerspective(
-            country: country.name,
+            country: countryName,
             role: role,
             justification: justification,
             strategicGoals: extractGoals(from: justification),
@@ -246,7 +251,7 @@ struct MultiPerspectiveView: View {
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
-                    Text(analysis.war.description)
+                    Text("\(analysis.war.aggressor) vs \(analysis.war.defender)")
                         .font(.headline)
                         .foregroundColor(.white.opacity(0.7))
                 }

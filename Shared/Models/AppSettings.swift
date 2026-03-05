@@ -38,3 +38,34 @@ struct AppSettings {
         }
     }
 }
+
+// MARK: - Shared Sentiment Types
+// Defined here (Shared layer) so they're visible when compiling both Shared and app-level files
+
+struct SentimentResult {
+    let overallSentiment: Sentiment
+    let score: Double
+    let emotions: [String: Double]
+
+    init(overallSentiment: Sentiment = .neutral, score: Double = 0.0, emotions: [String: Double] = [:]) {
+        self.overallSentiment = overallSentiment
+        self.score = score
+        self.emotions = emotions
+    }
+}
+
+enum Sentiment: String, Codable {
+    case positive = "positive"
+    case negative = "negative"
+    case neutral = "neutral"
+    case mixed = "mixed"
+
+    var description: String {
+        switch self {
+        case .positive: return "Friendly"
+        case .negative: return "Hostile"
+        case .neutral: return "Neutral"
+        case .mixed: return "Mixed"
+        }
+    }
+}

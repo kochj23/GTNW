@@ -20,7 +20,6 @@ class PredictiveIntelligence: ObservableObject {
     @Published var crisisProbabilities: [CrisisProbability] = []
     @Published var isAnalyzing = false
 
-    private let analysis = AnalysisUnified.shared
     private let llm = AIBackendManager.shared
 
     private init() {}
@@ -86,32 +85,26 @@ class PredictiveIntelligence: ObservableObject {
         var probability = 0.0
 
         // Factor 1: Diplomatic relations (-100 to +100)
-        let relations = country1.relations[country2.id] ?? 0
+        let relations = country1.diplomaticRelations[country2.id] ?? 0
         if relations < -50 {
             probability += 0.4
         } else if relations < 0 {
             probability += 0.2
         }
 
-        // Factor 2: Grievances
-        let grievances = country1.memory.grievances.filter { $0.against == country2.id }
-        probability += Double(grievances.count) * 0.05
+        // Factor 2: Aggression level
+        probability += Double(country1.aggressionLevel) / 100.0 * 0.15
 
-        // Factor 3: Personality
-        if let personality = country1.personality {
-            probability += Double(personality.aggressionMultiplier - 1.0) * 0.2
-        }
+        // Factor 3: DEFCON level
+        probability += Double(5 - gameState.defconLevel.rawValue) * 0.1
 
-        // Factor 4: DEFCON level
-        probability += Double(5 - gameState.defconLevel) * 0.1
-
-        // Factor 5: Nuclear imbalance
-        if country1.hasNuclearWeapons && !country2.hasNuclearWeapons {
+        // Factor 4: Nuclear imbalance
+        if country1.nuclearWarheads > 0 && country2.nuclearWarheads == 0 {
             probability += 0.15
         }
 
-        // Factor 6: Recent conflicts
-        if gameState.activeWars.contains(where: { $0.involves(country1) || $0.involves(country2) }) {
+        // Factor 5: Recent conflicts
+        if gameState.activeWars.contains(where: { $0.aggressor == country1.id || $0.defender == country1.id || $0.aggressor == country2.id || $0.defender == country2.id }) {
             probability += 0.2
         }
 
@@ -121,16 +114,16 @@ class PredictiveIntelligence: ObservableObject {
     private func analyzeWarReasons(_ c1: Country, _ c2: Country) -> [String] {
         var reasons: [String] = []
 
-        if (c1.relations[c2.id] ?? 0) < -50 {
+        if (c1.diplomaticRelations[c2.id] ?? 0) < -50 {
             reasons.append("Hostile diplomatic relations")
         }
 
-        if c1.memory.grievances.contains(where: { $0.against == c2.id }) {
-            reasons.append("Unresolved grievances")
+        if c1.aggressionLevel > 60 {
+            reasons.append("High aggression level")
         }
 
-        if c1.personality?.personalityType == .opportunistic && c2.militaryStrength < c1.militaryStrength * 0.5 {
-            reasons.append("Opportunistic personality sees weakness")
+        if c2.militaryStrength < c1.militaryStrength / 2 {
+            reasons.append("Military advantage")
         }
 
         return reasons
@@ -147,12 +140,11 @@ class PredictiveIntelligence: ObservableObject {
     private func forecastDEFCON(gameState: GameState) async throws -> [DEFCONForecast] {
         var forecast: [DEFCONForecast] = []
 
-        let currentDEFCON = gameState.defconLevel
-        var predictedDEFCON = currentDEFCON
+        var predictedDEFCON = gameState.defconLevel.rawValue
 
         // Forecast next 10 turns
         for turn in 1...10 {
-            let futureTurn = gameState.turnNumber + turn
+            let futureTurn = gameState.turn + turn
 
             // Predict DEFCON changes
             let tensionDelta = predictTensionChange(gameState: gameState, turnsAhead: turn)
@@ -166,7 +158,7 @@ class PredictiveIntelligence: ObservableObject {
             forecast.append(DEFCONForecast(
                 turn: futureTurn,
                 predictedLevel: predictedDEFCON,
-                confidence: 0.85 - (Double(turn) * 0.05), // Confidence decreases over time
+                confidence: 0.85 - (Double(turn) * 0.05),
                 factors: ["Historical patterns", "Current tensions", "AI analysis"]
             ))
         }
@@ -181,7 +173,7 @@ class PredictiveIntelligence: ObservableObject {
         tensionDelta += Double(gameState.activeWars.count) * 0.1
 
         // Factor in hostile relations
-        let hostileRelations = gameState.countries.flatMap { $0.relations.values }.filter { $0 < -50 }.count
+        let hostileRelations = gameState.countries.flatMap { $0.diplomaticRelations.values }.filter { $0 < -50 }.count
         tensionDelta += Double(hostileRelations) * 0.02
 
         // Factor in nuclear tests
@@ -212,7 +204,7 @@ class PredictiveIntelligence: ObservableObject {
                         country1: country1,
                         country2: country2,
                         probability: probability,
-                        estimatedTurn: gameState.turnNumber + Int.random(in: 2...6),
+                        estimatedTurn: gameState.turn + Int.random(in: 2...6),
                         reasons: analyzeAllianceReasons(country1, country2),
                         confidence: probability * 0.9
                     ))
@@ -227,7 +219,7 @@ class PredictiveIntelligence: ObservableObject {
         var probability = 0.0
 
         // Good relations
-        let relations = c1.relations[c2.id] ?? 0
+        let relations = c1.diplomaticRelations[c2.id] ?? 0
         if relations > 50 {
             probability += 0.4
         } else if relations > 20 {
@@ -239,7 +231,7 @@ class PredictiveIntelligence: ObservableObject {
         probability += Double(sharedEnemies.count) * 0.15
 
         // Similar government types
-        if c1.governmentType == c2.governmentType {
+        if c1.government == c2.government {
             probability += 0.1
         }
 
@@ -250,8 +242,8 @@ class PredictiveIntelligence: ObservableObject {
     }
 
     private func findSharedEnemies(_ c1: Country, _ c2: Country, _ gameState: GameState) -> [Country] {
-        let c1Enemies = c1.relations.filter { $0.value < -50 }.keys
-        let c2Enemies = c2.relations.filter { $0.value < -50 }.keys
+        let c1Enemies = c1.diplomaticRelations.filter { $0.value < -50 }.keys
+        let c2Enemies = c2.diplomaticRelations.filter { $0.value < -50 }.keys
         let shared = Set(c1Enemies).intersection(Set(c2Enemies))
 
         return gameState.countries.filter { shared.contains($0.id) }
@@ -260,11 +252,11 @@ class PredictiveIntelligence: ObservableObject {
     private func analyzeAllianceReasons(_ c1: Country, _ c2: Country) -> [String] {
         var reasons: [String] = []
 
-        if (c1.relations[c2.id] ?? 0) > 50 {
+        if (c1.diplomaticRelations[c2.id] ?? 0) > 50 {
             reasons.append("Strong diplomatic ties")
         }
 
-        if c1.governmentType == c2.governmentType {
+        if c1.government == c2.government {
             reasons.append("Similar government systems")
         }
 
@@ -279,13 +271,13 @@ class PredictiveIntelligence: ObservableObject {
         var predictions: [CrisisProbability] = []
 
         // Base probability from DEFCON
-        let baseProbability = Double(5 - gameState.defconLevel) * 0.15
+        let baseProbability = Double(5 - gameState.defconLevel.rawValue) * 0.15
 
         // Predict crisis types
         predictions.append(CrisisProbability(
             type: "Nuclear Test",
             probability: baseProbability + 0.1,
-            estimatedTurn: gameState.turnNumber + 2,
+            estimatedTurn: gameState.turn + 2,
             confidence: 0.7,
             description: "Country likely to conduct nuclear test"
         ))
@@ -293,16 +285,16 @@ class PredictiveIntelligence: ObservableObject {
         predictions.append(CrisisProbability(
             type: "Regional Conflict",
             probability: baseProbability + 0.15,
-            estimatedTurn: gameState.turnNumber + 3,
+            estimatedTurn: gameState.turn + 3,
             confidence: 0.65,
             description: "Tensions escalating in volatile region"
         ))
 
-        if gameState.defconLevel <= 2 {
+        if gameState.defconLevel.rawValue <= 2 {
             predictions.append(CrisisProbability(
                 type: "Nuclear Alert",
                 probability: 0.6,
-                estimatedTurn: gameState.turnNumber + 1,
+                estimatedTurn: gameState.turn + 1,
                 confidence: 0.85,
                 description: "DEFCON 2: High probability of nuclear crisis"
             ))

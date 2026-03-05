@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BB0003AA00000003AA000003 /* AdministrationSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */; };
+		BB0006AA00000006AA000006 /* DiplomaticMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E082C07AA705A6B4CA2D17B /* DiplomaticMessagesView.swift */; };
+		BB0009AA00000009AA000009 /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */; };
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
 		03E52911A7DE17E85DD58483 /* ModernDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CF53E773D67381802521E1 /* ModernDesign.swift */; };
@@ -28,8 +31,10 @@
 		32ECDC244087293A0E69CF11 /* LiveNewsNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAF8F3874EE4B33697489A0 /* LiveNewsNetwork.swift */; };
 		36666231626265322D343961382D346433652D393032302D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
+		36FA9CEB67D5809CB5BAD2C0 /* AIBackendManager+Enhanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4D89D642BE116EC6182D4B /* AIBackendManager+Enhanced.swift */; };
 		38A4E12CF88174755CD44822 /* HistoricalAdministrations_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */; };
-		3D0B114CF010F97CE6D8C284 /* HistoricalCrises_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */; };
+		3CAC3EADA6B849BC2C4F7E97 /* AIBackendManager+Generation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D1A418AA229ADEE47B81E9D /* AIBackendManager+Generation.swift */; };
+		/* REMOVED: HistoricalCrises_PreNuclear.swift - base type HistoricalCrises not in build */
 		3E66D88CA341C393647721B0 /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		3F3776463616B38201BA5954 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
 		40BA548AC1F96838707E22F5 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
@@ -64,6 +69,7 @@
 		854167CE65FCF346BA800663 /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F2CAFFC239692E6D4C5120 /* GameEngine.swift */; };
 		871F3746E1D5AA2E551969F2 /* Advisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DCC47475BC4E6E381CED1 /* Advisor.swift */; };
 		8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */; };
+		8CD16B774AFCA29FA6F31A9E /* AIBackendStatusMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8338BB97494508110FCFC172 /* AIBackendStatusMenu.swift */; };
 		948B3C658864BE9FC3F88C4C /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		97396C9CA4C3021340306946 /* SentimentWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23597A87E243362EFB70CF64 /* SentimentWorldMap.swift */; };
@@ -99,7 +105,7 @@
 		EF095B87A192355C459DBF6E /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
 		F22190179915148B3EA249D4 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
 		F3701B6CB75BB4A0C4845E5B /* DiplomaticMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E082C07AA705A6B4CA2D17B /* DiplomaticMessagesView.swift */; };
-		F8A2DDEBFDF6D0826EC04AB1 /* WorldCountriesDatabase_Complete.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF597366E34160CFAB88B2D /* WorldCountriesDatabase_Complete.swift */; };
+		/* REMOVED: WorldCountriesDatabase_Complete.swift - base type not in build */
 		FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
 		FDA0817763260DF5A2653FC1 /* EconomicWarfareSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */; };
 		WIDGET001A /* GTNWWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET001F /* GTNWWidget.swift */; };
@@ -147,13 +153,16 @@
 		7A5DB59B9D1F01FD48B5F19B /* ImageGenerationUnified.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ImageGenerationUnified.swift; path = GTNW/AICapabilities/ImageGenerationUnified.swift; sourceTree = "<group>"; };
 		7BD985DE7EFE89ACB8056982 /* SafeFeatureSystems.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafeFeatureSystems.swift; sourceTree = "<group>"; };
 		82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MLXIntegration.swift; sourceTree = "<group>"; };
+		8338BB97494508110FCFC172 /* AIBackendStatusMenu.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIBackendStatusMenu.swift; path = Shared/Models/AIBackendStatusMenu.swift; sourceTree = "<group>"; };
 		846D958A103EA494AAC732D1 /* CyberWarfare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberWarfare.swift; sourceTree = "<group>"; };
+		8A4D89D642BE116EC6182D4B /* AIBackendManager+Enhanced.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "AIBackendManager+Enhanced.swift"; path = "Shared/Models/AIBackendManager+Enhanced.swift"; sourceTree = "<group>"; };
 		8BE38E70336CCFDDEDEDD455 /* CyberWarfareTheater.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CyberWarfareTheater.swift; sourceTree = "<group>"; };
 		8E082C07AA705A6B4CA2D17B /* DiplomaticMessagesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiplomaticMessagesView.swift; sourceTree = "<group>"; };
 		94847C472F1566DF6947C4A3 /* CommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandView.swift; sourceTree = "<group>"; };
 		991630D748C5C7E56E47730C /* GTNW_macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GTNW_macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B62F448E991AD0276155180 /* DynamicCrisisGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DynamicCrisisGenerator.swift; sourceTree = "<group>"; };
 		9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalThermalNuclearWarApp.swift; sourceTree = "<group>"; };
+		9D1A418AA229ADEE47B81E9D /* AIBackendManager+Generation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "AIBackendManager+Generation.swift"; path = "Shared/Models/AIBackendManager+Generation.swift"; sourceTree = "<group>"; };
 		A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalCrises_PreNuclear.swift; sourceTree = "<group>"; };
 		A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnalysisUnified.swift; path = GTNW/AICapabilities/AnalysisUnified.swift; sourceTree = "<group>"; };
 		A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EconomicWarfareSimulator.swift; sourceTree = "<group>"; };
@@ -307,6 +316,7 @@
 				80335E74269385013821DC0D /* Products */,
 				854F628D7554D1E187C54898 /* GTNW */,
 				WIDGET_GROUP /* GTNW Widget */,
+				F408151A0BE8C3D732CDDD9C /* AIBackend */,
 			);
 			sourceTree = "<group>";
 		};
@@ -427,6 +437,16 @@
 				34CF53E773D67381802521E1 /* ModernDesign.swift */,
 			);
 			name = Design;
+			sourceTree = "<group>";
+		};
+		F408151A0BE8C3D732CDDD9C /* AIBackend */ = {
+			isa = PBXGroup;
+			children = (
+				9D1A418AA229ADEE47B81E9D /* AIBackendManager+Generation.swift */,
+				8A4D89D642BE116EC6182D4B /* AIBackendManager+Enhanced.swift */,
+				8338BB97494508110FCFC172 /* AIBackendStatusMenu.swift */,
+			);
+			name = AIBackend;
 			sourceTree = "<group>";
 		};
 		WIDGET_GROUP /* GTNW Widget */ = {
@@ -667,9 +687,15 @@
 				2ECA3C78A7A69D26EF589671 /* AnalysisUnified.swift in Sources */,
 				58FD5AFE23CDED3D9C18D67C /* SecurityUnified.swift in Sources */,
 				38A4E12CF88174755CD44822 /* HistoricalAdministrations_PreNuclear.swift in Sources */,
-				3D0B114CF010F97CE6D8C284 /* HistoricalCrises_PreNuclear.swift in Sources */,
-				F8A2DDEBFDF6D0826EC04AB1 /* WorldCountriesDatabase_Complete.swift in Sources */,
+				BB0003AA00000003AA000003 /* AdministrationSelectionView.swift in Sources */,
+				BB0006AA00000006AA000006 /* DiplomaticMessagesView.swift in Sources */,
+				BB0009AA00000009AA000009 /* HistoricalAdministrations.swift in Sources */,
+				/* HistoricalCrises_PreNuclear.swift removed - base type not in build */
+				/* WorldCountriesDatabase_Complete.swift removed - base type not in build */
 				WIDGET006A /* WidgetSync.swift in Sources */,
+				3CAC3EADA6B849BC2C4F7E97 /* AIBackendManager+Generation.swift in Sources */,
+				36FA9CEB67D5809CB5BAD2C0 /* AIBackendManager+Enhanced.swift in Sources */,
+				8CD16B774AFCA29FA6F31A9E /* AIBackendStatusMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

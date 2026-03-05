@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 //
@@ -304,4 +305,5 @@ struct AIBackendStatusMenu_Previews: PreviewProvider {
         .padding()
     }
 }
+#endif
 #endif

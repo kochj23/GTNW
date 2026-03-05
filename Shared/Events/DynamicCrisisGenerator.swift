@@ -31,11 +31,11 @@ class DynamicCrisisGenerator: ObservableObject {
         Generate a realistic geopolitical crisis for a Cold War strategy game.
 
         CURRENT GAME STATE:
-        - Turn: \(gameState.turnNumber)
+        - Turn: \(gameState.turn)
         - Year: \(gameState.currentYear)
-        - DEFCON: \(gameState.defconLevel)
-        - Active Wars: \(gameState.activeWars.map { $0.description }.joined(separator: "; "))
-        - Player President: \(gameState.selectedAdministration?.president ?? "Unknown")
+        - DEFCON: \(gameState.defconLevel.description)
+        - Active Wars: \(gameState.activeWars.map { "\($0.aggressor) vs \($0.defender)" }.joined(separator: "; "))
+        - Player Country: \(gameState.playerCountryID)
         - Unstable Countries: \(findUnstableCountries(gameState).map { $0.name }.joined(separator: ", "))
         - Recent Events: \(gameState.recentEvents.suffix(5).joined(separator: "; "))
 
@@ -61,15 +61,7 @@ class DynamicCrisisGenerator: ObservableObject {
         // Parse JSON response
         let crisis = try parseCrisisJSON(response)
 
-        // Enhance with AI-generated imagery
-        let imagePrompt = "News photo of \(crisis.title), photojournalism, dramatic, tense situation"
-        let imageData = try? await ImageGenerationUnified.shared.generateImage(
-            prompt: imagePrompt,
-            backend: .swarmui,
-            size: .landscape768x512,
-            style: .realistic
-        )
-
+        // Image generation happens at the app level (not shared code)
         let dynamicCrisis = DynamicCrisis(
             id: UUID(),
             title: crisis.title,
@@ -78,7 +70,7 @@ class DynamicCrisisGenerator: ObservableObject {
             countries: crisis.countries,
             options: crisis.options,
             severity: crisis.severity,
-            imageData: imageData,
+            imageData: nil,
             generatedAt: Date()
         )
 
@@ -90,9 +82,9 @@ class DynamicCrisisGenerator: ObservableObject {
 
     private func findUnstableCountries(_ gameState: GameState) -> [Country] {
         return gameState.countries.filter { country in
-            let hasWar = gameState.activeWars.contains { $0.involves(country) }
+            let hasWar = gameState.activeWars.contains { $0.aggressor == country.id || $0.defender == country.id }
             let lowStability = country.stability < 40
-            let poorEconomy = country.gdp < 50
+            let poorEconomy = country.economicStrength < 30
             return hasWar || lowStability || poorEconomy
         }.prefix(5).map { $0 }
     }
@@ -100,42 +92,49 @@ class DynamicCrisisGenerator: ObservableObject {
     // MARK: - Parse Crisis from LLM
 
     private func parseCrisisJSON(_ json: String) throws -> ParsedCrisis {
-        // Try to parse JSON response
         guard let jsonData = json.data(using: .utf8) else {
             return parseFallback(json)
         }
 
         do {
-            let decoder = JSONDecoder()
-            let crisis = try decoder.decode(ParsedCrisisJSON.self, from: jsonData)
-
+            let decoded = try JSONDecoder().decode(ParsedCrisisJSON.self, from: jsonData)
+            let options = decoded.options.map { opt in
+                CrisisOption(
+                    title: opt.title,
+                    description: opt.outcome,
+                    consequences: CrisisConsequences(message: opt.outcome)
+                )
+            }
             return ParsedCrisis(
-                title: crisis.title,
-                description: crisis.description,
-                countries: crisis.countries,
-                options: crisis.options,
-                severity: CrisisSeverity(rawValue: crisis.severity) ?? .medium
+                title: decoded.title,
+                description: decoded.description,
+                countries: decoded.countries,
+                options: options,
+                severity: DynamicSeverity(rawValue: decoded.severity) ?? .medium
             )
         } catch {
-            // Fallback: Parse as structured text
             return parseFallback(json)
         }
     }
 
     private func parseFallback(_ text: String) -> ParsedCrisis {
-        // Extract title (first line or between quotes)
         let lines = text.components(separatedBy: "\n")
         let title = lines.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Crisis Alert"
-
-        // Use LLM response as description
         let description = text.components(separatedBy: "\n\n").first ?? text
 
-        // Generate basic options
         let options = [
-            CrisisOption(title: "Diplomatic approach", outcome: "Attempt to resolve through negotiation"),
-            CrisisOption(title: "Military response", outcome: "Show strength through military action"),
-            CrisisOption(title: "Economic pressure", outcome: "Use sanctions and economic tools"),
-            CrisisOption(title: "Covert operations", outcome: "Handle situation discretely through intelligence")
+            CrisisOption(title: "Diplomatic approach",
+                         description: "Attempt to resolve through negotiation",
+                         consequences: CrisisConsequences(message: "Diplomatic solution pursued")),
+            CrisisOption(title: "Military response",
+                         description: "Show strength through military action",
+                         consequences: CrisisConsequences(message: "Military action taken")),
+            CrisisOption(title: "Economic pressure",
+                         description: "Use sanctions and economic tools",
+                         consequences: CrisisConsequences(message: "Economic pressure applied")),
+            CrisisOption(title: "Covert operations",
+                         description: "Handle situation through intelligence",
+                         consequences: CrisisConsequences(message: "Covert action initiated"))
         ]
 
         return ParsedCrisis(
@@ -151,21 +150,26 @@ class DynamicCrisisGenerator: ObservableObject {
         let title: String
         let description: String
         let countries: [String]
-        let options: [CrisisOption]
+        let options: [OptionJSON]
         let severity: String
+
+        struct OptionJSON: Codable {
+            let title: String
+            let outcome: String
+        }
     }
 }
 
 // MARK: - Models
 
-struct DynamicCrisis: Identifiable {
+struct DynamicCrisis: Identifiable, Codable {
     let id: UUID
     let title: String
     let description: String
     let year: Int
     let countries: [String]
     let options: [CrisisOption]
-    let severity: CrisisSeverity
+    let severity: DynamicSeverity
     let imageData: Data?
     let generatedAt: Date
 }
@@ -175,10 +179,10 @@ struct ParsedCrisis {
     let description: String
     let countries: [String]
     let options: [CrisisOption]
-    let severity: CrisisSeverity
+    let severity: DynamicSeverity
 }
 
-enum CrisisSeverity: String {
+enum DynamicSeverity: String, Codable {
     case low = "Low"
     case medium = "Medium"
     case high = "High"
@@ -202,79 +206,52 @@ struct DynamicCrisisView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // Severity badge
-            HStack {
-                Text(crisis.severity.rawValue.uppercased())
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(crisis.severity.color)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(crisis.severity.color.opacity(0.2))
-                    .cornerRadius(8)
-
-                Spacer()
-
-                Text("Turn \(crisis.year)")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-            }
-
-            // Title
-            Text(crisis.title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-
-            // Image
-            if let imageData = crisis.imageData,
-               let nsImage = NSImage(data: imageData) {
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 200)
-                    .clipped()
-                    .cornerRadius(12)
-            }
-
-            // Description
-            Text(crisis.description)
-                .font(.body)
-                .foregroundColor(.white.opacity(0.9))
-                .padding()
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(10)
-
-            // Options
-            VStack(spacing: 12) {
-                ForEach(Array(crisis.options.enumerated()), id: \.offset) { index, option in
-                    Button(action: {
-                        selectedOption = index
-                    }) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(option.title)
-                                .font(.headline)
-                                .foregroundColor(.white)
-
-                            Text("→ \(option.outcome)")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(selectedOption == index ? Color.blue.opacity(0.3) : Color.gray.opacity(0.2))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(selectedOption == index ? Color.blue : Color.clear, lineWidth: 2)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+            severityHeader
+            crisisContent
+            optionsList
         }
         .padding(24)
         .frame(maxWidth: 600)
+    }
+
+    private var severityHeader: some View {
+        HStack {
+            Text(crisis.severity.rawValue.uppercased())
+                .font(.caption).fontWeight(.bold)
+                .foregroundColor(crisis.severity.color)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(crisis.severity.color.opacity(0.2))
+                .cornerRadius(8)
+            Spacer()
+            Text("Turn \(crisis.year)").font(.caption).foregroundColor(.white.opacity(0.6))
+        }
+    }
+
+    private var crisisContent: some View {
+        VStack(spacing: 12) {
+            Text(crisis.title).font(.title2).fontWeight(.bold).foregroundColor(.white).multilineTextAlignment(.center)
+            if let imageData = crisis.imageData, let nsImage = NSImage(data: imageData) {
+                Image(nsImage: nsImage).resizable().aspectRatio(contentMode: .fill).frame(height: 200).clipped().cornerRadius(12)
+            }
+            Text(crisis.description).font(.body).foregroundColor(.white.opacity(0.9)).padding().background(Color.black.opacity(0.3)).cornerRadius(10)
+        }
+    }
+
+    private var optionsList: some View {
+        VStack(spacing: 12) {
+            ForEach(Array(crisis.options.enumerated()), id: \.offset) { index, option in
+                Button(action: { selectedOption = index }) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(option.title).font(.headline).foregroundColor(.white)
+                        Text("→ \(option.description)").font(.caption).foregroundColor(.white.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).padding()
+                    .background(selectedOption == index ? Color.blue.opacity(0.3) : Color.gray.opacity(0.2))
+                    .cornerRadius(10)
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedOption == index ? Color.blue : Color.clear, lineWidth: 2))
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }

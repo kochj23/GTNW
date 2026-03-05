@@ -133,9 +133,9 @@ class AnalysisUnified: ObservableObject {
             overallSentiment: .positive,
             score: 0.72,
             emotions: [
-                .joy: 0.6,
-                .surprise: 0.3,
-                .anger: 0.1
+                "joy": 0.6,
+                "surprise": 0.3,
+                "anger": 0.1
             ]
         )
     }
@@ -265,27 +265,7 @@ enum RelationType {
     case none
 }
 
-struct SentimentResult {
-    let overallSentiment: Sentiment
-    let score: Double
-    let emotions: [Emotion: Double]
-}
-
-enum Sentiment {
-    case positive
-    case negative
-    case neutral
-    case mixed
-}
-
-enum Emotion {
-    case joy
-    case anger
-    case sadness
-    case fear
-    case surprise
-    case disgust
-}
+// SentimentResult and Sentiment are defined in AppSettings.swift (Shared layer)
 
 struct URLAnalysis {
     let url: URL

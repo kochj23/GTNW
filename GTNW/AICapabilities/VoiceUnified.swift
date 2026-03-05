@@ -33,6 +33,7 @@ class VoiceUnified: ObservableObject {
 
         defer { isProcessing = false }
 
+        #if os(macOS)
         // Call F5-TTS-MLX Python script
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/local/bin/python3")
@@ -50,6 +51,9 @@ class VoiceUnified: ObservableObject {
         guard process.terminationStatus == 0 else {
             throw VoiceError.cloneFailed
         }
+        #else
+        throw VoiceError.cloneFailed
+        #endif
     }
 
     // MARK: - System TTS
@@ -85,6 +89,7 @@ class VoiceUnified: ObservableObject {
         // Use say command to generate audio file (macOS native TTS)
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("briefing_\(UUID().uuidString).aiff")
 
+        #if os(macOS)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
         process.arguments = [
@@ -100,6 +105,9 @@ class VoiceUnified: ObservableObject {
               FileManager.default.fileExists(atPath: tempURL.path) else {
             throw VoiceError.audioGenerationFailed
         }
+        #else
+        throw VoiceError.audioGenerationFailed
+        #endif
 
         let audioData = try Data(contentsOf: tempURL)
 
