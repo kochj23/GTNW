@@ -141,6 +141,9 @@ class GameEngine: ObservableObject {
             isProcessingAITurn = false  // Allow actions again
         }
 
+        // Process nuclear arms race dynamics
+        processArmsRace()
+
         // Update DEFCON level
         updateDEFCON()
 
@@ -695,6 +698,9 @@ class GameEngine: ObservableObject {
         addLog("\(aggressorCountry.flag) \(aggressorCountry.name) declares war on \(defenderCountry.flag) \(defenderCountry.name)", type: .warning)
 
         self.gameState = gameState
+
+        // Check NATO Article 5 / Warsaw Pact collective defense
+        checkAndInvokeCollectiveDefense(aggressor: aggressor, target: defender)
 
         // Raise DEFCON
         raiseDEFCON()
@@ -1636,7 +1642,7 @@ class GameEngine: ObservableObject {
     // MARK: - Helpers
 
     /// Get country by ID
-    private func getCountry(_ id: String) -> Country? {
+    func getCountry(_ id: String) -> Country? {
         return gameState?.getCountry(id: id)
     }
 

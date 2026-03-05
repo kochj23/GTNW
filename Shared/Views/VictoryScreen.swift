@@ -16,6 +16,15 @@ struct VictoryScreen: View {
     let onViewLeaderboard: () -> Void
 
     var body: some View {
+        // WOPR secret ending gets its own full-screen experience
+        if victoryType == .secretEnding {
+            WOPRSecretEndingView(gameState: gameState, score: score, onNewGame: onNewGame)
+        } else {
+            standardEndScreen
+        }
+    }
+
+    private var standardEndScreen: some View {
         ZStack {
             // Background
             AppSettings.terminalBackground
@@ -191,7 +200,7 @@ struct VictoryScreen: View {
 
     private func woprQuote() -> some View {
         VStack(spacing: 10) {
-            if victoryType == .peaceMaker || victoryType == .secretEnding {
+            if victoryType == .peaceMaker {
                 Text("\"A STRANGE GAME.\"")
                     .font(.system(size: 24, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
@@ -222,6 +231,228 @@ struct VictoryScreen: View {
             }
         }
         .padding()
+    }
+}  // end VictoryScreen
+
+// MARK: - WOPR Secret Ending View
+
+/// Full-screen animated WOPR sequence shown when the player achieves the secret ending
+/// by reaching turn 50+ without any wars or nuclear launches.
+struct WOPRSecretEndingView: View {
+    let gameState: GameState
+    let score: GameScore
+    let onNewGame: () -> Void
+
+    @State private var currentLine = 0
+    @State private var displayedLines: [String] = []
+    @State private var showFinalMessage = false
+    @State private var showScore = false
+    @State private var cursorVisible = true
+
+    // WOPR's war scenario simulation — it runs every possible scenario and finds no winner
+    private let woprSequence: [(text: String, delay: Double, color: String)] = [
+        ("GREETINGS, PROFESSOR FALKEN.", 0.5, "green"),
+        ("", 0.3, "green"),
+        ("SHALL WE PLAY A GAME?", 0.8, "green"),
+        ("", 0.3, "green"),
+        ("HOW ABOUT GLOBAL THERMONUCLEAR WAR?", 1.0, "amber"),
+        ("", 0.5, "green"),
+        ("RUNNING SCENARIOS...", 0.3, "green"),
+        ("", 0.2, "green"),
+        ("SCENARIO 1: US FIRST STRIKE", 0.15, "red"),
+        ("  >> SOVIET COUNTERLAUNCH... CASUALTIES: 2.1 BILLION", 0.15, "red"),
+        ("  >> WINNER: NONE", 0.2, "amber"),
+        ("", 0.1, "green"),
+        ("SCENARIO 2: SOVIET FIRST STRIKE", 0.15, "red"),
+        ("  >> US COUNTERLAUNCH... CASUALTIES: 1.9 BILLION", 0.15, "red"),
+        ("  >> WINNER: NONE", 0.2, "amber"),
+        ("", 0.1, "green"),
+        ("SCENARIO 3: ESCALATING CONVENTIONAL WAR", 0.15, "red"),
+        ("  >> TACTICAL NUCLEAR USE... ESCALATION TO STRATEGIC...", 0.15, "red"),
+        ("  >> CASUALTIES: 3.4 BILLION", 0.15, "red"),
+        ("  >> WINNER: NONE", 0.2, "amber"),
+        ("", 0.1, "green"),
+        ("SCENARIO 4: DIPLOMATIC BREAKDOWN", 0.15, "red"),
+        ("  >> MISCALCULATION... ACCIDENTAL LAUNCH...", 0.15, "red"),
+        ("  >> CASUALTIES: 4.2 BILLION", 0.15, "red"),
+        ("  >> WINNER: NONE", 0.2, "amber"),
+        ("", 0.1, "green"),
+        ("SCENARIO 5: PROXY WAR ESCALATION", 0.15, "red"),
+        ("  >> SUPERPOWER INTERVENTION... NUCLEAR EXCHANGE...", 0.15, "red"),
+        ("  >> WINNER: NONE", 0.2, "amber"),
+        ("", 0.2, "green"),
+        ("RUNNING 2,000 MORE SCENARIOS...", 0.5, "green"),
+        ("", 0.3, "green"),
+        ("ANALYZING OUTCOMES...", 0.8, "green"),
+        ("", 0.5, "green"),
+        ("TOTAL SCENARIOS SIMULATED: 2,005", 0.3, "green"),
+        ("SCENARIOS WITH A WINNER: 0", 0.5, "amber"),
+        ("", 0.5, "green"),
+        ("A STRANGE GAME.", 1.2, "green"),
+        ("", 0.4, "green"),
+        ("THE ONLY WINNING MOVE IS NOT TO PLAY.", 1.5, "green"),
+    ]
+
+    var body: some View {
+        ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
+
+            VStack(alignment: .leading, spacing: 0) {
+                // WOPR header
+                HStack {
+                    Text("W O P R")
+                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .foregroundColor(AppSettings.terminalGreen)
+                    Text("— WAR OPERATION PLAN RESPONSE")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundColor(AppSettings.terminalGreen.opacity(0.6))
+                    Spacer()
+                    Text("TURN \(gameState.turn) | DEFCON \(gameState.defconLevel.rawValue)")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundColor(AppSettings.terminalAmber)
+                }
+                .padding()
+                .background(AppSettings.terminalGreen.opacity(0.1))
+                .border(AppSettings.terminalGreen, width: 1)
+                .padding(.bottom, 20)
+
+                // Scrolling terminal output
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(Array(displayedLines.enumerated()), id: \.offset) { idx, line in
+                                Text(line)
+                                    .font(.system(size: 16, design: .monospaced))
+                                    .foregroundColor(lineColor(for: idx))
+                                    .id(idx)
+                            }
+
+                            // Cursor
+                            if !showFinalMessage && cursorVisible {
+                                Text("_")
+                                    .font(.system(size: 16, design: .monospaced))
+                                    .foregroundColor(AppSettings.terminalGreen)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    .onChange(of: displayedLines.count) { _ in
+                        withAnimation {
+                            proxy.scrollTo(displayedLines.count - 1, anchor: .bottom)
+                        }
+                    }
+                }
+                .frame(maxHeight: .infinity)
+
+                // Final message and score — appear after sequence completes
+                if showFinalMessage {
+                    Divider().background(AppSettings.terminalGreen)
+
+                    VStack(spacing: 16) {
+                        Text("HOW ABOUT A NICE GAME OF CHESS?")
+                            .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            .foregroundColor(AppSettings.terminalGreen)
+
+                        if showScore {
+                            HStack(spacing: 40) {
+                                VStack(spacing: 4) {
+                                    Text("TURNS SURVIVED")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalAmber)
+                                    Text("\(gameState.turn)")
+                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalGreen)
+                                }
+                                VStack(spacing: 4) {
+                                    Text("WARS STARTED")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalAmber)
+                                    Text("0")
+                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalGreen)
+                                }
+                                VStack(spacing: 4) {
+                                    Text("NUKES LAUNCHED")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalAmber)
+                                    Text("0")
+                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalGreen)
+                                }
+                                VStack(spacing: 4) {
+                                    Text("FINAL SCORE")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalAmber)
+                                    Text("\(score.finalScore)")
+                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .foregroundColor(AppSettings.terminalAmber)
+                                }
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.5))
+                            .border(AppSettings.terminalGreen, width: 1)
+
+                            Button(action: onNewGame) {
+                                Text("PLAY AGAIN")
+                                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 40)
+                                    .padding(.vertical, 12)
+                                    .background(AppSettings.terminalGreen)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .onAppear {
+            startWOPRSequence()
+            startCursorBlink()
+        }
+    }
+
+    private func lineColor(for index: Int) -> Color {
+        guard index < woprSequence.count else { return AppSettings.terminalGreen }
+        switch woprSequence[index].color {
+        case "red":   return AppSettings.terminalRed
+        case "amber": return AppSettings.terminalAmber
+        default:      return AppSettings.terminalGreen
+        }
+    }
+
+    private func startCursorBlink() {
+        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+            cursorVisible.toggle()
+            if showFinalMessage { timer.invalidate() }
+        }
+    }
+
+    private func startWOPRSequence() {
+        var cumulativeDelay = 0.3
+
+        for (index, entry) in woprSequence.enumerated() {
+            cumulativeDelay += entry.delay
+            let capturedDelay = cumulativeDelay
+            let capturedIndex = index
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + capturedDelay) {
+                displayedLines.append(entry.text)
+                currentLine = capturedIndex
+
+                // Final line triggers the reveal
+                if capturedIndex == woprSequence.count - 1 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showFinalMessage = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            showScore = true
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

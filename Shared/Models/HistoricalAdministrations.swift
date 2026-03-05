@@ -26,11 +26,13 @@ struct Administration: Identifiable, Codable {
 }
 
 extension Advisor {
-    /// Get all historical administrations from 1789 to present (46 total)
+    /// Get all historical administrations from 1789 to present (47 total)
     static func allAdministrations() -> [Administration] {
-        // For now, return nuclear age only (pre-nuclear coming soon)
-        // TODO: Add preNuclearAdministrations() once file compiles
-        return [
+        // Pre-nuclear era (Washington through FDR: 1789-1945)
+        let preNuclear = preNuclearAdministrations()
+
+        // Nuclear age (Truman through Trump II: 1945-present)
+        let nuclearAge: [Administration] = [
             trumanAdministration(),
             eisenhowerAdministration(),
             kennedyAdministration(),
@@ -47,6 +49,9 @@ extension Advisor {
             bidenAdministration(),
             trumpSecondAdministration()
         ]
+
+        // Sort chronologically so the picker shows Washington → Trump
+        return (preNuclear + nuclearAge).sorted { $0.startYear < $1.startYear }
     }
 
     // MARK: - Truman Administration (1945-1953)
