@@ -1721,6 +1721,60 @@ extension GameEngine {
     func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String) {
         guard var gameState = gameState else { return }
 
+        // ── Pre-action Factbook validations ──────────────────────────────────
+        let targetFB = WorldFactbookDatabase.record(for: targetID)
+        let targetCountry = getCountry(targetID)
+
+        // Naval blockade only works on coastal/island nations
+        if action == .navalBlockade {
+            if targetFB.isLandlocked {
+                let name = targetCountry?.name ?? targetID
+                addLog("❌ NAVAL BLOCKADE INVALID", type: .error)
+                addLog("   \(name) is landlocked — no ports to blockade.", type: .info)
+                addLog("📨 \(targetCountry?.flag ?? "") \(name): \"Your fleet sails in circles. We have no coastline.\"", type: .info)
+                return
+            }
+            if !targetFB.terrainType.blockadeable {
+                let name = targetCountry?.name ?? targetID
+                addLog("⚠️ BLOCKADE EFFECTIVENESS REDUCED", type: .warning)
+                addLog("   \(name) has limited coastline. Blockade will be less effective.", type: .info)
+            }
+        }
+
+        // Sanctions are less effective against energy exporters and corrupt regimes
+        if action == .sanctions || action == .oilEmbargo || action == .freezeAssets {
+            let leakage = targetFB.sanctionsLeakage
+            if leakage > 0.5 {
+                addLog("⚠️ SANCTIONS WARNING: \(targetCountry?.name ?? targetID) has high corruption (leakage \(Int(leakage * 100))%)", type: .warning)
+                addLog("   Black markets and shell companies will reduce effectiveness.", type: .info)
+            }
+            if targetFB.energyExporter && action == .oilEmbargo {
+                addLog("⚠️ OIL EMBARGO NOTE: \(targetCountry?.name ?? targetID) is a net energy exporter.", type: .warning)
+                addLog("   Embargo will have minimal economic impact on them.", type: .info)
+            }
+        }
+
+        // Propaganda effectiveness note
+        if action == .propaganda || action == .disinfo || action == .rebelBroadcast {
+            let mult = targetFB.propagandaMultiplier
+            if mult > 1.5 {
+                addLog("✅ HIGH-YIELD INFORMATION TARGET: Press freedom score \(targetFB.pressFreedomIndex)/100", type: .info)
+                addLog("   Propaganda multiplier: \(String(format: "%.1f", mult))×", type: .info)
+            } else if mult < 0.6 {
+                addLog("⚠️ LOW-YIELD TARGET: Free press (score \(targetFB.pressFreedomIndex)/100) resists disinformation.", type: .warning)
+            }
+        }
+
+        // Territorial dispute bonus for crisis/war triggers
+        if action == .groundInvasion || action == .navalBlockade || action == .airStrike {
+            let playerFB = WorldFactbookDatabase.record(for: playerID)
+            if targetFB.territorialDisputes.contains(playerID) ||
+               playerFB.territorialDisputes.contains(targetID) {
+                addLog("⚡ TERRITORIAL DISPUTE: Pre-existing claims heighten crisis risk.", type: .warning)
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         let result = ShadowPresidentActionManager.execute(
             action: action,
             from: playerID,

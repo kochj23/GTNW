@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.7.0
+# 🏛️ GTNW - Global Thermal Nuclear War v1.8.0
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,11 +16,51 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.7.0
+## 🆕 What's New in v1.8.0
 
-**Every country in the world now shows its historically correct name and existence for the era being played.**
+**CIA World Factbook integration** — Tier 1 & 2 data for all 195 countries, driving real gameplay mechanics.
 
-### Complete Historical Country Coverage
+### What's New
+
+**Natural Resources** (oil, gas, coal, gold, diamonds, lithium, rare earths, etc.) for every country. Resource-rich nations are more resilient to sanctions. Energy exporters barely feel oil embargos.
+
+**Corruption Index** (Transparency International) drives covert operation effectiveness:
+- Afghanistan (16/100): coups very easy, officials easily bribed
+- Denmark (90/100): covert operations extremely difficult, bribery nearly impossible
+- Staged coups harder in clean democracies, trivial in kleptocracies
+
+**Geographic Features** (landlocked, terrain type, coastline): Naval blockades now fail against landlocked countries (Afghanistan, Bolivia, etc.). Mountain terrain increases invasion difficulty. Desert/jungle penalties applied.
+
+**Religion** (dominant faith per country) creates diplomatic blocs: OIC solidarity among Muslim-majority nations; Orthodox Christian countries share diplomatic bonuses; Buddhist East Asian bloc, etc.
+
+**Trade Dependency** (top 3 trading partners per country): shown in action warnings. Sanctioning China hurts every country that trades with China.
+
+**Press Freedom Index** (Reporters Without Borders) scales propaganda and disinformation effectiveness. North Korea (2/100): propaganda is nearly 3× effective. Denmark (89/100): disinformation campaigns largely fail.
+
+**Income Inequality (GINI)** reduces stability. South Africa (GINI 63) is structurally unstable. Japan (GINI 33) resists internal unrest.
+
+**Energy Independence** scales oil embargo vulnerability. Energy exporters (Russia, Saudi Arabia) gain from embargos on competitors. Energy importers (Japan, Germany) suffer dramatically.
+
+**Literacy Rate + HDI** — economic development ceilings.
+
+**Territorial Disputes** pre-loaded from Factbook: India-China-Pakistan Kashmir, South China Sea (China/Vietnam/Philippines), Greece-Turkey Aegean, Israel-Palestine, Russia-Ukraine, Russia-Japan Kurils, and more. Automatically create hostile base relations and heighten crisis risk during military actions.
+
+### Gameplay Mechanics
+
+All 10 data categories drive real calculations:
+- `country.factbook` — immediate lookup from `WorldFactbookRecord`
+- Sanctions leakage: 60% in Somalia, 10% in Norway
+- Blockade validation: error if target is landlocked
+- Coup probability scales with corruption
+- Religion blocs: +8 relations with co-religionists at game start
+- GINI instability: up to -15 stability penalty for most unequal nations
+- Oil embargo vulnerability: 3.0× for pure energy importers, 0.05× for exporters
+
+---
+
+## Historical Country Names (v1.7.0)
+
+Every country has historically accurate names:
 
 | Country | Change |
 |---------|--------|

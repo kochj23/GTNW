@@ -494,10 +494,37 @@ class ShadowPresidentActionManager {
         case .freezeAssets: result.relationChange = -35
         case .forgiveDebt: result.relationChange = 40
         
-        case .infiltrate: result.detectedProbability = 0.30
-        case .assassinate: result.detectedProbability = 0.60; result.triggeredWar = true
-        case .stageCoup: result.detectedProbability = 0.70; result.triggeredCrisis = true
-        case .cyberAttack: result.relationChange = -25; result.detectedProbability = 0.40
+        // Covert operations — effectiveness scales with target's corruption
+        // Highly corrupt countries (low corruptionIndex) are easier to infiltrate
+        case .infiltrate:
+            let fb = WorldFactbookDatabase.record(for: targetID)
+            let corr = fb.corruptionIndex  // 0=corrupt, 100=clean
+            result.detectedProbability = max(0.05, 0.70 - Double(corr) / 140.0)
+            if corr < 30 { result.message = "Target is highly corrupt. Infiltration opportunities abundant." }
+
+        case .assassinate:
+            result.detectedProbability = 0.60; result.triggeredWar = true
+
+        case .stageCoup:
+            let fb = WorldFactbookDatabase.record(for: targetID)
+            let corr = fb.corruptionIndex
+            result.detectedProbability = max(0.20, 0.85 - Double(corr) / 160.0)
+            result.triggeredCrisis = true
+            if corr > 70 { result.message = "Target has clean governance. Coup very difficult." }
+            else if corr < 25 { result.message = "Target is deeply corrupt. Military elements sympathetic." }
+
+        case .bribe:
+            let fb = WorldFactbookDatabase.record(for: targetID)
+            let bribeChance = fb.briberySuccessRate
+            result.success = Double.random(in: 0...1) < bribeChance
+            result.message = result.success ?
+                "Bribery successful. Officials cooperating." :
+                "Bribery failed — target officials refused or reported contact."
+            result.detectedProbability = result.success ? 0.10 : 0.50
+
+        case .cyberAttack:
+            result.relationChange = -25; result.detectedProbability = 0.40
+
         case .sabotageNuke: result.detectedProbability = 0.50; result.triggeredWar = true
         
         case .deploySpies: result.message = "Spy network deployed"

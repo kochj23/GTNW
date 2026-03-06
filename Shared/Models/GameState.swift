@@ -262,6 +262,7 @@ class GameState: ObservableObject, Codable {
             countries[index].isPlayerControlled = true
         }
         initializeDiplomaticRelations()
+        applyFactbookModifiers()
     }
 
     // MARK: - Codable
@@ -397,6 +398,44 @@ class GameState: ObservableObject, Codable {
         guard let index = countries.firstIndex(where: { $0.id == from }),
               let currentRelation = countries[index].diplomaticRelations[to] else { return }
         countries[index].diplomaticRelations[to] = max(-100, min(100, currentRelation + by))
+    }
+
+    /// Apply CIA World Factbook modifiers after diplomatic relations are set.
+    /// - Religion: shared religion adds a diplomatic bonus
+    /// - GINI: high inequality reduces stability
+    /// - Territorial disputes: set hostile relations between disputing countries
+    private func applyFactbookModifiers() {
+        for i in countries.indices {
+            let country = countries[i]
+            let fb = country.factbook  // Lazy lookup from WorldFactbookDatabase
+
+            // GINI inequality → instability penalty
+            let inequalityPenalty = fb.inequalityInstabilityBonus
+            if inequalityPenalty > 0 {
+                countries[i].stability = max(0, countries[i].stability - inequalityPenalty)
+            }
+
+            // Territorial disputes → hostile base relations
+            for disputeID in fb.territorialDisputes {
+                if countries.contains(where: { $0.id == disputeID }) {
+                    let existing = countries[i].diplomaticRelations[disputeID] ?? 0
+                    if existing > -40 {
+                        countries[i].diplomaticRelations[disputeID] = -40
+                    }
+                }
+            }
+
+            // Religion blocs → diplomatic bonus with co-religionists
+            let myReligion = fb.dominantReligion
+            guard myReligion != .mixed, myReligion != .secular else { continue }
+            for j in countries.indices where j != i {
+                let otherFB = countries[j].factbook
+                if otherFB.dominantReligion == myReligion {
+                    let existing = countries[i].diplomaticRelations[countries[j].id] ?? 0
+                    countries[i].diplomaticRelations[countries[j].id] = min(100, existing + myReligion.sharedReligionBonus)
+                }
+            }
+        }
     }
 
     /// Get player's country

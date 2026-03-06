@@ -151,6 +151,9 @@ struct Country: Identifiable, Codable, Hashable {
     var hasASATWeapons: Bool // Anti-Satellite weapons
     var treatyViolations: Int // Count of detected violations
 
+    // NOTE: CIA World Factbook data is accessed via country.factbook (WorldFactbookRecord)
+    // This keeps the Codable-compliant Country struct lean; Factbook data is static reference.
+
     enum CodingKeys: String, CodingKey {
         case id, name, code, flag, capital, region, coordinates
         case nuclearStatus, nuclearWarheads, icbmCount, submarineLaunchedMissiles, bombers, militaryStrength
@@ -290,10 +293,16 @@ struct Country: Identifiable, Codable, Hashable {
         self.activeWeaponPrograms = []
         self.deployedProhibitedWeapons = []
         self.hasABMSystem = false
-        self.hasMIRVTechnology = isMajorPower // USA/USSR had MIRV by 1970s
-        self.hasMobileLaunchers = (id == "RUS") // Russia has mobile SS-25/SS-27
-        self.hasASATWeapons = (id == "USA" || id == "RUS" || id == "CHN") // Space powers
+        self.hasMIRVTechnology = isMajorPower
+        self.hasMobileLaunchers = (id == "RUS")
+        self.hasASATWeapons = (id == "USA" || id == "RUS" || id == "CHN")
         self.treatyViolations = 0
+    }
+
+    /// Convenience accessor for this country's CIA World Factbook data.
+    /// Reference data — not stored in the struct (avoids Codable complexity).
+    var factbook: WorldFactbookRecord {
+        WorldFactbookDatabase.record(for: id)
     }
 
     /// Calculate total nuclear capability score

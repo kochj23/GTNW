@@ -51,6 +51,7 @@
 		6389A4D8D9F7A6BE10CC8664 /* AdaptiveOpponentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */; };
 		64633366336537652D616334332D343061352D626336662D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		67706BD14D60107F9E0A7532 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
+		EADF976252434AAAAA0FF642 /* WorldFactbookData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DA91E222E440E4B5257DFC /* WorldFactbookData.swift */; };
 		769CA620D51E46A7A71BF2A0 /* AlienInvasionScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */; };
 		C8EF9152498F4DBEA1FF8FB5 /* PresidentialPowers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C5FC8E90BB415A941883B2 /* PresidentialPowers.swift */; };
 		50E45AE9B9584F26BCC9EFFD /* HistoricalCrises.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F79596501F45D8917DD587 /* HistoricalCrises.swift */; };
@@ -179,6 +180,7 @@
 		AB4591D208BA4670CBA98E76 /* Country.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Country.swift; sourceTree = "<group>"; };
 		B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdministrationSelectionView.swift; sourceTree = "<group>"; };
 		B700263707446EC9BADF298F /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		00DA91E222E440E4B5257DFC /* WorldFactbookData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldFactbookData.swift; sourceTree = "<group>"; };
 		1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlienInvasionScenario.swift; sourceTree = "<group>"; };
 		78C5FC8E90BB415A941883B2 /* PresidentialPowers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidentialPowers.swift; sourceTree = "<group>"; };
 		83F79596501F45D8917DD587 /* HistoricalCrises.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HistoricalCrises.swift; path = Shared/Models/HistoricalCrises.swift; sourceTree = SOURCE_ROOT; };
@@ -262,6 +264,7 @@
 				014D013914894F15AB986F12 /* MilitaryAllianceSystem.swift */,
 				78C5FC8E90BB415A941883B2 /* PresidentialPowers.swift */,
 				1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */,
+				00DA91E222E440E4B5257DFC /* WorldFactbookData.swift */,
 				WIDGET005F /* WidgetSync.swift */,
 			);
 			path = Models;
@@ -607,6 +610,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EADF976252434AAAAA0FF642 /* WorldFactbookData.swift in Sources */,
 				769CA620D51E46A7A71BF2A0 /* AlienInvasionScenario.swift in Sources */,
 				A5B12EA17B9C44E383A50B70 /* PresidentialPowersViews.swift in Sources */,
 				C8EF9152498F4DBEA1FF8FB5 /* PresidentialPowers.swift in Sources */,
@@ -961,7 +965,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -973,7 +977,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -991,7 +995,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1003,7 +1007,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
