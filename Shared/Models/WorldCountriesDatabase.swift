@@ -247,11 +247,327 @@ struct WorldCountriesDatabase {
             countries.removeAll { $0.id == "XKX" }
         }
 
+        // ── COMPREHENSIVE ERA-BASED COUNTRY TRANSFORMATIONS ──────────────────
+
+        // TURKEY → Ottoman Empire (Republic of Turkey proclaimed 1923)
+        if year < 1923 {
+            countries.removeAll { $0.id == "TUR" }
+            countries.append(ottomanEmpire(year: year))
+        }
+
+        // IRAN → Persia (renamed Iran in 1935)
+        if year < 1935 {
+            countries.removeAll { $0.id == "IRN" }
+            countries.append(persia(year: year))
+        }
+
+        // THAILAND → Siam (renamed Thailand 1939; briefly reverted 1946, permanent 1949)
+        if year < 1939 {
+            countries.removeAll { $0.id == "THA" }
+            countries.append(siam(year: year))
+        }
+
+        // JAPAN — Empire of Japan 1868-1945 (highly aggressive, different stats)
+        if year >= 1868 && year < 1945 {
+            countries.removeAll { $0.id == "JPN" }
+            countries.append(imperialJapan(year: year))
+        } else if year < 1868 {
+            // Edo Period — Japan was closed, very low presence
+            countries.removeAll { $0.id == "JPN" }
+            countries.append(feudalJapan(year: year))
+        }
+
+        // KOREA — various forms
+        if year < 1897 {
+            // Joseon Dynasty (1392-1897)
+            countries.removeAll { ["KOR","PRK"].contains($0.id) }
+            countries.append(joseonKorea(year: year))
+        } else if year < 1910 {
+            // Korean Empire (1897-1910)
+            countries.removeAll { ["KOR","PRK"].contains($0.id) }
+            countries.append(koreanEmpire())
+        } else if year < 1945 {
+            // Japanese-occupied Korea (1910-1945) — removed (part of Japan)
+            countries.removeAll { ["KOR","PRK"].contains($0.id) }
+        }
+        // 1945-1948: KOR appears (filter for PRK < 1948 already handled)
+
+        // CHINA — Qing Empire and Republic transitions
+        if year < 1912 {
+            // Qing Dynasty (Manchu Empire, 1644-1912)
+            countries.removeAll { $0.id == "CHN" }
+            countries.append(qingEmpire(year: year))
+        } else if year < 1949 {
+            // Republic of China 1912-1949 (already handled in adjustCountriesForEra name)
+            // Keep CHN but with weaker stats (handled in adjustCountriesForEra)
+        }
+
+        // INDIA — British India pre-1947 (name change only, territory exists)
+        if year < 1947 && year >= 1858 {
+            countries.removeAll { $0.id == "IND" }
+            countries.append(britishIndia(year: year))
+        } else if year < 1858 && year >= 1700 {
+            countries.removeAll { $0.id == "IND" }
+            countries.append(mughalIndia(year: year))
+        } else if year < 1700 {
+            countries.removeAll { $0.id == "IND" }
+        }
+
+        // INDONESIA → Dutch East Indies (Netherlands Indies until 1945, recognized 1949)
+        if year < 1945 {
+            countries.removeAll { $0.id == "IDN" }
+            countries.append(dutchEastIndies(year: year))
+        } else if year < 1949 {
+            countries.removeAll { $0.id == "IDN" }
+            countries.append(indonesiaDeclared())
+        }
+
+        // MYANMAR → Burma (British Burma pre-1948, name change 1989)
+        if year < 1948 {
+            countries.removeAll { $0.id == "MMR" }
+            if year >= 1885 {
+                countries.append(britishBurma(year: year))
+            }
+            // Pre-1885: various Burmese kingdoms — removed
+        }
+        // 1948-1989: "Burma" — handled in adjustCountriesForEra
+
+        // CAMBODIA — French Protectorate until 1953
+        if year < 1953 {
+            countries.removeAll { $0.id == "KHM" }
+        }
+
+        // LAOS — French Protectorate until 1954
+        if year < 1954 {
+            countries.removeAll { $0.id == "LAO" }
+        }
+
+        // PHILIPPINES — Spanish until 1898, American 1898-1946
+        if year < 1898 {
+            countries.removeAll { $0.id == "PHL" }
+            countries.append(spanishPhilippines(year: year))
+        } else if year < 1946 {
+            countries.removeAll { $0.id == "PHL" }
+            countries.append(americanPhilippines(year: year))
+        }
+
+        // MALAYSIA → Malaya pre-1963 (British Malaya until 1957, Malayan Federation 1957-1963)
+        if year < 1957 {
+            countries.removeAll { $0.id == "MYS" }
+            // British colony — removed
+        } else if year < 1963 {
+            countries.removeAll { $0.id == "MYS" }
+            countries.append(malayanFederation())
+        }
+
+        // MONGOLIA — Chinese territory pre-1921
+        if year < 1921 {
+            countries.removeAll { $0.id == "MNG" }
+            // Part of Qing/China — removed
+        }
+
+        // ITALY — didn't unify until 1861
+        if year < 1861 {
+            countries.removeAll { $0.id == "ITA" }
+            countries.append(italianStates(year: year))
+        }
+
+        // BELGIUM — created 1830 (independence from Netherlands)
+        if year < 1830 {
+            countries.removeAll { $0.id == "BEL" }
+        }
+
+        // NORWAY — under Swedish union until independence 1905
+        if year < 1905 {
+            countries.removeAll { $0.id == "NOR" }
+        }
+
+        // FINLAND — Grand Duchy under Russia until independence 1917
+        if year < 1917 {
+            countries.removeAll { $0.id == "FIN" }
+            // Part of Russian Empire (already shown as Russian Empire)
+        }
+
+        // ICELAND — under Danish rule until 1944
+        if year < 1944 {
+            countries.removeAll { $0.id == "ISL" }
+        }
+
+        // IRELAND — Irish Free State 1922, Republic 1949
+        if year < 1922 {
+            countries.removeAll { $0.id == "IRL" }
+            // Part of the United Kingdom
+        }
+
+        // POLAND — didn't exist as state 1795-1918 (partitioned)
+        if year < 1918 {
+            countries.removeAll { $0.id == "POL" }
+        }
+
+        // HUNGARY — independent 1918, then various forms
+        if year < 1918 {
+            countries.removeAll { $0.id == "HUN" }
+            // Part of Austria-Hungary
+        }
+
+        // CZECH REPUBLIC, SLOVAKIA — handled by Czechoslovakia block, but also:
+        // Before 1918, part of Austria-Hungary
+        if year < 1918 {
+            countries.removeAll { ["CZE","SVK"].contains($0.id) }
+            // Czechoslovakia block adds CSK for 1918-1993
+        }
+
+        // ROMANIA — roughly independent 1881, but various forms before
+        if year < 1881 {
+            countries.removeAll { $0.id == "ROU" }
+        }
+
+        // BULGARIA — independent 1908 (was Ottoman/autonomous before)
+        if year < 1908 {
+            countries.removeAll { $0.id == "BGR" }
+        }
+
+        // GREECE — independence from Ottoman Empire ~1829 (recognized 1830)
+        if year < 1829 {
+            countries.removeAll { $0.id == "GRC" }
+            // Part of Ottoman Empire
+        }
+
+        // ALBANIA — independent 1912
+        if year < 1912 {
+            countries.removeAll { $0.id == "ALB" }
+        }
+
+        // SERBIA (modern) — handled by Yugoslavia block for 1918-1992
+        // Pre-1918: Kingdom of Serbia existed from 1882
+        // For simplicity: remove pre-1882
+        if year < 1882 {
+            countries.removeAll { $0.id == "SRB" }
+        }
+
+        // MOLDOVA — Soviet Moldova 1940-1991 (in removeSoviet), independent 1991
+        // Before 1918: part of Romania (Bessarabia), 1918-1940 part of Romania
+
+        // UKRAINE, BELARUS — in removeSoviet (part of USSR pre-1991)
+        // Already handled
+
+        // AUSTRALIA — Federation 1901 (before: separate British colonies)
+        if year < 1901 {
+            countries.removeAll { $0.id == "AUS" }
+        }
+
+        // NEW ZEALAND — Dominion 1907, before that British colony
+        if year < 1907 {
+            countries.removeAll { $0.id == "NZL" }
+        }
+
+        // PAPUA NEW GUINEA — independent 1975 (German/Australian territory before)
+        if year < 1975 {
+            countries.removeAll { $0.id == "PNG" }
+        }
+
+        // CANADA — Confederation 1867 (British colonies before)
+        if year < 1867 {
+            countries.removeAll { $0.id == "CAN" }
+        }
+
+        // MEXICO — independent from Spain 1821
+        if year < 1821 {
+            countries.removeAll { $0.id == "MEX" }
+        }
+
+        // CENTRAL AMERICA — Spanish colonies until ~1821
+        if year < 1821 {
+            countries.removeAll { ["GTM","HND","SLV","NIC","CRI","PAN","BLZ"].contains($0.id) }
+        }
+
+        // CUBA — Spanish until 1898, American protectorate 1898-1902
+        if year < 1898 {
+            countries.removeAll { $0.id == "CUB" }
+        }
+
+        // HAITI, DOMINICAN REPUBLIC — complex history
+        if year < 1804 {
+            countries.removeAll { $0.id == "HTI" }  // French Saint-Domingue
+        }
+        if year < 1844 {
+            countries.removeAll { $0.id == "DOM" }  // Part of Haiti until 1844
+        }
+
+        // JAMAICA and other Caribbean islands — British colonies
+        // Keep them as territories of their colonial power — remove pre-independence
+        if year < 1962 {
+            countries.removeAll { ["JAM","TTO"].contains($0.id) }
+        }
+        if year < 1966 {
+            countries.removeAll { ["BRB","GUY"].contains($0.id) }
+        }
+        if year < 1978 {
+            countries.removeAll { ["DMA","KNA","LCA","VCT","ATG","GRD","BHS"].contains($0.id) }
+        }
+
+        // BRAZIL — independent from Portugal 1822
+        if year < 1822 {
+            countries.removeAll { $0.id == "BRA" }
+        }
+
+        // SOUTH AMERICAN COUNTRIES — Spanish colonies until ~1821
+        let spanishSouthAmerica = ["ARG","CHL","COL","VEN","PER","ECU","BOL","PRY","URY"]
+        if year < 1821 {
+            countries.removeAll { spanishSouthAmerica.contains($0.id) }
+        }
+
+        // IRAQ — Ottoman Mesopotamia until 1920, British Mandate 1920-1932
+        if year < 1920 {
+            countries.removeAll { $0.id == "IRQ" }
+            // Under Ottoman Empire (already shown)
+        } else if year < 1932 {
+            countries.removeAll { $0.id == "IRQ" }
+            countries.append(iraqMandiate())
+        }
+
+        // SYRIA — Ottoman until 1920, French Mandate 1920-1946
+        if year < 1920 {
+            countries.removeAll { $0.id == "SYR" }
+        } else if year < 1946 {
+            countries.removeAll { $0.id == "SYR" }
+            countries.append(syriaMandate())
+        }
+
+        // LEBANON — Ottoman until 1920, French Mandate 1920-1943
+        if year < 1943 {
+            countries.removeAll { $0.id == "LBN" }
+        }
+
+        // OMAN — The Sultanate of Oman existed continuously; keep it
+        // YEMEN — Complex history; unified 1990 from North/South Yemen
+        if year < 1918 {
+            countries.removeAll { $0.id == "YEM" }
+            // Under Ottoman suzerainty or imamate
+        }
+
+        // EGYPT — Ottoman/British until 1922 (nominal independence)
+        // Egypt had continuous existence; keep it but note colonial status
+        // via adjustCountriesForEra
+
+        // LIBYA — Ottoman until 1911, Italian Colony 1911-1951
+        if year < 1951 {
+            countries.removeAll { $0.id == "LBY" }
+        }
+
+        // ALGERIA — French Algeria 1830-1962 (already filtered via postColonialAfrica pre-1960)
+        // Morocco — French Protectorate 1912-1956 (filtered pre-1960)
+        // Tunisia — French Protectorate 1881-1956 (filtered pre-1960)
+
+        // SOUTH AFRICA — Union of South Africa 1910 (before: British colonies)
+        if year < 1910 {
+            countries.removeAll { $0.id == "ZAF" }
+        }
+
         // NOTE: Nuclear status cleanup is handled in GameState.adjustCountriesForEra()
         // after conversion to Country objects, where direct mutation is safe.
 
-        // Many African nations gained independence 1960s
-        // Remove not-yet-independent nations
+        // Remove countries whose yearEnd has passed
         countries = countries.filter { c in
             guard let end = c.yearEnd else { return true }
             return year <= end
@@ -972,6 +1288,170 @@ struct WorldCountriesDatabase {
             mil:90,aggr:80,stab:60,
             nuke:year < 1949 ? .none : .declared,
             yearEnd:1991)
+    }
+
+    // MARK: - Major Power Historical Forms
+
+    // ─── Turkey / Ottoman Empire ─────────────────────────────────────────────
+
+    static func ottomanEmpire(year: Int) -> CountryTemplate {
+        let gdp: Double = year < 1800 ? 80 : year < 1870 ? 120 : year < 1900 ? 200 : 150
+        let pop: Double = year < 1800 ? 25 : year < 1870 ? 30 : year < 1900 ? 35 : 20
+        let mil: Int    = year < 1800 ? 75 : year < 1870 ? 65 : year < 1900 ? 55 : 45
+        let stab: Int   = year < 1800 ? 65 : year < 1870 ? 58 : 40  // declining
+        return CountryTemplate("TUR","Ottoman Empire",flag:"🇹🇷",capital:"Constantinople",
+            lat:41.0082,lon:28.9784,region:.middleEast,gov:.monarchy,align:.nonAligned,
+            gdp:gdp,pop:pop,mil:mil,aggr:55,stab:stab,nuke:.none,yearEnd:1923)
+    }
+
+    // ─── Iran / Persia ───────────────────────────────────────────────────────
+
+    static func persia(year: Int) -> CountryTemplate {
+        let gdp: Double = year < 1800 ? 30 : year < 1900 ? 50 : 80
+        let mil: Int    = year < 1800 ? 55 : year < 1900 ? 45 : 38
+        return CountryTemplate("IRN","Persia",flag:"🇮🇷",capital:"Tehran",
+            lat:35.6892,lon:51.3890,region:.middleEast,gov:.monarchy,align:.nonAligned,
+            gdp:gdp,pop:year < 1900 ? 10 : 15,mil:mil,aggr:40,stab:55,nuke:.none,yearEnd:1935)
+    }
+
+    // ─── Thailand / Siam ─────────────────────────────────────────────────────
+
+    static func siam(year: Int) -> CountryTemplate {
+        CountryTemplate("THA","Siam",flag:"🇹🇭",capital:"Bangkok",
+            lat:13.7563,lon:100.5018,region:.asia,gov:.monarchy,align:.nonAligned,
+            gdp:year < 1900 ? 15 : 30,pop:year < 1900 ? 8 : 12,
+            mil:35,aggr:25,stab:68,nuke:.none,yearEnd:1939)
+    }
+
+    // ─── Japan ───────────────────────────────────────────────────────────────
+
+    static func feudalJapan(year: Int) -> CountryTemplate {
+        CountryTemplate("JPN","Japan (Edo Period)",flag:"🇯🇵",capital:"Edo",
+            lat:35.6762,lon:139.6503,region:.asia,gov:.military,align:.nonAligned,
+            gdp:year < 1800 ? 20 : 25,pop:30,mil:40,aggr:20,stab:72,nuke:.none,yearEnd:1868)
+    }
+
+    static func imperialJapan(year: Int) -> CountryTemplate {
+        let gdp: Double = year < 1900 ? 60 : year < 1920 ? 150 : year < 1940 ? 350 : 500
+        let mil: Int    = year < 1900 ? 55 : year < 1920 ? 65 : year < 1940 ? 80 : 90
+        let aggr: Int   = year < 1900 ? 40 : year < 1930 ? 55 : 85  // increasingly militaristic
+        return CountryTemplate("JPN","Empire of Japan",flag:"🇯🇵",capital:"Tokyo",
+            lat:35.6762,lon:139.6503,region:.asia,gov:.military,align:.nonAligned,
+            gdp:gdp,pop:year < 1900 ? 40 : year < 1940 ? 70 : 74,
+            mil:mil,aggr:aggr,stab:65,nuke:.none,yearEnd:1945)
+    }
+
+    // ─── Korea ───────────────────────────────────────────────────────────────
+
+    static func joseonKorea(year: Int) -> CountryTemplate {
+        CountryTemplate("KOR","Joseon Korea",flag:"🇰🇷",capital:"Hanseong",
+            lat:37.5665,lon:126.9780,region:.asia,gov:.monarchy,align:.nonAligned,
+            gdp:10,pop:year < 1800 ? 10 : 15,mil:30,aggr:15,stab:60,nuke:.none,yearEnd:1897)
+    }
+
+    static func koreanEmpire() -> CountryTemplate {
+        CountryTemplate("KOR","Korean Empire",flag:"🇰🇷",capital:"Hanseong",
+            lat:37.5665,lon:126.9780,region:.asia,gov:.monarchy,align:.nonAligned,
+            gdp:12,pop:12,mil:25,aggr:20,stab:42,nuke:.none,yearEnd:1910)
+    }
+
+    // ─── China ───────────────────────────────────────────────────────────────
+
+    static func qingEmpire(year: Int) -> CountryTemplate {
+        let gdp: Double = year < 1800 ? 500 : year < 1850 ? 450 : 250  // declining
+        let mil: Int    = year < 1800 ? 75 : year < 1850 ? 65 : 45
+        let stab: Int   = year < 1800 ? 72 : year < 1850 ? 60 : 35  // Taiping Rebellion etc.
+        return CountryTemplate("CHN","Qing Empire",flag:"🇨🇳",capital:"Beijing",
+            lat:39.9042,lon:116.4074,region:.asia,gov:.monarchy,align:.nonAligned,
+            gdp:gdp,pop:year < 1800 ? 300 : year < 1860 ? 400 : 420,
+            mil:mil,aggr:30,stab:stab,nuke:.none,yearEnd:1912)
+    }
+
+    // ─── India ───────────────────────────────────────────────────────────────
+
+    static func britishIndia(year: Int) -> CountryTemplate {
+        CountryTemplate("IND","British India",flag:"🇮🇳",capital:"Calcutta",
+            lat:22.5726,lon:88.3639,region:.asia,gov:.authoritarian,align:.western,
+            gdp:year < 1900 ? 80 : year < 1920 ? 120 : 180,
+            pop:year < 1900 ? 250 : year < 1920 ? 290 : 350,
+            mil:50,aggr:20,stab:55,nuke:.none,yearEnd:1947)
+    }
+
+    static func mughalIndia(year: Int) -> CountryTemplate {
+        CountryTemplate("IND","Mughal Empire",flag:"🇮🇳",capital:"Delhi",
+            lat:28.6139,lon:77.2090,region:.asia,gov:.monarchy,align:.nonAligned,
+            gdp:year < 1750 ? 350 : 200,pop:year < 1750 ? 150 : 170,
+            mil:65,aggr:35,stab:year < 1750 ? 65 : 40,nuke:.none,yearEnd:1858)
+    }
+
+    // ─── Indonesia ───────────────────────────────────────────────────────────
+
+    static func dutchEastIndies(year: Int) -> CountryTemplate {
+        CountryTemplate("IDN","Dutch East Indies",flag:"🇮🇩",capital:"Batavia",
+            lat:-6.2088,lon:106.8456,region:.asia,gov:.authoritarian,align:.western,
+            gdp:year < 1900 ? 40 : 80,pop:year < 1900 ? 35 : 70,
+            mil:25,aggr:20,stab:50,nuke:.none,yearEnd:1945)
+    }
+
+    static func indonesiaDeclared() -> CountryTemplate {
+        CountryTemplate("IDN","Indonesia (Declared)",flag:"🇮🇩",capital:"Jakarta",
+            lat:-6.2088,lon:106.8456,region:.asia,gov:.republic,align:.nonAligned,
+            gdp:50,pop:80,mil:30,aggr:35,stab:42,nuke:.none,yearEnd:1949)
+    }
+
+    // ─── Myanmar / Burma ─────────────────────────────────────────────────────
+
+    static func britishBurma(year: Int) -> CountryTemplate {
+        CountryTemplate("MMR","British Burma",flag:"🇲🇲",capital:"Rangoon",
+            lat:16.8661,lon:96.1951,region:.asia,gov:.authoritarian,align:.western,
+            gdp:20,pop:year < 1920 ? 12 : 17,mil:20,aggr:15,stab:52,nuke:.none,yearEnd:1948)
+    }
+
+    // ─── Philippines ─────────────────────────────────────────────────────────
+
+    static func spanishPhilippines(year: Int) -> CountryTemplate {
+        CountryTemplate("PHL","Spanish Philippines",flag:"🇵🇭",capital:"Manila",
+            lat:14.5995,lon:120.9842,region:.asia,gov:.authoritarian,align:.nonAligned,
+            gdp:15,pop:year < 1800 ? 3 : 8,mil:20,aggr:20,stab:55,nuke:.none,yearEnd:1898)
+    }
+
+    static func americanPhilippines(year: Int) -> CountryTemplate {
+        CountryTemplate("PHL","Philippines (US Territory)",flag:"🇵🇭",capital:"Manila",
+            lat:14.5995,lon:120.9842,region:.asia,gov:.republic,align:.western,
+            gdp:25,pop:year < 1920 ? 10 : 18,mil:22,aggr:20,stab:58,nuke:.none,yearEnd:1946)
+    }
+
+    // ─── Malaysia ────────────────────────────────────────────────────────────
+
+    static func malayanFederation() -> CountryTemplate {
+        CountryTemplate("MYS","Federation of Malaya",flag:"🇲🇾",capital:"Kuala Lumpur",
+            lat:3.1390,lon:101.6869,region:.asia,gov:.monarchy,align:.western,
+            gdp:30,pop:8,mil:25,aggr:15,stab:68,nuke:.none,yearEnd:1963)
+    }
+
+    // ─── Italy (pre-unification) ─────────────────────────────────────────────
+
+    static func italianStates(year: Int) -> CountryTemplate {
+        CountryTemplate("ITA","Italian States",flag:"🇮🇹",capital:"Rome",
+            lat:41.9028,lon:12.4964,region:.europe,gov:.monarchy,align:.western,
+            gdp:year < 1800 ? 50 : 80,pop:year < 1800 ? 17 : 22,
+            mil:45,aggr:25,stab:52,nuke:.none,yearEnd:1861)
+    }
+
+    // ─── Iraq ────────────────────────────────────────────────────────────────
+
+    static func iraqMandiate() -> CountryTemplate {
+        CountryTemplate("IRQ","Iraq (British Mandate)",flag:"🇮🇶",capital:"Baghdad",
+            lat:33.3152,lon:44.3661,region:.middleEast,gov:.monarchy,align:.western,
+            gdp:10,pop:3,mil:20,aggr:35,stab:40,nuke:.none,yearEnd:1932)
+    }
+
+    // ─── Syria ───────────────────────────────────────────────────────────────
+
+    static func syriaMandate() -> CountryTemplate {
+        CountryTemplate("SYR","Syria (French Mandate)",flag:"🇸🇾",capital:"Damascus",
+            lat:33.5102,lon:36.2913,region:.middleEast,gov:.authoritarian,align:.western,
+            gdp:8,pop:3,mil:15,aggr:30,stab:38,nuke:.none,yearEnd:1946)
     }
 
     // MARK: - German Historical Eras

@@ -606,6 +606,144 @@ class GameState: ObservableObject, Codable {
                     )
                 }
 
+            // ── Myanmar ──────────────────────────────────────────────────────
+            case "MMR":
+                // "Burma" until 1989 when military junta renamed it Myanmar
+                if year < 1989 {
+                    country = renamedCountry(country, name: "Burma")
+                }
+
+            // ── Vietnam (unified) ─────────────────────────────────────────────
+            case "VNM":
+                if year < 1954 {
+                    country = adjustedCountry(country,
+                        name: "French Indochina",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 5,
+                        military: 25, gdp: 0.008,
+                        alignment: .western, government: .authoritarian
+                    )
+                }
+
+            // ── Egypt ─────────────────────────────────────────────────────────
+            case "EGY":
+                if year < 1922 {
+                    country = adjustedCountry(country,
+                        name: "British Egypt",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 30, gdp: 0.020,
+                        alignment: .western, government: .authoritarian
+                    )
+                } else if year < 1953 {
+                    country = adjustedCountry(country,
+                        name: "Kingdom of Egypt",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 10,
+                        military: 38, gdp: 0.04,
+                        alignment: .nonAligned, government: .monarchy
+                    )
+                }
+
+            // ── Ethiopia ──────────────────────────────────────────────────────
+            case "ETH":
+                if year < 1896 {
+                    country = renamedCountry(country, name: "Abyssinia")
+                } else if year >= 1936 && year < 1941 {
+                    // Italian occupation 1936-1941
+                    country = adjustedCountry(country,
+                        name: "Italian East Africa",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 15, gdp: 0.005,
+                        alignment: .nonAligned, government: .military
+                    )
+                } else if year < 1975 {
+                    country = renamedCountry(country, name: "Abyssinia")
+                }
+
+            // ── Sudan ─────────────────────────────────────────────────────────
+            case "SDN":
+                if year < 1956 {
+                    country = adjustedCountry(country,
+                        name: "Anglo-Egyptian Sudan",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 15, gdp: 0.003,
+                        alignment: .western, government: .military
+                    )
+                }
+
+            // ── Morocco ───────────────────────────────────────────────────────
+            case "MAR":
+                if year >= 1912 && year < 1956 {
+                    country = adjustedCountry(country,
+                        name: "French Morocco",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 20, gdp: 0.015,
+                        alignment: .western, government: .authoritarian
+                    )
+                }
+
+            // ── Algeria ───────────────────────────────────────────────────────
+            case "DZA":
+                if year >= 1830 && year < 1962 {
+                    country = adjustedCountry(country,
+                        name: "French Algeria",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 15, gdp: 0.01,
+                        alignment: .western, government: .authoritarian
+                    )
+                }
+
+            // ── Tunisia ───────────────────────────────────────────────────────
+            case "TUN":
+                if year >= 1881 && year < 1956 {
+                    country = adjustedCountry(country,
+                        name: "French Tunisia",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 15, gdp: 0.008,
+                        alignment: .western, government: .authoritarian
+                    )
+                }
+
+            // ── Congo (DRC) ───────────────────────────────────────────────────
+            case "COD":
+                if year < 1960 {
+                    country = adjustedCountry(country,
+                        name: "Belgian Congo",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 10, gdp: 0.005,
+                        alignment: .western, government: .authoritarian
+                    )
+                } else if year < 1971 {
+                    country = renamedCountry(country, name: "Congo-Léopoldville")
+                }
+
+            // ── Zimbabwe ──────────────────────────────────────────────────────
+            case "ZWE":
+                if year < 1965 {
+                    country = adjustedCountry(country,
+                        name: "Southern Rhodesia",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 5,
+                        military: 25, gdp: 0.008,
+                        alignment: .western, government: .authoritarian
+                    )
+                } else if year < 1980 {
+                    country = adjustedCountry(country,
+                        name: "Rhodesia",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 10,
+                        military: 30, gdp: 0.012,
+                        alignment: .nonAligned, government: .authoritarian
+                    )
+                }
+
+            // ── Namibia ───────────────────────────────────────────────────────
+            case "NAM":
+                if year < 1990 {
+                    country = adjustedCountry(country,
+                        name: "South West Africa",
+                        nukes: 0, icbm: 0, slbm: 0, bombers: 0,
+                        military: 10, gdp: 0.003,
+                        alignment: .western, government: .authoritarian
+                    )
+                }
+
             default:
                 // Countries that didn't exist yet get reduced capabilities
                 if year < 1991 {

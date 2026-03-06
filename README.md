@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.6.5
+# 🏛️ GTNW - Global Thermal Nuclear War v1.7.0
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,15 +16,43 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.6.5
+## 🆕 What's New in v1.7.0
 
-**Historical accuracy + gameplay depth** — five features across four areas.
+**Every country in the world now shows its historically correct name and existence for the era being played.**
 
-### Nuclear Weapons No Longer Appear in the 1800s
-AI countries (Iran, Afghanistan, etc.) were building nuclear weapons in the 1840s because the build-nukes code had no era check. Fixed — the nuclear age begins in 1945, regardless of how many turns you play.
+### Complete Historical Country Coverage
 
-### Correct Country Names for Each Era
-- **Germany**: German Confederation (pre-1871) → German Empire (1871-1918) → Weimar Republic (1918-1933) → Nazi Germany (1933-1945) → West/East Germany (1945-1990) → Germany (1990+)
+| Country | Change |
+|---------|--------|
+| Turkey | Ottoman Empire (pre-1923) |
+| Iran | Persia (pre-1935) |
+| Thailand | Siam (pre-1939) |
+| Japan | Empire of Japan 1868–1945, Edo Period pre-1868 |
+| Korea | Joseon (pre-1897), Korean Empire (1897-1910), Japanese (1910-1945) |
+| China | Qing Empire (pre-1912) |
+| India | British India (1858-1947), Mughal Empire (pre-1858) |
+| Indonesia | Dutch East Indies (pre-1945) |
+| Myanmar | Burma (pre-1989), British Burma (pre-1948) |
+| Philippines | Spanish Philippines (pre-1898), US Territory (1898-1946) |
+| Malaysia | Federation of Malaya (1957-1963) |
+| Vietnam | French Indochina (pre-1954) |
+| Italy | Italian States (pre-1861) |
+| Germany | German Confederation → German Empire → Weimar → Nazi Germany → Split → Unified |
+| Iraq | Removed pre-1920, British Mandate 1920-1932 |
+| Syria | Removed pre-1946 (Ottoman/French mandate) |
+| Lebanon | Removed pre-1943 |
+| Egypt | British Egypt (pre-1922), Kingdom of Egypt (1922-1953) |
+| Ethiopia | Abyssinia (pre-1975), Italian East Africa during occupation (1936-1941) |
+| Algeria/Morocco/Tunisia | Named as French colonial territories until independence |
+| Congo DRC | Belgian Congo (pre-1960) |
+| Zimbabwe | Southern Rhodesia → Rhodesia → Zimbabwe |
+| Namibia | South West Africa (pre-1990) |
+| Sudan | Anglo-Egyptian Sudan (pre-1956) |
+
+**Countries that simply didn't exist yet are removed from the map:**
+- Belgium (pre-1830), Norway (pre-1905), Finland (pre-1917), Iceland (pre-1944), Ireland (pre-1922), Poland (pre-1918), Hungary/Czech/Slovak (pre-1918 as Austria-Hungary), Romania (pre-1881), Bulgaria (pre-1908), Greece (pre-1829), Albania (pre-1912), Australia (pre-1901), New Zealand (pre-1907), Canada (pre-1867), Mexico and Central America (pre-1821), most of South America (pre-1821), Brazil (pre-1822), Caribbean islands (pre-independence dates), Cambodia (pre-1953), Laos (pre-1954), Malaysia (pre-1957), Mongolia (pre-1921), Papua New Guinea (pre-1975), South Africa (pre-1910), Libya (pre-1951), Jamaica/Trinidad (pre-1962), and many more.
+
+---
 - **Vietnam**: No longer splits into North/South before 1954 — the split only applies to the actual 1954-1975 period
 - Additional filtering applied to countries that didn't exist in the relevant era
 
