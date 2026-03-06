@@ -67,18 +67,76 @@ struct MilitaryAllianceSystem {
         return members
     }
 
+    // MARK: - Non-NATO/Warsaw Regional Alliances
+
+    static func cstoMembers(year: Int) -> Set<String> {
+        guard year >= 2002 else { return [] }
+        return ["RUS","BLR","ARM","KAZ","KGZ","TJK"]
+    }
+
+    static func scoMembers(year: Int) -> Set<String> {
+        guard year >= 2001 else { return [] }
+        var m: Set<String> = ["CHN","RUS","KAZ","KGZ","TJK","UZB"]
+        if year >= 2017 { m.formUnion(["IND","PAK"]) }
+        if year >= 2023 { m.insert("IRN") }
+        return m
+    }
+
+    static func arabLeagueMembers(year: Int) -> Set<String> {
+        guard year >= 1945 else { return [] }
+        return ["EGY","SYR","JOR","IRQ","SAU","LBN","YEM","LBY","SDN","MAR",
+                "TUN","KWT","DZA","ARE","QAT","BHR","OMN","PSE","SOM","DJI","COM","MRT"]
+    }
+
+    static func aseanMembers(year: Int) -> Set<String> {
+        guard year >= 1967 else { return [] }
+        var m: Set<String> = ["IDN","MYS","PHL","SGP","THA"]
+        if year >= 1984 { m.insert("BRN") }
+        if year >= 1995 { m.insert("VNM") }
+        if year >= 1997 { m.formUnion(["MMR","LAO"]) }
+        if year >= 1999 { m.insert("KHM") }
+        return m
+    }
+
+    static func africanUnionMembers(year: Int) -> Set<String> {
+        guard year >= 2002 else { return [] }
+        return ["DZA","AGO","BEN","BWA","BFA","BDI","CPV","CMR","CAF","TCD","COM",
+                "COD","DJI","EGY","GNQ","ERI","SWZ","ETH","GAB","GMB","GHA","GIN",
+                "GNB","KEN","LSO","LBR","LBY","MDG","MWI","MLI","MRT","MUS","MAR",
+                "MOZ","NAM","NER","NGA","RWA","STP","SEN","SYC","SLE","SOM","ZAF",
+                "SSD","SDN","TZA","TGO","TUN","UGA","ZMB","ZWE","COG","CIV"]
+    }
+
+    static func aukusMembers(year: Int) -> Set<String> {
+        guard year >= 2021 else { return [] }
+        return ["AUS","GBR","USA"]
+    }
+
+    /// Returns regional alliance info for a country: (name, members, responseStrength 0-1).
+    /// Strength: AUKUS 0.7, CSTO 0.6, SCO 0.3, Arab League 0.25, ASEAN 0.2, AU 0.15
+    static func regionalAlliance(for id: String, year: Int) -> (name: String, members: Set<String>, strength: Double)? {
+        if cstoMembers(year: year).contains(id)        { return ("CSTO", cstoMembers(year: year), 0.6) }
+        if aukusMembers(year: year).contains(id)       { return ("AUKUS", aukusMembers(year: year), 0.7) }
+        if scoMembers(year: year).contains(id)         { return ("SCO", scoMembers(year: year), 0.3) }
+        if arabLeagueMembers(year: year).contains(id)  { return ("Arab League", arabLeagueMembers(year: year), 0.25) }
+        if aseanMembers(year: year).contains(id)       { return ("ASEAN", aseanMembers(year: year), 0.2) }
+        if africanUnionMembers(year: year).contains(id){ return ("African Union", africanUnionMembers(year: year), 0.15) }
+        return nil
+    }
+
     // MARK: - Alliance Name
 
     static func allianceName(year: Int, forCountryID countryID: String) -> String? {
-        if natoMembers(year: year).contains(countryID) { return "NATO" }
-        if warsawPactMembers(year: year).contains(countryID) { return "Warsaw Pact" }
+        if natoMembers(year: year).contains(countryID)      { return "NATO" }
+        if warsawPactMembers(year: year).contains(countryID){ return "Warsaw Pact" }
+        if let r = regionalAlliance(for: countryID, year: year) { return r.name }
         return nil
     }
 
     // MARK: - Article 5 / Collective Defense Check
 
-    /// Checks if attacking `targetID` triggers collective defense for the target's alliance.
-    /// Returns a list of country IDs that should declare war on the aggressor.
+    /// Checks if attacking `targetID` triggers collective defense.
+    /// NATO/Warsaw: full Article 5. Regional alliances: partial solidarity.
     static func collectiveDefenseResponse(
         aggressor: String,
         target: String,
@@ -86,27 +144,43 @@ struct MilitaryAllianceSystem {
         allCountries: [Country]
     ) -> CollectiveDefenseResult {
 
-        let natoSet = natoMembers(year: year)
-        let warsawSet = warsawPactMembers(year: year)
+        let natoSet    = natoMembers(year: year)
+        let warsawSet  = warsawPactMembers(year: year)
+        let existingIDs = Set(allCountries.map { $0.id })
 
-        // Is the target in an alliance?
-        let targetInNATO = natoSet.contains(target)
+        let targetInNATO   = natoSet.contains(target)
         let targetInWarsaw = warsawSet.contains(target)
 
+        // ── Regional (non-NATO/Warsaw) solidarity ───────────────────────────
+        if !targetInNATO && !targetInWarsaw {
+            if let regional = regionalAlliance(for: target, year: year),
+               !regional.members.contains(aggressor) {
+                let maxResponders = max(1, Int(Double(regional.members.count) * regional.strength))
+                let responders = regional.members
+                    .filter { $0 != target && $0 != aggressor && existingIDs.contains($0) }
+                    .sorted()
+                    .prefix(maxResponders)
+                    .map { $0 }
+                if !responders.isEmpty {
+                    return CollectiveDefenseResult(
+                        triggered: true,
+                        allianceName: "\(regional.name) Solidarity",
+                        responders: responders
+                    )
+                }
+            }
+            return CollectiveDefenseResult(triggered: false, allianceName: nil, responders: [])
+        }
+
+        // ── NATO / Warsaw Pact full collective defense ───────────────────────
         guard targetInNATO || targetInWarsaw else {
             return CollectiveDefenseResult(triggered: false, allianceName: nil, responders: [])
         }
 
-        // Don't trigger if the aggressor is also in the same alliance (internal dispute)
-        if targetInNATO && natoSet.contains(aggressor) {
-            return CollectiveDefenseResult(triggered: false, allianceName: nil, responders: [])
-        }
-        if targetInWarsaw && warsawSet.contains(aggressor) {
-            return CollectiveDefenseResult(triggered: false, allianceName: nil, responders: [])
-        }
+        if targetInNATO   && natoSet.contains(aggressor)   { return CollectiveDefenseResult(triggered: false, allianceName: nil, responders: []) }
+        if targetInWarsaw && warsawSet.contains(aggressor)  { return CollectiveDefenseResult(triggered: false, allianceName: nil, responders: []) }
 
-        // Identify which alliance was attacked
-        let allianceName = targetInNATO ? "NATO Article 5" : "Warsaw Pact Treaty"
+        let allianceName    = targetInNATO ? "NATO Article 5" : "Warsaw Pact Treaty"
         let allianceMembers = targetInNATO ? natoSet : warsawSet
 
         // All alliance members except the target itself and any already at war with each other

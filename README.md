@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.8.0
+# 🏛️ GTNW - Global Thermal Nuclear War v1.8.1
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,7 +16,28 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.8.0
+## 🆕 What's New in v1.8.1
+
+**Non-NATO/Warsaw alliances** + CIA World Factbook integration.
+
+### New: CSTO, SCO, Arab League, ASEAN, African Union, AUKUS
+
+Six additional alliance systems now trigger **partial collective defense** when member states are attacked:
+
+| Alliance | Members | Trigger Strength | Founded |
+|----------|---------|-----------------|---------|
+| **AUKUS** | Australia, UK, USA | 70% | 2021 |
+| **CSTO** | Russia, Belarus, Armenia, Kazakhstan, Kyrgyzstan, Tajikistan | 60% | 2002 |
+| **SCO** | China, Russia, India, Pakistan, Central Asia, Iran | 30% | 2001 |
+| **Arab League** | 22 Arab nations | 25% | 1945 |
+| **ASEAN** | 10 Southeast Asian nations | 20% | 1967 |
+| **African Union** | 55 African nations | 15% | 2002 |
+
+Attacking a CSTO member draws Russia and its allies into the conflict. Attacking a ASEAN state brings limited but real diplomatic/military pressure. Each alliance's response is proportional to its historical collective defense commitment — AUKUS is nearly as strong as NATO; the African Union is largely political.
+
+---
+
+### CIA World Factbook Integration (also in this release)
 
 **CIA World Factbook integration** — Tier 1 & 2 data for all 195 countries, driving real gameplay mechanics.
 
