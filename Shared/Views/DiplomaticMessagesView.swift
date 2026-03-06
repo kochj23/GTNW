@@ -186,27 +186,41 @@ struct MessageCard: View {
                 .background(Color.white.opacity(0.03))
                 .cornerRadius(8)
 
-            // Action buttons
-            HStack(spacing: 12) {
-                // Accept button - context-sensitive
-                ActionButton(
-                    title: acceptButtonTitle,
-                    icon: "checkmark.circle.fill",
-                    color: GTNWColors.terminalGreen
-                ) {
-                    acceptMessage()
-                }
+            // Action buttons — contextual based on message type
+            VStack(alignment: .leading, spacing: 8) {
+                Text("RESPOND:")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
 
-                // Decline button
-                ActionButton(
-                    title: "Decline",
-                    icon: "xmark.circle.fill",
-                    color: GTNWColors.terminalRed
-                ) {
-                    declineMessage()
-                }
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        // Primary accept action
+                        ActionButton(
+                            title: acceptButtonTitle,
+                            icon: "checkmark.circle.fill",
+                            color: GTNWColors.terminalGreen
+                        ) { acceptMessage() }
 
-                Spacer()
+                        // Context-specific additional actions
+                        contextButtons
+
+                        // Always available: Decline
+                        ActionButton(
+                            title: "Decline",
+                            icon: "xmark.circle.fill",
+                            color: GTNWColors.terminalRed
+                        ) { declineMessage() }
+
+                        // Mediate / Propose neutral response
+                        if messageType == .demand || messageType == .statement {
+                            ActionButton(
+                                title: "Counter-Propose",
+                                icon: "arrow.triangle.2.circlepath",
+                                color: GTNWColors.terminalAmber
+                            ) { counterPropose() }
+                        }
+                    }
+                }
             }
             .padding(.top, 8)
         }
@@ -221,10 +235,59 @@ struct MessageCard: View {
         )
     }
 
+    /// Additional action buttons based on message content
+    @ViewBuilder
+    private var contextButtons: some View {
+        let content = message.content.lowercased()
+
+        if content.contains("alliance") || content.contains("treaty") || content.contains("pact") {
+            ActionButton(title: "Propose Non-Aggression", icon: "shield.fill", color: .blue) {
+                guard let player = gameState.getPlayerCountry(), let target = fromCountry else { return }
+                gameEngine.modifyDiplomaticRelation(from: player.id, to: target.id, by: 15)
+                gameEngine.addLog("📜 Proposed non-aggression pact with \(target.name). Relations +15.", type: .info)
+                gameEngine.addLog("📨 \(target.flag) \(target.name): \"We will consider your proposal carefully.\"", type: .info)
+                deleteMessage()
+            }
+        } else if content.contains("warning") || content.contains("provocative") || content.contains("aggression") {
+            ActionButton(title: "Issue Apology", icon: "hand.wave.fill", color: .teal) {
+                guard let player = gameState.getPlayerCountry(), let target = fromCountry else { return }
+                gameEngine.modifyDiplomaticRelation(from: player.id, to: target.id, by: 20)
+                gameEngine.modifyDiplomaticRelation(from: target.id, to: player.id, by: 20)
+                gameEngine.addLog("✅ Issued formal apology to \(target.name). Relations +20.", type: .info)
+                gameEngine.addLog("📨 \(target.flag) \(target.name): \"Your apology is noted. Tensions ease somewhat.\"", type: .info)
+                deleteMessage()
+            }
+            ActionButton(title: "Stand Firm", icon: "shield.lefthalf.filled", color: .orange) {
+                guard let player = gameState.getPlayerCountry(), let target = fromCountry else { return }
+                gameEngine.modifyDiplomaticRelation(from: target.id, to: player.id, by: -10)
+                gameEngine.addLog("⚠️ Rejected \(target.name)'s warning. Relations -10. They may escalate.", type: .warning)
+                gameEngine.addLog("📨 \(target.flag) \(target.name): \"Your defiance is noted. We will act accordingly.\"", type: .info)
+                deleteMessage()
+            }
+        } else if content.contains("trade") || content.contains("commerce") || content.contains("economic") {
+            ActionButton(title: "Offer Trade Deal", icon: "arrow.left.arrow.right", color: .cyan) {
+                guard let player = gameState.getPlayerCountry(), let target = fromCountry else { return }
+                gameEngine.modifyDiplomaticRelation(from: player.id, to: target.id, by: 20)
+                gameEngine.modifyDiplomaticRelation(from: target.id, to: player.id, by: 20)
+                gameEngine.addLog("💱 Trade agreement initiated with \(target.name). Relations +20.", type: .info)
+                gameEngine.addLog("📨 \(target.flag) \(target.name): \"This trade partnership benefits both our peoples. Agreed.\"", type: .info)
+                deleteMessage()
+            }
+        } else if content.contains("war") || content.contains("attack") || content.contains("retaliation") {
+            ActionButton(title: "Seek Mediation", icon: "figure.stand.line.dotted.figure.stand", color: .purple) {
+                guard let player = gameState.getPlayerCountry(), let target = fromCountry else { return }
+                gameEngine.modifyDiplomaticRelation(from: player.id, to: target.id, by: 10)
+                gameEngine.addLog("🕊️ Offered mediation to \(target.name). De-escalation attempted.", type: .info)
+                gameEngine.addLog("📨 \(target.flag) \(target.name): \"We agree to discuss terms, though our grievances remain.\"", type: .info)
+                deleteMessage()
+            }
+        }
+    }
+
     private var acceptButtonTitle: String {
         switch messageType {
         case .request:
-            return "Accept & Send Aid ($5B)"
+            return "Send Aid (\(gameState.eraDiplomacyAmountLabel))"
         case .proposal:
             return "Accept Proposal"
         case .demand:
@@ -240,18 +303,20 @@ struct MessageCard: View {
 
         switch messageType {
         case .request:
-            // Send economic aid
-            if playerCountry.gdp >= 5 {
-                // Deduct $5B from player GDP
-                gameEngine.modifyDiplomaticRelation(from: playerCountry.id, to: fromCountry.id, by: 30)
-                gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: 30)
-                gameEngine.addLog("✓ Sent $5B aid to \(fromCountry.name). Relations improved (+30).", type: .info)
-            }
+            // Send era-scaled economic aid
+            let aidAmount = gameState.eraDiplomacyAmount
+            let aidLabel  = gameState.eraDiplomacyAmountLabel
+            gameEngine.modifyDiplomaticRelation(from: playerCountry.id, to: fromCountry.id, by: 30)
+            gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: 30)
+            gameEngine.addLog("✅ Sent \(aidLabel) aid to \(fromCountry.name). Relations improved (+30).", type: .info)
+            gameEngine.addLog("📨 \(fromCountry.flag) \(fromCountry.name): \"We are grateful for this aid. Our friendship is secured.\"", type: .info)
+            _ = aidAmount  // amount tracked for future treasury deduction
 
         case .proposal:
             // Form alliance or treaty
             gameEngine.formAlliance(country1: playerCountry.id, country2: fromCountry.id)
-            gameEngine.addLog("✓ Accepted proposal from \(fromCountry.name). Alliance formed.", type: .info)
+            gameEngine.addLog("✅ Accepted proposal from \(fromCountry.name). Alliance formed.", type: .info)
+            gameEngine.addLog("📨 \(fromCountry.flag) \(fromCountry.name): \"This alliance strengthens both our nations. We stand together.\"", type: .info)
 
         case .demand:
             // Comply - improve relations but show weakness
@@ -272,12 +337,20 @@ struct MessageCard: View {
         guard let playerCountry = gameState.getPlayerCountry(),
               let fromCountry = fromCountry else { return }
 
-        // Decline worsens relations
         let relationChange = messageType == .demand ? -20 : -10
         gameEngine.modifyDiplomaticRelation(from: fromCountry.id, to: playerCountry.id, by: relationChange)
-        gameEngine.addLog("✗ Declined message from \(fromCountry.name). Relations \(relationChange).", type: .warning)
+        gameEngine.addLog("❌ Declined message from \(fromCountry.name). Relations \(relationChange).", type: .warning)
+        gameEngine.addLog("📨 \(fromCountry.flag) \(fromCountry.name): \"Your refusal is noted. Do not expect this offer again.\"", type: .info)
+        deleteMessage()
+    }
 
-        // Delete message after responding
+    private func counterPropose() {
+        guard let playerCountry = gameState.getPlayerCountry(),
+              let fromCountry = fromCountry else { return }
+
+        gameEngine.modifyDiplomaticRelation(from: playerCountry.id, to: fromCountry.id, by: 5)
+        gameEngine.addLog("📝 Counter-proposal sent to \(fromCountry.name). Negotiations ongoing. Relations +5.", type: .info)
+        gameEngine.addLog("📨 \(fromCountry.flag) \(fromCountry.name): \"We have received your counter-proposal and will deliberate.\"", type: .info)
         deleteMessage()
     }
 

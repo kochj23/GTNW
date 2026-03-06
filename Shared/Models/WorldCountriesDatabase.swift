@@ -121,12 +121,30 @@ struct WorldCountriesDatabase {
         }
         // Post-1991: individual successor states already in allCountries()
 
-        // Germany: split until 1990
-        if year < 1990 {
+        // Germany — name and form changed significantly across eras
+        if year < 1871 {
+            // Pre-unification: German Confederation / Prussia dominates
+            countries.removeAll { $0.id == "DEU" }
+            countries.append(germanConfederation(year: year))
+        } else if year < 1918 {
+            // Wilhelmine German Empire (unified 1871, dissolved 1918)
+            countries.removeAll { $0.id == "DEU" }
+            countries.append(germanEmpire(year: year))
+        } else if year < 1933 {
+            // Weimar Republic (1918-1933)
+            countries.removeAll { $0.id == "DEU" }
+            countries.append(weimarGermany(year: year))
+        } else if year < 1945 {
+            // Nazi Germany / Third Reich (1933-1945)
+            countries.removeAll { $0.id == "DEU" }
+            countries.append(naziGermany(year: year))
+        } else if year < 1990 {
+            // Post-WWII split: West Germany + East Germany
             countries.removeAll { $0.id == "DEU" }
             countries.append(westGermany(year: year))
             countries.append(eastGermany(year: year))
         }
+        // 1990+: unified Germany (DEU) stays from allCountries()
 
         // Yugoslavia: unified until 1992
         if year < 1992 {
@@ -141,12 +159,15 @@ struct WorldCountriesDatabase {
             countries.append(czechoslovakia())
         }
 
-        // Vietnam: split until 1975
-        if year < 1975 {
+        // Vietnam: only split during the actual North/South period (1954-1975)
+        // Before 1954: unified Vietnam/French Indochina/Nguyen Dynasty
+        // After 1975: reunified Socialist Republic of Vietnam
+        if year >= 1954 && year < 1975 {
             countries.removeAll { $0.id == "VNM" }
             countries.append(northVietnam())
             countries.append(southVietnam())
         }
+        // Before 1954 or after 1975: VNM stays as unified Vietnam
 
         // Korea: always split (never unified)
         // North/South Korea always separate — already in allCountries()
@@ -951,6 +972,41 @@ struct WorldCountriesDatabase {
             mil:90,aggr:80,stab:60,
             nuke:year < 1949 ? .none : .declared,
             yearEnd:1991)
+    }
+
+    // MARK: - German Historical Eras
+
+    /// Pre-unification: loose confederation of 39 German states, Prussia dominant (1815-1871)
+    static func germanConfederation(year: Int) -> CountryTemplate {
+        let gdp: Double = year < 1850 ? 80 : 140
+        let pop: Double = year < 1850 ? 35 : 42
+        return CountryTemplate("DEU","German Confederation",flag:"🇩🇪",capital:"Frankfurt",
+            lat:50.1109,lon:8.6821,region:.europe,gov:.authoritarian,align:.nonAligned,
+            gdp:gdp,pop:pop,mil:55,aggr:30,stab:58,nuke:.none,yearEnd:1871)
+    }
+
+    /// Wilhelmine German Empire — unified, industrializing great power (1871-1918)
+    static func germanEmpire(year: Int) -> CountryTemplate {
+        let gdp: Double = year < 1900 ? 250 : 500
+        return CountryTemplate("DEU","German Empire",flag:"🇩🇪",capital:"Berlin",
+            lat:52.5200,lon:13.4050,region:.europe,gov:.authoritarian,align:.western,
+            gdp:gdp,pop:year < 1900 ? 49 : 65,mil:80,aggr:55,stab:70,nuke:.none,yearEnd:1918)
+    }
+
+    /// Weimar Republic — democratic but unstable (1918-1933)
+    static func weimarGermany(year: Int) -> CountryTemplate {
+        CountryTemplate("DEU","Germany (Weimar Republic)",flag:"🇩🇪",capital:"Berlin",
+            lat:52.5200,lon:13.4050,region:.europe,gov:.republic,align:.western,
+            gdp:200,pop:60,mil:30,aggr:20,stab:40,nuke:.none,yearEnd:1933)
+    }
+
+    /// Third Reich — Nazi Germany (1933-1945)
+    static func naziGermany(year: Int) -> CountryTemplate {
+        let mil = year < 1940 ? 75 : 95
+        let gdp: Double = year < 1940 ? 500 : 700
+        return CountryTemplate("DEU","Nazi Germany",flag:"🇩🇪",capital:"Berlin",
+            lat:52.5200,lon:13.4050,region:.europe,gov:.authoritarian,align:.nonAligned,
+            gdp:gdp,pop:70,mil:mil,aggr:95,stab:65,nuke:.none,yearEnd:1945)
     }
 
     static func westGermany(year: Int) -> CountryTemplate {

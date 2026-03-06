@@ -153,8 +153,9 @@ class GameEngine: ObservableObject {
         // Process consequences of actions
         processConsequences()
 
-        // Check for random crisis events
+        // Check for random crisis events (including alien invasion — very rare)
         checkForCrisis()
+        checkForAlienInvasion()
 
         // Generate news headlines
         generateNews()
@@ -472,7 +473,8 @@ class GameEngine: ObservableObject {
                     gameState.countries[countryIndex].gdp -= 0.5
                     gameState.aiActionSummary.append("\(country.flag) \(country.name) 🪖 built military (+100K)")
                 }
-            } else if buildRoll <= 40 && country.nuclearWarheads < 100 && country.gdp >= 1.0 {
+            } else if buildRoll <= 40 && country.nuclearWarheads < 100 && country.gdp >= 1.0
+                      && gameState.currentYear >= 1945 {  // Nuclear age only — no 1840s nukes
                 // BUILD NUKES
                 if let countryIndex = gameState.countries.firstIndex(where: { $0.id == country.id }) {
                     gameState.countries[countryIndex].nuclearWarheads += 5
@@ -1738,7 +1740,27 @@ extension GameEngine {
             declareWar(aggressor: playerID, defender: targetID)
         }
 
-        addLog("[\(action.category.rawValue)] \(action.rawValue): \(result.message)", type: result.success ? .info : .error)
+        // Outcome log — clearly labelled as success or failure
+        let outcomeIcon = result.success ? "✅" : "❌"
+        addLog("", type: .system)
+        addLog("\(outcomeIcon) \(action.rawValue.uppercased()) — \(result.success ? "SUCCESS" : "FAILED")", type: result.success ? .info : .error)
+        addLog("   \(result.message)", type: .info)
+
+        // Target country's reaction — based on action type and their personality
+        if let target = gameState.getCountry(id: targetID), let player = gameState.getPlayerCountry() {
+            let targetResponse = generateTargetResponse(
+                action: action,
+                target: target,
+                player: player,
+                success: result.success,
+                gameState: gameState
+            )
+            addLog("📨 \(target.flag) \(target.name) responds: \"\(targetResponse)\"", type: .info)
+
+            // Log to diplomatic messages so player sees it in the inbox
+            diplomacyService.generateMessage(from: targetID, content: targetResponse, turn: gameState.turn)
+        }
+
         eventLogger.log(
             "\(action.rawValue) against \(gameState.getCountry(id: targetID)?.name ?? targetID)",
             type: actionCategoryToEventType(action.category),
@@ -1751,6 +1773,113 @@ extension GameEngine {
         if action.category == .covert && Double.random(in: 0...1) < result.detectedProbability {
             addLog("⚠️ COVERT OPERATION DETECTED!", type: .warning)
             modifyDiplomaticRelation(from: playerID, to: targetID, by: -40)
+        }
+    }
+
+    /// Generate a contextual response from a target country after a player action.
+    private func generateTargetResponse(
+        action: PresidentialAction,
+        target: Country,
+        player: Country,
+        success: Bool,
+        gameState: GameState
+    ) -> String {
+        let isHawkish = target.aggressionLevel > 65
+        let isFriendly = (target.diplomaticRelations[player.id] ?? 0) > 40
+        let isHostile  = (target.diplomaticRelations[player.id] ?? 0) < -30
+        let isModern   = gameState.eraStartYear >= 1945
+
+        switch action.category {
+        case .military:
+            if action == .deployTroops || action == .militaryExercise {
+                if isHostile { return isHawkish ?
+                    "This provocation will not go unanswered. Our forces are on full alert." :
+                    "We view this military movement with grave concern and demand immediate explanation." }
+                return isFriendly ?
+                    "We acknowledge your defensive posture. Our channels remain open." :
+                    "We are monitoring your forces closely. Restraint is expected."
+            }
+            if action == .sellWeapons || action == .militaryAid {
+                return success ?
+                    "We gratefully accept this partnership. Our defense capabilities are strengthened." :
+                    "We note your offer but must decline at this time."
+            }
+            if success {
+                return isHawkish ?
+                    "You have struck a blow against our sovereignty. Retaliation will follow." :
+                    "This aggression is condemned. We appeal to the international community for assistance."
+            }
+            return "Your military action has failed. We emerge stronger from this test."
+
+        case .diplomatic:
+            if action == .stateVisit || action == .summit {
+                return isFriendly ?
+                    "We welcome this meeting of leaders. Our partnership grows stronger." :
+                    isHostile ? "We agree to talks, though our differences remain profound." :
+                    "We welcome this diplomatic exchange and look forward to productive dialogue."
+            }
+            if action == .sendAmbassador {
+                return "We accept your ambassador and reciprocate. Diplomatic channels are now open."
+            }
+            if action == .expelDiplomats || action == .severRelations {
+                return isHawkish ?
+                    "This hostile act will have consequences. We sever relations in kind." :
+                    "We deeply regret this rupture and call for immediate dialogue to restore relations."
+            }
+            return success ? "Your diplomatic initiative is acknowledged." : "We decline your diplomatic overture at this time."
+
+        case .economic:
+            if action == .economicAid || action == .loanMoney || action == .forgiveDebt {
+                return "We are grateful for this act of generosity. Our people will remember your friendship."
+            }
+            if action == .sanctions || action == .oilEmbargo || action == .freezeAssets {
+                if isHostile { return isHawkish ?
+                    "These economic attacks only strengthen our resolve. We will find other partners." :
+                    "Your sanctions harm innocent civilians. We condemn this economic warfare." }
+                return isModern ?
+                    "We strongly protest these economic measures and call for their immediate reversal." :
+                    "These trade restrictions violate the customs of civilized nations and will be opposed."
+            }
+            if action == .tradeDeal {
+                return "We welcome this commercial partnership. Trade between our nations benefits all."
+            }
+            return success ? "Your economic proposal has been received." : "We cannot accept these economic terms."
+
+        case .covert:
+            // Covert actions should usually not generate a visible response (deniability)
+            // unless detected
+            if success {
+                return "Our intelligence services are investigating certain irregularities. Vigilance is heightened."
+            }
+            return isHawkish ?
+                "Your covert operatives have been identified and expelled. This will not be forgotten." :
+                "We have evidence of hostile covert activity originating from your territory. We demand an explanation."
+
+        case .nuclear:
+            if action == .nuclearTest {
+                return isHawkish ?
+                    "We have noted your test. Our own deterrent capabilities are fully operational." :
+                    "This nuclear test escalates regional tensions. We call for immediate de-escalation."
+            }
+            if action == .demandInspect {
+                return success ?
+                    "We will allow inspectors access as required by international agreement." :
+                    "We reject this demand as an infringement on our sovereign rights."
+            }
+            return success ?
+                "We are aware of your nuclear posture and respond accordingly." :
+                "Your nuclear threats are noted but will not change our strategic calculus."
+
+        case .intelligence:
+            return "Our security services have detected unusual intelligence activity. We remain vigilant."
+
+        case .treaties, .propaganda:
+            if success {
+                return isFriendly ?
+                    "We welcome this agreement and look forward to deeper cooperation." :
+                    "We acknowledge the terms proposed. Further negotiation may be warranted."
+            }
+            return "We cannot accept these terms as presented. Counter-proposals are possible."
         }
     }
 

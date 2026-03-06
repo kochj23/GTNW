@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-03-05
+
+### Fixed
+- **AI nuclear buildup in pre-nuclear eras** — `executeAIAction` was building 5 nukes/turn for aggressive AI countries with no era check. Iran, Afghanistan, and others were building nukes in 1837. Fixed with `gameState.currentYear >= 1945` guard.
+- **Germany wrong name for pre-1871 eras** — Germany only became unified in 1871. Now correctly shows: German Confederation (pre-1871), German Empire (1871-1918), Weimar Republic (1918-1933), Nazi Germany (1933-1945), West/East Germany split (1945-1990), unified Germany (1990+)
+- **Vietnam split in wrong eras** — Vietnam was split into North/South Vietnam for ALL years before 1975. Now only split for 1954-1975 (the actual historical period). Before 1954: unified Vietnam; after 1975: reunified Vietnam.
+
+### Added
+- **Action feedback with target country response** — `executeShadowPresidentAction` now logs: (1) clear ✅/❌ success/failure outcome, (2) `result.message` description, (3) target country's in-character diplomatic response based on action type, their aggressionLevel, and current relations. Response also delivered to diplomatic inbox.
+- **Expanded diplomatic message actions** — `MessageCard` now shows contextual action buttons beyond Accept/Decline:
+  - Alliance proposals → "Propose Non-Aggression" alternative
+  - Warnings/accusations → "Issue Apology" or "Stand Firm"
+  - Trade messages → "Offer Trade Deal" directly
+  - War threats → "Seek Mediation"
+  - Demands/statements → "Counter-Propose"
+  - Accept amount uses `gameState.eraDiplomacyAmountLabel` (era-scaled)
+  - Decline and Counter-Propose both generate target country responses
+- **Independence Day alien invasion scenario** — `AlienInvasionScenario.swift`: rare 0.1% per-turn random event (triggerable in any era). When triggered: all wars stop, all nations temporarily allied. Five decision options: global nuclear strike, computer virus upload, communication attempt, kamikaze H-bomb, underground evacuation. Each has distinct outcomes, approval impacts, and narrative consequence text. `checkForAlienInvasion()` called from `endTurn()`. Also available as `Scenario.alienInvasion` for the What If system.
+
+*Released by Jordan Koch*
+
 ## [1.6.4] - 2026-03-05
 
 ### Fixed

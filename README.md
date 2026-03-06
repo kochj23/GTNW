@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.6.4
+# 🏛️ GTNW - Global Thermal Nuclear War v1.6.5
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,15 +16,42 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.6.4
+## 🆕 What's New in v1.6.5
 
-**Era accuracy and gameplay quality** — three user-facing improvements plus a crash fix.
+**Historical accuracy + gameplay depth** — five features across four areas.
 
-### Era-Appropriate Military Actions
-The Shadow President action menu now hides actions before they historically existed. Van Buren (1837) has no Air Strike option. Lincoln (1861) has no No-Fly Zone or Cyber Attack. Each action is gated to the year it became real:
-- Air Patrol / Air Strike / Bombardment → **1914** (WWI)
-- No-Fly Zone → **1991** (Gulf War)
-- All nuclear actions → **1945** (Manhattan Project)
+### Nuclear Weapons No Longer Appear in the 1800s
+AI countries (Iran, Afghanistan, etc.) were building nuclear weapons in the 1840s because the build-nukes code had no era check. Fixed — the nuclear age begins in 1945, regardless of how many turns you play.
+
+### Correct Country Names for Each Era
+- **Germany**: German Confederation (pre-1871) → German Empire (1871-1918) → Weimar Republic (1918-1933) → Nazi Germany (1933-1945) → West/East Germany (1945-1990) → Germany (1990+)
+- **Vietnam**: No longer splits into North/South before 1954 — the split only applies to the actual 1954-1975 period
+- Additional filtering applied to countries that didn't exist in the relevant era
+
+### Action Feedback — Target Country Responds
+After every Shadow President action, the game now shows:
+1. A clear success/failure outcome (`✅ SUCCESS` or `❌ FAILED`)
+2. The target country's diplomatic response in character (e.g., *"This aggression will not stand. We will defend ourselves."*)
+3. The response is also delivered to your diplomatic inbox for follow-up
+
+### Diplomatic Message Actions
+The message inbox now has contextual action buttons based on the message content:
+- Alliance/treaty proposal → "Propose Non-Aggression" alternative
+- Warning/accusation → "Issue Apology" or "Stand Firm" options
+- Trade/commerce message → "Offer Trade Deal" directly
+- War threat → "Seek Mediation" option
+- Any demand/statement → "Counter-Propose" option
+- Accept amount uses era-scaled dollars ($100K in 1840s, not $5B)
+
+### Independence Day Scenario — Alien Invasion
+A rare random event (0.1% per turn) — or trigger manually — brings a full alien invasion crisis inspired by Independence Day (1996). All wars stop. Every nation unites against the common threat. Choose your response:
+- **Global Nuclear Strike** — shields are down but nuclear winter follows
+- **Upload computer virus** — the classic solution; shields drop, every air force scrambles
+- **Communicate** — they say "EXTERMINATE"
+- **Kamikaze H-bomb** — one pilot, one bomb, one chance
+- **Evacuate underground** — mankind survives to fight another day
+
+---
 - Satellite Reconnaissance → **1957** (Sputnik)
 - Cyber Attack / Hack / Disrupt → **1990** (Internet era)
 
