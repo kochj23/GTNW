@@ -1,4 +1,4 @@
-# 🏛️ GTNW - Global Thermal Nuclear War v1.8.1
+# 🏛️ GTNW - Global Thermal Nuclear War v1.8.2
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 
@@ -16,7 +16,49 @@ Command America through 236 years of history (1789-2025) as any of 47 presidents
 
 ---
 
-## 🆕 What's New in v1.8.1
+## 🆕 What's New in v1.8.2
+
+**Nuclear arsenal data accuracy** — every warhead, ICBM, SLBM, and bomber now reflects real-world figures from SIPRI/FAS, with full historical coverage from 1945 to 2025.
+
+### Bug Fix: Arsenal Data Was All Zeros
+`CountryTemplate.toCountry()` was hardcoding all four arsenal fields to `0` regardless of what was set in the database. Nuclear status flags were correct, but the actual counts driving the game engine were always zero. Now fixed.
+
+### Accurate 2025 Nuclear Inventories
+
+| Country | Warheads | ICBMs | SLBMs | Bombers | Notes |
+|---------|----------|-------|-------|---------|-------|
+| 🇺🇸 USA | 5,550 | 400 | 280 | 96 | Minuteman III + B-2A/B-52H; B-21 entering service |
+| 🇷🇺 Russia | 6,257 | 310 | 192 | 71 | RS-28 Sarmat entering service |
+| 🇨🇳 China | 500 | 350 | 72 | 20 | Fastest-growing arsenal on Earth |
+| 🇬🇧 UK | 225 | 0 | 48 | 0 | Vanguard-class / Trident II D5; submarine-only |
+| 🇫🇷 France | 290 | 0 | 48 | 40 | Le Triomphant-class + Rafale; land ICBMs retired 1996 |
+| 🇮🇳 India | 172 | 12 | 12 | 36 | Agni-V ICBM operational 2022; Arihant SSBN 2016 |
+| 🇵🇰 Pakistan | 170 | 0 | 0 | 36 | No ICBMs; F-16 / Mirage delivery aircraft |
+| 🇮🇱 Israel | 90 | 18 | 16 | 0 | Undeclared; Jericho III range-class; Dolphin SSBs |
+| 🇰🇵 North Korea | 50 | 10 | 0 | 0 | Hwasong-17/18 ICBM capability from 2017 |
+
+### No More Nukes in the 1800s — Full Historical Coverage
+All nine nuclear states now have era-accurate arsenal data for every decade from first test to 2025. A game set in 1995 will no longer give China 500 warheads — it correctly uses ~260.
+
+| Country | Coverage Added |
+|---------|---------------|
+| USA | 1992–2024: START drawdown 24,000 → 5,550 |
+| Russia | 1992–2024: Post-Soviet collapse → New START |
+| China | 1980–2024: Modest Mao-era buildup → rapid modern expansion |
+| UK | 1970–2024: V-bombers → Polaris → Trident disarmament |
+| France | 1980–2024: Peak 500 → Plateau d'Albion retired 1996 → 290 |
+| India | 1974–2024: Smiling Buddha → Agni-V ICBM operational |
+| Pakistan | 1998–2024: Post-Chagai tests buildup |
+| North Korea | 2006–2024: Basic device → Hwasong ICBM capability 2017 |
+| Israel | 1967–2024: Dimona → Jericho III → Dolphin SSBs |
+
+### Data Corrections
+- **Saudi Arabia**: Removed incorrect `.suspected` nuclear status — Saudi Arabia has no nuclear weapons program at any point in history
+- **Israel**: `adjustedCountry()` now preserves `.undeclared` status (policy of nuclear ambiguity) instead of overwriting to `.declared`
+
+---
+
+## What's New in v1.8.1
 
 **Non-NATO/Warsaw alliances** + CIA World Factbook integration.
 
@@ -751,6 +793,13 @@ Widget files are located in `/GTNW Widget/`:
 
 ## Version History
 
+### v1.8.2 (March 2026) - "Nuclear Data Accuracy"
+- Fixed bug: all nuclear arsenal fields (warheads/ICBMs/SLBMs/bombers) were hardcoded to zero
+- Accurate 2025 inventories for all 9 nuclear states (SIPRI/FAS sources)
+- Full historical era coverage — no anachronistic weapons in 1800s games
+- Fixed Saudi Arabia incorrectly tagged as `.suspected` nuclear state
+- Fixed Israel's `.undeclared` ambiguity status being overwritten
+
 ### v1.5.1 (February 2026) - "Desktop Commander Update"
 - macOS WidgetKit desktop widget
 - Real-time DEFCON level display
@@ -792,7 +841,7 @@ MIT License - Copyright © 2026 Jordan Koch
 
 ---
 
-**Last Updated:** February 4, 2026
+**Last Updated:** March 6, 2026
 **Status:** ✅ Ready to Play
 **Rating:** Mature (17+) - War themes, political violence, nuclear weapons
 

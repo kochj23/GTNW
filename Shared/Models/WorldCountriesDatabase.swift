@@ -28,6 +28,10 @@ struct CountryTemplate {
     let aggressionLevel: Int      // 0-100
     let stability: Int            // 0-100
     let nuclearStatus: NuclearStatus
+    let warheads: Int             // nuclear warhead count (modern era baseline)
+    let icbms: Int                // ICBM count
+    let slbms: Int                // submarine-launched missile count
+    let bomberCount: Int          // nuclear-capable bomber count
     let yearEnd: Int?             // nil = still exists
 
     init(
@@ -39,6 +43,7 @@ struct CountryTemplate {
         gdp: Double, pop: Double,
         mil: Int, aggr: Int = 30, stab: Int = 70,
         nuke: NuclearStatus = .none,
+        warheads: Int = 0, icbms: Int = 0, slbms: Int = 0, bombs: Int = 0,
         yearEnd: Int? = nil
     ) {
         self.id = id; self.name = name; self.flag = flag; self.capital = capital
@@ -46,7 +51,9 @@ struct CountryTemplate {
         self.government = gov; self.alignment = align
         self.gdpBillions = gdp; self.populationMillions = pop
         self.militaryStrength = mil; self.aggressionLevel = aggr; self.stability = stab
-        self.nuclearStatus = nuke; self.yearEnd = yearEnd
+        self.nuclearStatus = nuke
+        self.warheads = warheads; self.icbms = icbms; self.slbms = slbms; self.bomberCount = bombs
+        self.yearEnd = yearEnd
     }
 
     /// Convert to a full Country object usable by the game engine.
@@ -56,10 +63,10 @@ struct CountryTemplate {
             capital: capital, region: region,
             lat: lat, lon: lon,
             nuclearStatus: nuclearStatus,
-            nuclearWarheads: 0,
-            icbmCount: 0,
-            submarineLaunchedMissiles: 0,
-            bombers: 0,
+            nuclearWarheads: warheads,
+            icbmCount: icbms,
+            submarineLaunchedMissiles: slbms,
+            bombers: bomberCount,
             militaryStrength: max(1, min(100, militaryStrength)),
             gdp: gdpBillions / 1000.0,
             population: max(1, Int(populationMillions)),   // min 1 to prevent divide-by-zero
@@ -581,7 +588,8 @@ struct WorldCountriesDatabase {
     static let northAmerica: [CountryTemplate] = [
         CountryTemplate("USA","United States",flag:"🇺🇸",capital:"Washington D.C.",
             lat:38.9072,lon:-77.0369,region:.northAmerica,gov:.republic,align:.western,
-            gdp:27000,pop:335,mil:100,aggr:60,stab:80,nuke:.declared),
+            gdp:27000,pop:335,mil:100,aggr:60,stab:80,nuke:.declared,
+            warheads:5550,icbms:400,slbms:280,bombs:96),
         CountryTemplate("CAN","Canada",flag:"🇨🇦",capital:"Ottawa",
             lat:45.4215,lon:-75.6972,region:.northAmerica,gov:.monarchy,align:.western,
             gdp:2200,pop:40,mil:55,aggr:20,stab:95),
@@ -701,13 +709,15 @@ struct WorldCountriesDatabase {
     static let westernEurope: [CountryTemplate] = [
         CountryTemplate("GBR","United Kingdom",flag:"🇬🇧",capital:"London",
             lat:51.5074,lon:-0.1278,region:.europe,gov:.monarchy,align:.western,
-            gdp:3500,pop:68,mil:80,aggr:50,stab:82,nuke:.declared),
+            gdp:3500,pop:68,mil:80,aggr:50,stab:82,nuke:.declared,
+            warheads:225,icbms:0,slbms:48,bombs:0),
         CountryTemplate("DEU","Germany",flag:"🇩🇪",capital:"Berlin",
             lat:52.5200,lon:13.4050,region:.europe,gov:.republic,align:.western,
             gdp:4400,pop:84,mil:70,aggr:30,stab:90),
         CountryTemplate("FRA","France",flag:"🇫🇷",capital:"Paris",
             lat:48.8566,lon:2.3522,region:.europe,gov:.republic,align:.western,
-            gdp:3000,pop:68,mil:75,aggr:45,stab:80,nuke:.declared),
+            gdp:3000,pop:68,mil:75,aggr:45,stab:80,nuke:.declared,
+            warheads:290,icbms:0,slbms:48,bombs:40),
         CountryTemplate("ITA","Italy",flag:"🇮🇹",capital:"Rome",
             lat:41.9028,lon:12.4964,region:.europe,gov:.republic,align:.western,
             gdp:2200,pop:59,mil:60,aggr:30,stab:72),
@@ -822,7 +832,8 @@ struct WorldCountriesDatabase {
     static let formerSoviet: [CountryTemplate] = [
         CountryTemplate("RUS","Russian Federation",flag:"🇷🇺",capital:"Moscow",
             lat:55.7558,lon:37.6173,region:.europe,gov:.authoritarian,align:.eastern,
-            gdp:2200,pop:144,mil:92,aggr:80,stab:62,nuke:.declared),
+            gdp:2200,pop:144,mil:92,aggr:80,stab:62,nuke:.declared,
+            warheads:6257,icbms:310,slbms:192,bombs:71),
         CountryTemplate("GEO","Georgia",flag:"🇬🇪",capital:"Tbilisi",
             lat:41.6941,lon:44.8337,region:.asia,gov:.republic,align:.western,
             gdp:24,pop:3.7,mil:20,aggr:35,stab:62),
@@ -880,13 +891,14 @@ struct WorldCountriesDatabase {
     static let middleEast: [CountryTemplate] = [
         CountryTemplate("SAU","Saudi Arabia",flag:"🇸🇦",capital:"Riyadh",
             lat:24.7136,lon:46.6753,region:.middleEast,gov:.monarchy,align:.western,
-            gdp:1100,pop:36,mil:72,aggr:50,stab:65,nuke:.suspected),
+            gdp:1100,pop:36,mil:72,aggr:50,stab:65),
         CountryTemplate("IRN","Iran",flag:"🇮🇷",capital:"Tehran",
             lat:35.6892,lon:51.3890,region:.middleEast,gov:.theocracy,align:.independent,
             gdp:400,pop:89,mil:72,aggr:75,stab:58,nuke:.developing),
         CountryTemplate("ISR","Israel",flag:"🇮🇱",capital:"Jerusalem",
             lat:31.7683,lon:35.2137,region:.middleEast,gov:.republic,align:.western,
-            gdp:550,pop:9,mil:90,aggr:70,stab:72,nuke:.undeclared),
+            gdp:550,pop:9,mil:90,aggr:70,stab:72,nuke:.undeclared,
+            warheads:90,icbms:18,slbms:16,bombs:0),
         CountryTemplate("TUR","Turkey",flag:"🇹🇷",capital:"Ankara",
             lat:39.9334,lon:32.8597,region:.middleEast,gov:.republic,align:.western,
             gdp:1100,pop:86,mil:78,aggr:55,stab:60),
@@ -930,10 +942,12 @@ struct WorldCountriesDatabase {
     static let southAsia: [CountryTemplate] = [
         CountryTemplate("IND","India",flag:"🇮🇳",capital:"New Delhi",
             lat:28.6139,lon:77.2090,region:.asia,gov:.republic,align:.nonAligned,
-            gdp:3500,pop:1429,mil:85,aggr:35,stab:72,nuke:.declared),
+            gdp:3500,pop:1429,mil:85,aggr:35,stab:72,nuke:.declared,
+            warheads:172,icbms:12,slbms:12,bombs:36),
         CountryTemplate("PAK","Pakistan",flag:"🇵🇰",capital:"Islamabad",
             lat:33.6844,lon:73.0479,region:.asia,gov:.republic,align:.nonAligned,
-            gdp:380,pop:225,mil:72,aggr:60,stab:45,nuke:.declared),
+            gdp:380,pop:225,mil:72,aggr:60,stab:45,nuke:.declared,
+            warheads:170,icbms:0,slbms:0,bombs:36),
         CountryTemplate("BGD","Bangladesh",flag:"🇧🇩",capital:"Dhaka",
             lat:23.8103,lon:90.4125,region:.asia,gov:.republic,align:.nonAligned,
             gdp:460,pop:173,mil:42,aggr:25,stab:55),
@@ -959,7 +973,8 @@ struct WorldCountriesDatabase {
     static let eastAsia: [CountryTemplate] = [
         CountryTemplate("CHN","People's Republic of China",flag:"🇨🇳",capital:"Beijing",
             lat:39.9042,lon:116.4074,region:.asia,gov:.communist,align:.eastern,
-            gdp:18000,pop:1425,mil:95,aggr:70,stab:78,nuke:.declared),
+            gdp:18000,pop:1425,mil:95,aggr:70,stab:78,nuke:.declared,
+            warheads:500,icbms:350,slbms:72,bombs:20),
         CountryTemplate("JPN","Japan",flag:"🇯🇵",capital:"Tokyo",
             lat:35.6762,lon:139.6503,region:.asia,gov:.monarchy,align:.western,
             gdp:4200,pop:123,mil:68,aggr:20,stab:92),
@@ -968,7 +983,8 @@ struct WorldCountriesDatabase {
             gdp:1800,pop:52,mil:78,aggr:45,stab:82),
         CountryTemplate("PRK","North Korea",flag:"🇰🇵",capital:"Pyongyang",
             lat:39.0392,lon:125.7625,region:.asia,gov:.authoritarian,align:.eastern,
-            gdp:30,pop:26,mil:68,aggr:90,stab:38,nuke:.declared),
+            gdp:30,pop:26,mil:68,aggr:90,stab:38,nuke:.declared,
+            warheads:50,icbms:10,slbms:0,bombs:0),
         CountryTemplate("MNG","Mongolia",flag:"🇲🇳",capital:"Ulaanbaatar",
             lat:47.8864,lon:106.9057,region:.asia,gov:.republic,align:.nonAligned,
             gdp:20,pop:3,mil:22,aggr:20,stab:68),

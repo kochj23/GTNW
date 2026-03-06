@@ -492,7 +492,38 @@ class GameState: ObservableObject, Codable {
                         alignment: .eastern,
                         government: .communist
                     )
+                } else if year <= 1999 {
+                    // Post-Soviet collapse; massive arsenal but economy in freefall
+                    country = adjustedCountry(country,
+                        nukes: 30000 - (year - 1991) * 1500,
+                        icbm: historicalSovietICBMs(year: year),
+                        slbm: 300, bombers: 150,
+                        military: 78,
+                        gdp: 0.4 + Double(year - 1991) * 0.01,
+                        alignment: .eastern
+                    )
+                } else if year <= 2010 {
+                    // START reductions under Putin; economic partial recovery
+                    country = adjustedCountry(country,
+                        nukes: 18000 - (year - 2000) * 1000,
+                        icbm: 500 - (year - 2000) * 15,
+                        slbm: 200, bombers: 100,
+                        military: 82,
+                        gdp: 0.8 + Double(year - 2000) * 0.15,
+                        alignment: .eastern
+                    )
+                } else if year < 2025 {
+                    // New START modernization; RS-28 Sarmat development
+                    country = adjustedCountry(country,
+                        nukes: 8000 - (year - 2010) * 130,
+                        icbm: 330 - (year - 2010),
+                        slbm: 200, bombers: 72,
+                        military: 88,
+                        gdp: 2.0 + Double(year - 2010) * 0.01,
+                        alignment: .eastern
+                    )
                 }
+                // 2025+: CountryTemplate values (6257 warheads, 310 ICBMs, 192 SLBMs, 71 bombers)
 
             // ── China ───────────────────────────────────────────────────────
             case "CHN":
@@ -520,7 +551,38 @@ class GameState: ObservableObject, Codable {
                         military: 72, gdp: 0.1,
                         alignment: .independent, government: .communist
                     )
+                } else if year < 2000 {
+                    // Post-Mao modernization: modest buildup
+                    country = adjustedCountry(country,
+                        nukes: 200 + (year - 1980) * 3,
+                        icbm: 30 + (year - 1980),
+                        slbm: 12, bombers: 30,
+                        military: 80,
+                        gdp: 0.3 + Double(year - 1980) * 0.04,
+                        alignment: .independent
+                    )
+                } else if year < 2015 {
+                    // Rapid expansion begins post-2000
+                    country = adjustedCountry(country,
+                        nukes: 250 + (year - 2000) * 7,
+                        icbm: 50 + (year - 2000) * 4,
+                        slbm: 48, bombers: 20,
+                        military: 88,
+                        gdp: 2.0 + Double(year - 2000) * 0.9,
+                        alignment: .independent
+                    )
+                } else if year < 2025 {
+                    // Accelerated buildup: fastest-growing nuclear arsenal on Earth
+                    country = adjustedCountry(country,
+                        nukes: 355 + (year - 2015) * 15,
+                        icbm: 110 + (year - 2015) * 24,
+                        slbm: 72, bombers: 20,
+                        military: 93,
+                        gdp: 10.0 + Double(year - 2015) * 0.5,
+                        alignment: .eastern
+                    )
                 }
+                // 2025+: CountryTemplate values (500 warheads, 350 ICBMs, 72 SLBMs, 20 bombers)
 
             // ── United Kingdom ───────────────────────────────────────────────
             case "GBR":
@@ -537,7 +599,25 @@ class GameState: ObservableObject, Codable {
                         icbm: 0, slbm: year >= 1960 ? 16 : 0, bombers: 50,
                         military: 72, gdp: 0.6
                     )
+                } else if year < 1994 {
+                    // V-bomber era then Polaris SSBNs; UK peaked ~450 warheads late-1970s
+                    country = adjustedCountry(country,
+                        nukes: year < 1980 ? 350 : 450,
+                        icbm: 0,
+                        slbm: year < 1980 ? 48 : 64,
+                        bombers: year < 1982 ? 50 : 0,  // Vulcans retired 1982
+                        military: 75, gdp: 0.8
+                    )
+                } else if year < 2025 {
+                    // Vanguard class / Trident II D5; UK disarmed to ~225 by 2025
+                    country = adjustedCountry(country,
+                        nukes: max(225, 300 - (year - 1994) * 3),
+                        icbm: 0, slbm: 48, bombers: 0,
+                        military: 80,
+                        gdp: 1.5 + Double(year - 1994) * 0.07
+                    )
                 }
+                // 2025+: CountryTemplate values (225 warheads, 0 ICBMs, 48 SLBMs, 0 bombers)
 
             // ── France ───────────────────────────────────────────────────────
             case "FRA":
@@ -553,17 +633,62 @@ class GameState: ObservableObject, Codable {
                         icbm: 0, slbm: year >= 1970 ? 16 : 0, bombers: 40,
                         military: 70, gdp: 0.4
                     )
+                } else if year < 1996 {
+                    // France peaked ~500 warheads; land-based S3 IRBMs on Plateau d'Albion
+                    country = adjustedCountry(country,
+                        nukes: year < 1990 ? 400 : 500,
+                        icbm: 18,   // 18 S3 IRBM/ICBMs on Plateau d'Albion
+                        slbm: 80, bombers: 50,
+                        military: 78, gdp: 0.8
+                    )
+                } else if year < 2025 {
+                    // Post-Cold War disarmament; Plateau d'Albion retired 1996
+                    country = adjustedCountry(country,
+                        nukes: max(290, 500 - (year - 1996) * 7),
+                        icbm: 0,    // Land-based IRBMs retired 1996
+                        slbm: 48, bombers: 40,
+                        military: 78,
+                        gdp: 1.5 + Double(year - 1996) * 0.06
+                    )
                 }
+                // 2025+: CountryTemplate values (290 warheads, 0 ICBMs, 48 SLBMs, 40 bombers)
 
             // ── India ────────────────────────────────────────────────────────
             case "IND":
                 if year < 1974 {
-                    // India tested first nuke 1974
+                    // India tested first nuke 1974 ("Smiling Buddha")
                     country = adjustedCountry(country,
                         nukes: 0, icbm: 0, slbm: 0, bombers: 10,
                         military: 50, gdp: 0.05
                     )
+                } else if year < 1998 {
+                    // Pre-Pokhran-II: device capability but not weaponized
+                    country = adjustedCountry(country,
+                        nukes: year < 1990 ? 2 : 10,
+                        icbm: 0, slbm: 0, bombers: 10,
+                        military: 65,
+                        gdp: 0.15 + Double(year - 1974) * 0.01
+                    )
+                } else if year < 2012 {
+                    // Post-1998 declared nuclear state; Agni series developing
+                    country = adjustedCountry(country,
+                        nukes: 20 + (year - 1998) * 5,
+                        icbm: 0, slbm: 0, bombers: 20,
+                        military: 78,
+                        gdp: 0.5 + Double(year - 1998) * 0.2
+                    )
+                } else if year < 2025 {
+                    // Agni-V ICBM testing from 2012; Arihant SSBN 2016+; operational ~2022
+                    country = adjustedCountry(country,
+                        nukes: 90 + (year - 2012) * 6,
+                        icbm: year >= 2022 ? 12 : 0,
+                        slbm: year >= 2016 ? 12 : 0,
+                        bombers: 36,
+                        military: 83,
+                        gdp: 2.0 + Double(year - 2012) * 0.15
+                    )
                 }
+                // 2025+: CountryTemplate values (172 warheads, 12 ICBMs, 12 SLBMs, 36 bombers)
 
             // ── Pakistan ─────────────────────────────────────────────────────
             case "PAK":
@@ -573,7 +698,23 @@ class GameState: ObservableObject, Codable {
                         nukes: 0, icbm: 0, slbm: 0, bombers: 5,
                         military: 45, gdp: 0.03
                     )
+                } else if year < 2010 {
+                    // Early post-test buildup
+                    country = adjustedCountry(country,
+                        nukes: 10 + (year - 1998) * 5,
+                        icbm: 0, slbm: 0, bombers: 10,
+                        military: 55,
+                        gdp: 0.06 + Double(year - 1998) * 0.01
+                    )
+                } else if year < 2025 {
+                    country = adjustedCountry(country,
+                        nukes: 80 + (year - 2010) * 6,
+                        icbm: 0, slbm: 0, bombers: 36,
+                        military: 65,
+                        gdp: 0.15 + Double(year - 2010) * 0.015
+                    )
                 }
+                // 2025+: CountryTemplate values (170 warheads, 0 ICBMs, 0 SLBMs, 36 bombers)
 
             // ── North Korea ──────────────────────────────────────────────────
             case "PRK":
@@ -583,7 +724,23 @@ class GameState: ObservableObject, Codable {
                         nukes: 0, icbm: 0, slbm: 0, bombers: 0,
                         military: 40, gdp: 0.01
                     )
+                } else if year < 2017 {
+                    // Early nuclear capability; no demonstrated ICBM
+                    country = adjustedCountry(country,
+                        nukes: 1 + (year - 2006) * 2,
+                        icbm: 0, slbm: 0, bombers: 0,
+                        military: 55, gdp: 0.015
+                    )
+                } else if year < 2025 {
+                    // Hwasong-14/15/17/18 ICBM demonstrated from 2017
+                    country = adjustedCountry(country,
+                        nukes: 25 + (year - 2017) * 3,
+                        icbm: 2 + (year - 2017),
+                        slbm: 0, bombers: 0,
+                        military: 62, gdp: 0.02
+                    )
                 }
+                // 2025+: CountryTemplate values (50 warheads, 10 ICBMs, 0 SLBMs, 0 bombers)
 
             // ── Israel ───────────────────────────────────────────────────────
             case "ISR":
@@ -592,7 +749,34 @@ class GameState: ObservableObject, Codable {
                         nukes: 0, icbm: 0, slbm: 0, bombers: 0,
                         military: 55, gdp: 0.03
                     )
+                } else if year < 1990 {
+                    // Dimona production; Jericho I/II development; policy of ambiguity
+                    country = adjustedCountry(country,
+                        nukes: 15 + (year - 1967),
+                        icbm: 0, slbm: 0, bombers: 0,
+                        military: 85,
+                        gdp: 0.05 + Double(year - 1967) * 0.01
+                    )
+                } else if year < 2000 {
+                    // Jericho II operational; Dolphin submarines acquired mid-1990s
+                    country = adjustedCountry(country,
+                        nukes: 50 + (year - 1990) * 2,
+                        icbm: 0,
+                        slbm: year >= 1994 ? 8 : 0,
+                        bombers: 0,
+                        military: 88, gdp: 0.35
+                    )
+                } else if year < 2025 {
+                    // Jericho III ICBM-range missile operational ~2010; three Dolphin-class SSBs
+                    country = adjustedCountry(country,
+                        nukes: 80,
+                        icbm: year >= 2010 ? 18 : 0,
+                        slbm: 16, bombers: 0,
+                        military: 90,
+                        gdp: 0.4 + Double(year - 2000) * 0.006
+                    )
                 }
+                // 2025+: CountryTemplate values (90 warheads, 18 ICBMs, 16 SLBMs, 0 bombers)
 
             // ── United States ────────────────────────────────────────────────
             case "USA":
@@ -643,7 +827,34 @@ class GameState: ObservableObject, Codable {
                         nukes: 24000, icbm: 1000, slbm: 640, bombers: 300,
                         military: 100, gdp: 6.0
                     )
+                } else if year <= 1999 {
+                    // Post-Cold War START I drawdown
+                    country = adjustedCountry(country,
+                        nukes: 24000 - (year - 1991) * 800,
+                        icbm: 1000 - (year - 1991) * 50,
+                        slbm: 480, bombers: 200,
+                        military: 100,
+                        gdp: 7.0 + Double(year - 1991) * 0.5
+                    )
+                } else if year <= 2010 {
+                    // START II / Moscow Treaty reductions
+                    country = adjustedCountry(country,
+                        nukes: 10000 - (year - 2000) * 450,
+                        icbm: 550 - (year - 2000) * 15,
+                        slbm: 336, bombers: 150,
+                        military: 100,
+                        gdp: 12.0 + Double(year - 2000) * 1.0
+                    )
+                } else if year < 2025 {
+                    // New START; continued reductions to ~5550
+                    country = adjustedCountry(country,
+                        nukes: 5500 + max(0, (2020 - year) * 100),
+                        icbm: 400, slbm: 280, bombers: 96,
+                        military: 100,
+                        gdp: 20.0 + Double(year - 2010) * 0.7
+                    )
                 }
+                // 2025+: CountryTemplate values (5550 warheads, 400 ICBMs, 280 SLBMs, 96 bombers)
 
             // ── Myanmar ──────────────────────────────────────────────────────
             case "MMR":
@@ -810,7 +1021,7 @@ class GameState: ObservableObject, Codable {
             "ISR": 1967,  // PRK, USA, RUS handled above
         ]
         let suspectedThresholds: [String: Int] = [
-            "SAU": 2000,   // Saudi suspected program is entirely modern
+            // Saudi Arabia has no nuclear program — removed
             "IRN": 1985,   // Iranian nuclear ambitions post-revolution
         ]
         for i in countries.indices {
@@ -853,7 +1064,12 @@ class GameState: ObservableObject, Codable {
         c.strategicNukes = c.nuclearWarheads - c.tacticalNukes
         c.firstStrikeCapability = c.nuclearWarheads >= 100
         c.secondStrikeCapability = c.submarineLaunchedMissiles > 0
-        c.nuclearStatus = c.nuclearWarheads > 0 ? .declared : .none
+        // Preserve nuclear ambiguity for Israel (policy of deliberate opacity)
+        if country.id == "ISR" {
+            c.nuclearStatus = c.nuclearWarheads > 0 ? .undeclared : .none
+        } else {
+            c.nuclearStatus = c.nuclearWarheads > 0 ? .declared : .none
+        }
         return c
     }
 
@@ -876,7 +1092,7 @@ class GameState: ObservableObject, Codable {
         case 1960...1969: return 1600 + (year - 1960) * 700
         case 1970...1979: return 11000 + (year - 1970) * 400
         case 1980...1991: return 30000
-        default:      return 5977      // Post-Soviet modern numbers
+        default:      return 6257      // Post-Soviet modern numbers (post-1991 handled in adjustCountriesForEra)
         }
     }
 
