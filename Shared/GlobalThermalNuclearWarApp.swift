@@ -13,6 +13,10 @@ struct GlobalThermalNuclearWarApp: App {
     @StateObject private var gameEngine = GameEngine()
     @State private var showingAISettings = false
 
+    init() {
+        NovaAPIServer.shared.start()
+    }
+
     var body: some Scene {
         WindowGroup {
             MainTabView()
