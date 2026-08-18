@@ -27,6 +27,31 @@ class GameEngine: ObservableObject {
     @Published var finalScore: GameScore?
     @Published var isProcessingAITurn = false  // Prevent actions during AI processing
 
+    // MARK: - Brain-per-country system
+
+    /// Whose turn it is / what the world is doing. Drives the UI banner and
+    /// disables player actions while the world resolves.
+    @Published private(set) var turnPhase: TurnPhase = .playerInput
+
+    /// Which brain drives each country. Any country NOT present here defaults to
+    /// `.ruleBased` (the player's own country is `.human`). This preserves
+    /// existing behavior until the player assigns brains.
+    @Published var brainAssignments: [String: AIBrain] = [:]
+
+    /// Transport/timeout settings for remote brains.
+    var brainConfig: BrainConfig = .default
+
+    /// Test/override hook: when set, remote brain moves are resolved by this
+    /// closure instead of real networking (keeps the turn loop unit-testable and
+    /// network-free). Production leaves this nil.
+    var brainTransportOverride: (@Sendable (MoveRequest, AIBrain) async -> MoveResponse?)? = nil
+
+    /// Countries whose brain failed/timed out last turn and fell back to rule-based.
+    @Published var lastTurnFallbackCountryIDs: Set<String> = []
+
+    /// An armed-but-not-yet-resolved nuclear launch, cancellable via `abortLaunch()`.
+    @Published var pendingLaunch: PendingLaunch? = nil
+
     // Safe feature systems (thread-safe implementations)
     @Published var intelService = SafeIntelligenceService.shared
     @Published var diplomacyService = SafeDiplomacyService.shared
@@ -129,16 +154,17 @@ class GameEngine: ObservableObject {
         // Process AI turns
         addLog("🤖 AI NATIONS TAKING ACTIONS...", type: .info)
         isProcessingAITurn = true
+        turnPhase = .resolving
 
-        // Check AI Backend status and process accordingly
+        // Route every country through its assigned brain. Remote brains run
+        // CONCURRENTLY off the main actor (no per-country serial sleep); only
+        // non-rule-based countries make an LLM/session call. Anything that
+        // times out falls back to fast rule-based AI so a turn never hangs.
         Task { @MainActor in
-            if aiBackend.activeBackend != nil {
-                await processAITurnsWithAI()
-            } else {
-                processAITurnsSync()
-            }
+            await processAITurnsWithBrains()
             showAISummary()
-            isProcessingAITurn = false  // Allow actions again
+            isProcessingAITurn = false   // Allow actions again
+            turnPhase = .playerInput     // Unmistakable cue: control returns to the player
         }
 
         // Process nuclear arms race dynamics
@@ -359,7 +385,7 @@ class GameEngine: ObservableObject {
     }
 
     /// Enhanced AI with 40% attack rates (fallback when Ollama unavailable)
-    private func determineAIActionEnhanced(for country: Country) -> AIAction {
+    func determineAIActionEnhanced(for country: Country) -> AIAction {
         guard let gameState = gameState else { return .wait }
 
         // Difficulty scaling
@@ -459,7 +485,7 @@ class GameEngine: ObservableObject {
     }
 
     /// Execute AI action
-    private func executeAIAction(_ action: AIAction, for country: Country, reason: String? = nil) {
+    func executeAIAction(_ action: AIAction, for country: Country, reason: String? = nil) {
         guard let gameState = gameState else { return }
 
         switch action {
@@ -1720,6 +1746,41 @@ extension GameEngine {
 
     func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String) {
         guard var gameState = gameState else { return }
+
+        // ── Route menu labels that used to LIE to their real engine verbs ─────
+        // Previously these fell through the generic resolver and did nothing
+        // meaningful (no launch, no war cleared, no alliance changed).
+        switch action {
+        case .launchNukes, .preemptive, .firstStrike, .strategicNuke, .tacticalNuke, .retaliate:
+            if let attacker = getCountry(playerID), attacker.nuclearWarheads > 0 {
+                let warheads: Int
+                switch action {
+                case .tacticalNuke:                        warheads = min(3, attacker.nuclearWarheads)
+                case .strategicNuke, .firstStrike, .preemptive: warheads = min(10, attacker.nuclearWarheads)
+                default:                                   warheads = min(5, attacker.nuclearWarheads)
+                }
+                addLog("☢️ \(action.rawValue.uppercased()) ordered against \(getCountry(targetID)?.name ?? targetID)", type: .critical)
+                launchNuclearStrike(from: playerID, to: targetID, warheads: warheads)
+            } else {
+                addLog("❌ \(action.rawValue): no nuclear warheads available.", type: .error)
+            }
+            return
+        case .ceasefire, .peace:
+            if !sueForPeace(from: playerID, to: targetID) {
+                addLog("ℹ️ No active war with \(getCountry(targetID)?.name ?? targetID) to end.", type: .info)
+            }
+            return
+        case .leaveNATO:
+            if !leaveAlliance(country: playerID, from: targetID) {
+                addLog("ℹ️ No alliance with \(getCountry(targetID)?.name ?? targetID) to leave.", type: .info)
+            }
+            return
+        case .joinNATO, .mutualDefense, .defensivePact:
+            formAlliance(country1: playerID, country2: targetID)
+            return
+        default:
+            break
+        }
 
         // ── Pre-action Factbook validations ──────────────────────────────────
         let targetFB = WorldFactbookDatabase.record(for: targetID)

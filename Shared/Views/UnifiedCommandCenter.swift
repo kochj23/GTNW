@@ -14,6 +14,8 @@ struct UnifiedCommandCenter: View {
     @State private var selectedTarget: String?
     @State private var showingCountryPicker = false
     @State private var showingShadowMenu = false
+    @State private var showingBrainAssignment = false
+    @State private var showingAdvancedActions = false
     @State private var warheadCount: Int = 1
     @State private var showingWarheadPicker = false
     @State private var commandText = ""
@@ -95,7 +97,38 @@ struct UnifiedCommandCenter: View {
             .sheet(isPresented: $showingDiplomaticMessages) {
                 DiplomaticMessagesView(diplomacyService: gameEngine.diplomacyService, gameEngine: gameEngine, gameState: gameState)
             }
+            .sheet(isPresented: $showingBrainAssignment) {
+                BrainAssignmentView().environmentObject(gameEngine)
+            }
+            .sheet(isPresented: $showingAdvancedActions) {
+                AdvancedActionsPanel(selectedTarget: selectedTarget).environmentObject(gameEngine)
+            }
         }
+    }
+
+    // MARK: - Turn Phase Banner
+
+    /// Persistent banner making it unmistakable whose turn it is. #1 finding.
+    private func turnPhaseBanner(gameState: GameState) -> some View {
+        let resolving = gameEngine.turnPhase == .resolving || gameEngine.isProcessingAITurn
+        return HStack(spacing: 12) {
+            Image(systemName: resolving ? "hourglass" : "play.fill")
+                .font(.system(size: 18, weight: .bold))
+            Text(resolving
+                 ? "⏳ WORLD RESOLVING…"
+                 : "▶ YOUR TURN — Turn \(gameState.turn) · \(gameState.currentYear) · DEFCON \(gameState.defconLevel.rawValue)")
+                .font(.system(size: 15, weight: .heavy, design: .monospaced))
+            Spacer()
+        }
+        .foregroundColor(resolving ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill((resolving ? GTNWColors.terminalAmber : GTNWColors.terminalGreen).opacity(0.15))
+                .overlay(RoundedRectangle(cornerRadius: 10)
+                    .stroke(resolving ? GTNWColors.terminalAmber : GTNWColors.terminalGreen, lineWidth: 2))
+        )
     }
 
     // MARK: - Left Panel (Command Controls)
@@ -105,6 +138,9 @@ struct UnifiedCommandCenter: View {
             VStack(spacing: 24) {
                 // Header
                 SectionHeader("⚡ COMMAND CENTER", icon: "command.circle.fill", color: GTNWColors.terminalGreen)
+
+                // Turn phase banner — whose turn is it?
+                turnPhaseBanner(gameState: gameState)
 
                 // DEFCON Status (clickable)
                 Button(action: { showingDefconDetails = true }) {
@@ -120,8 +156,36 @@ struct UnifiedCommandCenter: View {
                 // Target Selection
                 targetSelectionCard(gameState: gameState)
 
-                // Action Buttons
+                // Action Buttons (disabled while the world resolves)
                 actionButtons(gameState: gameState)
+                    .disabled(gameEngine.turnPhase == .resolving)
+                    .opacity(gameEngine.turnPhase == .resolving ? 0.4 : 1.0)
+
+                // Action Hub + Brain assignment
+                HStack(spacing: 12) {
+                    Button(action: { showingAdvancedActions = true }) {
+                        Label("ACTION HUB", systemImage: "square.grid.2x2.fill")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(GTNWColors.neonCyan.opacity(0.15))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(GTNWColors.neonCyan, lineWidth: 1)))
+                            .foregroundColor(GTNWColors.neonCyan)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(gameEngine.turnPhase == .resolving)
+
+                    Button(action: { showingBrainAssignment = true }) {
+                        Label("BRAINS", systemImage: "brain.head.profile")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(GTNWColors.neonPurple.opacity(0.15))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(GTNWColors.neonPurple, lineWidth: 1)))
+                            .foregroundColor(GTNWColors.neonPurple)
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 // Quick Stats
                 SectionHeader("📊 STATUS", icon: "chart.bar.fill", color: GTNWColors.neonCyan)

@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **A brain per country (PvP + PvE)** — every country can be driven by a different brain:
+  `Human`, `Rule-Based AI` (default), `This Session` (live Claude Code session — true PvP),
+  `Gateway-Claude` (always-on), or any local/frontier OpenAI-compatible model.
+  - `Engine/AIBrain.swift` — `AIBrain` abstraction, `BrainClient` transport, vendored
+    `OpenAICompatibleRequest`, `ModelRegistry.parseOllamaTags`, `LiveSessionBus`, and a
+    `withMoveTimeout` guard.
+  - `Engine/AIMove.swift` — pure, network-free `MoveRequest`/`MoveResponse` contract with
+    `GameEngine.buildMoveRequest(for:)`, `applyMove(_:for:)`, and `legalActions(for:)`.
+  - `Engine/GameEngineBrains.swift` — brain assignment map (`[countryId: AIBrain]`, defaulting
+    every non-player country to `.ruleBased`) and the concurrent turn loop.
+  - `Views/BrainAssignmentView.swift` — "Who plays each country?" picker.
+- **Live-session PvP bus** — GTNW parks a `MoveRequest` in `nova_ops.claude_coordination`
+  (via `tools/gtnw_coordination_bridge.py`) for a live session to answer, then polls for the
+  `MoveResponse`. Schema: `migrations/2026-08-18_gtnw_coordination_moves.sql`.
+- **Action hub** (`Views/AdvancedActionsPanel.swift`) — folds every implemented verb that
+  previously lived only in the orphaned `CommandView` (SDI, cyber ops, weapons programs,
+  economic diplomacy, the covert quartet) into `UnifiedCommandCenter`, grouped by category
+  with proactive `.disabled` + inline reason chips ("Select a target", "Need $100B", "Unlocks 1983").
+- **Turn-phase banner** — `GameEngine.TurnPhase` drives a persistent banner
+  (`▶ YOUR TURN` vs `⏳ WORLD RESOLVING…`) and disables action buttons while the world resolves.
+- **Reversible / real agency verbs** — `abortLaunch()` / `scheduleLaunch()` / `resolvePendingLaunch()`
+  (recall a launch before it fires), `sueForPeace(from:to:)` (actually clears `activeWars`),
+  `leaveAlliance(country:from:)` (mutates alliances and bumps the previously-unused
+  `alliancesBroken` stat). The lying `Preemptive`/`First Strike`/`Ceasefire`/`Leave Alliance`
+  Shadow-President menu labels are now wired to these real engine verbs.
+
+### Changed
+- **AI turn loop is now concurrent + non-blocking** — replaced ~195 serial LLM calls (each
+  with a 200 ms main-thread sleep) with a `TaskGroup` that only calls out for non-rule-based
+  countries and never blocks the main actor. Remote brains that time out fall back to rule-based AI.
+
 ## [1.6.5] - 2026-03-05
 
 ### Fixed
