@@ -1216,7 +1216,7 @@ class CrisisManager: ObservableObject {
 
     /// Resolve crisis with chosen option
     func resolveCrisis(optionIndex: Int, gameState: inout GameState) {
-        guard var crisis = activeCrisis, optionIndex < crisis.options.count else { return }
+        guard var crisis = activeCrisis, optionIndex >= 0, optionIndex < crisis.options.count else { return }
 
         let option = crisis.options[optionIndex]
 
