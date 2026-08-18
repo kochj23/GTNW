@@ -7,13 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		FC91DB3D52484F7DBE2A168C /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */; };
-		31DF5AC08475491385D9DCA6 /* HistoricalAdministrations_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */; };
-		743FB90661F34C4EA7D86909 /* AnalysisUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */; };
-		176383259F5540D78FF1F9EE /* UnifiedAICapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA12DC249885D2FDDED18F24 /* UnifiedAICapabilities.swift */; };
-		641E1562EBDC48F9AB281013 /* WorldCountriesDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76A2267D69249178DDADD78 /* WorldCountriesDatabase.swift */; };
-		16666E30F49F4ADE9A595591 /* ImageGenerationUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5DB59B9D1F01FD48B5F19B /* ImageGenerationUnified.swift */; };
-		7A52153FF55A40C89F5F3DE7 /* SecurityUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C31E7D86AB72EDD917A62B /* SecurityUnified.swift */; };
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
 		03E52911A7DE17E85DD58483 /* ModernDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CF53E773D67381802521E1 /* ModernDesign.swift */; };
@@ -22,8 +15,11 @@
 		0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */; };
 		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		1357BE3A32F95BEC7FA165C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
+		1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */; };
 		14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
 		14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
+		16666E30F49F4ADE9A595591 /* ImageGenerationUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5DB59B9D1F01FD48B5F19B /* ImageGenerationUnified.swift */; };
+		176383259F5540D78FF1F9EE /* UnifiedAICapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA12DC249885D2FDDED18F24 /* UnifiedAICapabilities.swift */; };
 		1AC0A967F83425FFA2E1E57B /* SafeFeatureSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD985DE7EFE89ACB8056982 /* SafeFeatureSystems.swift */; };
 		1C79C86BAFCFD45DFD28E584 /* CinematicEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 683E810F11DA27011DB780CB /* CinematicEngine.swift */; };
 		1CDE37637B9A36E743BA1063 /* UnifiedCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */; };
@@ -31,6 +27,7 @@
 		22ECE3B26B1A098E3371A5E1 /* UnifiedAICapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA12DC249885D2FDDED18F24 /* UnifiedAICapabilities.swift */; };
 		2B76DF08711E46FDE51A69CC /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		2ECA3C78A7A69D26EF589671 /* AnalysisUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */; };
+		31DF5AC08475491385D9DCA6 /* HistoricalAdministrations_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */; };
 		32ECDC244087293A0E69CF11 /* LiveNewsNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAF8F3874EE4B33697489A0 /* LiveNewsNetwork.swift */; };
 		36666231626265322D343961382D346433652D393032302D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
@@ -51,7 +48,9 @@
 		59D72DF370BD09EF52516CBC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
 		5B51E2D1A374CBC57D3A29CA /* ModernCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75BFDEE85E6AE222B571791D /* ModernCommandView.swift */; };
 		62EB1DD76C1B4B1081B6C3B7 /* HistoricalCrises_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */; };
+		6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */; };
 		6389A4D8D9F7A6BE10CC8664 /* AdaptiveOpponentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */; };
+		641E1562EBDC48F9AB281013 /* WorldCountriesDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76A2267D69249178DDADD78 /* WorldCountriesDatabase.swift */; };
 		64633366336537652D616334332D343061352D626336662D /* AIBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */; };
 		67706BD14D60107F9E0A7532 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
 		6A3EA91EF0FA3F9EB096E784 /* MultiPerspectiveAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3168F06F2B322BD5EE637056 /* MultiPerspectiveAnalyzer.swift */; };
@@ -59,12 +58,14 @@
 		6EB415D2D4186D38A3616E76 /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
 		6FC58C6C449B38D80847C955 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
 		7292BA0DB6A370E2FF1F3ABB /* ImageGenerationUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5DB59B9D1F01FD48B5F19B /* ImageGenerationUnified.swift */; };
+		743FB90661F34C4EA7D86909 /* AnalysisUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */; };
 		7494639D7337DF87DC04D621 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700263707446EC9BADF298F /* AppSettings.swift */; };
 		74EB5655F52EFB5ECC77EE07 /* TextCommandInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */; };
 		75F82511211E162114221744 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94847C472F1566DF6947C4A3 /* CommandView.swift */; };
 		769CA620D51E46A7A71BF2A0 /* AlienInvasionScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */; };
 		76E331A448D43D60424EEA18 /* ModernDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CF53E773D67381802521E1 /* ModernDesign.swift */; };
 		79602484A81ED37C5DB339E6 /* AchievementEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EDD0F24DB212B6E82F9582 /* AchievementEngine.swift */; };
+		7A52153FF55A40C89F5F3DE7 /* SecurityUnified.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C31E7D86AB72EDD917A62B /* SecurityUnified.swift */; };
 		7ABDEF5D1B4F33715640E692 /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		7B58B87BA586678F7FB2A833 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
 		7B5D1C3A60EDC9F80545B4CB /* TheLivingRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3AFE577AA206EFC80AC0CE /* TheLivingRoom.swift */; };
@@ -79,6 +80,7 @@
 		948B3C658864BE9FC3F88C4C /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		9524A43CBD1C56CE4B1C8E53 /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		97396C9CA4C3021340306946 /* SentimentWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23597A87E243362EFB70CF64 /* SentimentWorldMap.swift */; };
+		99BD19A6521D9A063A32D7A6 /* GTNWAuditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA3E7FC67216FDA941511B3 /* GTNWAuditTests.swift */; };
 		99DA140B585F4996F4A27B2D /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81E03C944B7130DB24D3B19 /* OllamaService.swift */; };
 		9A97F22D5B4A34C796C91BA2 /* WorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ED35FA1859FB798CDBD083 /* WorldMap.swift */; };
 		9B6EDDFB99BB9370BBAE9C2F /* GameSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = A998F3C744EB66ACE08758DF /* GameSystems.swift */; };
@@ -116,6 +118,8 @@
 		EF095B87A192355C459DBF6E /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
 		F22190179915148B3EA249D4 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
 		F3701B6CB75BB4A0C4845E5B /* DiplomaticMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E082C07AA705A6B4CA2D17B /* DiplomaticMessagesView.swift */; };
+		F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */; };
+		FC91DB3D52484F7DBE2A168C /* HistoricalAdministrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */; };
 		FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
 		FDA0817763260DF5A2653FC1 /* EconomicWarfareSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */; };
 		WIDGET001A /* GTNWWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET001F /* GTNWWidget.swift */; };
@@ -124,28 +128,17 @@
 		WIDGET004A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = WIDGET004F /* Assets.xcassets */; };
 		WIDGET005A /* WidgetSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET005F /* WidgetSync.swift */; };
 		WIDGET006A /* WidgetSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET005F /* WidgetSync.swift */; };
-F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */; };
-1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */; };
-6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-88D62EAA291FBF336166B07C /* PBXContainerItemProxy */ = {
-	isa = PBXContainerItemProxy;
-	containerPortal = EA58568D7C96D1FC811BF388 /* Project object */;
-	proxyType = 1;
-	remoteGlobalIDString = ABB94F1EC86B3E165928C70B;
-	remoteInfo = GTNW_macOS;
-};
+		88D62EAA291FBF336166B07C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EA58568D7C96D1FC811BF388 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ABB94F1EC86B3E165928C70B;
+			remoteInfo = GTNW_macOS;
+		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-93D0EAF084C9D4DA5043E0AB /* PBXTargetDependency */ = {
-	isa = PBXTargetDependency;
-	target = ABB94F1EC86B3E165928C70B /* GTNW_macOS */;
-	targetProxy = 88D62EAA291FBF336166B07C /* PBXContainerItemProxy */;
-};
-/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		003177A629E84F33BCF55FD0 /* PresidentialPowersViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidentialPowersViews.swift; sourceTree = "<group>"; };
@@ -162,7 +155,7 @@ F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildF
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlienInvasionScenario.swift; sourceTree = "<group>"; };
 		1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdaptiveOpponentEngine.swift; sourceTree = "<group>"; };
-		1FAEB803289CF2B22BD2D87B /* NovaAPIServer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "/Volumes/Data/xcode/GTNW/Shared/NovaAPIServer.swift"; sourceTree = "<absolute>"; };
+		1FAEB803289CF2B22BD2D87B /* NovaAPIServer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NovaAPIServer.swift; sourceTree = "<group>"; };
 		1FAF8F3874EE4B33697489A0 /* LiveNewsNetwork.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveNewsNetwork.swift; sourceTree = "<group>"; };
 		1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisView.swift; sourceTree = "<group>"; };
 		204DCC47475BC4E6E381CED1 /* Advisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Advisor.swift; sourceTree = "<group>"; };
@@ -176,13 +169,16 @@ F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildF
 		34CF53E773D67381802521E1 /* ModernDesign.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ModernDesign.swift; path = Design/ModernDesign.swift; sourceTree = "<group>"; };
 		38333833323034632D656666642D346461612D613738352D /* AIBackendManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackendManager.swift; sourceTree = "<group>"; };
 		390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPresidentActions.swift; sourceTree = "<group>"; };
+		3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWFunctionalTests.swift; sourceTree = "<group>"; };
 		3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScoringSystem.swift; sourceTree = "<group>"; };
 		3FA7A49314ADF98CD22BB912 /* NaturalLanguageIntel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NaturalLanguageIntel.swift; sourceTree = "<group>"; };
 		4F961F9A3D52CD1EC10D97CF /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
+		5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GTNWTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProhibitedWeapons.swift; sourceTree = "<group>"; };
 		5EFC468BB40351CE42893C87 /* NewsFeed.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewsFeed.swift; sourceTree = "<group>"; };
 		60D0B51B989A94270AE3580D /* AdvisorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorViews.swift; sourceTree = "<group>"; };
 		683E810F11DA27011DB780CB /* CinematicEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CinematicEngine.swift; sourceTree = "<group>"; };
+		7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWSecurityTests.swift; sourceTree = "<group>"; };
 		75BFDEE85E6AE222B571791D /* ModernCommandView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModernCommandView.swift; sourceTree = "<group>"; };
 		77A18618B97CC2F0FBC4F8DA /* PropagandaEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PropagandaEngine.swift; sourceTree = "<group>"; };
 		78C5FC8E90BB415A941883B2 /* PresidentialPowers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidentialPowers.swift; sourceTree = "<group>"; };
@@ -200,6 +196,7 @@ F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildF
 		991630D748C5C7E56E47730C /* GTNW_macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GTNW_macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B62F448E991AD0276155180 /* DynamicCrisisGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DynamicCrisisGenerator.swift; sourceTree = "<group>"; };
 		9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalThermalNuclearWarApp.swift; sourceTree = "<group>"; };
+		9CA3E7FC67216FDA941511B3 /* GTNWAuditTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GTNWAuditTests.swift; sourceTree = "<group>"; };
 		9D1A418AA229ADEE47B81E9D /* AIBackendManager+Generation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "AIBackendManager+Generation.swift"; path = "Shared/Models/AIBackendManager+Generation.swift"; sourceTree = "<group>"; };
 		A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalCrises_PreNuclear.swift; sourceTree = "<group>"; };
 		A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnalysisUnified.swift; path = GTNW/AICapabilities/AnalysisUnified.swift; sourceTree = "<group>"; };
@@ -215,6 +212,7 @@ F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildF
 		D7ECEDC77508A1E557396BF0 /* PredictiveIntelligence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PredictiveIntelligence.swift; sourceTree = "<group>"; };
 		D81E03C944B7130DB24D3B19 /* OllamaService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OllamaService.swift; sourceTree = "<group>"; };
 		DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnifiedCommandCenter.swift; sourceTree = "<group>"; };
+		DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWUnitTests.swift; sourceTree = "<group>"; };
 		E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
 		E7840FA926BF3040BC40D754 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GTNW_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -230,10 +228,6 @@ F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */ = {isa = PBXBuildF
 		WIDGET006F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		WIDGET007F /* GTNW_Widget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GTNW_Widget.entitlements; sourceTree = "<group>"; };
 		WIDGET_PRODUCT /* GTNW Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "GTNW Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWUnitTests.swift; sourceTree = "<group>"; };
-3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWFunctionalTests.swift; sourceTree = "<group>"; };
-7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWSecurityTests.swift; sourceTree = "<group>"; };
-5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GTNWTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -307,6 +301,17 @@ DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; la
 			path = Visualization;
 			sourceTree = "<group>";
 		};
+		36A6866A806DFB3DE513621A /* GTNWTests */ = {
+			isa = PBXGroup;
+			children = (
+				DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */,
+				3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */,
+				7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */,
+				9CA3E7FC67216FDA941511B3 /* GTNWAuditTests.swift */,
+			);
+			path = GTNWTests;
+			sourceTree = "<group>";
+		};
 		4EFAFFB7B1DA5042AA46F1C4 /* Warfare */ = {
 			isa = PBXGroup;
 			children = (
@@ -367,8 +372,8 @@ DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; la
 				854F628D7554D1E187C54898 /* GTNW */,
 				WIDGET_GROUP /* GTNW Widget */,
 				F408151A0BE8C3D732CDDD9C /* AIBackend */,
-							36A6866A806DFB3DE513621A /* GTNWTests */,
-							5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */,
+				36A6866A806DFB3DE513621A /* GTNWTests */,
+				5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -515,19 +520,25 @@ DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; la
 			path = "GTNW Widget";
 			sourceTree = "<group>";
 		};
-36A6866A806DFB3DE513621A /* GTNWTests */ = {
-	isa = PBXGroup;
-	children = (
-		DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */,
-		3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */,
-		7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */,
-	);
-	path = GTNWTests;
-	sourceTree = "<group>";
-};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		22445FA90247CF86335D6468 /* GTNWTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8FD158E499385BBC1D92E9A3 /* Build configuration list for PBXNativeTarget "GTNWTests" */;
+			buildPhases = (
+				B8EC63688AE3D6B6076ADBD7 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				93D0EAF084C9D4DA5043E0AB /* PBXTargetDependency */,
+			);
+			name = GTNWTests;
+			productName = GTNWTests;
+			productReference = 5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		ABB94F1EC86B3E165928C70B /* GTNW_macOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3A46324CC1BFC02C1A014BDA /* Build configuration list for PBXNativeTarget "GTNW_macOS" */;
@@ -576,22 +587,6 @@ DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; la
 			productReference = WIDGET_PRODUCT /* GTNW Widget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-22445FA90247CF86335D6468 /* GTNWTests */ = {
-	isa = PBXNativeTarget;
-	buildConfigurationList = 8FD158E499385BBC1D92E9A3 /* Build configuration list for PBXNativeTarget "GTNWTests" */;
-	buildPhases = (
-		B8EC63688AE3D6B6076ADBD7 /* Sources */,
-	);
-	buildRules = (
-	);
-	dependencies = (
-		93D0EAF084C9D4DA5043E0AB /* PBXTargetDependency */,
-	);
-	name = GTNWTests;
-	productName = GTNWTests;
-	productReference = 5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */;
-	productType = "com.apple.product-type.bundle.unit-test";
-};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -740,6 +735,17 @@ DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; la
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */,
+				1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */,
+				6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */,
+				99BD19A6521D9A063A32D7A6 /* GTNWAuditTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E623BDB4D48526A513B0C9FC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -802,17 +808,15 @@ DDAEE64EDCEF92AF3EF548E3 /* GTNWUnitTests.swift */ = {isa = PBXFileReference; la
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
-	isa = PBXSourcesBuildPhase;
-	buildActionMask = 2147483647;
-	files = (
-		F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */,
-		1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */,
-		6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */,
-	);
-	runOnlyForDeploymentPostprocessing = 0;
-};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		93D0EAF084C9D4DA5043E0AB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ABB94F1EC86B3E165928C70B /* GTNW_macOS */;
+			targetProxy = 88D62EAA291FBF336166B07C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1697DC5D63F7EA8E894A46D9 /* Debug */ = {
@@ -840,6 +844,22 @@ B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
 			};
 			name = Debug;
 		};
+		350B8A121C1710A3463521F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GTNW.app/Contents/MacOS/GTNW";
+			};
+			name = Debug;
+		};
 		71E4435A3BDA8F8C2591996C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -860,6 +880,22 @@ B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos;
 				PRODUCT_NAME = GTNW;
 				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		77C8103FBBDB7035DE6F4879 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = QRRCB8HB3W;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GTNW.app/Contents/MacOS/GTNW";
 			};
 			name = Release;
 		};
@@ -1088,38 +1124,6 @@ B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
 			};
 			name = Release;
 		};
-350B8A121C1710A3463521F6 /* Debug */ = {
-	isa = XCBuildConfiguration;
-	buildSettings = {
-		BUNDLE_LOADER = "$(TEST_HOST)";
-		CODE_SIGN_STYLE = Automatic;
-		DEVELOPMENT_TEAM = QRRCB8HB3W;
-		GENERATE_INFOPLIST_FILE = YES;
-		MACOSX_DEPLOYMENT_TARGET = 13.0;
-		PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.tests;
-		PRODUCT_NAME = "$(TARGET_NAME)";
-		SDKROOT = macosx;
-		SWIFT_VERSION = 5.0;
-		TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GTNW.app/Contents/MacOS/GTNW";
-	};
-	name = Debug;
-};
-77C8103FBBDB7035DE6F4879 /* Release */ = {
-	isa = XCBuildConfiguration;
-	buildSettings = {
-		BUNDLE_LOADER = "$(TEST_HOST)";
-		CODE_SIGN_STYLE = Automatic;
-		DEVELOPMENT_TEAM = QRRCB8HB3W;
-		GENERATE_INFOPLIST_FILE = YES;
-		MACOSX_DEPLOYMENT_TARGET = 13.0;
-		PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.tests;
-		PRODUCT_NAME = "$(TARGET_NAME)";
-		SDKROOT = macosx;
-		SWIFT_VERSION = 5.0;
-		TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GTNW.app/Contents/MacOS/GTNW";
-	};
-	name = Release;
-};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1137,6 +1141,15 @@ B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
 			buildConfigurations = (
 				7E31FCBB2D457C5F981D2402 /* Debug */,
 				71E4435A3BDA8F8C2591996C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8FD158E499385BBC1D92E9A3 /* Build configuration list for PBXNativeTarget "GTNWTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				350B8A121C1710A3463521F6 /* Debug */,
+				77C8103FBBDB7035DE6F4879 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -1159,15 +1172,6 @@ B8EC63688AE3D6B6076ADBD7 /* Sources */ = {
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-8FD158E499385BBC1D92E9A3 /* Build configuration list for PBXNativeTarget "GTNWTests" */ = {
-	isa = XCConfigurationList;
-	buildConfigurations = (
-		350B8A121C1710A3463521F6 /* Debug */,
-		77C8103FBBDB7035DE6F4879 /* Release */,
-	);
-	defaultConfigurationIsVisible = 0;
-	defaultConfigurationName = Debug;
-};
 /* End XCConfigurationList section */
 	};
 	rootObject = EA58568D7C96D1FC811BF388 /* Project object */;
