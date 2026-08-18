@@ -15,6 +15,38 @@ Inspired by the WOPR computer from WarGames (1983).
 
 Written by Jordan Koch.
 
+---
+
+## Who plays each country? — a brain per country (PvP + PvE)
+
+Every country can be driven by a different **brain**. Open the **BRAINS** panel in the
+Command Center to assign any of these to any nation:
+
+| Brain | What it is |
+|-------|------------|
+| **Human** | A person at the keyboard — no automated move is taken for that country. |
+| **Rule-Based AI** | The fast built-in AI. **Default** for every non-player country, so existing behavior is preserved until you change assignments. Network-free. |
+| **This Session (live PvP)** | A **live Claude Code session** answers that country's moves in real time — true player-vs-player. |
+| **Gateway-Claude (always-on)** | An always-on opponent served by Nova Gateway (`:18792`) — no human session required. |
+| **Local / frontier models** | Any OpenAI-compatible endpoint: local Ollama models (auto-discovered from `:11434/api/tags`) or frontier models via OpenRouter. |
+
+Each turn, only countries whose brain is **not** rule-based make an LLM/session call, and
+those calls run **concurrently** (a `TaskGroup`, off the main actor) — turns are dramatically
+faster than the old serial path. Every remote call is bounded by a timeout: **if a brain
+does not answer in time, that country falls back to rule-based AI**, so a turn never blocks
+waiting on a human or a slow model.
+
+### The true-PvP live-session bus
+
+For "This Session" brains, GTNW POSTs a `MoveRequest` to a thin local bridge
+(`tools/gtnw_coordination_bridge.py`) which parks it in `nova_ops.claude_coordination`
+(topic `gtnw-move`, keyed by game/turn/country). A live Claude Code session answers by
+writing a `MoveResponse` back onto the row; GTNW polls for it and applies it. GTNW talks
+**HTTP to the bridge** rather than embedding a Postgres client, keeping the app free of a
+heavy pinned SPM dependency. See `migrations/2026-08-18_gtnw_coordination_moves.sql` for the
+row schema. Until the bridge (or an equivalent gateway route) is running, live-session calls
+simply time out and fall back — harmlessly.
+
 ![GTNW](Screenshots/main-window.png)
 
 ---

@@ -514,6 +514,21 @@ final class WarAndTreatyTests: XCTestCase {
 
 final class LeaderboardTests: XCTestCase {
 
+    // LeaderboardManager persists to UserDefaults.standard["GTNW_Leaderboard"], which is
+    // shared process-wide. Without clearing it, entries accumulate across tests (and prior
+    // runs), polluting sort/rank assertions. Reset before and after each test for hermeticity.
+    private let leaderboardKey = "GTNW_Leaderboard"
+
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.removeObject(forKey: leaderboardKey)
+    }
+
+    override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: leaderboardKey)
+        super.tearDown()
+    }
+
     func testLeaderboardSorting() {
         let manager = LeaderboardManager()
 
