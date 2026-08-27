@@ -636,16 +636,19 @@ class AIBackendManager: ObservableObject {
         }
         fullPrompt += "User: \(prompt)\n\nAssistant:"
 
-        // Create Python MLX invocation
+        // Create Python MLX invocation.
+        // SECURITY: the prompt is untrusted text and must NOT be interpolated into the Python
+        // source (that is code injection — a prompt containing ''' or arbitrary statements would
+        // execute). Instead the script reads the prompt from argv, exactly like the safe sibling
+        // AIBackendManager+Generation.swift. Only the numeric max_tokens/temperature — which are
+        // typed Int/Float, not attacker-controlled strings — are interpolated.
         let script = """
         import sys
         import json
         try:
             import mlx_lm
 
-            prompt = '''
-            \(fullPrompt)
-            '''
+            prompt = sys.argv[1]
 
             model, tokenizer = mlx_lm.load("mlx-community/Llama-3.2-1B-Instruct-4bit")
 
@@ -673,10 +676,10 @@ class AIBackendManager: ObservableObject {
             try? FileManager.default.removeItem(at: scriptFile)
         }
 
-        // Execute Python script
+        // Execute Python script, passing the prompt as an argv value (not interpolated into source).
         let task = Process()
         task.executableURL = URL(fileURLWithPath: pythonPath)
-        task.arguments = [scriptFile.path]
+        task.arguments = [scriptFile.path, fullPrompt]
 
         let outputPipe = Pipe()
         let errorPipe = Pipe()

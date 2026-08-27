@@ -32,6 +32,7 @@
 
 import Foundation
 import Network
+import Security
 
 @MainActor
 class NovaAPIServer {
@@ -129,7 +130,14 @@ class NovaAPIServer {
     // MARK: - Router
 
     private func route(_ req: NovaRequest) async -> String {
-        if req.method == "OPTIONS" { return http(200, "") }
+        // Mutating routes (POST/DELETE/etc.) require the per-install bearer token so a website the
+        // user happens to visit can't drive game sessions or burn paid cloud-AI quota via this
+        // loopback server. GET reads stay open (loopback-only, native clients ignore CORS).
+        if req.method != "GET" {
+            guard req.isAuthorized(token: Self.apiToken) else {
+                return json(401, ["error": "Unauthorized: missing or invalid bearer token"] as [String: Any])
+            }
+        }
 
         // Parse /:id/ pattern from path
         let parts = req.path.split(separator: "/").map(String.init)
@@ -662,10 +670,15 @@ class NovaAPIServer {
     // MARK: - HTTP helpers
 
     private struct NovaRequest {
-        let method: String; let path: String; let body: String
+        let method: String; let path: String; let body: String; let authorization: String?
         func bodyJSON() -> [String: Any]? {
             guard let d = body.data(using: .utf8), !body.isEmpty else { return nil }
             return try? JSONSerialization.jsonObject(with: d) as? [String: Any]
+        }
+        /// True iff the request carries `Authorization: Bearer <token>` matching the per-install token.
+        func isAuthorized(token: String) -> Bool {
+            guard !token.isEmpty, let auth = authorization else { return false }
+            return auth == "Bearer \(token)"
         }
         init?(_ data: Data) {
             guard let raw = String(data: data, encoding: .utf8), raw.contains("\r\n\r\n") else { return nil }
@@ -684,7 +697,60 @@ class NovaAPIServer {
             method = tokens[0]
             path = tokens[1].components(separatedBy: "?").first ?? tokens[1]
             body = rawBody
+            authorization = hdrs["authorization"]
         }
+    }
+
+    // MARK: - Per-install API token (Keychain-backed)
+    //
+    // Mutating routes require `Authorization: Bearer <apiToken>`. The token is generated once with
+    // a CSPRNG and stored in the login Keychain; native Nova clients read it from the same Keychain
+    // item. To rotate it, delete the Keychain item and the next launch regenerates one.
+
+    private static let keychainService = "com.jordankoch.GTNW.NovaAPIServer"
+    private static let keychainAccount = "api_bearer_token"
+
+    /// The per-install bearer token required on mutating routes.
+    static let apiToken: String = loadOrCreateToken()
+
+    private static func loadOrCreateToken() -> String {
+        if let existing = loadToken() { return existing }
+        let token = generateToken()
+        saveToken(token)
+        return token
+    }
+
+    private static func generateToken() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return bytes.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func loadToken() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: keychainAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data,
+              let token = String(data: data, encoding: .utf8) else { return nil }
+        return token
+    }
+
+    private static func saveToken(_ token: String) {
+        guard let data = token.data(using: .utf8) else { return }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: keychainAccount,
+            kSecValueData as String: data
+        ]
+        SecItemDelete(query as CFDictionary)
+        SecItemAdd(query as CFDictionary, nil)
     }
 
     private func json(_ s: Int, _ d: [String: Any]) -> String {
@@ -698,7 +764,10 @@ class NovaAPIServer {
         return http(s, body, "application/json")
     }
     private func http(_ s: Int, _ body: String, _ ct: String = "text/plain") -> String {
-        let st = [200:"OK",201:"Created",400:"Bad Request",404:"Not Found",500:"Internal Server Error"][s] ?? "Unknown"
-        return "HTTP/1.1 \(s) \(st)\r\nContent-Type: \(ct); charset=utf-8\r\nContent-Length: \(body.utf8.count)\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n\(body)"
+        let st = [200:"OK",201:"Created",400:"Bad Request",401:"Unauthorized",404:"Not Found",500:"Internal Server Error"][s] ?? "Unknown"
+        // No Access-Control-Allow-Origin: loopback-only API for native clients (which ignore CORS).
+        // A wildcard ACAO would let any website the user visits read these responses and, combined
+        // with the token gate above, is unnecessary; omitting it stops cross-origin browser reads.
+        return "HTTP/1.1 \(s) \(st)\r\nContent-Type: \(ct); charset=utf-8\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
     }
 }
