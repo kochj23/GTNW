@@ -27,6 +27,9 @@ class GameEngine: ObservableObject {
     @Published var finalScore: GameScore?
     @Published var isProcessingAITurn = false  // Prevent actions during AI processing
 
+    /// When set (the app does this; tests don't), the game autosaves to slot 0 at the end of every turn.
+    var autosaveManager: SaveManager? = nil
+
     // MARK: - Brain-per-country system
 
     /// Whose turn it is / what the world is doing. Drives the UI banner and
@@ -88,10 +91,13 @@ class GameEngine: ObservableObject {
     // MARK: - Game Lifecycle
 
     /// Start a new game
-    func startNewGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal, administration: Administration? = nil) {
-        gameState = GameState(playerCountryID: playerCountryID, difficultyLevel: difficulty, administration: administration)
+    func startNewGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal, administration: Administration? = nil,
+                      turnLength: TurnLength = TurnLength.defaultForNewGames()) {
+        gameState = GameState(playerCountryID: playerCountryID, difficultyLevel: difficulty, administration: administration,
+                              turnLength: turnLength)
         logMessages = []
         showingGameOver = false
+        setupShadowSystems()
 
         addLog("WOPR SYSTEM INITIALIZED", type: .system)
         addLog("GREETINGS PROFESSOR FALKEN", type: .system)
@@ -106,11 +112,11 @@ class GameEngine: ObservableObject {
         addLog("", type: .system)
         addLog("1. SELECT TARGET: Pick a country from dropdown", type: .info)
         addLog("2. CHOOSE ACTION: Click button (Nuke, War, Alliance, etc.)", type: .info)
-        addLog("3. AUTO-END TURN: Action executes and turn ends automatically", type: .info)
+        addLog("3. ACTIONS PER TURN: \(turnLength.actionsPerTurn) per \(turnLength.displayName.lowercased()); the turn ends when they're used", type: .info)
         addLog("4. AI RESPONDS: Watch AI countries take their actions", type: .info)
-        addLog("5. NEW TURN: Starts automatically, repeat!", type: .info)
+        addLog("5. NEW TURN: The calendar advances one \(turnLength.displayName.lowercased())", type: .info)
         addLog("", type: .system)
-        addLog("💡 TIP: Actions auto-end turn. No need to click END TURN!", type: .info)
+        addLog("📅 \(gameState!.currentDateLabel) — elections, budgets and polls follow the calendar.", type: .info)
         addLog("═══════════════════════════════════════", type: .system)
         addLog("", type: .system)
     }
@@ -144,6 +150,10 @@ class GameEngine: ObservableObject {
         if let gs = self.gameState {
             gs.systems.processTurn(gameState: gs)
         }
+
+        // Shadow systems: calendar events, anxieties, War Room, budget, aid, popularity, elections, advisors
+        processShadowTurn()
+        addLog("📅 \(gameState.currentDateLabel)", type: .system)
 
         // Process cyber operations
         processCyberOperations()
@@ -195,6 +205,10 @@ class GameEngine: ObservableObject {
 
         // Log system updates
         logSystemUpdates()
+
+        if let manager = autosaveManager, let gs = self.gameState, !gs.gameOver {
+            try? manager.save(gs, slot: 0)
+        }
     }
 
     private func logFeatureNotifications() {
@@ -672,6 +686,18 @@ class GameEngine: ObservableObject {
         // Set DEFCON 1
         gameState.defconLevel = .defcon1
 
+        // Domestic fallout and casualties among the cabinet
+        if attackerID == gameState.playerCountryID {
+            recordPlayerAction(rung: .nuclear, hostile: true, detected: true)
+            gameState.nukesLaunched += 1
+            gameState.totalWarheadsLaunched += warheads
+        }
+        gameState.shadow.post("Nuclear detonation: \(attacker.name) strikes \(target.name).", date: gameState.currentDate, severity: 3)
+        if targetID == gameState.playerCountryID { homelandStruck() }
+        for i in gameState.countries.indices where !gameState.countries[i].isDestroyed {
+            gameState.countries[i].profile.anxieties.nuclear += gameState.countries[i].id == targetID ? 60 : 15
+        }
+
         addLog("", type: .system)
         addLog("☢️  NUCLEAR STRIKE DETECTED ☢️", type: .critical)
         addLog("\(attacker.flag) \(attacker.name) launches \(warheads) nuclear warhead(s) at \(target.flag) \(target.name)", type: .critical)
@@ -942,12 +968,14 @@ class GameEngine: ObservableObject {
         gameState.countries[countryIndex] = country
 
         // Create program
-        let program = WeaponsDevelopmentProgram(
+        var program = WeaponsDevelopmentProgram(
             countryID: countryID,
             weapon: weapon,
             startTurn: gameState.turn
         )
 
+        // developmentTime is in years; convert to turns for this game's calendar.
+        program.completionTurn = program.startTurn + gameState.scale.turns(forYears: Double(weapon.developmentTime))
         gameState.activeWeaponPrograms.append(program)
         country.activeWeaponPrograms.append(program.id)
         gameState.countries[countryIndex] = country
@@ -956,7 +984,7 @@ class GameEngine: ObservableObject {
         addLog("🔬 SECRET WEAPONS PROGRAM INITIATED", type: .warning)
         addLog("Program: \(weapon.rawValue)", type: .info)
         addLog("Cost: $\(weapon.developmentCost.formatted())", type: .info)
-        addLog("Estimated completion: Turn \(program.completionTurn)", type: .info)
+        addLog("Estimated completion: \(gameState.dateLabel(forTurn: program.completionTurn))", type: .info)
         addLog("⚠️ WARNING: Treaty violation if discovered", type: .warning)
         addLog("", type: .system)
         addLog("CLASSIFICATION: TOP SECRET", type: .critical)
@@ -981,7 +1009,8 @@ class GameEngine: ObservableObject {
             // Check for detection during development
             if !program.wasDetected && gameState.turn < program.completionTurn {
                 let detectionChance = calculateWeaponDetectionChance(program: program)
-                if Int.random(in: 1...100) <= detectionChance {
+                // The chance is per game year; scale it to this turn's length.
+                if Double.random(in: 0..<1) < gameState.scale.probability(annual: Double(detectionChance) / 100) {
                     program.wasDetected = true
                     program.detectedOnTurn = gameState.turn
                     gameState.activeWeaponPrograms[i] = program
@@ -1008,7 +1037,8 @@ class GameEngine: ObservableObject {
         return WeaponsIntelligence.detectionChance(
             for: program.weapon,
             targetIntelligence: averageIntel,
-            turn: gameState.turn,
+            // The time bonus is per year of development, not per turn.
+            turn: program.startTurn + Int(Double(gameState.turn - program.startTurn) * gameState.turnLength.yearFraction),
             startTurn: program.startTurn
         )
     }
@@ -1083,7 +1113,7 @@ class GameEngine: ObservableObject {
         addLog("🚨 SECRET WEAPONS PROGRAM DETECTED", type: .critical)
         addLog("\(country.flag) \(country.name) developing: \(program.weapon.rawValue)", type: .critical)
         addLog("Intelligence confirms treaty violation in progress", type: .warning)
-        addLog("Estimated completion: Turn \(program.completionTurn)", type: .info)
+        addLog("Estimated completion: \(gameState.dateLabel(forTurn: program.completionTurn))", type: .info)
         addLog("", type: .system)
         addLog("⚠️ International crisis escalating", type: .warning)
 
@@ -1177,12 +1207,14 @@ class GameEngine: ObservableObject {
         gameState.countries[attackerIndex] = attacker
 
         // Create operation
-        let operation = CyberOperation(
+        var operation = CyberOperation(
             attackerID: attackerID,
             targetID: targetID,
             type: attackType,
             startTurn: gameState.turn
         )
+        // Operation durations are in game years; convert to turns.
+        operation.completionTurn = operation.startTurn + gameState.scale.turns(forYears: Double(attackType.duration))
 
         gameState.activeCyberOperations.append(operation)
         attacker.activeCyberOperations.append(operation.id)
@@ -1222,7 +1254,8 @@ class GameEngine: ObservableObject {
             // Check for detection during operation
             if !operation.wasDetected && gameState.turn < operation.completionTurn {
                 let detectionChance = calculateDetectionChance(operation: operation)
-                if Int.random(in: 1...100) <= detectionChance {
+                // The chance is per game year; scale it to this turn's length.
+                if Double.random(in: 0..<1) < gameState.scale.probability(annual: Double(detectionChance) / 100) {
                     operation.wasDetected = true
                     operation.detectedOnTurn = gameState.turn
                     gameState.activeCyberOperations[i] = operation
@@ -1243,7 +1276,7 @@ class GameEngine: ObservableObject {
 
         let baseDetection = operation.type.detectability
         let defenseBonus = target.cyberDefenseLevel.detectionBonus
-        let perTurnIncrease = (gameState.turn - operation.startTurn) * 5 // Increases over time
+        let perTurnIncrease = Int(Double(gameState.turn - operation.startTurn) * gameState.turnLength.yearFraction * 5) // +5/year
 
         return min(95, baseDetection + defenseBonus + perTurnIncrease)
     }
@@ -1559,8 +1592,8 @@ class GameEngine: ObservableObject {
         } else if warCount >= 1 {
             targetDEFCON = .defcon3
         } else {
-            // Gradually return to peace
-            if gameState.defconLevel.rawValue < 5 && gameState.turn % 5 == 0 {
+            // Gradually return to peace: one level per full game year of calm
+            if gameState.defconLevel.rawValue < 5 && gameState.turn % gameState.scale.turns(forYears: 1) == 0 {
                 let newLevel = DefconLevel(rawValue: min(5, gameState.defconLevel.rawValue + 1)) ?? .defcon5
                 gameState.defconLevel = newLevel
                 addLog("DEFCON lowered to: \(newLevel.description)", type: .info)
@@ -1659,8 +1692,9 @@ class GameEngine: ObservableObject {
         // Radiation spread
         for i in gameState.countries.indices {
             if gameState.countries[i].radiationLevel > 50 {
-                gameState.countries[i].stability = max(0, gameState.countries[i].stability - 5)
-                gameState.countries[i].economicStrength = max(0, gameState.countries[i].economicStrength - 3)
+                // -5 stability / -3 economy per game year of heavy fallout
+                gameState.countries[i].stability = max(0, gameState.countries[i].stability - gameState.scale.integer(annual: 5))
+                gameState.countries[i].economicStrength = max(0, gameState.countries[i].economicStrength - gameState.scale.integer(annual: 3))
             }
         }
 

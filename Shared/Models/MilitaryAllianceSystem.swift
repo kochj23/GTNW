@@ -261,12 +261,15 @@ struct ArmsRaceEngine {
             let buildRate = armsRaceBuildRate(year: year, country: country, ratio: ratio)
             guard buildRate > 0 else { continue }
 
-            gameState.countries[i].nuclearWarheads += buildRate
-            gameState.countries[i].icbmCount += max(0, buildRate / 10)
+            // buildRate is per game year; spread it over the turn length.
+            let perTurn = gameState.scale.integer(annual: Double(buildRate))
+            guard perTurn > 0 else { continue }
+            gameState.countries[i].nuclearWarheads += perTurn
+            gameState.countries[i].icbmCount += max(0, perTurn / 10)
 
             let flag = country.flag
             let name = country.name
-            logs.append("ARMS RACE: \(flag) \(name) accelerates nuclear buildup (+\(buildRate) warheads)")
+            logs.append("ARMS RACE: \(flag) \(name) accelerates nuclear buildup (+\(perTurn) warheads)")
         }
 
         // Conversely: if major powers have SALT-era treaties, reduce slightly
@@ -342,7 +345,7 @@ struct ArmsRaceEngine {
                   country.nuclearWarheads > cap else { continue }
 
             // Small natural reduction each turn toward the cap
-            let reduction = min(50, (country.nuclearWarheads - cap) / 10)
+            let reduction = gameState.scale.integer(annual: Double(min(50, (country.nuclearWarheads - cap) / 10)))
             if reduction > 0 {
                 gameState.countries[i].nuclearWarheads -= reduction
                 logs.append("ARMS CONTROL: \(country.flag) \(country.name) reduces arsenal under \(label) (-\(reduction))")

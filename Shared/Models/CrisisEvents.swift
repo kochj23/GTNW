@@ -150,7 +150,8 @@ class CrisisManager: ObservableObject {
         case .defcon1: crisisProbability = 0.50
         }
 
-        guard Double.random(in: 0...1) < crisisProbability else { return nil }
+        // The table above is per game year; scale it to the turn length.
+        guard Double.random(in: 0...1) < gameState.scale.probability(annual: crisisProbability) else { return nil }
 
         // Select random crisis type
         let crisisTypes: [CrisisEventType] = [

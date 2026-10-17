@@ -151,6 +151,10 @@ struct Country: Identifiable, Codable, Hashable {
     var hasASATWeapons: Bool // Anti-Satellite weapons
     var treatyViolations: Int // Count of detected violations
 
+    // Leader personality, anxieties, quality of life and aid need (Shadow systems). Optional so older saves load;
+    // read it through `profile`, which derives a default when missing.
+    var leaderProfile: CountryProfile? = nil
+
     // NOTE: CIA World Factbook data is accessed via country.factbook (WorldFactbookRecord)
     // This keeps the Codable-compliant Country struct lean; Factbook data is static reference.
 
@@ -173,6 +177,7 @@ struct Country: Identifiable, Codable, Hashable {
         case cyberAttacksReceived, cyberAttacksLaunched, isUnderCyberAttack
         case activeWeaponPrograms, deployedProhibitedWeapons, hasABMSystem
         case hasMIRVTechnology, hasMobileLaunchers, hasASATWeapons, treatyViolations
+        case leaderProfile
     }
 
     // Initializer

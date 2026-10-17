@@ -449,7 +449,8 @@ final class VictoryCheckerTests: XCTestCase {
     }
 
     func testSecretEndingRequirements() {
-        let gs = GameState(playerCountryID: "USA")
+        // Thresholds are in game years; a one-year-per-turn game makes 50 turns = 50 years.
+        let gs = GameState(playerCountryID: "USA", turnLength: .year)
         gs.turn = 50
 
         // Secret ending: 50+ turns, no wars, no nuclear strikes
@@ -459,7 +460,7 @@ final class VictoryCheckerTests: XCTestCase {
     }
 
     func testPeaceMakerRequirements() {
-        let gs = GameState(playerCountryID: "USA")
+        let gs = GameState(playerCountryID: "USA", turnLength: .year)
         gs.turn = 25
 
         // Peace Maker: 20+ turns, no active wars, no player-launched nukes

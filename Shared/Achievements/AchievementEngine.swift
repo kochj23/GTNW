@@ -340,7 +340,7 @@ class AchievementEngine: ObservableObject {
 
         // Peace Achievements
         case "peace_maker":
-            return gameState.turn >= 20 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0
+            return gameState.elapsedYears >= 20 - 1e-6 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0
 
         case "master_diplomat":
             let alliedCount = gameState.countries.filter { ($0.diplomaticRelations[gameState.playerCountryID] ?? 0) > 60 }.count
@@ -411,7 +411,7 @@ class AchievementEngine: ObservableObject {
 
         // Special
         case "wopr_choice":
-            return gameState.turn >= 50 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0 && gameState.defconLevel == .defcon5
+            return gameState.elapsedYears >= 50 - 1e-6 && gameState.warsStarted == 0 && gameState.nukesLaunched == 0 && gameState.defconLevel == .defcon5
 
         case "provocateur":
             return gameState.warsStarted >= 3 && gameState.activeWars.count >= 2

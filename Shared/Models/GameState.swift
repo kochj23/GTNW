@@ -35,7 +35,40 @@ class GameState: ObservableObject, Codable {
     @Published var activeWeaponPrograms: [WeaponsDevelopmentProgram]
     @Published var advisors: [Advisor] = []
     @Published var aiActionSummary: [String] = []
-    @Published var hasUsedActionThisTurn: Bool = false
+
+    // MARK: - Calendar (see GameCalendar.swift)
+
+    /// How much game time each turn covers. Fixed for the life of a game.
+    @Published var turnLength: TurnLength = .month
+    /// The date the game began (Inauguration Day of the era year unless a scenario says otherwise).
+    @Published var startDate: Date = GameCalendar.inauguration(year: 2025)
+    /// Player actions taken this turn; the turn ends when `actionsPerTurn` are used.
+    @Published var actionsUsedThisTurn: Int = 0
+
+    /// Shadow-President-style systems: popularity, elections, budget, aid, war fronts, scripted events.
+    @Published var shadow = ShadowState()
+
+    var actionsPerTurn: Int { turnLength.actionsPerTurn }
+    var actionsRemaining: Int { max(0, actionsPerTurn - actionsUsedThisTurn) }
+
+    /// Legacy flag kept for existing callers: reading it says "no actions left this turn"; setting it to true
+    /// consumes one action, setting it to false starts a fresh turn's allowance.
+    var hasUsedActionThisTurn: Bool {
+        get { actionsUsedThisTurn >= actionsPerTurn }
+        set { actionsUsedThisTurn = newValue ? min(actionsPerTurn, actionsUsedThisTurn + 1) : 0 }
+    }
+
+    /// The in-game date for any turn number.
+    func date(atTurn t: Int) -> Date { GameCalendar.advance(startDate, by: turnLength, turns: t) }
+    var currentDate: Date { date(atTurn: turn) }
+    var previousTurnDate: Date { date(atTurn: max(0, turn - 1)) }
+    var currentDateLabel: String { GameCalendar.format(currentDate) }
+    func dateLabel(forTurn t: Int) -> String { GameCalendar.format(date(atTurn: t)) }
+    /// Game years elapsed since the start of the game.
+    var elapsedYears: Double { Double(turn) * turnLength.yearFraction }
+    var scale: TurnScale { TurnScale(turnLength) }
+    /// Years of unbroken peace (peaceTurns scaled by turn length).
+    var peaceYears: Double { Double(peaceTurns) * turnLength.yearFraction }
 
     // MARK: - Stats tracking (for achievements, analytics)
     @Published var presidentsPlayed: [String] = []
@@ -61,15 +94,24 @@ class GameState: ObservableObject, Codable {
     var turnNumber: Int { turn }
     var recentEvents: [String] { turnHistory.suffix(20).map { $0.event } }
 
-    /// The in-game year, anchored to the era start year stored at init time.
-    @Published var eraStartYear: Int = 2025
-    var currentYear: Int { eraStartYear + turn }
+    /// The year the game (era) started in.
+    @Published var eraStartYear: Int = 2025 {
+        // Moving the era moves the calendar start to the same month/day of the new year.
+        didSet {
+            guard eraStartYear != oldValue else { return }
+            let cal = GameCalendar.calendar
+            startDate = GameCalendar.date(year: eraStartYear, month: cal.component(.month, from: startDate),
+                                          day: cal.component(.day, from: startDate))
+        }
+    }
+    /// The in-game calendar year, derived from the current date.
+    var currentYear: Int { GameCalendar.year(of: currentDate) }
 
     // MARK: - Era-aware delivery system labels
 
     /// Label for the icbmCount stat — changes based on what actually existed in the era.
     var deliverySystemLabel: String {
-        switch eraStartYear {
+        switch currentYear {
         case ..<1957: return "Atom Bombs"       // Gravity bombs on B-29/B-47, no ICBMs yet
         case 1957..<1960: return "Missiles"     // Early Atlas/R-7 ballistic missiles
         case 1960..<1970: return "ICBMs"        // Atlas, Titan, Minuteman operational
@@ -79,7 +121,7 @@ class GameState: ObservableObject, Codable {
 
     /// Label for submarineLaunchedMissiles — pre-Polaris eras had no SLBMs.
     var slbmLabel: String {
-        switch eraStartYear {
+        switch currentYear {
         case ..<1960: return "Sub-Launched Missiles" // Polaris first patrol Nov 1960
         case 1960..<1972: return "Polaris Missiles"  // UGM-27 Polaris era
         case 1972..<1990: return "Poseidon Missiles" // UGM-73 Poseidon era
@@ -89,7 +131,7 @@ class GameState: ObservableObject, Codable {
 
     /// Generic delivery system name for use in prose / crisis event text.
     var deliverySystemProse: String {
-        switch eraStartYear {
+        switch currentYear {
         case ..<1957: return "nuclear-armed bombers"
         case 1957..<1960: return "ballistic missiles"
         default: return "ICBMs"
@@ -101,7 +143,7 @@ class GameState: ObservableObject, Codable {
     /// Standard economic diplomacy amount for this era.
     /// Historically appropriate: thousands in 1800s, billions today.
     var eraDiplomacyAmount: Int {
-        switch eraStartYear {
+        switch currentYear {
         case ..<1800: return 50_000           // $50K (1790s frontier economics)
         case 1800..<1860: return 100_000      // $100K (ante-bellum era)
         case 1860..<1900: return 500_000      // $500K (Gilded Age)
@@ -129,26 +171,26 @@ class GameState: ObservableObject, Codable {
     // MARK: - Era-gated technology
 
     /// Returns true if cyber warfare capabilities existed in this era.
-    var cyberWarfareAvailable: Bool { eraStartYear >= 1990 }
+    var cyberWarfareAvailable: Bool { currentYear >= 1990 }
 
     /// Returns true if reconnaissance satellites were available.
-    var satelliteSurveillanceAvailable: Bool { eraStartYear >= 1957 }
+    var satelliteSurveillanceAvailable: Bool { currentYear >= 1957 }
 
     /// Returns true if the SDI / Star Wars missile defense program existed.
-    var sdiAvailable: Bool { eraStartYear >= 1983 }
+    var sdiAvailable: Bool { currentYear >= 1983 }
 
     /// Returns true if precision-guided munitions (smart bombs) were available.
-    var precisionMunitionsAvailable: Bool { eraStartYear >= 1970 }
+    var precisionMunitionsAvailable: Bool { currentYear >= 1970 }
 
     /// Returns true if drone strikes were a viable option.
-    var droneStrikesAvailable: Bool { eraStartYear >= 2001 }
+    var droneStrikesAvailable: Bool { currentYear >= 2001 }
 
     /// Returns true if SLBM / Polaris submarines were operational.
-    var submarineLaunchAvailable: Bool { eraStartYear >= 1960 }
+    var submarineLaunchAvailable: Bool { currentYear >= 1960 }
 
     /// Human-readable label for the era's primary intelligence-gathering method.
     var intelMethodLabel: String {
-        switch eraStartYear {
+        switch currentYear {
         case ..<1957: return "Human Intelligence (HUMINT)"
         case 1957..<1970: return "Satellite & HUMINT"
         case 1970..<1990: return "SIGINT & Satellite"
@@ -163,16 +205,16 @@ class GameState: ObservableObject, Codable {
         var outlets: [String] = []
         outlets.append("Associated Press")   // Founded 1846
         outlets.append("Reuters")            // Founded 1851
-        if eraStartYear >= 1927 { outlets.append("BBC") }
-        if eraStartYear >= 1943 { outlets.append("TASS (Soviet)") }   // Cold War era
-        if eraStartYear >= 1950 { outlets.append("Voice of America") }
-        if eraStartYear >= 1960 { outlets.append("Pravda") }          // USSR state paper
-        if eraStartYear >= 1980 { outlets.append("CNN") }             // Founded 1980
-        if eraStartYear >= 1991 { outlets.append("C-SPAN") }
-        if eraStartYear >= 1996 { outlets.append("FOX News") }        // Founded 1996
-        if eraStartYear >= 1996 { outlets.append("Al Jazeera") }      // Founded 1996
-        if eraStartYear >= 2005 { outlets.append("RT (Russia Today)") } // Founded 2005
-        if eraStartYear >= 2006 { outlets.append("Twitter/X News") }
+        if currentYear >= 1927 { outlets.append("BBC") }
+        if currentYear >= 1943 { outlets.append("TASS (Soviet)") }   // Cold War era
+        if currentYear >= 1950 { outlets.append("Voice of America") }
+        if currentYear >= 1960 { outlets.append("Pravda") }          // USSR state paper
+        if currentYear >= 1980 { outlets.append("CNN") }             // Founded 1980
+        if currentYear >= 1991 { outlets.append("C-SPAN") }
+        if currentYear >= 1996 { outlets.append("FOX News") }        // Founded 1996
+        if currentYear >= 1996 { outlets.append("Al Jazeera") }      // Founded 1996
+        if currentYear >= 2005 { outlets.append("RT (Russia Today)") } // Founded 2005
+        if currentYear >= 2006 { outlets.append("Twitter/X News") }
         return outlets
     }
 
@@ -180,7 +222,7 @@ class GameState: ObservableObject, Codable {
 
     /// Key doctrine or slogan of the era, shown in briefing header.
     var eraDoctrine: String {
-        switch eraStartYear {
+        switch currentYear {
         case 1945..<1953: return "Containment Policy — Stop Soviet Expansion"
         case 1953..<1961: return "Massive Retaliation — Any Attack Answered with Nuclear Force"
         case 1961..<1963: return "Flexible Response — Proportional Military Options"
@@ -200,7 +242,7 @@ class GameState: ObservableObject, Codable {
 
     /// The dominant adversary framing for this era.
     var primaryThreatLabel: String {
-        switch eraStartYear {
+        switch currentYear {
         case ..<1815:     return "European Powers"
         case 1815..<1861: return "Sectional Crisis / Manifest Destiny"
         case 1861..<1865: return "Confederacy / Civil War"
@@ -222,10 +264,16 @@ class GameState: ObservableObject, Codable {
         case gameOverReason, difficultyLevel, turnHistory, peaceTurns
         case isMultiplayer, currentPlayerIndex, playerCountries
         case activeCyberOperations, cyberIncidents, activeWeaponPrograms, advisors
+        // Added with the game calendar (2026-10). All optional on decode so older saves still load.
+        case eraStartYear, turnLength, startDate, actionsUsedThisTurn, shadow
+        case presidentsPlayed, warsStarted, warsWon, nukesLaunched, totalWarheadsLaunched, conflictsMediated
+        case successfulCovertOps, spyNetworksEstablished, successfulCoups, sanctionsImposed, alliancesBroken
+        case militaryActionsUsed, reachedDEFCON1
     }
 
-    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil) {
+    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil, turnLength: TurnLength = .month, startDate: Date? = nil) {
         self.playerCountryID = playerCountryID
+        self.turnLength = turnLength
         self.difficultyLevel = difficultyLevel
         // Use era-appropriate country list when playing as a historical administration
         let eraYear = administration?.startYear ?? 2025
@@ -257,6 +305,7 @@ class GameState: ObservableObject, Codable {
             systems.scenario = s
             defconLevel = s.defcon
         }
+        self.startDate = startDate ?? GameCalendar.inauguration(year: eraStartYear)
 
         if let index = countries.firstIndex(where: { $0.id == playerCountryID }) {
             countries[index].isPlayerControlled = true
@@ -290,6 +339,26 @@ class GameState: ObservableObject, Codable {
         cyberIncidents = try c.decodeIfPresent([CyberIncident].self, forKey: .cyberIncidents) ?? []
         activeWeaponPrograms = try c.decodeIfPresent([WeaponsDevelopmentProgram].self, forKey: .activeWeaponPrograms) ?? []
         advisors = try c.decodeIfPresent([Advisor].self, forKey: .advisors) ?? []
+
+        // Calendar migration: saves from before the calendar were one-year-per-turn games with no stored date.
+        eraStartYear = try c.decodeIfPresent(Int.self, forKey: .eraStartYear) ?? 2025
+        turnLength = try c.decodeIfPresent(TurnLength.self, forKey: .turnLength) ?? .year
+        startDate = try c.decodeIfPresent(Date.self, forKey: .startDate) ?? GameCalendar.inauguration(year: eraStartYear)
+        actionsUsedThisTurn = try c.decodeIfPresent(Int.self, forKey: .actionsUsedThisTurn) ?? 0
+        shadow = try c.decodeIfPresent(ShadowState.self, forKey: .shadow) ?? ShadowState()
+        presidentsPlayed = try c.decodeIfPresent([String].self, forKey: .presidentsPlayed) ?? []
+        warsStarted = try c.decodeIfPresent(Int.self, forKey: .warsStarted) ?? 0
+        warsWon = try c.decodeIfPresent(Int.self, forKey: .warsWon) ?? 0
+        nukesLaunched = try c.decodeIfPresent(Int.self, forKey: .nukesLaunched) ?? 0
+        totalWarheadsLaunched = try c.decodeIfPresent(Int.self, forKey: .totalWarheadsLaunched) ?? 0
+        conflictsMediated = try c.decodeIfPresent(Int.self, forKey: .conflictsMediated) ?? 0
+        successfulCovertOps = try c.decodeIfPresent(Int.self, forKey: .successfulCovertOps) ?? 0
+        spyNetworksEstablished = try c.decodeIfPresent(Int.self, forKey: .spyNetworksEstablished) ?? 0
+        successfulCoups = try c.decodeIfPresent(Int.self, forKey: .successfulCoups) ?? 0
+        sanctionsImposed = try c.decodeIfPresent(Int.self, forKey: .sanctionsImposed) ?? 0
+        alliancesBroken = try c.decodeIfPresent(Int.self, forKey: .alliancesBroken) ?? 0
+        militaryActionsUsed = try c.decodeIfPresent(Int.self, forKey: .militaryActionsUsed) ?? 0
+        reachedDEFCON1 = try c.decodeIfPresent(Bool.self, forKey: .reachedDEFCON1) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -315,6 +384,24 @@ class GameState: ObservableObject, Codable {
         try c.encode(cyberIncidents, forKey: .cyberIncidents)
         try c.encode(activeWeaponPrograms, forKey: .activeWeaponPrograms)
         try c.encode(advisors, forKey: .advisors)
+        try c.encode(eraStartYear, forKey: .eraStartYear)
+        try c.encode(turnLength, forKey: .turnLength)
+        try c.encode(startDate, forKey: .startDate)
+        try c.encode(actionsUsedThisTurn, forKey: .actionsUsedThisTurn)
+        try c.encode(shadow, forKey: .shadow)
+        try c.encode(presidentsPlayed, forKey: .presidentsPlayed)
+        try c.encode(warsStarted, forKey: .warsStarted)
+        try c.encode(warsWon, forKey: .warsWon)
+        try c.encode(nukesLaunched, forKey: .nukesLaunched)
+        try c.encode(totalWarheadsLaunched, forKey: .totalWarheadsLaunched)
+        try c.encode(conflictsMediated, forKey: .conflictsMediated)
+        try c.encode(successfulCovertOps, forKey: .successfulCovertOps)
+        try c.encode(spyNetworksEstablished, forKey: .spyNetworksEstablished)
+        try c.encode(successfulCoups, forKey: .successfulCoups)
+        try c.encode(sanctionsImposed, forKey: .sanctionsImposed)
+        try c.encode(alliancesBroken, forKey: .alliancesBroken)
+        try c.encode(militaryActionsUsed, forKey: .militaryActionsUsed)
+        try c.encode(reachedDEFCON1, forKey: .reachedDEFCON1)
     }
 
     // MARK: - Game Logic

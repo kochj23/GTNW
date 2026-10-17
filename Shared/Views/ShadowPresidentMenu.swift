@@ -15,7 +15,8 @@ struct ShadowPresidentMenu: View {
     let player: Country
     let target: Country
     let gameState: GameState
-    let onExecute: (PresidentialAction) -> Void
+    /// Called with the action and the advice the responsible cabinet post gave on it.
+    let onExecute: (PresidentialAction, ActionAdvice?) -> Void
     @Environment(\.dismiss) var dismiss
 
     @State private var selectedCategory: ActionCategory = .diplomatic
@@ -24,7 +25,7 @@ struct ShadowPresidentMenu: View {
     private var filteredActions: [PresidentialAction] {
         PresidentialAction.allCases.filter {
             $0.category == selectedCategory &&
-            $0.eraAvailableYear <= gameState.eraStartYear
+            $0.eraAvailableYear <= gameState.currentYear
         }
     }
 
@@ -110,9 +111,13 @@ struct ShadowPresidentMenu: View {
                                 }
                             }
 
+                            // The responsible advisor weighs in before you commit
+                            let advice = AdviceEngine.advise(action: action, player: player, target: target, gameState: gameState)
+                            AdvicePanel(advice: advice)
+
                             // Execute button
                             Button(action: {
-                                onExecute(action)
+                                onExecute(action, advice)
                                 let media = ShadowPack.media(forActionCase: String(describing: action))
                                 if let sound = media.sound { ShadowPack.shared.play(sound) }
                                 if let anim = media.animation, let a = ShadowPack.shared.animation(anim) {

@@ -69,12 +69,9 @@ struct UnifiedCommandCenter: View {
                         player: player,
                         target: target,
                         gameState: gameState,
-                        onExecute: { action in
-                            gameEngine.executeShadowPresidentAction(action, from: player.id, to: target.id)
-                            // Auto-end turn after action
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                gameEngine.endTurn()
-                            }
+                        onExecute: { action, advice in
+                            // Executes, applies domestic fallout and advisor reactions, and uses one action
+                            gameEngine.performAdvisedAction(action, targetID: target.id, advice: advice)
                         }
                     )
                 }
@@ -516,9 +513,7 @@ struct UnifiedCommandCenter: View {
                 Button(action: {
                     if let target = selectedTarget, let player = gameState.getPlayerCountry() {
                         gameEngine.declareWar(aggressor: player.id, defender: target)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            gameEngine.endTurn()
-                        }
+                        gameEngine.completePlayerAction(endTurnDelay: 0.3)
                     }
                 }) {
                     VStack(spacing: 8) {
@@ -828,9 +823,7 @@ struct UnifiedCommandCenter: View {
         let actualWarheads = min(warheads, player.nuclearWarheads)
         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: actualWarheads)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            gameEngine.endTurn()
-        }
+        gameEngine.completePlayerAction(endTurnDelay: 0.3)
     }
 
     private func openAISettings() {
@@ -1149,27 +1142,19 @@ struct UnifiedCommandCenter: View {
                     }
                 case "BUILD_MILITARY":
                     responseMessage = "✓ BUILD MILITARY: \(parsed.reason)\nProcessing turn..."
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        gameEngine.endTurn()
-                    }
+                    gameEngine.completePlayerAction(endTurnDelay: 0.3)
                 case "BUILD_NUKES":
                     responseMessage = "✓ BUILD NUKES: \(parsed.reason)\nProcessing turn..."
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        gameEngine.endTurn()
-                    }
+                    gameEngine.completePlayerAction(endTurnDelay: 0.3)
                 case "ALLY":
                     if let target = parsed.target {
                         gameEngine.formAlliance(country1: player.id, country2: target)
                         responseMessage = "✓ ALLIANCE FORMED: \(parsed.reason)"
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            gameEngine.endTurn()
-                        }
+                        gameEngine.completePlayerAction(endTurnDelay: 0.3)
                     }
                 default:
                     responseMessage = "✓ Command understood: \(parsed.reason)\nProcessing turn..."
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        gameEngine.endTurn()
-                    }
+                    gameEngine.completePlayerAction(endTurnDelay: 0.3)
                 }
             }
         } else if input.lowercased().contains("help") {

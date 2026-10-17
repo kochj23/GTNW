@@ -441,8 +441,10 @@ extension GameEngine {
         let lastTurn = Self.lastAddressTurn[cooldownKey] ?? -99
 
         // Enforce cooldown
-        if gameState.turn - lastTurn < type.cooldownTurns {
-            let turnsLeft = type.cooldownTurns - (gameState.turn - lastTurn)
+        // cooldownTurns is measured in game years; convert to this game's turns.
+        let cooldown = gameState.scale.turns(forYears: Double(type.cooldownTurns))
+        if gameState.turn - lastTurn < cooldown {
+            let turnsLeft = cooldown - (gameState.turn - lastTurn)
             addLog("Address cooldown: \(turnsLeft) turn(s) remaining before another \(type.rawValue).", type: .info)
             return
         }

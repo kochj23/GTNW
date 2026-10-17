@@ -58,8 +58,8 @@ struct ModernCommandView: View {
                         player: player,
                         target: target,
                         gameState: gameState,
-                        onExecute: { action in
-                            gameEngine.executeShadowPresidentAction(action, from: player.id, to: target.id)
+                        onExecute: { action, advice in
+                            gameEngine.performAdvisedAction(action, targetID: target.id, advice: advice)
                         }
                     )
                 }

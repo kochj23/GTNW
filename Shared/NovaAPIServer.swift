@@ -622,7 +622,7 @@ class NovaAPIServer {
             "victoryType": gs.victoryType.map { "\($0)" } as Any,
             "peaceTurns": gs.peaceTurns,
             "hasUsedActionThisTurn": gs.hasUsedActionThisTurn,
-            "woprEndingUnlocked": gs.peaceTurns >= 50 && gs.nukesLaunched == 0 && gs.warsStarted == 0
+            "woprEndingUnlocked": gs.peaceYears >= 50 && gs.nukesLaunched == 0 && gs.warsStarted == 0
         ]
     }
 

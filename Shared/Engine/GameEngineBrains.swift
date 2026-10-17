@@ -118,17 +118,26 @@ extension GameEngine {
             }
         }
 
-        // Rule-based countries resolve locally.
-        for id in ruleBasedIDs {
+        // Rule-based countries resolve locally. Each acts about four times a game year (at most once a turn),
+        // so shorter turns don't make the world more hyperactive.
+        let actChance = aiActionProbability(gameState)
+        for id in ruleBasedIDs where Double.random(in: 0..<1) < actChance {
             applyRuleBasedAction(for: id)
         }
     }
 
     /// Fast built-in rule-based move for one country.
     func applyRuleBasedAction(for countryID: String) {
-        guard let country = gameState?.getCountry(id: countryID) else { return }
-        let action = determineAIActionEnhanced(for: country)
-        executeAIAction(action, for: country, reason: nil)
+        guard let gs = gameState, let country = gs.getCountry(id: countryID) else { return }
+        // Countries at war in the nuclear age may escalate; ruthless leaders far more readily.
+        if !country.atWarWith.isEmpty, country.nuclearWarheads > 0, gs.defconLevel.rawValue <= 2,
+           let enemy = country.atWarWith.first,
+           Double.random(in: 0..<1) < Double(country.profile.ambition) / 6 * 0.25 * gs.difficultyLevel.aiAggressionMultiplier {
+            executeAIAction(.launchNuclearStrike(target: enemy, warheads: min(3, country.nuclearWarheads)), for: country, reason: nil)
+            return
+        }
+        // Otherwise the leader's personality and anxieties pick the move (see CountryProfile.swift).
+        executeWorldMove(PersonalityAI.choose(for: country, in: gs), for: country)
     }
 
     // MARK: - Reversible / agency verbs

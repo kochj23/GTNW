@@ -39,6 +39,9 @@ struct Advisor: Identifiable, Codable, Hashable {
     // Portrait (for now, color-coded placeholder)
     var portraitColor: String // Hex color for placeholder
 
+    /// nil / .active = serving. Departed advisors stay in the list with their fate (see AdviceEngine.swift).
+    var status: AdvisorStatus? = nil
+
     /// Initialize a new advisor
     init(
         id: String,

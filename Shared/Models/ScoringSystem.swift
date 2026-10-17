@@ -206,8 +206,8 @@ class VictoryChecker {
             return nil
         }
 
-        // Secret ending: survived 50+ turns without war or nukes
-        if gameState.turn >= 50 &&
+        // Secret ending: 50+ game years without war or nukes
+        if gameState.elapsedYears >= 50 - 1e-6 &&
            gameState.activeWars.isEmpty &&
            gameState.nuclearStrikes.isEmpty {
             return .secretEnding
@@ -219,7 +219,7 @@ class VictoryChecker {
         }
         if !playerLaunchedNukes &&
            gameState.activeWars.isEmpty &&
-           gameState.turn >= 20 {
+           gameState.elapsedYears >= 20 - 1e-6 {
             return .peaceMaker
         }
 
@@ -252,7 +252,7 @@ class VictoryChecker {
         // Survival: survived nuclear winter
         if gameState.systems.environ.stage.rawValue >= 3 &&
            !player.isDestroyed &&
-           gameState.turn >= 100 {
+           gameState.elapsedYears >= 100 - 1e-6 {
             return .survival
         }
 
@@ -263,6 +263,11 @@ class VictoryChecker {
     static func checkDefeat(gameState: GameState) -> (defeated: Bool, reason: String) {
         guard let player = gameState.getPlayerCountry() else {
             return (true, "Your nation has been destroyed")
+        }
+
+        // Domestic endings: lost election, impeachment, assassination, civil war
+        if let ending = gameState.shadow.domesticEnding {
+            return (true, ending.headline)
         }
 
         // Player country destroyed
