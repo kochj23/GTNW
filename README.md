@@ -1,7 +1,7 @@
 # GTNW -- Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-77%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-189%20passed-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -14,6 +14,80 @@ A grand strategy presidential simulator spanning 236 years of American history (
 Inspired by the WOPR computer from WarGames (1983).
 
 Written by Jordan Koch.
+
+---
+
+## The Situation Room (v3.0, October 2026)
+
+GTNW now plays on one screen around a living world map, in the spirit of *Shadow President* (1993) — with every
+mechanic re-implemented in GTNW's own code and words:
+
+- **A real calendar.** Games start on Inauguration Day of the era year (scenarios may pick another date). Each turn is
+  a **Day, Week, Month (default) or Year**, with 1 / 1 / 2 / 4 actions per turn. Everything that used to count turns as
+  years — era technology, arms races, crisis odds, program durations, cooldowns, DEFCON calm-down, victory
+  thresholds — now scales by elapsed game time. Budgets, the State of the Union and elections happen on their dates.
+  Old saves load as one-year-per-turn games.
+- **Bordered world map** (Natural Earth, public domain) with hover/click, World / Region / Country zoom and 23
+  thematic filters (alliances, ideology, wealth, quality of life, ethic, ambition, the five worries, aid need…).
+- **Seven advisors** who brief you, recommend **APPROVE / CAUTION / OPPOSE** on every action, keep standing proposals
+  (ACCEPT / REJECT / REQUEST ALTERNATIVE), resign when overruled too often, get fired, die in attacks or leave in
+  scandal.
+- **Leaders with personalities** — ambition and ethic (1–6), ideology, leadership — and **five threat anxieties**
+  (nuclear, military, political, economic, social) that drive what computer-run countries do; spikes become crises.
+- **Popularity, polls, elections** (toggleable), **impeachment, assassination and civil-war endings**.
+- **Federal budget** (four taxes, four spending lines, year-end cycle) feeding growth, quality of life, military
+  strength and the **five-category foreign-aid** pool; recipients thank you, take part, or refuse.
+- **War Room**: fronts, weekly fighting, morale, U.S. troop commitments, surrender → new government.
+- **Scenarios** (The World in 1990, Thirteen Days 1962, Able Archer 1983, The World Today) and **save slots** + autosave.
+- **World Evaluation** with a six-band world peace level and Presidency Summary, and a **City View** that grows with
+  the economy and burns when nuked.
+- **Two skins**: *Modern* and a full **Retro EGA** skin (16-colour palette, monospaced type, beveled panels), switchable
+  from the Retro menu (⌘⇧R), Settings → Game or the new-game screen.
+- Optional **Shadow Pack**: if you own Shadow President, `tools/build_shadow_pack.py` builds a local pack of its art
+  and sounds (never part of this repository); GTNW uses it for portraits, animations, city tiles and sounds and falls
+  back to drawn art without it.
+
+```mermaid
+flowchart TB
+  subgraph UI["Situation Room (SwiftUI)"]
+    TB["Top bar: date · actions left · popularity / days to election · DEFCON · world peace"]
+    AR["Advisor rail (7 posts)"] --- MAP["VectorWorldMap<br/>Natural Earth outlines · zoom · 23 filters"] --- DOS["Country dossier<br/>personality · anxieties · aid need"]
+    LAD["Escalation ladder<br/>Social → Economic → Covert → Military → Nuclear"] --- TICK["News ticker"]
+    SHEETS["Sheets: Budget · Aid · War Room · World Evaluation · City View · Save/Load · Election night"]
+  end
+  subgraph ENGINE["Engine"]
+    GE["GameEngine.endTurn()"] --> SIM["ShadowSimulation.processShadowTurn()"]
+    SIM --> CAL["GameCalendar / TurnScale<br/>date · per-year → per-turn rates"]
+    SIM --> EV["Scenario event queue"]
+    SIM --> ANX["AnxietyModel + PersonalityAI"]
+    SIM --> WAR["CombatModel (fronts)"]
+    SIM --> ECO["BudgetModel + AidModel"]
+    SIM --> POP["PopularityModel<br/>polls · elections · impeachment"]
+    SIM --> ADV["AdviceEngine<br/>advice · advisor fates"]
+  end
+  subgraph STATE["GameState (Codable)"]
+    GS["turn · turnLength · startDate · shadow: ShadowState"] --> CP["Country.leaderProfile<br/>ambition · ethic · ideology · anxieties · aid need"]
+  end
+  UI --> GE
+  SIM --> STATE
+  THEME["ThemeManager<br/>Modern | Retro EGA"] -.-> UI
+  PACK["ShadowPack (optional, local)"] -.-> UI
+```
+
+```mermaid
+sequenceDiagram
+  participant P as Player
+  participant A as AdviceEngine
+  participant E as GameEngine
+  participant S as ShadowSimulation
+  P->>A: pick an action on the ladder
+  A-->>P: APPROVE / CAUTION / OPPOSE + reason + odds
+  P->>E: DO IT (uses 1 of the turn's actions)
+  E->>E: execute action, popularity & ruthlessness, advisor reaction
+  E->>S: last action used → endTurn(): calendar advances one Day/Week/Month/Year
+  S->>S: scripted events, anxieties, AI moves, weekly combat, budget/aid cycle, polls, elections
+  S-->>P: ticker headlines, crises, election night, endings
+```
 
 ---
 
@@ -295,8 +369,10 @@ The macOS build runs without app sandbox for full system access. The widget exte
 ## How to Play
 
 1. Launch GTNW
-2. Choose a president (any of 47, Washington through modern era)
-3. Select a start year (1789--2025) or a historical scenario
+2. Choose a president (any of 47, Washington through modern era), a turn length (Day / Week / Month / Year),
+   elections on/off and a skin — or pick a scenario
+3. Work from the Situation Room: select a country on the map, read the dossier, consult advisors, climb the
+   escalation ladder only as far as you must
 4. Read your intelligence briefing
 5. Respond to crises, conduct diplomacy, manage military operations
 6. Monitor DEFCON -- if it reaches 1, nuclear war begins
@@ -307,15 +383,18 @@ The macOS build runs without app sandbox for full system access. The widget exte
 - **Diplomatic Victory** -- achieve lasting peace treaties
 - **Domination** -- become the sole superpower
 - **Economic Victory** -- win the economic war
-- **Survival** -- last 100 turns without nuclear holocaust
-- **WOPR Ending** -- 50 turns with zero wars and zero launches
+- **Peacemaker** -- 20 game years with no wars and no nuclear launches by you
+- **Survival** -- last 100 game years through a nuclear winter
+- **WOPR Ending** -- 50 game years with zero wars and zero launches
 
 ### Defeat Conditions
 
 - Nuclear war (launch or receive strikes)
 - DEFCON reaches 1 with no resolution
-- Impeachment (domestic support collapses)
-- Assassination (coups or revolutions)
+- Losing a presidential election (when elections are on)
+- Impeachment (sustained unpopularity plus ruthless conduct; Congress escalates month by month)
+- Assassination (risk rises with ruthlessness and very low approval)
+- Civil war (extreme unrest at home)
 
 ---
 
@@ -329,11 +408,18 @@ GTNW/
   Package.swift               Swift Package Manager descriptor
   Shared/                     All shared source (both platforms)
     Engine/                   GameEngine -- core turn loop (84K)
+      Shadow/                 Calendar, ShadowState, profiles & anxieties, budget & aid,
+                              popularity & elections, advice engine, combat, scenarios,
+                              world evaluation, ShadowSimulation (per-turn step)
+    Design/                   ModernDesign + Theme (Modern / Retro EGA skins)
+    Resources/                world_countries.json (Natural Earth, public domain)
+    ShadowPack/               Optional local Shadow President art/sound loader
     Models/                   38 files: GameState, Country, Crises,
                               Advisors, Alliances, World DB, Factbook,
                               AI backends, Presidential Powers, etc.
-    Views/                    19 SwiftUI views: CommandCenter, WorldMap,
-                              TextCommandInterface, CrisisView, etc.
+    Views/                    SwiftUI views: CommandCenter, WorldMap,
+                              TextCommandInterface, CrisisView, WarRoomView, etc.
+      SituationRoom/          Home screen, vector map, advice panel, sheets
     AI/                       AdaptiveOpponentEngine
     Intelligence/             PredictiveIntelligence, NaturalLanguageIntel
     Diplomacy/                TheLivingRoom (voice conversations)
@@ -394,10 +480,15 @@ GTNW includes a comprehensive XCTest suite covering unit, functional, and securi
 
 | Suite | Tests | Coverage |
 |-------|-------|----------|
-| **Unit Tests** | 40 | Country model, GameState, DefconLevel, era systems, scoring, victory conditions, Codable, leaderboard |
-| **Functional Tests** | 28 | GameEngine lifecycle, war/alliance, diplomacy, nuclear strikes, SDI, cyber defense, covert ops, DEFCON management |
-| **Security Tests** | 9 | API port binding, input bounds, state integrity, data uniqueness, serialization round-trip, resource abuse |
-| **Total** | **77** | **0 failures** |
+| **Unit Tests** (`GTNWUnitTests`) | 48 | Country model, GameState, DefconLevel, era systems, scoring, victory conditions, Codable, leaderboard |
+| **Functional Tests** (`GTNWFunctionalTests`) | 28 | GameEngine lifecycle, war/alliance, diplomacy, nuclear strikes, SDI, cyber defense, covert ops, DEFCON management |
+| **Security Tests** (`GTNWSecurityTests`) | 27 | API port binding, input bounds, state integrity, data uniqueness, serialization round-trip, resource abuse |
+| **Audit Tests** (`GTNWAuditTests`) | 18 | Score arithmetic, crisis-resolution safety, victory boundaries |
+| **AI Brain Tests** (`AIBrainTests`) | 20 | Brain-per-country turn loop, timeouts and fallbacks, move parsing |
+| **Shadow Pack Tests** (`ShadowPackTests`) | 8 | Optional pack loader and fallbacks |
+| **Shadow Systems Tests** (`ShadowSystemsTests`) | 39 | Calendar & rate scaling, save migration & slots, profiles & anxieties, advice & advisor fates, popularity & elections, budget & aid, War Room combat, scenarios, world evaluation & City View, theme persistence |
+| **Snapshot render** (`SnapshotRenderTests`) | 1 | Renders the Situation Room and its sheets offscreen in both skins |
+| **Total** | **189** | **0 failures** (plus an iOS-simulator build in CI) |
 
 ### Running Tests
 
@@ -414,6 +505,7 @@ open GTNW.xcodeproj
 
 - **GTNWUnitTests.swift** -- Pure model and logic tests. No UI, no side effects. Validates country initialization, nuclear capability math, scoring formulas, era-gated technology, Codable round-trips, and all victory/defeat conditions.
 - **GTNWFunctionalTests.swift** -- Game engine integration tests. Validates war declaration, alliance formation, nuclear strikes (including SDI interception), economic diplomacy, covert operations, and DEFCON escalation/de-escalation. All tests run on `@MainActor`.
+- **ShadowSystemsTests.swift** -- The Situation Room systems. Uses injected `UserDefaults` suites and temporary folders only (never the player's real settings or saves).
 - **GTNWSecurityTests.swift** -- Validates API server binds to correct port, all numeric values have proper floors (military, warheads, stability never go negative), diplomatic relations are clamped to [-100, 100], country IDs/codes are unique, nuclear powers have warheads, and game state serialization preserves all fields.
 
 ---
@@ -422,6 +514,7 @@ open GTNW.xcodeproj
 
 | Version | Date       | Highlights                                                    |
 |---------|------------|---------------------------------------------------------------|
+| 3.0.0   | Oct 2026   | Situation Room, real calendar (Day/Week/Month/Year), bordered map, advisors' advice, elections, budget, aid, War Room, scenarios + saves, Retro EGA skin, iOS target builds again |
 | 2.0.0   | May 2026   | Full multiplayer API, Nova email game hosting (nova_gtnw_host.py) |
 | 1.9.0   | May 2026   | XCTest suite (77 tests), warning fixes, QE pipeline           |
 | 1.8.2   | March 2026 | Nuclear arsenal data accuracy, SIPRI/FAS sourced inventories  |
@@ -451,6 +544,10 @@ See [LICENSE](LICENSE) for the full text.
 ---
 
 ## Credits
+
+Map outlines: [Natural Earth](https://www.naturalearthdata.com) 1:50m Admin 0 Countries (public domain), simplified by
+`tools/natural_earth_to_gtnw.py`. *Shadow President* (D.C. True, 1993) inspired the Situation Room's mechanics; none of
+its art, sound, text or data is in this repository.
 
 Written by Jordan Koch ([kochj23](https://github.com/kochj23)).
 

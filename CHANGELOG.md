@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-10-17 — The Situation Room
+
+### Added
+- **Situation Room** home screen: map, seven advisors, country dossier, escalation ladder, news ticker, top bar with
+  date / popularity / days to election / DEFCON / world peace.
+- **Game calendar**: Day / Week / Month (default) / Year turns with 1 / 1 / 2 / 4 actions; all rates scale by game
+  time; calendar-driven budget, State of the Union, polls and elections.
+- **Bordered world map** (Natural Earth, public domain) with hover/click, three zoom levels and 23 filters.
+- **Advice engine** (approve / caution / oppose) and standing advisor recommendations wired to ACCEPT / REJECT /
+  REQUEST ALTERNATIVE; advisor resignations, firing, deaths and scandals.
+- **Leader personality** (ambition, ethic, ideology, leadership) and **five threat anxieties** driving AI moves.
+- **Popularity, elections, impeachment, assassination, civil war**; **federal budget**; **five-category foreign aid**.
+- **War Room** combat model; **scenarios** (1990, 1962, 1983, 2025); **save slots** + autosave.
+- **World Evaluation** + Presidency Summary; **City View**.
+- **Retro EGA skin** alongside Modern.
+
+### Changed
+- Old saves load as one-year-per-turn games. Victory thresholds are in game years.
+- Turn labels show calendar dates.
+
+### Fixed
+- The iOS target builds again (missing sources added, AppKit-only image code made cross-platform); CI builds it.
+- `WarRoomView.swift` was not compiled by any target.
+
 ## [Unreleased]
 
 ### Added
