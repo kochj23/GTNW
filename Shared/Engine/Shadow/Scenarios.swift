@@ -181,6 +181,22 @@ enum ScenarioLoader {
         "pakistan": "PAK", "cuba": "CUB", "egypt": "EGY", "syria": "SYR", "libya": "LBY", "jordan": "JOR",
     ]
 
+    /// Map a generic ideology label onto GTNW's ideology list.
+    static func ideologyFromLabel(_ label: String) -> LeaderIdeology? {
+        let l = label.lowercased()
+        if l.contains("commun") { return .communism }
+        if l.contains("fundamental") { return .theocracy }
+        if l.contains("islam") { return .islamicRepublic }
+        if l.contains("imperial") { return .expansionism }
+        if l.contains("fascis") || l.contains("national") { return .nationalism }
+        if l.contains("central") { return .oneParty }
+        if l.contains("socialis") { return l.contains("democ") ? .socialDemocracy : .oneParty }
+        if l.contains("developing") { return .developingDemocracy }
+        if l.contains("capital") || l.contains("democ") { return .liberalDemocracy }
+        if l.contains("monarch") { return .absoluteMonarchy }
+        return nil
+    }
+
     /// Refine ambition/ethic/anxieties from the local pack's 1990 data, when the player has built the pack.
     @discardableResult
     static func applyPackPersonalities(from url: URL, to gs: GameState) -> Int {
@@ -199,6 +215,7 @@ enum ScenarioLoader {
                                                           ("PTA_political_threat_anxiety", .political), ("ETA_economic_threat_anxiety", .economic),
                                                           ("STA_social_threat_anxiety", .social)]
             for (k, kind) in keys { if let v = row[k] as? Double { p.anxieties[kind] = v } }
+            if let ideology = (row["Ideology"] as? String).flatMap(ideologyFromLabel) { p.ideology = ideology }
             gs.countries[i].profile = p
             applied += 1
         }

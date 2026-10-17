@@ -30,6 +30,10 @@ extension GameEngine {
             gs.countries[i].profile.anxieties = AnxietyModel.targets(for: gs.countries[i], in: gs)
         }
         gs.shadow.electionsEnabled = electionsEnabled
+        // Every Situation Room post gets someone, even in eras whose cabinet data lacks it.
+        for role in AdviceEngine.roleOrder where !gs.advisors.contains(where: { $0.roleKey == role }) {
+            gs.advisors.append(AdviceEngine.staffer(for: role, year: gs.currentYear))
+        }
         gs.shadow.budget = FederalBudget.forYear(gs.currentYear)
         gs.shadow.aidRemaining = gs.shadow.budget.aidPool(gdpTrillions: gs.getPlayerCountry()?.gdp ?? 1)
         gs.shadow.lastBudgetYear = gs.currentYear

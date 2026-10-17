@@ -37,6 +37,9 @@ struct VictoryScreen: View {
                 if let victory = victoryType {
                     victoryHeader(victory: victory)
                 } else {
+                    if let ending = gameState.shadow.domesticEnding {
+                        DomesticEndingBanner(ending: ending).padding(.horizontal, 40)
+                    }
                     defeatHeader()
                 }
 

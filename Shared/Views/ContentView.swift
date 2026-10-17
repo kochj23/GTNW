@@ -14,6 +14,10 @@ struct ContentView: View {
     @State private var showingAdministrationSelection = false
     @State private var selectedDifficulty: DifficultyLevel = .normal
     @State private var selectedAdministration: Administration? = nil
+    @State private var turnLength: TurnLength = TurnLength.defaultForNewGames()
+    @State private var showingScenarios = false
+    @AppStorage(ShadowSettings.electionsKey) private var electionsEnabled = true
+    @ObservedObject private var themes = ThemeManager.shared
 
     var body: some View {
         ZStack {
@@ -130,12 +134,34 @@ struct ContentView: View {
             }
             .padding(.bottom, 20)
 
+            // Calendar, elections and skin
+            HStack(spacing: 16) {
+                Picker("Each turn is", selection: $turnLength) {
+                    ForEach(TurnLength.allCases) { Text($0.displayName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 300)
+                Toggle("Elections", isOn: $electionsEnabled)
+                Picker("Skin", selection: $themes.theme) {
+                    ForEach(GameTheme.allCases) { Text($0.displayName).tag($0) }
+                }
+                .frame(width: 200)
+                Button("SCENARIOS…") { showingScenarios = true }
+                    .buttonStyle(ThemedButtonStyle(color: ModernColors.yellow))
+            }
+            .font(.system(size: 13, design: .monospaced))
+            Text("\(turnLength.actionsPerTurn) action\(turnLength.actionsPerTurn == 1 ? "" : "s") per \(turnLength.displayName.lowercased()) · the game starts on Inauguration Day")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(ModernColors.textSecondary)
+                .padding(.bottom, 10)
+
             // Start button - Always start as USA
             Button(action: {
                 gameEngine.startNewGame(
                     playerCountryID: "USA",
                     difficulty: selectedDifficulty,
-                    administration: selectedAdministration
+                    administration: selectedAdministration,
+                    turnLength: turnLength
                 )
             }) {
                 Text("INITIALIZE GAME (AS USA)")
@@ -161,6 +187,17 @@ struct ContentView: View {
         .padding()
         .sheet(isPresented: $showingAdministrationSelection) {
             AdministrationSelectionView(selectedAdministration: $selectedAdministration)
+        }
+        .sheet(isPresented: $showingScenarios) {
+            ScrollView {
+                ScenarioList { s in
+                    showingScenarios = false
+                    gameEngine.startScenario(s, difficulty: selectedDifficulty)
+                }
+                .padding()
+            }
+            .frame(width: 640, height: 520)
+            .background(Theme.isRetro ? EGA.blue : Color.black)
         }
     }
 

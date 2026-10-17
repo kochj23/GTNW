@@ -236,6 +236,25 @@ enum AdviceEngine {
         gs.shadow.advisorGrievances[gs.advisors[i].id] = max(0, (gs.shadow.advisorGrievances[gs.advisors[i].id] ?? 0) - 1)
     }
 
+    /// A career staffer for a post the era's cabinet data doesn't cover (fictional names).
+    static func staffer(for role: String, year: Int) -> Advisor {
+        let names = ["whc": "Margaret Holloway", "nsa": "Gen. Walter Pryce", "state": "Edmund Ashby",
+                     "defense": "Adm. Lucas Brandt", "press": "Nora Delaney", "cia": "Victor Krane", "economic": "Dr. Helen Ruiz"]
+        let title: String
+        switch role {
+        case "whc": title = "White House Chief of Staff"
+        case "press": title = "Press Secretary"
+        case "economic": title = "Chairman, Council of Economic Advisers"
+        case "cia": title = year < 1947 ? "Director of National Intelligence (OSS)" : "Director of Central Intelligence"
+        default: title = roleTitle(role)
+        }
+        let hawk = ["defense": 70, "nsa": 60, "cia": 55, "state": 35, "press": 40, "whc": 45, "economic": 40][role] ?? 50
+        return Advisor(id: "staff-\(role)", name: names[role] ?? "Staff", title: title, department: "Executive Office",
+                       bio: "Career professional serving the administration.", expertise: 65, loyalty: 75, influence: 50,
+                       publicSupport: 50, hawkishness: hawk, interventionism: 50, fiscalConservatism: 50,
+                       adviceAreas: [.diplomacy], portraitColor: "#4A6FA5")
+    }
+
     /// Appoint an acting replacement for a departed advisor so the post is not left empty.
     static func appointActing(replacing old: Advisor, sequence: Int) -> Advisor {
         let surnames = ["Brennan", "Okonkwo", "Haldane", "Vasquez", "Kowalski", "Lindgren", "Abernathy", "Tanaka"]

@@ -89,15 +89,17 @@ struct BudgetProjection: Equatable {
 }
 
 enum BudgetModel {
+    /// Tax burden above ~20% of GDP drags on growth and popularity; social spending above ~8% lifts quality of life;
+    /// research pays off in growth; big deficits cost growth and votes.
     static func project(_ b: FederalBudget, atWar: Bool = false) -> BudgetProjection {
         let taxBurden = b.revenue
-        var growth = 2.5 + b.research * 0.6 - max(0, taxBurden - 15) * 0.12 - max(0, b.deficit - 3) * 0.25
+        var growth = 2.0 + b.research * 0.6 - max(0, taxBurden - 20) * 0.12 - max(0, b.deficit - 3) * 0.25
         growth -= b.tariff > 10 ? (b.tariff - 10) * 0.05 : 0
         if atWar { growth -= 0.5 }
         growth = min(8, max(-6, growth))
-        let qol = (b.social - 9) * 0.8 + growth * 0.3 - max(0, taxBurden - 15) * 0.2
+        let qol = (b.social - 8) * 0.6 + (growth - 2.5) * 0.3 - max(0, taxBurden - 20) * 0.2
         let military = (b.defense - 3.5) * 2.5
-        var pop = -max(0, taxBurden - 15) * 1.2 + (b.social - 9) * 0.6 + growth * 0.8 - max(0, b.deficit - 4) * 0.8
+        var pop = -max(0, taxBurden - 20) * 1.2 + (b.social - 8) * 0.6 + (growth - 2.5) * 0.8 - max(0, b.deficit - 4) * 0.8
         pop += taxBurden < 15 ? (15 - taxBurden) * 0.5 : 0
         return BudgetProjection(revenue: taxBurden, spending: b.spending, deficit: b.deficit, growth: growth,
                                 qualityOfLifeChange: qol, militaryChange: military, popularityChange: min(8, max(-12, pop)))

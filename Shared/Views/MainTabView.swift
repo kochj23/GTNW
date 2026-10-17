@@ -11,6 +11,7 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject var gameEngine: GameEngine
     @State private var selectedTab = 0
+    @State private var electionShown: Date?
 
     var body: some View {
         if gameEngine.gameState == nil {
@@ -20,13 +21,21 @@ struct MainTabView: View {
         } else {
             // Game tabs
             TabView(selection: $selectedTab) {
+                // The Situation Room: map, advisors, dossier, escalation ladder, news (home screen)
+                SituationRoomView(gameState: gameEngine.gameState!)
+                    .environmentObject(gameEngine)
+                    .tabItem {
+                        Label("Situation Room", systemImage: "map.fill")
+                    }
+                    .tag(0)
+
                 // Unified Command Center (Commands + Terminal + Event Log)
                 UnifiedCommandCenter()
                     .environmentObject(gameEngine)
                     .tabItem {
                         Label("Command", systemImage: "command.circle.fill")
                     }
-                    .tag(0)
+                    .tag(5)
 
                 // World Map
                 SimpleModernWorldMap(gameState: gameEngine.gameState!)
@@ -102,6 +111,11 @@ struct MainTabView: View {
             .sheet(isPresented: $gameEngine.showingLeaderboard) {
                 LeaderboardView()
                     .environmentObject(gameEngine)
+            }
+            .sheet(item: Binding(
+                get: { gameEngine.gameState?.shadow.lastElection.flatMap { $0.date == electionShown ? nil : $0 } },
+                set: { if $0 == nil { electionShown = gameEngine.gameState?.shadow.lastElection?.date } })) { result in
+                ElectionNightView(result: result)
             }
         }
     }

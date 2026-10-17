@@ -2,246 +2,222 @@
 //  WarRoomView.swift
 //  GTNW
 //
-//  AI War Room interface for strategic analysis
-//  Created by Jordan Koch on 2026-01-22
+//  The War Room: every active front with troop and damage assessments and an operations log. The President can
+//  commit or recall U.S. troops on either side, demand the enemy's surrender, or sue for peace. Fighting itself is
+//  resolved week by week by CombatModel (Shared/Engine/Shadow/CombatModel.swift) as turns pass.
+//  Created by Jordan Koch on 2026-01-22; rebuilt around the combat model 2026-10.
 //
 
 import SwiftUI
 
-/// AI War Room strategic analysis view
 struct WarRoomView: View {
-    @ObservedObject var warRoom: AIWarRoom
-    let gameState: GameState
-    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var gameEngine: GameEngine
+    @ObservedObject var gameState: GameState
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedFront: UUID?
+    @State private var troopStep: Double = 50
+    @State private var notice = ""
+
+    private var fronts: [WarFront] {
+        gameState.shadow.fronts.sorted { ($0.status == .fighting ? 0 : 1, $0.startDate) < ($1.status == .fighting ? 0 : 1, $1.startDate) }
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
+        VStack(spacing: 10) {
             HStack {
                 PackImage("warroom.sword") {
-                    Image(systemName: "shield.lefthalf.filled.badge.checkmark")
-                        .font(.title)
-                        .foregroundColor(GTNWColors.neonCyan)
+                    Image(systemName: "shield.lefthalf.filled").font(.title).foregroundColor(GTNWColors.terminalRed)
                 }
                 .frame(width: 32, height: 32)
-
-                // Shadow President's "The War Room" title art when the local pack is installed
                 PackImage("warroom.title") {
-                    Text("AI WAR ROOM")
-                        .font(GTNWFonts.title())
-                        .foregroundColor(GTNWColors.terminalGreen)
+                    Text("THE WAR ROOM").font(ThemeFont.mono(22, .bold)).foregroundColor(GTNWColors.terminalRed)
                 }
                 .frame(maxHeight: 28)
-
                 Spacer()
-
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(GTNWColors.terminalRed)
-                }
-                .buttonStyle(.plain)
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle())
             }
-            .padding()
-            .background(Color.black.opacity(0.9))
-
-            Divider().background(GTNWColors.terminalGreen)
-
-            if let analysis = warRoom.threatAnalysis {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // Immediate Threats
-                        if !analysis.immediateThreats.isEmpty {
-                            ThreatSection(title: "🚨 IMMEDIATE THREATS", threats: analysis.immediateThreats)
-                        }
-
-                        // Opportunities
-                        if !analysis.opportunities.isEmpty {
-                            OpportunitySection(opportunities: analysis.opportunities)
-                        }
-
-                        // Recommendations
-                        if !analysis.recommendations.isEmpty {
-                            RecommendationSection(recommendations: analysis.recommendations)
-                        }
-
-                        // Victory Path
-                        VictoryPathSection(analysis: analysis.victoryPathAnalysis)
-                    }
-                    .padding()
-                }
-            } else {
-                VStack(spacing: 20) {
-                    if warRoom.isAnalyzing {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text("Analyzing strategic situation...")
-                            .font(GTNWFonts.body())
-                            .foregroundColor(GTNWColors.terminalAmber)
-                    } else {
-                        Button(action: {
-                            Task {
-                                await warRoom.analyzeSituation(gameState: gameState)
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "brain.head.profile")
-                                Text("ANALYZE SITUATION")
-                            }
-                            .padding()
-                            .background(GTNWColors.neonCyan.opacity(0.3))
-                            .cornerRadius(8)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .frame(maxHeight: .infinity)
-            }
-        }
-        .frame(width: 800, height: 600)
-        .background(Color.black)
-        .border(GTNWColors.neonCyan, width: 2)
-    }
-}
-
-struct ThreatSection: View {
-    let title: String
-    let threats: [ThreatReport]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(GTNWFonts.sectionHeader())
-                .foregroundColor(GTNWColors.terminalRed)
-
-            ForEach(threats) { threat in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(threat.country)
-                            .font(GTNWFonts.headline())
-                            .foregroundColor(GTNWColors.terminalGreen)
-
+            HStack(alignment: .top, spacing: 10) {
+                frontList.frame(width: 280)
+                if let f = fronts.first(where: { $0.id == selectedFront }) ?? fronts.first(where: { $0.status == .fighting }) {
+                    frontDetail(f)
+                } else {
+                    VStack {
                         Spacer()
-
-                        ThreatLevelBadge(level: threat.threatLevel)
+                        Text("No wars are being fought. Long may it last.").font(ThemeFont.mono(13)).foregroundColor(GTNWColors.terminalGreen)
+                        Spacer()
                     }
-
-                    Text(threat.reasoning)
-                        .font(GTNWFonts.body())
-                        .foregroundColor(GTNWColors.terminalAmber.opacity(0.8))
-
-                    HStack {
-                        Image(systemName: "clock")
-                        Text(threat.timeWindow)
-                    }
-                    .font(GTNWFonts.caption())
-                    .foregroundColor(GTNWColors.neonPurple)
-
-                    if !threat.recommendedResponse.isEmpty {
-                        Text("→ \(threat.recommendedResponse)")
-                            .font(GTNWFonts.caption())
-                            .foregroundColor(GTNWColors.neonCyan)
-                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .padding()
-                .background(Color.black.opacity(0.5))
-                .border(GTNWColors.terminalRed, width: 1)
+            }
+            operationsLog.frame(height: 120)
+        }
+        .padding(14)
+        .frame(width: 940, height: 640)
+        .background(Theme.isRetro ? EGA.black : Color.black)
+        .onAppear { ShadowPack.shared.play("sfx.warroom_enter") }
+    }
+
+    private var frontList: some View {
+        ScrollView {
+            VStack(spacing: 4) {
+                ForEach(fronts) { f in
+                    Button { selectedFront = f.id } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(name(f.attacker)) → \(name(f.defender))").font(ThemeFont.mono(11, .bold))
+                            Text(statusText(f)).font(ThemeFont.mono(9))
+                                .foregroundColor(f.status == .fighting ? GTNWColors.terminalRed : GTNWColors.neonCyan)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(6)
+                        .foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        .background(f.id == selectedFront ? GTNWColors.terminalRed.opacity(0.35) : Color.clear)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
-    }
-}
-
-struct ThreatLevelBadge: View {
-    let level: Int
-
-    var body: some View {
-        Text("\(level)")
-            .font(.system(size: 14, weight: .bold, design: .monospaced))
-            .foregroundColor(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(threatColor)
-            .cornerRadius(4)
+        .themedPanel(retroFill: EGA.blue)
     }
 
-    var threatColor: Color {
-        if level >= 80 { return GTNWColors.terminalRed }
-        if level >= 60 { return GTNWColors.terminalAmber }
-        if level >= 40 { return GTNWColors.neonPurple }
-        return GTNWColors.terminalGreen
-    }
-}
-
-struct OpportunitySection: View {
-    let opportunities: [Opportunity]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("💡 OPPORTUNITIES")
-                .font(GTNWFonts.sectionHeader())
-                .foregroundColor(GTNWColors.neonCyan)
-
-            ForEach(opportunities) { opp in
-                HStack(alignment: .top) {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(GTNWColors.yellow)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(opp.country)
-                            .font(GTNWFonts.headline())
-                            .foregroundColor(GTNWColors.terminalGreen)
-                        Text(opp.opportunity)
-                            .font(GTNWFonts.body())
-                            .foregroundColor(GTNWColors.terminalAmber.opacity(0.8))
+    private func frontDetail(_ f: WarFront) -> some View {
+        let us = gameState.playerCountryID
+        let usIsBelligerent = f.attacker == us || f.defender == us
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("\(flag(f.attacker)) \(name(f.attacker).uppercased())  vs  \(flag(f.defender)) \(name(f.defender).uppercased())")
+                .font(ThemeFont.mono(15, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            momentumBar(f)
+            HStack(alignment: .top, spacing: 12) {
+                assessment(title: "TROOP ASSESSMENT", rows: [
+                    ("In theater (K)", Int(f.attackerTroops), Int(f.defenderTroops)),
+                    ("Initial (K)", Int(f.attackerInitial), Int(f.defenderInitial)),
+                    ("Will to fight %", Int(f.attackerWill * 100), Int(f.defenderWill * 100)),
+                    ("U.S. troops (K)", f.usSide == f.attacker ? Int(f.usTroops) : 0, f.usSide == f.defender ? Int(f.usTroops) : 0),
+                ], f: f)
+                assessment(title: "DAMAGE ASSESSMENT", rows: [
+                    ("Military dead (K)", Int(f.attackerDead), Int(f.defenderDead)),
+                    ("Civilian dead (K)", 0, Int(f.civilianDead)),
+                    ("Economic loss ($B)", 0, Int(f.economicLoss)),
+                    ("Weeks of fighting", f.battles, f.battles),
+                ], f: f)
+            }
+            if f.status == .fighting {
+                HStack(spacing: 8) {
+                    Stepper("Troops: \(Int(troopStep))K", value: $troopStep, in: 10...500, step: 10).frame(width: 170)
+                    if !usIsBelligerent {
+                        Button("SEND TO \(name(f.defender).uppercased())") { act { gameEngine.commitTroops(frontID: f.id, side: f.defender, thousands: troopStep) } }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen)).disabled(f.usSide == f.attacker)
+                        Button("SEND TO \(name(f.attacker).uppercased())") { act { gameEngine.commitTroops(frontID: f.id, side: f.attacker, thousands: troopStep) } }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed)).disabled(f.usSide == f.defender)
+                        if f.usTroops > 0, let side = f.usSide {
+                            Button("RECALL") { act { gameEngine.commitTroops(frontID: f.id, side: side, thousands: -troopStep) } }
+                                .buttonStyle(ThemedButtonStyle())
+                        }
                     }
                 }
-                .padding()
-                .background(Color.black.opacity(0.5))
-                .border(GTNWColors.neonCyan, width: 1)
-            }
-        }
-    }
-}
-
-struct RecommendationSection: View {
-    let recommendations: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("📋 STRATEGIC RECOMMENDATIONS")
-                .font(GTNWFonts.sectionHeader())
-                .foregroundColor(GTNWColors.terminalGreen)
-
-            ForEach(Array(recommendations.enumerated()), id: \.offset) { index, rec in
-                HStack(alignment: .top) {
-                    Text("\(index + 1).")
-                        .font(GTNWFonts.headline())
-                        .foregroundColor(GTNWColors.neonCyan)
-                    Text(rec)
-                        .font(GTNWFonts.body())
-                        .foregroundColor(GTNWColors.terminalAmber)
+                .font(ThemeFont.mono(10))
+                HStack(spacing: 8) {
+                    if usIsBelligerent || f.usSide != nil {
+                        Button("DEMAND SURRENDER") {
+                            let accepted = gameEngine.demandSurrender(frontID: f.id)
+                            notice = accepted ? "They have accepted your terms." : "Surrender demand rejected. The fighting continues."
+                            gameEngine.recordPlayerAction(rung: .military, hostile: true, detected: true)
+                        }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                    }
+                    if usIsBelligerent {
+                        Button("SUE FOR PEACE") {
+                            let other = f.attacker == us ? f.defender : f.attacker
+                            _ = gameEngine.sueForPeace(from: us, to: other)
+                            notice = "Ceasefire signed with \(name(other))."
+                        }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+                    } else {
+                        Button("BROKER CEASEFIRE") {
+                            _ = gameEngine.sueForPeace(from: f.attacker, to: f.defender)
+                            gameEngine.completePlayerAction()
+                            notice = "U.S. mediators have brokered a ceasefire."
+                        }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+                        .disabled(gameState.actionsRemaining == 0)
+                    }
                 }
-                .padding()
-                .background(Color.black.opacity(0.3))
-                .border(GTNWColors.terminalGreen, width: 1)
+                Text(String(format: "Odds they accept a surrender demand now: %.0f%%",
+                            CombatModel.surrenderAcceptance(f, demandedBy: f.usSide ?? (f.attacker == us ? f.attacker : f.defender)) * 100))
+                    .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
             }
+            if !notice.isEmpty { Text(notice).font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber) }
+            Spacer()
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .themedPanel(retroFill: EGA.blue)
+    }
+
+    private var operationsLog: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("OPERATIONS STATUS").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                ForEach(Array(gameState.shadow.warLog.suffix(40).reversed().enumerated()), id: \.offset) { _, line in
+                    Text(line).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(6)
+        }
+        .themedPanel(retroFill: EGA.black)
+    }
+
+    private func momentumBar(_ f: WarFront) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(f.attackerMomentum > 0.05 ? "\(name(f.attacker)) is advancing" : (f.attackerMomentum < -0.05 ? "\(name(f.defender)) is holding and pushing back" : "The front is static"))
+                .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(GTNWColors.terminalGreen)
+                    Rectangle().fill(GTNWColors.terminalRed).frame(width: g.size.width * (f.attackerMomentum + 1) / 2)
+                }
+            }
+            .frame(height: 10)
         }
     }
-}
 
-struct VictoryPathSection: View {
-    let analysis: String
+    private func assessment(title: String, rows: [(String, Int, Int)], f: WarFront) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            HStack {
+                Text("").frame(width: 130, alignment: .leading)
+                Text(code(f.attacker)).frame(width: 60, alignment: .trailing)
+                Text(code(f.defender)).frame(width: 60, alignment: .trailing)
+            }
+            .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.neonCyan)
+            ForEach(rows, id: \.0) { r in
+                HStack {
+                    Text(r.0).frame(width: 130, alignment: .leading)
+                    Text("\(r.1)").frame(width: 60, alignment: .trailing)
+                    Text("\(r.2)").frame(width: 60, alignment: .trailing)
+                }
+                .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+            }
+        }
+        .padding(6)
+        .themedPanel(retroFill: EGA.black)
+    }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("🏆 PATH TO VICTORY")
-                .font(GTNWFonts.sectionHeader())
-                .foregroundColor(GTNWColors.yellow)
+    private func act(_ f: () -> Bool) {
+        notice = f() ? "Orders sent." : "Those orders can't be carried out."
+    }
 
-            Text(analysis)
-                .font(GTNWFonts.body())
-                .foregroundColor(GTNWColors.terminalAmber)
-                .padding()
-                .background(Color.black.opacity(0.5))
-                .border(GTNWColors.yellow, width: 1)
+    private func name(_ id: String) -> String { gameState.getCountry(id: id)?.name ?? id }
+    private func flag(_ id: String) -> String { gameState.getCountry(id: id)?.flag ?? "" }
+    private func code(_ id: String) -> String { id }
+
+    private func statusText(_ f: WarFront) -> String {
+        switch f.status {
+        case .fighting: return "FIGHTING · since \(GameCalendar.format(f.startDate))"
+        case .attackerWon: return "\(name(f.defender)) surrendered"
+        case .defenderWon: return "\(name(f.attacker)) withdrew"
+        case .ceasefire: return "Ceasefire"
         }
     }
 }

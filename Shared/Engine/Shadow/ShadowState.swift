@@ -146,3 +146,7 @@ struct ShadowState: Codable {
         advisorGrievances = try c.decodeIfPresent([String: Int].self, forKey: .advisorGrievances) ?? [:]
     }
 }
+
+extension ElectionResult: Identifiable {
+    var id: Date { date }
+}
