@@ -13,42 +13,42 @@ import SwiftUI
 
 struct ModernColors {
     // Dark blue gradient background (CleanMyMac style)
-    static let gradientStart = Color(red: 0.08, green: 0.12, blue: 0.22) // Dark navy
-    static let gradientMid = Color(red: 0.10, green: 0.15, blue: 0.28)   // Navy blue
-    static let gradientEnd = Color(red: 0.12, green: 0.18, blue: 0.32)   // Lighter navy
+    static var gradientStart: Color { Theme.isRetro ? EGA.blue : Color(red: 0.08, green: 0.12, blue: 0.22) }  // Dark navy
+    static var gradientMid: Color { Theme.isRetro ? EGA.blue : Color(red: 0.10, green: 0.15, blue: 0.28) }  // Navy blue
+    static var gradientEnd: Color { Theme.isRetro ? EGA.blue : Color(red: 0.12, green: 0.18, blue: 0.32) }  // Lighter navy
 
     // Vibrant accent colors (CleanMyMac style)
-    static let cyan = Color(red: 0.3, green: 0.85, blue: 0.95)          // Bright cyan
-    static let teal = Color(red: 0.2, green: 0.8, blue: 0.8)            // Teal
-    static let purple = Color(red: 0.6, green: 0.4, blue: 0.95)         // Purple
-    static let orange = Color(red: 1.0, green: 0.6, blue: 0.2)          // Warm orange
-    static let yellow = Color(red: 1.0, green: 0.85, blue: 0.3)         // Bright yellow
-    static let pink = Color(red: 1.0, green: 0.35, blue: 0.65)          // Hot pink
-    static let accent = Color(red: 0.3, green: 0.85, blue: 0.95)        // Cyan (primary)
-    static let accentBlue = Color(red: 0.3, green: 0.7, blue: 1.0)      // Blue
-    static let accentGreen = Color(red: 0.3, green: 0.9, blue: 0.6)     // Green
-    static let accentOrange = Color(red: 1.0, green: 0.6, blue: 0.2)    // Orange
+    static var cyan: Color { Theme.isRetro ? EGA.lightCyan : Color(red: 0.3, green: 0.85, blue: 0.95) }  // Bright cyan
+    static var teal: Color { Theme.isRetro ? EGA.cyan : Color(red: 0.2, green: 0.8, blue: 0.8) }  // Teal
+    static var purple: Color { Theme.isRetro ? EGA.magenta : Color(red: 0.6, green: 0.4, blue: 0.95) }  // Purple
+    static var orange: Color { Theme.isRetro ? EGA.brown : Color(red: 1.0, green: 0.6, blue: 0.2) }  // Warm orange
+    static var yellow: Color { Theme.isRetro ? EGA.yellow : Color(red: 1.0, green: 0.85, blue: 0.3) }  // Bright yellow
+    static var pink: Color { Theme.isRetro ? EGA.lightMagenta : Color(red: 1.0, green: 0.35, blue: 0.65) }  // Hot pink
+    static var accent: Color { Theme.isRetro ? EGA.lightCyan : Color(red: 0.3, green: 0.85, blue: 0.95) }  // Cyan (primary)
+    static var accentBlue: Color { Theme.isRetro ? EGA.lightBlue : Color(red: 0.3, green: 0.7, blue: 1.0) }  // Blue
+    static var accentGreen: Color { Theme.isRetro ? EGA.lightGreen : Color(red: 0.3, green: 0.9, blue: 0.6) }  // Green
+    static var accentOrange: Color { Theme.isRetro ? EGA.brown : Color(red: 1.0, green: 0.6, blue: 0.2) }  // Orange
 
     // Background blob colors (vibrant for dark background)
-    static let blobCyan = Color(red: 0.2, green: 0.7, blue: 0.9)
-    static let blobPurple = Color(red: 0.5, green: 0.3, blue: 0.8)
-    static let blobPink = Color(red: 0.9, green: 0.3, blue: 0.6)
-    static let blobOrange = Color(red: 0.9, green: 0.5, blue: 0.2)
+    static var blobCyan: Color { Theme.isRetro ? EGA.cyan : Color(red: 0.2, green: 0.7, blue: 0.9) }
+    static var blobPurple: Color { Theme.isRetro ? EGA.magenta : Color(red: 0.5, green: 0.3, blue: 0.8) }
+    static var blobPink: Color { Theme.isRetro ? EGA.lightMagenta : Color(red: 0.9, green: 0.3, blue: 0.6) }
+    static var blobOrange: Color { Theme.isRetro ? EGA.brown : Color(red: 0.9, green: 0.5, blue: 0.2) }
 
     // Status colors (CleanMyMac health indicators)
-    static let statusLow = Color(red: 0.3, green: 0.9, blue: 0.6)       // Bright green
-    static let statusMedium = Color(red: 1.0, green: 0.85, blue: 0.3)   // Yellow
-    static let statusHigh = Color(red: 1.0, green: 0.6, blue: 0.2)      // Orange
-    static let statusCritical = Color(red: 1.0, green: 0.3, blue: 0.4)  // Red
+    static var statusLow: Color { Theme.isRetro ? EGA.lightGreen : Color(red: 0.3, green: 0.9, blue: 0.6) }  // Bright green
+    static var statusMedium: Color { Theme.isRetro ? EGA.yellow : Color(red: 1.0, green: 0.85, blue: 0.3) }  // Yellow
+    static var statusHigh: Color { Theme.isRetro ? EGA.brown : Color(red: 1.0, green: 0.6, blue: 0.2) }  // Orange
+    static var statusCritical: Color { Theme.isRetro ? EGA.lightRed : Color(red: 1.0, green: 0.3, blue: 0.4) }  // Red
 
     // Text colors (light for dark background)
-    static let textPrimary = Color.white
-    static let textSecondary = Color.white.opacity(0.7)
-    static let textTertiary = Color.white.opacity(0.5)
+    static var textPrimary: Color { Theme.isRetro ? EGA.white : Color.white }
+    static var textSecondary: Color { Theme.isRetro ? EGA.lightGray : Color.white.opacity(0.7) }
+    static var textTertiary: Color { Theme.isRetro ? EGA.lightGray : Color.white.opacity(0.5) }
 
     // Glass card colors (darker, more opaque)
-    static let glassBackground = Color.white.opacity(0.05)
-    static let glassBorder = Color.white.opacity(0.15)
+    static var glassBackground: Color { Theme.isRetro ? EGA.blue : Color.white.opacity(0.05) }
+    static var glassBorder: Color { Theme.isRetro ? EGA.lightGray : Color.white.opacity(0.15) }
 
     // Get color for percentage (heat map)
     static func heatColor(percentage: Double) -> Color {
@@ -79,6 +79,9 @@ struct GlassCard: ViewModifier {
     let prominent: Bool
 
     func body(content: Content) -> some View {
+        if Theme.isRetro {
+            content.padding(20).background(RetroBevel(fill: EGA.blue))
+        } else {
         content
             .padding(20)
             .background(
@@ -96,6 +99,7 @@ struct GlassCard: ViewModifier {
                     .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
                     .shadow(color: Color.white.opacity(0.8), radius: 1, x: -1, y: -1)
             )
+        }
     }
 }
 
@@ -209,6 +213,15 @@ struct GlassmorphicBackground: View {
     @State private var animateBlobs = false
 
     var body: some View {
+        if Theme.isRetro {
+            // Retro: a flat EGA-blue desktop, like a 1990s DOS front end.
+            EGA.blue.ignoresSafeArea()
+        } else {
+            modernBody
+        }
+    }
+
+    private var modernBody: some View {
         ZStack {
             // Base gradient
             ModernColors.backgroundGradient

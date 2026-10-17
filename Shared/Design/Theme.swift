@@ -39,7 +39,9 @@ final class ThemeManager: ObservableObject {
 
 /// Global switch read by the colour tokens.
 enum Theme {
-    static var isRetro: Bool { ThemeManager.shared.isRetro }
+    /// Forces a skin without touching saved preferences (used by offscreen snapshot tests).
+    static var forced: GameTheme?
+    static var isRetro: Bool { (forced ?? ThemeManager.shared.theme) == .retro }
 }
 
 /// The standard 16-colour EGA palette.
@@ -114,7 +116,7 @@ struct ThemedPanel: ViewModifier {
     var retroFill: Color = EGA.blue
 
     func body(content: Content) -> some View {
-        if themes.isRetro {
+        if Theme.isRetro {
             content.background(RetroBevel(fill: retroFill))
         } else {
             content.background(

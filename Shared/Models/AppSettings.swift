@@ -9,18 +9,18 @@ import SwiftUI
 
 struct AppSettings {
     // WOPR-inspired color scheme
-    static let terminalGreen = Color(red: 0.0, green: 1.0, blue: 0.0)
-    static let terminalAmber = Color(red: 1.0, green: 0.75, blue: 0.0)
-    static let terminalRed = Color(red: 1.0, green: 0.0, blue: 0.0)
-    static let terminalBackground = Color(red: 0.05, green: 0.05, blue: 0.05)
-    static let panelBackground = Color(red: 0.1, green: 0.1, blue: 0.1)
+    static var terminalGreen: Color { Theme.isRetro ? EGA.lightGreen : Color(red: 0.0, green: 1.0, blue: 0.0) }
+    static var terminalAmber: Color { Theme.isRetro ? EGA.yellow : Color(red: 1.0, green: 0.75, blue: 0.0) }
+    static var terminalRed: Color { Theme.isRetro ? EGA.lightRed : Color(red: 1.0, green: 0.0, blue: 0.0) }
+    static var terminalBackground: Color { Theme.isRetro ? EGA.black : Color(red: 0.05, green: 0.05, blue: 0.05) }
+    static var panelBackground: Color { Theme.isRetro ? EGA.blue : Color(red: 0.1, green: 0.1, blue: 0.1) }
 
     // Game colors
-    static let defcon5 = Color.blue
-    static let defcon4 = Color.green
-    static let defcon3 = Color.yellow
-    static let defcon2 = Color.orange
-    static let defcon1 = Color.red
+    static var defcon5: Color { Theme.isRetro ? EGA.lightBlue : Color.blue }
+    static var defcon4: Color { Theme.isRetro ? EGA.lightGreen : Color.green }
+    static var defcon3: Color { Theme.isRetro ? EGA.yellow : Color.yellow }
+    static var defcon2: Color { Theme.isRetro ? EGA.brown : Color.orange }
+    static var defcon1: Color { Theme.isRetro ? EGA.lightRed : Color.red }
 
     // UI settings
     static let cornerRadius: CGFloat = 8

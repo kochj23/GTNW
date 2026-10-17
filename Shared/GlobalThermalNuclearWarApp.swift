@@ -11,6 +11,7 @@ import SwiftUI
 @main
 struct GlobalThermalNuclearWarApp: App {
     @StateObject private var gameEngine = GameEngine()
+    @StateObject private var themes = ThemeManager.shared
     @State private var showingAISettings = false
 
     init() {
@@ -21,7 +22,11 @@ struct GlobalThermalNuclearWarApp: App {
         WindowGroup {
             MainTabView()
                 .environmentObject(gameEngine)
+                .environmentObject(themes)
+                // Rebuild every screen when the skin changes so all theme tokens are re-read.
+                .id(themes.theme)
                 .preferredColorScheme(.dark)
+                .onAppear { gameEngine.autosaveManager = SaveManager() }
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)
@@ -46,6 +51,12 @@ struct GlobalThermalNuclearWarApp: App {
             }
 
             CommandMenu("Retro") {
+                Picker("Skin", selection: $themes.theme) {
+                    ForEach(GameTheme.allCases) { Text($0.displayName).tag($0) }
+                }
+                Button(themes.isRetro ? "Switch to Modern Skin" : "Switch to Retro Skin") { themes.toggle() }
+                    .keyboardShortcut("r", modifiers: [.command, .shift])
+                Divider()
                 Toggle("Shadow President Art", isOn: Binding(get: { ShadowPack.shared.useRetroArt },
                                                              set: { ShadowPack.shared.useRetroArt = $0 }))
                 Toggle("Sound Effects", isOn: Binding(get: { ShadowPack.shared.soundEnabled },
@@ -58,6 +69,7 @@ struct GlobalThermalNuclearWarApp: App {
         #if os(macOS)
         Settings {
             TabView {
+                ThemeSettingsView().tabItem { Label("Game", systemImage: "gamecontroller") }
                 AIBackendSettingsView().tabItem { Label("AI", systemImage: "cpu") }
                 ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
             }

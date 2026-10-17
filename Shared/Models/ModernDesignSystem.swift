@@ -12,24 +12,26 @@ import SwiftUI
 
 struct GTNWColors {
     // Primary WOPR Colors (keep these)
-    static let terminalGreen = Color(red: 0.0, green: 1.0, blue: 0.0)
-    static let terminalAmber = Color(red: 1.0, green: 0.75, blue: 0.0)
-    static let terminalRed = Color(red: 1.0, green: 0.0, blue: 0.0)
+    static var terminalGreen: Color { Theme.isRetro ? EGA.lightGreen : Color(red: 0.0, green: 1.0, blue: 0.0) }
+    static var terminalAmber: Color { Theme.isRetro ? EGA.yellow : Color(red: 1.0, green: 0.75, blue: 0.0) }
+    static var terminalRed: Color { Theme.isRetro ? EGA.lightRed : Color(red: 1.0, green: 0.0, blue: 0.0) }
 
     // New Modern Colors
-    static let neonCyan = Color(red: 0.0, green: 0.9, blue: 1.0)
-    static let neonPurple = Color(red: 0.7, green: 0.3, blue: 1.0)
-    static let neonBlue = Color(red: 0.3, green: 0.6, blue: 1.0)
-    static let neonPink = Color(red: 1.0, green: 0.3, blue: 0.6)
+    static var neonCyan: Color { Theme.isRetro ? EGA.lightCyan : Color(red: 0.0, green: 0.9, blue: 1.0) }
+    static var neonPurple: Color { Theme.isRetro ? EGA.lightMagenta : Color(red: 0.7, green: 0.3, blue: 1.0) }
+    static var neonBlue: Color { Theme.isRetro ? EGA.lightBlue : Color(red: 0.3, green: 0.6, blue: 1.0) }
+    static var neonPink: Color { Theme.isRetro ? EGA.lightMagenta : Color(red: 1.0, green: 0.3, blue: 0.6) }
 
     // LCARS-inspired
-    static let lcarsOrange = Color(red: 1.0, green: 0.6, blue: 0.0)
-    static let lcarsPeach = Color(red: 1.0, green: 0.7, blue: 0.5)
-    static let lcarsSkyBlue = Color(red: 0.4, green: 0.7, blue: 1.0)
-    static let lcarsLavender = Color(red: 0.9, green: 0.7, blue: 1.0)
+    static var lcarsOrange: Color { Theme.isRetro ? EGA.brown : Color(red: 1.0, green: 0.6, blue: 0.0) }
+    static var lcarsPeach: Color { Theme.isRetro ? EGA.lightRed : Color(red: 1.0, green: 0.7, blue: 0.5) }
+    static var lcarsSkyBlue: Color { Theme.isRetro ? EGA.lightBlue : Color(red: 0.4, green: 0.7, blue: 1.0) }
+    static var lcarsLavender: Color { Theme.isRetro ? EGA.lightMagenta : Color(red: 0.9, green: 0.7, blue: 1.0) }
 
     // Backgrounds
-    static let spaceBackground = LinearGradient(
+    static var spaceBackground: LinearGradient {
+        if Theme.isRetro { return EGA.solid(EGA.blue) }
+        return LinearGradient(
         colors: [
             Color(red: 0.0, green: 0.0, blue: 0.05),
             Color(red: 0.0, green: 0.05, blue: 0.1),
@@ -37,54 +39,61 @@ struct GTNWColors {
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
-    )
+        )
+    }
 
-    static let commandCenterBackground = LinearGradient(
+    static var commandCenterBackground: LinearGradient {
+        if Theme.isRetro { return EGA.solid(EGA.black) }
+        return LinearGradient(
         colors: [
             Color(red: 0.05, green: 0.05, blue: 0.1),
             Color(red: 0.0, green: 0.0, blue: 0.0)
         ],
         startPoint: .top,
         endPoint: .bottom
-    )
+        )
+    }
 
-    static let threatGradient = LinearGradient(
+    static var threatGradient: LinearGradient {
+        if Theme.isRetro { return EGA.solid(EGA.blue) }
+        return LinearGradient(
         colors: [terminalRed.opacity(0.3), terminalAmber.opacity(0.2), terminalGreen.opacity(0.1)],
         startPoint: .leading,
         endPoint: .trailing
-    )
+        )
+    }
 
     // Glass panels
-    static let glassPanelLight = Color.white.opacity(0.05)
-    static let glassPanelMedium = Color.white.opacity(0.08)
-    static let glassPanelDark = Color.black.opacity(0.6)
+    static var glassPanelLight: Color { Theme.isRetro ? EGA.blue : Color.white.opacity(0.05) }
+    static var glassPanelMedium: Color { Theme.isRetro ? EGA.blue : Color.white.opacity(0.08) }
+    static var glassPanelDark: Color { Theme.isRetro ? EGA.black : Color.black.opacity(0.6) }
 }
 
 // MARK: - Typography
 
 struct GTNWFonts {
     static func terminal(size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: size, weight: weight) : .system(size: size, weight: weight, design: .monospaced)
     }
 
     static func title() -> Font {
-        .system(size: 48, weight: .bold, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 48, weight: .bold) : .system(size: 48, weight: .bold, design: .monospaced)
     }
 
     static func heading() -> Font {
-        .system(size: 32, weight: .bold, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 32, weight: .bold) : .system(size: 32, weight: .bold, design: .monospaced)
     }
 
     static func subheading() -> Font {
-        .system(size: 24, weight: .semibold, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 24, weight: .semibold) : .system(size: 24, weight: .semibold, design: .monospaced)
     }
 
     static func body() -> Font {
-        .system(size: 16, weight: .regular, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 16, weight: .regular) : .system(size: 16, weight: .regular, design: .monospaced)
     }
 
     static func caption() -> Font {
-        .system(size: 12, weight: .regular, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 12, weight: .regular) : .system(size: 12, weight: .regular, design: .monospaced)
     }
 }
 
@@ -132,6 +141,9 @@ struct GlassPanel: ViewModifier {
     var borderColor: Color = GTNWColors.neonCyan.opacity(0.3)
 
     func body(content: Content) -> some View {
+        if Theme.isRetro {
+            content.background(RetroBevel(fill: EGA.blue))
+        } else {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -142,6 +154,7 @@ struct GlassPanel: ViewModifier {
                     )
                     .shadow(color: borderColor.opacity(0.5), radius: 10, x: 0, y: 5)
             )
+        }
     }
 }
 
@@ -151,7 +164,7 @@ struct NeonGlow: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .shadow(color: color.opacity(0.8), radius: radius, x: 0, y: 0)
+            .shadow(color: Theme.isRetro ? .clear : color.opacity(0.8), radius: radius, x: 0, y: 0)
             .shadow(color: color.opacity(0.6), radius: radius * 1.5, x: 0, y: 0)
             .shadow(color: color.opacity(0.4), radius: radius * 2, x: 0, y: 0)
     }
@@ -196,6 +209,9 @@ struct ModernCard: ViewModifier {
     var glowColor: Color = GTNWColors.neonCyan
 
     func body(content: Content) -> some View {
+        if Theme.isRetro {
+            content.background(RetroBevel(fill: EGA.blue))
+        } else {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -213,6 +229,7 @@ struct ModernCard: ViewModifier {
                     )
                     .shadow(color: glowColor.opacity(0.3), radius: 15, x: 0, y: 8)
             )
+        }
     }
 }
 
