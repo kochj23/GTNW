@@ -114,6 +114,12 @@ struct BrainConfig: Sendable {
     /// Timeout for `.model(...)` brains.
     var modelTimeout: TimeInterval = 30
 
+    /// Every remote brain call is retried with backoff (inside the timeouts above).
+    var retryPolicy: RetryPolicy = .network
+    /// Injectable seams so tests can drive the full transport with no network.
+    var transport: HTTPTransport = HTTP.live
+    var retrySleep: RetrySleeper = Retry.realSleep
+
     static let `default` = BrainConfig()
 }
 
@@ -147,10 +153,20 @@ enum ModelRegistry {
         }
     }
 
-    /// Fetch installed local models from Ollama. Network — returns [] on failure.
-    static func fetchLocalModels(host: String = ollamaHost) async -> [ModelInfo] {
-        guard let url = URL(string: "\(host)/api/tags"),
-              let (data, _) = try? await URLSession.shared.data(from: url) else { return [] }
+    /// Fetch installed local models from Ollama. Network — retried with backoff,
+    /// returns [] once retries are exhausted.
+    static func fetchLocalModels(
+        host: String = ollamaHost,
+        transport: @escaping HTTPTransport = HTTP.live,
+        policy: RetryPolicy = .network,
+        sleep: @escaping RetrySleeper = Retry.realSleep
+    ) async -> [ModelInfo] {
+        guard let url = URL(string: "\(host)/api/tags") else { return [] }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 5
+        guard let (data, _) = try? await Retry.http(req, label: "Ollama /api/tags",
+                                                    transport: transport, policy: policy, sleep: sleep)
+        else { return [] }
         return parseOllamaTags(data)
     }
 }
@@ -168,6 +184,10 @@ struct OpenAICompatibleRequest {
     var maxTokens: Int = 300
     var timeout: TimeInterval = 30
     var apiKey: String? = nil
+    /// Injectable transport + retry (tests use a stub and a no-op sleep).
+    var transport: HTTPTransport = HTTP.live
+    var retryPolicy: RetryPolicy = .network
+    var sleep: RetrySleeper = Retry.realSleep
 
     func makeURLRequest() -> URLRequest? {
         guard let url = URL(string: endpoint) else { return nil }
@@ -202,11 +222,13 @@ struct OpenAICompatibleRequest {
         return json["response"] as? String  // ollama native fallback
     }
 
-    /// Send and return the assistant text, or nil on any failure.
+    /// Send and return the assistant text, or nil once retries are exhausted.
+    /// Transport errors and 408/429/5xx are retried with backoff; other 4xx fail fast.
     func send() async -> String? {
         guard let req = makeURLRequest() else { return nil }
-        guard let (data, resp) = try? await URLSession.shared.data(for: req) else { return nil }
-        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) { return nil }
+        guard let (data, _) = try? await Retry.http(req, label: "LLM \(model) @ \(endpoint)",
+                                                    transport: transport, policy: retryPolicy, sleep: sleep)
+        else { return nil }
         return Self.parseContent(data)
     }
 }
@@ -244,21 +266,31 @@ enum BrainClient {
             return nil
         case .gatewayClaude:
             return await withMoveTimeout(config.gatewayTimeout) {
-                await openAICompatibleMove(request, endpoint: config.gatewayEndpoint, model: config.gatewayModel)
+                await openAICompatibleMove(request, endpoint: config.gatewayEndpoint, model: config.gatewayModel,
+                                           transport: config.transport, retryPolicy: config.retryPolicy,
+                                           sleep: config.retrySleep)
             }
         case .model(let id, let endpoint, _):
             return await withMoveTimeout(config.modelTimeout) {
-                await openAICompatibleMove(request, endpoint: endpoint, model: id)
+                await openAICompatibleMove(request, endpoint: endpoint, model: id,
+                                           transport: config.transport, retryPolicy: config.retryPolicy,
+                                           sleep: config.retrySleep)
             }
         case .liveSession:
             return await withMoveTimeout(config.liveSessionTimeout) {
-                await LiveSessionBus.requestMove(request, config: config)
+                await LiveSessionBus.requestMove(request, config: config, transport: config.transport,
+                                                 retryPolicy: config.retryPolicy, sleep: config.retrySleep)
             }
         }
     }
 
     /// Prompt an OpenAI-compatible endpoint for a MoveResponse.
-    static func openAICompatibleMove(_ request: MoveRequest, endpoint: String, model: String) async -> MoveResponse? {
+    static func openAICompatibleMove(
+        _ request: MoveRequest, endpoint: String, model: String,
+        transport: @escaping HTTPTransport = HTTP.live,
+        retryPolicy: RetryPolicy = .network,
+        sleep: @escaping RetrySleeper = Retry.realSleep
+    ) async -> MoveResponse? {
         let system = """
         You are the strategic AI for one nation in a Cold War / nuclear simulation. \
         Respond with ONLY a JSON object of the form \
@@ -277,7 +309,8 @@ enum BrainClient {
         let text = await OpenAICompatibleRequest(
             endpoint: endpoint, model: model,
             systemPrompt: system, userPrompt: user,
-            temperature: 0.6, maxTokens: 250
+            temperature: 0.6, maxTokens: 250,
+            transport: transport, retryPolicy: retryPolicy, sleep: sleep
         ).send()
         guard let text else { return nil }
         return MoveResponse.decode(fromText: text)
@@ -303,15 +336,21 @@ enum LiveSessionBus {
         "\(request.gameId)/\(request.turn)/\(request.countryId)"
     }
 
-    static func requestMove(_ request: MoveRequest, config: BrainConfig) async -> MoveResponse? {
+    static func requestMove(
+        _ request: MoveRequest, config: BrainConfig,
+        transport: @escaping HTTPTransport = HTTP.live,
+        retryPolicy: RetryPolicy = .network,
+        sleep: @escaping RetrySleeper = Retry.realSleep
+    ) async -> MoveResponse? {
         let key = moveKey(request)
-        // 1. POST the request so a live session can pick it up.
-        guard await post(request, to: "\(config.liveSessionBaseURL)/move") else { return nil }
+        // 1. POST the request so a live session can pick it up (retried with backoff).
+        guard await post(request, to: "\(config.liveSessionBaseURL)/move",
+                         transport: transport, retryPolicy: retryPolicy, sleep: sleep) else { return nil }
 
         // 2. Poll for the answer until the surrounding timeout fires.
         let pollNanos = UInt64(max(0.1, config.liveSessionPollInterval) * 1_000_000_000)
         while !Task.isCancelled {
-            if let response = await fetchResponse(key: key, config: config) {
+            if let response = await fetchResponse(key: key, config: config, transport: transport) {
                 return response
             }
             try? await Task.sleep(nanoseconds: pollNanos)
@@ -319,7 +358,12 @@ enum LiveSessionBus {
         return nil
     }
 
-    private static func post(_ request: MoveRequest, to urlString: String) async -> Bool {
+    static func post(
+        _ request: MoveRequest, to urlString: String,
+        transport: @escaping HTTPTransport = HTTP.live,
+        retryPolicy: RetryPolicy = .network,
+        sleep: @escaping RetrySleeper = Retry.realSleep
+    ) async -> Bool {
         guard let url = URL(string: urlString),
               let body = try? JSONEncoder().encode(request) else { return false }
         var req = URLRequest(url: url)
@@ -327,15 +371,19 @@ enum LiveSessionBus {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = body
         req.timeoutInterval = 10
-        guard let (_, resp) = try? await URLSession.shared.data(for: req) else { return false }
-        if let http = resp as? HTTPURLResponse { return (200...299).contains(http.statusCode) }
-        return false
+        guard let (_, resp) = try? await Retry.http(req, label: "live-session POST",
+                                                    transport: transport, policy: retryPolicy, sleep: sleep)
+        else { return false }
+        return resp is HTTPURLResponse
     }
 
-    private static func fetchResponse(key: String, config: BrainConfig) async -> MoveResponse? {
+    // Polling is itself a retry loop (bounded by the caller's timeout), so each
+    // poll is a single attempt.
+    static func fetchResponse(key: String, config: BrainConfig,
+                              transport: HTTPTransport = HTTP.live) async -> MoveResponse? {
         let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? key
         guard let url = URL(string: "\(config.liveSessionBaseURL)/move/\(encodedKey)") else { return nil }
-        guard let (data, resp) = try? await URLSession.shared.data(from: url) else { return nil }
+        guard let (data, resp) = try? await transport(URLRequest(url: url)) else { return nil }
         // 200 = answered, anything else = still pending.
         if let http = resp as? HTTPURLResponse, http.statusCode == 200 {
             return MoveResponse.decode(from: data)

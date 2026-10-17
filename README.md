@@ -1,7 +1,7 @@
 # GTNW -- Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-189%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-259%20passed-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -176,9 +176,13 @@ graph TD
     end
 
     subgraph "Testing (GTNWTests/)"
-        UnitTests["Unit Tests -- 40 tests<br/>Country, GameState, DefconLevel,<br/>Era, Scoring, Victory, Codable"]
-        FuncTests["Functional Tests -- 28 tests<br/>GameEngine, War, Alliances,<br/>Nuclear Strikes, SDI, Cyber, Covert"]
-        SecTests["Security Tests -- 9 tests<br/>API binding, input bounds,<br/>state integrity, serialization"]
+        UnitTests["Unit -- 131 tests<br/>Models, scoring, brains,<br/>Shadow systems, audits"]
+        FuncTests["Functional -- 32 tests<br/>GameEngine flows, AI opponents,<br/>save / load"]
+        SecTests["Security -- 36 tests<br/>Input bounds, API keys,<br/>data boundary, hostile LLM output"]
+        IntTests["Integration -- 9 tests<br/>Engine → brain → HTTP → state"]
+        PerfTests["Performance -- 14 tests<br/>Turn throughput, concurrency,<br/>bounded memory"]
+        RetryTests["Retry -- 29 tests<br/>Backoff on every external call"]
+        FrameTests["Frame -- 8 tests<br/>Host boot, root render,<br/>hidden launch smoke"]
     end
 
     subgraph Widget["GTNW Widget (WidgetKit)"]
@@ -474,39 +478,37 @@ GTNW/
 
 ## Testing
 
-GTNW includes a comprehensive XCTest suite covering unit, functional, and security tests. Tests are organized across three files:
+GTNW's XCTest suite covers all seven required categories. **259 tests, 0 failures.** No test touches the network, the real `UserDefaults`, or real saves: remote brains use stub transports, saves go to temporary folders.
 
-### Test Summary
+### By category
 
-| Suite | Tests | Coverage |
-|-------|-------|----------|
-| **Unit Tests** (`GTNWUnitTests`) | 48 | Country model, GameState, DefconLevel, era systems, scoring, victory conditions, Codable, leaderboard |
-| **Functional Tests** (`GTNWFunctionalTests`) | 28 | GameEngine lifecycle, war/alliance, diplomacy, nuclear strikes, SDI, cyber defense, covert ops, DEFCON management |
-| **Security Tests** (`GTNWSecurityTests`) | 27 | API port binding, input bounds, state integrity, data uniqueness, serialization round-trip, resource abuse |
-| **Audit Tests** (`GTNWAuditTests`) | 18 | Score arithmetic, crisis-resolution safety, victory boundaries |
-| **AI Brain Tests** (`AIBrainTests`) | 20 | Brain-per-country turn loop, timeouts and fallbacks, move parsing |
-| **Shadow Pack Tests** (`ShadowPackTests`) | 8 | Optional pack loader and fallbacks |
-| **Shadow Systems Tests** (`ShadowSystemsTests`) | 39 | Calendar & rate scaling, save migration & slots, profiles & anxieties, advice & advisor fates, popularity & elections, budget & aid, War Room combat, scenarios, world evaluation & City View, theme persistence |
-| **Snapshot render** (`SnapshotRenderTests`) | 1 | Renders the Situation Room and its sheets offscreen in both skins |
-| **Total** | **189** | **0 failures** (plus an iOS-simulator build in CI) |
+| Category | Tests | Where | What it covers |
+|----------|------:|-------|----------------|
+| **Unit** | 131 | `GTNWUnitTests`, `GTNWAuditTests`, `ShadowSystemsTests`, `AIBrainTests`, `ShadowPackTests` (unit) | Country model, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget, War Room, scenarios, pack loader |
+| **Functional** | 32 | `GTNWFunctionalTests` | Game lifecycle, war and alliances, nuclear strikes and SDI, cyber and covert ops, DEFCON; End Turn with an offline LLM opponent, an LLM opponent declaring war, save then load |
+| **Security** | 36 | `GTNWSecurityTests`, `ShadowPackTests` (licensing) | Input bounds and clamping, state integrity, serialization, resource abuse, API keys only in the `Authorization` header, game data stays local unless a remote brain is chosen, prompt-injection-safe request bodies, hostile LLM targets rejected, corrupt save files |
+| **Integration** | 9 | `GTNWIntegrationTests` | GameEngine → BrainClient → HTTP transport → MoveResponse → applyMove → GameState; live-session POST and poll; mixed brains in one turn; save → load → keep playing; autosave |
+| **Performance** | 14 | `GTNWPerformanceTests`, `ShadowPackTests` (catalog) | New game and scenario start, 20-turn and 50-shadow-turn throughput, remote brains run concurrently rather than serially, a hung backend is capped by its timeout, save/load throughput, lookups, the event log stays bounded, prompt size |
+| **Retry** | 29 | `GTNWRetryTests` | `RetryPolicy` backoff maths; `Retry.run`, `.optional` and `.http`: 5xx, 429 and transport errors retried, 4xx fails fast, cancellation stops retries; the LLM client, Ollama tags and generate, the live-session POST, `AIBackendManager.generate` and the MLX subprocess all retry |
+| **Frame** | 8 | `GTNWFrameTests`, `SnapshotRenderTests` | The test host is the real GTNW.app; root objects construct; the start screen renders offscreen in every skin; the API server's `start()` is idempotent; the built binary launches with `--launch-smoke`, survives startup and exits 0; the Situation Room renders in both skins |
+| **Total** | **259** | | **0 failures** |
+
+### Retry policy
+
+Every external call goes through `Shared/Engine/Retry.swift`. Network calls get 3 attempts with 0.5s and then 1s backoff. Subprocesses get 2 attempts. Transport errors, 408, 429 and 5xx are retried. Other 4xx responses and configuration errors fail fast. Each failed attempt is logged, and remote brains still fall back to rule-based AI once retries and the turn timeout run out. The sleep function and HTTP transport can be injected, so the tests run in milliseconds.
 
 ### Running Tests
 
 ```bash
-# Build and test via command line
+# Full suite
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -configuration Debug \
   -destination 'platform=macOS' test
 
-# Or open in Xcode and run with Cmd+U
-open GTNW.xcodeproj
+# Launch smoke against an installed or built app (hidden, background, quits itself)
+tools/launch_smoke.sh /Applications/GTNW.app
 ```
 
-### Test Architecture
-
-- **GTNWUnitTests.swift** -- Pure model and logic tests. No UI, no side effects. Validates country initialization, nuclear capability math, scoring formulas, era-gated technology, Codable round-trips, and all victory/defeat conditions.
-- **GTNWFunctionalTests.swift** -- Game engine integration tests. Validates war declaration, alliance formation, nuclear strikes (including SDI interception), economic diplomacy, covert operations, and DEFCON escalation/de-escalation. All tests run on `@MainActor`.
-- **ShadowSystemsTests.swift** -- The Situation Room systems. Uses injected `UserDefaults` suites and temporary folders only (never the player's real settings or saves).
-- **GTNWSecurityTests.swift** -- Validates API server binds to correct port, all numeric values have proper floors (military, warheads, stability never go negative), diplomatic relations are clamped to [-100, 100], country IDs/codes are unique, nuclear powers have warheads, and game state serialization preserves all fields.
+The tests use plain `Date()` timing with generous thresholds instead of `measure {}`.
 
 ---
 

@@ -162,6 +162,11 @@ class AIBackendManager: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let ollamaBaseURL = "http://localhost:11434"
 
+    /// Injectable HTTP transport + retry (tests stub these; production uses URLSession + backoff).
+    var httpTransport: HTTPTransport = HTTP.live
+    var generationRetryPolicy: RetryPolicy = .network
+    var retrySleep: RetrySleeper = Retry.realSleep
+
     private enum Keys {
         static let selectedBackend = "AIBackendManager_SelectedBackend"
         static let ollamaModel = "AIBackendManager_OllamaModel"
@@ -504,6 +509,38 @@ class AIBackendManager: ObservableObject {
         isProcessing = true
         defer { isProcessing = false }
 
+        // Every backend call (HTTP or MLX subprocess) is retried with backoff;
+        // configuration errors fail fast because retrying can't fix them.
+        return try await Retry.run("AI backend \(backend.rawValue)", policy: generationRetryPolicy,
+                                   sleep: retrySleep, shouldRetry: Self.isRetryable) {
+            try await generateOnce(backend: backend, prompt: prompt, systemPrompt: systemPrompt,
+                                   temperature: temperature, maxTokens: maxTokens)
+        }
+    }
+
+    /// Permanent errors that must not be retried.
+    nonisolated static func isRetryable(_ error: Error) -> Bool {
+        if let e = error as? AIBackendError {
+            switch e {
+            case .noBackendAvailable, .invalidConfiguration, .invalidState,
+                 .mlxScriptNotConfigured, .embeddingsNotSupported, .ethicalViolation:
+                return false
+            case .mlxExecutionFailed:
+                return true
+            }
+        }
+        if let status = error as? HTTPStatusError { return status.isRetryable }
+        return !(error is CancellationError)
+    }
+
+    /// One attempt against a specific backend (no retry).
+    private func generateOnce(
+        backend: AIBackend,
+        prompt: String,
+        systemPrompt: String?,
+        temperature: Float,
+        maxTokens: Int
+    ) async throws -> String {
         switch backend {
         case .ollama:
             return try await generateWithOllama(
@@ -611,7 +648,10 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, urlResponse) = try await httpTransport(request)
+        if let http = urlResponse as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw HTTPStatusError(statusCode: http.statusCode)
+        }
 
         struct OllamaResponse: Codable {
             let response: String
@@ -745,7 +785,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct TinyLLMResponse: Codable {
             struct Choice: Codable {
@@ -797,7 +837,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         // TinyChat returns OpenAI-compatible response
         struct TinyChatResponse: Codable {
@@ -849,7 +889,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         // OpenWebUI returns OpenAI-compatible response
         struct OpenWebUIResponse: Codable {
@@ -898,7 +938,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("Bearer \(openAIAPIKey)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct OpenAIResponse: Codable {
             struct Choice: Codable {
@@ -950,7 +990,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("Bearer \(googleCloudAPIKey)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct GoogleCloudResponse: Codable {
             struct Prediction: Codable {
@@ -994,7 +1034,7 @@ class AIBackendManager: ObservableObject {
         request.setValue(azureAPIKey, forHTTPHeaderField: "api-key")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct AzureResponse: Codable {
             struct Choice: Codable {
@@ -1073,7 +1113,7 @@ class AIBackendManager: ObservableObject {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct IBMWatsonResponse: Codable {
             struct Result: Codable {
@@ -1135,7 +1175,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct EmbeddingResponse: Codable {
             let embedding: [Float]
@@ -1169,7 +1209,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct TinyLLMEmbeddingResponse: Codable {
             struct Data: Codable {
@@ -1200,7 +1240,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct TinyChatEmbeddingResponse: Codable {
             struct Data: Codable {
@@ -1231,7 +1271,7 @@ class AIBackendManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await httpTransport(request)
 
         struct OpenWebUIEmbeddingResponse: Codable {
             struct Data: Codable {

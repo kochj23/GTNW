@@ -34,9 +34,15 @@ class OllamaService: ObservableObject {
     private let maxHistory = 50
     private var systemMonitorTimer: Timer?
 
-    private init() {
+    /// Injectable transport + retry policy (tests stub these; production uses URLSession + backoff).
+    var transport: HTTPTransport = HTTP.live
+    var retryPolicy: RetryPolicy = .network
+    var retrySleep: RetrySleeper = Retry.realSleep
+
+    /// `monitorSystem: false` lets tests build an isolated instance with no timers/subprocesses.
+    init(monitorSystem: Bool = true) {
         // Start system monitoring
-        startSystemMonitoring()
+        if monitorSystem { startSystemMonitoring() }
     }
 
     /// Check if Ollama is running and list available models
@@ -49,7 +55,10 @@ class OllamaService: ObservableObject {
         }
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            var tagsRequest = URLRequest(url: url)
+            tagsRequest.timeoutInterval = 5
+            let (data, _) = try await Retry.http(tagsRequest, label: "Ollama /api/tags",
+                                                 transport: transport, policy: retryPolicy, sleep: retrySleep)
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let models = json["models"] as? [[String: Any]] {
                 availableModels = models.compactMap { dict in
@@ -149,7 +158,9 @@ class OllamaService: ObservableObject {
         print("[Ollama] Generating with \(currentModel)...")
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            // Retried with backoff on transport errors and 408/429/5xx.
+            let (data, response) = try await Retry.http(request, label: "Ollama generate",
+                                                        transport: transport, policy: retryPolicy, sleep: retrySleep)
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 print("[Ollama] Bad response: \((response as? HTTPURLResponse)?.statusCode ?? -1)")

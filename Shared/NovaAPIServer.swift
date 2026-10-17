@@ -99,7 +99,13 @@ class NovaAPIServer {
 
     private init() {}
 
+    /// True once a listener has been created (start() is idempotent).
+    var isListening: Bool { listener != nil }
+
     func start() {
+        // Idempotent: a second start() used to replace (and leak) the live listener,
+        // and the replacement then failed to bind the already-taken port.
+        guard listener == nil else { return }
         do {
             let params = NWParameters.tcp
             params.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!)

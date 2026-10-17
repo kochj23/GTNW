@@ -15,6 +15,14 @@ struct GlobalThermalNuclearWarApp: App {
     @State private var showingAISettings = false
 
     init() {
+        #if os(macOS)
+        if LaunchSmoke.isRequested {
+            // Frame smoke test: boot the full app hidden (never activates, never takes
+            // focus, no API server), then quit cleanly. See tools/launch_smoke.sh.
+            LaunchSmoke.arm()
+            return
+        }
+        #endif
         NovaAPIServer.shared.start()
     }
 
@@ -77,3 +85,27 @@ struct GlobalThermalNuclearWarApp: App {
         #endif
     }
 }
+
+#if os(macOS)
+import AppKit
+
+/// `--launch-smoke`: start up, reach the run loop, then terminate with exit code 0.
+enum LaunchSmoke {
+    static let flag = "--launch-smoke"
+    static var isRequested: Bool { CommandLine.arguments.contains(flag) }
+
+    static func arm(after seconds: TimeInterval = 2.5) {
+        NSApplication.shared.setActivationPolicy(.prohibited)
+        // Keep any window the WindowGroup creates off-screen: never steal focus.
+        for delay in stride(from: 0.0, through: seconds, by: 0.1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                NSApplication.shared.windows.forEach { $0.orderOut(nil) }
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+            print("[LaunchSmoke] reached main run loop; exiting cleanly")
+            exit(0)
+        }
+    }
+}
+#endif

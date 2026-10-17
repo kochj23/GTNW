@@ -461,3 +461,81 @@ final class HistoricalAdministrationTests: XCTestCase {
         XCTAssertFalse(gs.submarineLaunchAvailable, "SLBMs should not be available in 1800")
     }
 }
+
+// MARK: - AI Opponents & Saves (user perspective)
+
+/// End-to-end from the player's seat: pick LLM opponents, press End Turn, and the
+/// game always hands control back — even when the AI backend is down.
+final class AIOpponentFunctionalTests: XCTestCase {
+
+    @MainActor
+    private func waitForPlayerTurn(_ e: GameEngine, timeout: TimeInterval = 10) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while (e.turnPhase != .playerInput || e.isProcessingAITurn) && Date() < deadline {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
+    @MainActor
+    func testEndTurnWithOfflineLLMOpponentStillReturnsControl() async {
+        let probe = RetryProbe()
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        e.brainConfig.transport = Stub.transport(probe, script: [(nil, "")])   // Ollama down
+        e.brainConfig.retrySleep = probe.sleeper
+        e.setBrain(.model(id: "qwen3:4b", endpoint: "http://127.0.0.1:1/v1/chat/completions", backend: .ollama), for: "RUS")
+        let turn = e.gameState?.turn ?? 0
+
+        e.endTurn()
+        await waitForPlayerTurn(e)
+
+        XCTAssertEqual(e.gameState?.turn, turn + 1)
+        XCTAssertEqual(e.turnPhase, .playerInput, "player must get control back")
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.contains("RUS"), "offline opponent plays rule-based")
+        XCTAssertEqual(probe.calls, 3, "backend was retried, not abandoned on first failure")
+    }
+
+    @MainActor
+    func testLLMOpponentDeclaresWarOnPlayer() async {
+        let probe = RetryProbe()
+        let content = #"{\"action\":\"DECLARE_WAR\",\"target\":\"USA\"}"#
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        e.brainConfig.transport = Stub.transport(probe, script: [(200, #"{"choices":[{"message":{"content":""# + content + #""}}]}"#)])
+        e.setBrain(.gatewayClaude, for: "RUS")
+
+        e.endTurn()
+        await waitForPlayerTurn(e)
+
+        XCTAssertTrue(e.gameState?.getPlayerCountry()?.atWarWith.contains("RUS") ?? false,
+                      "the player should now be at war with the LLM-driven Soviet bloc")
+    }
+
+    @MainActor
+    func testSaveThenLoadRestoresTheGame() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("gtnw-fn-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let manager = SaveManager(folder: dir)
+        let e = GameEngine()
+        e.startScenario(.world1990, turnLength: .month)
+        e.gameState?.turn = 4
+        let label = e.gameState?.currentDateLabel
+        try e.saveGame(slot: 3, manager: manager)
+
+        e.startNewGame(playerCountryID: "RUS")
+        try e.loadGame(slot: 3, manager: manager)
+
+        XCTAssertEqual(e.gameState?.turn, 4)
+        XCTAssertEqual(e.gameState?.currentDateLabel, label)
+        XCTAssertEqual(e.gameState?.playerCountryID, "USA")
+    }
+
+    @MainActor
+    func testLoadingMissingSlotFailsWithoutLosingCurrentGame() {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("gtnw-fn-\(UUID().uuidString)")
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        XCTAssertThrowsError(try e.loadGame(slot: 2, manager: SaveManager(folder: dir)))
+        XCTAssertEqual(e.gameState?.playerCountryID, "USA", "failed load must not wipe the game in progress")
+    }
+}

@@ -22,6 +22,11 @@ class MLXManager: ObservableObject {
     private var process: Process?
     #endif
 
+    /// Runs `python3 <args>` and returns (exitStatus, stdout). Injectable for tests.
+    var pythonRunner: @Sendable ([String]) -> (status: Int32, output: String)? = MLXManager.livePythonRunner
+    var retryPolicy: RetryPolicy = .subprocess
+    var retrySleep: RetrySleeper = Retry.realSleep
+
     /// Initialize MLX connection
     func initialize() async {
         // Check if MLX is available
@@ -207,22 +212,30 @@ class MLXManager: ObservableObject {
             print(f"ERROR: {e}")
         """
 
+        // Subprocess call is retried with backoff; a crash, non-zero exit, empty output,
+        // or the script's own "ERROR:" line all count as a failed attempt.
+        let runner = pythonRunner
+        return await Retry.optional("MLX python", policy: retryPolicy, sleep: retrySleep) {
+            guard let result = runner(["-c", script, jsonString]) else { return nil }
+            let output = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard result.status == 0, !output.isEmpty, !output.hasPrefix("ERROR") else { return nil }
+            return output
+        }
+    }
+
+    /// Real subprocess runner. Returns nil if python can't be launched.
+    static let livePythonRunner: @Sendable ([String]) -> (status: Int32, output: String)? = { args in
         #if os(macOS)
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: pythonPath)
-        task.arguments = ["-c", script, jsonString]
-
+        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/python3")
+        task.arguments = args
         let pipe = Pipe()
         task.standardOutput = pipe
-
         do {
             try task.run()
-            task.waitUntilExit()
-
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            return output
+            task.waitUntilExit()
+            return (task.terminationStatus, String(data: data, encoding: .utf8) ?? "")
         } catch {
             print("MLX call failed: \(error)")
             return nil
