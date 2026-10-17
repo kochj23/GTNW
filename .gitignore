@@ -11,3 +11,12 @@ build/
 *.xcuserstate
 *.bak
 *.bak[0-9]*
+
+# Shadow President assets are personal, local data (built by tools/build_shadow_pack.py) — never commit them
+/ShadowPack/
+*.shadowpack/
+!Shared/ShadowPack/
+*.PCX
+*.PCC
+*.SND
+**/shadow/assets/

@@ -530,7 +530,7 @@ final class LeaderboardTests: XCTestCase {
     }
 
     func testLeaderboardSorting() {
-        let manager = LeaderboardManager()
+        let manager = LeaderboardManager(defaults: UserDefaults(suiteName: "GTNWTests-\(UUID().uuidString)")!)
 
         var score1 = GameScore()
         score1.finalScore = 100
@@ -552,7 +552,7 @@ final class LeaderboardTests: XCTestCase {
     }
 
     func testLeaderboardRanking() {
-        let manager = LeaderboardManager()
+        let manager = LeaderboardManager(defaults: UserDefaults(suiteName: "GTNWTests-\(UUID().uuidString)")!)
 
         var score1 = GameScore()
         score1.finalScore = 1000
@@ -564,7 +564,7 @@ final class LeaderboardTests: XCTestCase {
     }
 
     func testBestScore() {
-        let manager = LeaderboardManager()
+        let manager = LeaderboardManager(defaults: UserDefaults(suiteName: "GTNWTests-\(UUID().uuidString)")!)
 
         var score = GameScore()
         score.finalScore = 750

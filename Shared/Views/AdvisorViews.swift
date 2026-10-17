@@ -71,7 +71,7 @@ struct AdvisorCardView: View {
     var body: some View {
         VStack(spacing: 8) {
             // Portrait placeholder
-            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue)
+            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
                 .frame(width: 100, height: 100)
                 .border(advisor.colorValue, width: 2)
 
@@ -142,7 +142,7 @@ struct AdvisorDetailView: View {
                     HStack(alignment: .top, spacing: 30) {
                         // Portrait
                         VStack(spacing: 10) {
-                            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue)
+                            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
                                 .frame(width: 200, height: 200)
                                 .border(advisor.colorValue, width: 3)
 
@@ -303,10 +303,13 @@ struct AdvisorDetailView: View {
 
 // MARK: - Supporting Views
 
-/// Placeholder advisor portrait with initials
+/// Advisor portrait: the Shadow President portrait for this cabinet post when the local Shadow Pack is installed,
+/// otherwise a placeholder with initials.
 struct PlaceholderAdvisorImage: View {
     let name: String
     let color: Color
+    var title: String? = nil
+    @ObservedObject private var pack = ShadowPack.shared
 
     var initials: String {
         name.components(separatedBy: " ")
@@ -316,6 +319,19 @@ struct PlaceholderAdvisorImage: View {
     }
 
     var body: some View {
+        if let title, let portrait = pack.advisorPortrait(title: title) {
+            Image(packImage: portrait)
+                .interpolation(.none)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .clipped()
+                .accessibilityLabel("\(title) portrait")
+        } else {
+            initialsTile
+        }
+    }
+
+    private var initialsTile: some View {
         ZStack {
             Rectangle()
                 .fill(color.opacity(0.2))

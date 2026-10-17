@@ -10,6 +10,8 @@
 import SwiftUI
 
 struct ShadowPresidentMenu: View {
+    /// Shadow Pack animation playing after EXECUTE (nil = none); the sheet closes when it finishes or is clicked.
+    @State private var playingAnimation: String?
     let player: Country
     let target: Country
     let gameState: GameState
@@ -111,7 +113,16 @@ struct ShadowPresidentMenu: View {
                             // Execute button
                             Button(action: {
                                 onExecute(action)
-                                dismiss()
+                                let media = ShadowPack.media(forActionCase: String(describing: action))
+                                if let sound = media.sound { ShadowPack.shared.play(sound) }
+                                if let anim = media.animation, let a = ShadowPack.shared.animation(anim) {
+                                    playingAnimation = anim
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + min(a.duration, 6)) {
+                                        if playingAnimation == anim { playingAnimation = nil; dismiss() }
+                                    }
+                                } else {
+                                    dismiss()
+                                }
                             }) {
                                 HStack {
                                     Image(systemName: "play.fill")
@@ -146,6 +157,17 @@ struct ShadowPresidentMenu: View {
             }
         }
         .frame(minWidth: 1100, minHeight: 700)
+        .overlay {
+            if let anim = playingAnimation {
+                ZStack {
+                    Color.black.opacity(0.85)
+                    PackAnimationView(anim) { EmptyView() }
+                        .frame(maxWidth: 520, maxHeight: 520)
+                }
+                .onTapGesture { playingAnimation = nil; dismiss() }
+                .accessibilityLabel("Action animation, click to skip")
+            }
+        }
     }
 
     private func categoryButton(_ category: ActionCategory) -> some View {

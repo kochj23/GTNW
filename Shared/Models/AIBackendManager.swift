@@ -462,20 +462,26 @@ class AIBackendManager: ObservableObject {
 
     private func checkMLXAvailability() async -> Bool {
         #if os(macOS)
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: pythonPath)
-        task.arguments = ["-c", "import mlx.core as mx; print('OK')"]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = pipe
-
-        do {
-            try task.run()
-            task.waitUntilExit()
-            return task.terminationStatus == 0
-        } catch {
-            return false
+        // Runs off the main thread with a 5 s limit. It used to waitUntilExit() on the main actor, so a slow or
+        // never-returning python froze app launch (and hung the whole test suite) — 2026-10-16.
+        let path = pythonPath
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: path)
+                task.arguments = ["-c", "import mlx.core as mx; print('OK')"]
+                task.standardOutput = FileHandle.nullDevice
+                task.standardError = FileHandle.nullDevice
+                do { try task.run() } catch { continuation.resume(returning: false); return }
+                let deadline = Date().addingTimeInterval(5)
+                while task.isRunning && Date() < deadline { usleep(50_000) }
+                if task.isRunning {
+                    task.terminate()
+                    continuation.resume(returning: false)
+                } else {
+                    continuation.resume(returning: task.terminationStatus == 0)
+                }
+            }
         }
         #else
         return false
