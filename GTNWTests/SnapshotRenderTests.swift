@@ -40,6 +40,8 @@ final class SnapshotRenderTests: XCTestCase {
             let room = SituationRoomView(gameState: gs).environmentObject(engine)
             let url = try render(room, size: CGSize(width: 1500, height: 940), name: "situation-\(theme.rawValue)")
             print("SNAPSHOT \(url.path)")
+            let compact = SituationRoomView(gameState: gs).environmentObject(engine)
+            print("SNAPSHOT \(try render(compact, size: CGSize(width: 820, height: 1100), name: "situation-compact-\(theme.rawValue)").path)")
             let war = WarRoomView(gameState: gs).environmentObject(engine)
             print("SNAPSHOT \(try render(war, size: CGSize(width: 940, height: 640), name: "warroom-\(theme.rawValue)").path)")
             print("SNAPSHOT \(try render(BudgetView(gameState: gs).environmentObject(engine), size: CGSize(width: 820, height: 560), name: "budget-\(theme.rawValue)").path)")

@@ -29,25 +29,13 @@ struct SituationRoomView: View {
 
     private var selected: Country? { selectedCountryID.flatMap { gameState.getCountry(id: $0) } }
 
+    @State private var compactPanel = 0
+
     var body: some View {
-        VStack(spacing: 6) {
-            SituationTopBar(gameState: gameState, onSheet: { sheet = $0 })
-            HStack(alignment: .top, spacing: 6) {
-                AdvisorRail(gameState: gameState, selected: selected, briefingRole: $briefingRole)
-                    .frame(width: 190)
-                VStack(spacing: 4) {
-                    mapControls
-                    VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
-                        .overlay(Rectangle().stroke(Theme.isRetro ? EGA.lightGray : Color.cyan.opacity(0.4), lineWidth: Theme.isRetro ? 3 : 1))
-                    MapLegend(filter: filter).frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(6)
-                .themedPanel(retroFill: EGA.lightGray)
-                CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
-                    .frame(width: 300)
+        GeometryReader { geo in
+            Group {
+                if geo.size.width < 1000 { compactLayout } else { wideLayout }
             }
-            ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 })
-            NewsTicker(items: gameState.shadow.ticker)
         }
         .padding(8)
         .background(Theme.isRetro ? EGA.darkGray : Color.clear)
@@ -71,6 +59,55 @@ struct SituationRoomView: View {
         }
         .sheet(item: Binding(get: { briefingRole.map(BriefingRole.init) }, set: { briefingRole = $0?.id })) { role in
             AdvisorBriefingSheet(role: role.id, gameState: gameState, country: selected).environmentObject(gameEngine)
+        }
+    }
+
+    /// Phones and narrow windows: map on top, then a switchable dossier / advisor panel.
+    private var compactLayout: some View {
+        VStack(spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) { SituationTopBar(gameState: gameState, onSheet: { sheet = $0 }) }
+            mapControls
+            VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
+                .frame(minHeight: 220)
+            Picker("", selection: $compactPanel) {
+                Text("Dossier").tag(0)
+                Text("Advisors").tag(1)
+            }
+            .pickerStyle(.segmented)
+            Group {
+                if compactPanel == 0 {
+                    CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
+                } else {
+                    AdvisorRail(gameState: gameState, selected: selected, briefingRole: $briefingRole)
+                }
+            }
+            .frame(maxHeight: .infinity)
+            ScrollView(.horizontal, showsIndicators: false) {
+                ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 }).frame(minWidth: 900)
+            }
+            NewsTicker(items: gameState.shadow.ticker)
+        }
+    }
+
+    private var wideLayout: some View {
+        VStack(spacing: 6) {
+            SituationTopBar(gameState: gameState, onSheet: { sheet = $0 })
+            HStack(alignment: .top, spacing: 6) {
+                AdvisorRail(gameState: gameState, selected: selected, briefingRole: $briefingRole)
+                    .frame(width: 190)
+                VStack(spacing: 4) {
+                    mapControls
+                    VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
+                        .overlay(Rectangle().stroke(Theme.isRetro ? EGA.lightGray : Color.cyan.opacity(0.4), lineWidth: Theme.isRetro ? 3 : 1))
+                    MapLegend(filter: filter).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(6)
+                .themedPanel(retroFill: EGA.lightGray)
+                CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
+                    .frame(width: 300)
+            }
+            ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 })
+            NewsTicker(items: gameState.shadow.ticker)
         }
     }
 

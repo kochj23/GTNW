@@ -31,6 +31,17 @@ jobs:
           SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
           | tail -40
 
+    - name: Build (iOS Simulator)
+      run: |
+        xcodebuild build \
+          -project "$PROJECT" \
+          -scheme GTNW_iOS \
+          -destination 'generic/platform=iOS Simulator' \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO \
+          SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+          | tail -40
+
     - name: Test (GTNWTests)
       run: |
         xcodebuild test \

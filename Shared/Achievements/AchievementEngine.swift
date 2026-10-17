@@ -564,8 +564,8 @@ struct AchievementUnlockView: View {
 
             // Commemorative poster
             if let posterData = achievement.commemorativePoster,
-               let nsImage = NSImage(data: posterData) {
-                Image(nsImage: nsImage)
+               let nsImage = PackPlatformImage(data: posterData) {
+                Image(packImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 200, height: 300)

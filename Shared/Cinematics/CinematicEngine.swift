@@ -236,8 +236,8 @@ struct CinematicPlayerView: View {
 
                 VStack(spacing: 0) {
                     // Scene image
-                    if let imgData = scene.imageData, let nsImage = NSImage(data: imgData) {
-                        Image(nsImage: nsImage)
+                    if let imgData = scene.imageData, let nsImage = PackPlatformImage(data: imgData) {
+                        Image(packImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(maxWidth: 800)

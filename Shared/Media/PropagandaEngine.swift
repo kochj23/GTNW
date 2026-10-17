@@ -305,8 +305,8 @@ struct PosterCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Poster image
-            if let imageData = poster.imageData, let nsImage = NSImage(data: imageData) {
-                Image(nsImage: nsImage)
+            if let imageData = poster.imageData, let nsImage = PackPlatformImage(data: imageData) {
+                Image(packImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxHeight: 300)

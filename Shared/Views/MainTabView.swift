@@ -69,7 +69,9 @@ struct MainTabView: View {
                     }
                     .tag(4)
             }
+            #if os(macOS)
             .frame(minWidth: 1400, minHeight: 900)
+            #endif
             .overlay(
                 // Crisis Event Overlay
                 Group {

@@ -65,13 +65,36 @@ flowchart TB
   nuclear threat) and nuclear/victory/crisis cinematic art and sound.
 - `tools/build_shadow_pack.py` builds the pack locally; `.gitignore` blocks pack content from the public repo.
 
-## Decisions needed
-1. **Turn length:** keep one year per turn, or add a monthly mode (recommended as an option)?
-2. **Game text:** the plan writes new advisor/news text in GTNW's voice (recommended for a public repo); the original
-   text could optionally load from the local pack for a "classic" feel.
-3. **Retro skin scope:** pack art only where it fits (current), or a full EGA-palette Retro skin for the whole UI?
+## Decisions (Jordan, 2026-10-17)
+1. **Turn length:** a real calendar. Turns are a Day, Week, **Month (default)** or Year; 1 / 1 / 2 / 4 actions per
+   turn; every per-turn rate is scaled by game time. ✅ Delivered.
+2. **Game text:** all advisor, news and event text is written fresh in GTNW's voice. ✅ Delivered.
+3. **Retro skin:** a full EGA-palette Retro skin for the whole UI, as a theme next to Modern. ✅ Delivered.
 
-## Known issue found along the way
-The **iOS target does not build**: 24 source files that the macOS target compiles (e.g. `HistoricalAdministrations.swift`,
-`CinematicEngine.swift`, `WorldCountriesDatabase.swift`) are missing from `GTNW_iOS`, and some use AppKit-only APIs.
-Pre-existing; not changed on this branch.
+## Delivered on `main` (2026-10-17) — status of the feature table
+| # | Feature | Status | Where |
+|---|---|---|---|
+| — | One home screen (map centre, advisors left, dossier right, ladder + ticker bottom, top bar) | ✅ | `Shared/Views/SituationRoom/SituationRoomView.swift` (first tab; compact layout on narrow screens) |
+| 1 | Real bordered world map, hover/click, World/Region/Country zoom, thematic filters | ✅ 23 filters | `VectorWorldMap.swift`, `Shared/Resources/world_countries.json` (Natural Earth, public domain) |
+| 2 | Advisor advice engine on ACCEPT / REJECT; resign / fired / killed / scandal | ✅ | `Shared/Engine/Shadow/AdviceEngine.swift`, `AdvisorViews.swift`, `AdvicePanel.swift` |
+| 3 | Leader personality (ambition, ethic, ideology) | ✅ | `CountryProfile.swift` (`PersonalityAI` picks AI moves) |
+| 4 | Five threat anxieties, dossier gauges, spikes → crises | ✅ | `AnxietyModel` in `CountryProfile.swift`, `ShadowSimulation.swift` |
+| 5 | Popularity, polls, elections (toggle), impeachment, assassination | ✅ + civil war | `PopularityModel.swift` |
+| 6 | Five-category foreign aid with need and reactions | ✅ | `EconomyModels.swift` (`AidModel`), Aid sheet |
+| 7 | Federal budget with end-of-year cycle | ✅ | `EconomyModels.swift` (`BudgetModel`), Budget sheet |
+| 8 | World Evaluation gauge + sheet | ✅ peace level in top bar; sheet with Presidency Summary | `WorldEvaluation.swift`, `SituationSheets.swift` |
+| 9 | City View (grows with GNP/QoL, burns when nuked) | ✅ pack tiles in Retro, drawn in Modern | `SituationSheets.swift` (`CityView`) |
+| 10 | War Room: fronts, weekly fighting, surrender → new government | ✅ | `CombatModel.swift`, `WarRoomView.swift` |
+| 11 | Scenario loader + save/load slots incl. 1990 | ✅ 4 scenarios, 5 slots + autosave | `Scenarios.swift` |
+| 12 | Calendar turn modes | ✅ Day / Week / Month / Year | `GameCalendar.swift` |
+| — | Modern + Retro skins | ✅ | `Shared/Design/Theme.swift` (all colour tokens are theme-aware) |
+
+## Known issue found along the way — fixed
+The iOS target did not build (24 macOS sources missing from `GTNW_iOS`, AppKit-only image code). All shared sources
+are now in both targets, images go through the cross-platform `PackPlatformImage`, and CI builds the iOS simulator
+target.
+
+## Still open / ideas
+- Opening "text crawl" for scenarios, a self-running tutorial, natural disasters, the Factbook tab.
+- Hand-tuned weights for `PersonalityAI` and the budget model after play-testing.
+- Region zoom uses GTNW's 7 regions (Shadow President had 17).

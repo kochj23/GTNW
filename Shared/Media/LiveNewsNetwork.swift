@@ -275,8 +275,8 @@ struct NewsArticleCard: View {
                 .foregroundColor(.white)
 
             // Image
-            if let imgData = article.imageData, let nsImage = NSImage(data: imgData) {
-                Image(nsImage: nsImage)
+            if let imgData = article.imageData, let nsImage = PackPlatformImage(data: imgData) {
+                Image(packImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(height: 200)
