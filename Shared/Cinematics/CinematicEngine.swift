@@ -204,6 +204,26 @@ enum CinematicType {
 
 struct CinematicPlayerView: View {
     let sequence: CinematicSequence
+    private static var activePlayer: AVAudioPlayer?
+
+    /// Shadow Pack art for scenes without a generated image (ids without the ".aspect4x3" suffix).
+    static func packArt(for type: CinematicType, sceneIndex: Int) -> String? {
+        switch type {
+        case .nuclearStrike: return sceneIndex == 0 ? "anim.nuke_city_stage1" : "anim.nuke_city_stage2"
+        case .defeat: return "screen.assassination_player"
+        default: return nil
+        }
+    }
+
+    /// Shadow Pack sound for the opening of each scene.
+    static func packSound(for type: CinematicType, sceneIndex: Int) -> String? {
+        switch type {
+        case .nuclearStrike: return sceneIndex == 0 ? "sfx.nuke_strike" : "sfx.nuke_city"
+        case .victory: return sceneIndex == 0 ? "sfx.hail_to_chief" : nil
+        case .crisis, .majorEvent: return sceneIndex == 0 ? "sfx.warning" : nil
+        case .defeat: return sceneIndex == 0 ? "sfx.popularity_hit" : nil
+        }
+    }
     @State private var currentSceneIndex = 0
     @Environment(\.dismiss) var dismiss
 
@@ -221,6 +241,10 @@ struct CinematicPlayerView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(maxWidth: 800)
+                    } else if let packArt = Self.packArt(for: sequence.type, sceneIndex: currentSceneIndex) {
+                        // Shadow President art from the local pack when the scene has no generated image
+                        PackImage(packArt + ".aspect4x3", packArt) { EmptyView() }
+                            .frame(maxWidth: 800, maxHeight: 520)
                     }
 
                     // Scene title and text
@@ -272,8 +296,13 @@ struct CinematicPlayerView: View {
 
         let scene = sequence.scenes[currentSceneIndex]
 
-        // Play scene audio
-        // playAudio(scene.audioURL)
+        // Play scene audio: the scene's own clip, else a Shadow President sound from the local pack
+        if let url = scene.audioURL, let player = try? AVAudioPlayer(contentsOf: url) {
+            player.play()
+            Self.activePlayer = player
+        } else if let sound = Self.packSound(for: sequence.type, sceneIndex: currentSceneIndex) {
+            ShadowPack.shared.play(sound)
+        }
 
         // Auto-advance after duration
         Task {

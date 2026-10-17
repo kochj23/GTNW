@@ -18,13 +18,20 @@ struct WarRoomView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Image(systemName: "shield.lefthalf.filled.badge.checkmark")
-                    .font(.title)
-                    .foregroundColor(GTNWColors.neonCyan)
+                PackImage("warroom.sword") {
+                    Image(systemName: "shield.lefthalf.filled.badge.checkmark")
+                        .font(.title)
+                        .foregroundColor(GTNWColors.neonCyan)
+                }
+                .frame(width: 32, height: 32)
 
-                Text("AI WAR ROOM")
-                    .font(GTNWFonts.title())
-                    .foregroundColor(GTNWColors.terminalGreen)
+                // Shadow President's "The War Room" title art when the local pack is installed
+                PackImage("warroom.title") {
+                    Text("AI WAR ROOM")
+                        .font(GTNWFonts.title())
+                        .foregroundColor(GTNWColors.terminalGreen)
+                }
+                .frame(maxHeight: 28)
 
                 Spacer()
 

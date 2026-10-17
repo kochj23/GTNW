@@ -44,12 +44,23 @@ struct GlobalThermalNuclearWarApp: App {
                 Text("Active: \(AIBackendManager.shared.activeBackend?.rawValue ?? "None")")
                     .disabled(true)
             }
+
+            CommandMenu("Retro") {
+                Toggle("Shadow President Art", isOn: Binding(get: { ShadowPack.shared.useRetroArt },
+                                                             set: { ShadowPack.shared.useRetroArt = $0 }))
+                Toggle("Sound Effects", isOn: Binding(get: { ShadowPack.shared.soundEnabled },
+                                                      set: { ShadowPack.shared.soundEnabled = $0 }))
+                Button("Reload Shadow Pack") { ShadowPack.shared.reload() }
+            }
         }
         #endif
 
         #if os(macOS)
         Settings {
-            AIBackendSettingsView()
+            TabView {
+                AIBackendSettingsView().tabItem { Label("AI", systemImage: "cpu") }
+                ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
+            }
         }
         #endif
     }
