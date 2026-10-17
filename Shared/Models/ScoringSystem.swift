@@ -135,8 +135,11 @@ class LeaderboardManager: ObservableObject {
 
     private let saveKey = "GTNW_Leaderboard"
     private let maxEntries = 100
+    private let defaults: UserDefaults
 
-    init() {
+    /// `defaults` is injectable so tests use a throwaway store instead of the player's real leaderboard.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         loadLeaderboard()
     }
 
@@ -165,7 +168,7 @@ class LeaderboardManager: ObservableObject {
 
     /// Load leaderboard from persistent storage
     func loadLeaderboard() {
-        guard let data = UserDefaults.standard.data(forKey: saveKey),
+        guard let data = defaults.data(forKey: saveKey),
               let decoded = try? JSONDecoder().decode([LeaderboardEntry].self, from: data) else {
             entries = []
             return
@@ -176,7 +179,7 @@ class LeaderboardManager: ObservableObject {
     /// Save leaderboard to persistent storage
     func saveLeaderboard() {
         guard let encoded = try? JSONEncoder().encode(entries) else { return }
-        UserDefaults.standard.set(encoded, forKey: saveKey)
+        defaults.set(encoded, forKey: saveKey)
     }
 
     /// Get top N entries
