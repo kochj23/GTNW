@@ -41,6 +41,9 @@ struct Advisor: Identifiable, Codable, Hashable {
 
     /// nil / .active = serving. Departed advisors stay in the list with their fate (see AdviceEngine.swift).
     var status: AdvisorStatus? = nil
+    /// The concrete action this advisor is currently urging (PresidentialAction raw value) and its target.
+    var recommendedAction: String? = nil
+    var recommendedTarget: String? = nil
 
     /// Initialize a new advisor
     init(

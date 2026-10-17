@@ -79,7 +79,7 @@ struct ModernCommandView: View {
 
                 HStack(spacing: 16) {
                     statPill("☢️ \(player.nuclearWarheads)", color: GTNWColors.terminalRed)
-                    statPill("Turn \(gameState.turn)", color: GTNWColors.neonCyan)
+                    statPill(gameState.currentDateLabel, color: GTNWColors.neonCyan)
                     statPill("Wars: \(gameState.activeWars.count)", color: gameState.activeWars.count > 0 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
                 }
             }

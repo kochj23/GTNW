@@ -134,7 +134,7 @@ class GameEngine: ObservableObject {
         addLog("", type: .system)
         addLog("", type: .system)
         addLog("═══════════════════════════════════════", type: .system)
-        addLog("===== TURN \(gameState.turn + 1) =====", type: .system)
+        addLog("===== TURN \(gameState.turn + 1) · \(gameState.dateLabel(forTurn: gameState.turn + 1).uppercased()) =====", type: .system)
         addLog("═══════════════════════════════════════", type: .system)
         addLog("", type: .system)
 

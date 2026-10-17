@@ -223,15 +223,15 @@ struct DynamicCrisisView: View {
                 .background(crisis.severity.color.opacity(0.2))
                 .cornerRadius(8)
             Spacer()
-            Text("Turn \(crisis.year)").font(.caption).foregroundColor(.white.opacity(0.6))
+            Text(String(crisis.year)).font(.caption).foregroundColor(.white.opacity(0.6))
         }
     }
 
     private var crisisContent: some View {
         VStack(spacing: 12) {
             Text(crisis.title).font(.title2).fontWeight(.bold).foregroundColor(.white).multilineTextAlignment(.center)
-            if let imageData = crisis.imageData, let nsImage = NSImage(data: imageData) {
-                Image(nsImage: nsImage).resizable().aspectRatio(contentMode: .fill).frame(height: 200).clipped().cornerRadius(12)
+            if let imageData = crisis.imageData, let nsImage = PackPlatformImage(data: imageData) {
+                Image(packImage: nsImage).resizable().aspectRatio(contentMode: .fill).frame(height: 200).clipped().cornerRadius(12)
             }
             Text(crisis.description).font(.body).foregroundColor(.white.opacity(0.9)).padding().background(Color.black.opacity(0.3)).cornerRadius(10)
         }

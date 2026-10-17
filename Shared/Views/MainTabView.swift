@@ -256,7 +256,7 @@ struct IntelligenceView: View {
             Text("Intensity: \(String(repeating: "▮", count: war.intensity)) (\(war.intensity)/10)")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
-            Text("Turn \(war.startTurn)")
+            Text("Since \(gameState.dateLabel(forTurn: war.startTurn))")
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }

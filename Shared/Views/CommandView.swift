@@ -70,7 +70,7 @@ struct CommandView: View {
                     }
 
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text("Turn \(gameState.turn)")
+                        Text(gameState.currentDateLabel)
                             .font(.system(size: 12, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                         Text("Wars: \(gameState.activeWars.count)")
@@ -1769,7 +1769,7 @@ struct ProhibitedWeaponsMenu: View {
                         .padding(.top, 5)
                 } else if inDevelopment {
                     if let program = gameEngine.gameState?.activeWeaponPrograms.first(where: { $0.weapon == weapon && $0.countryID == playerID }) {
-                        Text("🔬 IN DEVELOPMENT (Turn \(program.completionTurn))")
+                        Text("🔬 IN DEVELOPMENT (ready \(gameEngine.gameState?.dateLabel(forTurn: program.completionTurn) ?? "soon"))")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                             .padding(.top, 5)

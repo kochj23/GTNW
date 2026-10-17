@@ -45,7 +45,7 @@ extension GameEngine {
             let e = GameCalendar.nextElection(after: gs.currentDate)
             gs.shadow.post("Next presidential election: \(GameCalendar.format(e)).", date: gs.currentDate)
         }
-        for i in gs.advisors.indices { gs.advisors[i].currentAdvice = AdviceEngine.briefing(role: gs.advisors[i].roleKey ?? "whc", country: nil, gameState: gs) }
+        for i in gs.advisors.indices { AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs) }
         self.gameState = gs
     }
 
@@ -560,9 +560,9 @@ extension GameEngine {
                 departAdvisor(index: i, status: .scandal, reason: "\(gs.advisors[i].name) \(what) and has resigned.")
             }
         }
-        // Keep the rail's briefings fresh.
+        // Keep each advisor's standing advice fresh (situation read + a concrete proposal).
         for i in gs.advisors.indices where gs.advisors[i].isActive {
-            gs.advisors[i].currentAdvice = AdviceEngine.briefing(role: gs.advisors[i].roleKey ?? "whc", country: nil, gameState: gs)
+            AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs)
         }
         self.gameState = gs
     }
@@ -617,6 +617,40 @@ extension GameEngine {
         }
         self.gameState = gs
         completePlayerAction()
+    }
+
+    /// ACCEPT on an advisor's standing recommendation: carry it out with that advisor's blessing.
+    @discardableResult
+    func acceptRecommendation(advisorID: String) -> Bool {
+        guard let gs = gameState, let i = gs.advisors.firstIndex(where: { $0.id == advisorID }),
+              let raw = gs.advisors[i].recommendedAction, let action = PresidentialAction(rawValue: raw),
+              let target = gs.advisors[i].recommendedTarget, gs.actionsRemaining > 0 else { return false }
+        let adv = gs.advisors[i]
+        let advice = ActionAdvice(advisorID: adv.id, advisorName: adv.name, advisorTitle: adv.title, stance: .approve,
+                                  reason: adv.currentAdvice ?? "", successEstimate: action.successChance)
+        performAdvisedAction(action, targetID: target, advice: advice)
+        AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs)
+        return true
+    }
+
+    /// REJECT: the advisor notes it; repeated rejections wear down loyalty (and can end in resignation).
+    func rejectRecommendation(advisorID: String) {
+        guard let gs = gameState, let i = gs.advisors.firstIndex(where: { $0.id == advisorID }) else { return }
+        if let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs) {
+            gs.advisors.append(AdviceEngine.appointActing(replacing: gs.advisors[i], sequence: gs.advisors.count))
+            gs.shadow.post(msg, date: gs.currentDate, severity: 2)
+            addLog("👔 \(msg)", type: .warning)
+        }
+        self.gameState = gs
+    }
+
+    /// REQUEST ALTERNATIVE: the advisor proposes something different.
+    func alternativeRecommendation(advisorID: String) {
+        guard let gs = gameState, let i = gs.advisors.firstIndex(where: { $0.id == advisorID }) else { return }
+        var skip: Set<String> = []
+        if let a = gs.advisors[i].recommendedAction, let t = gs.advisors[i].recommendedTarget { skip.insert(a + t) }
+        AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs, excluding: skip)
+        self.gameState = gs
     }
 
     /// The player listened and backed off.

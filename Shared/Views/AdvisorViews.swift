@@ -74,6 +74,15 @@ struct AdvisorCardView: View {
             PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
                 .frame(width: 100, height: 100)
                 .border(advisor.colorValue, width: 2)
+                .overlay(alignment: .bottom) {
+                    if !advisor.isActive {
+                        Text((advisor.status ?? .active).label.uppercased())
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(.black)
+                            .padding(2)
+                            .background(AppSettings.terminalRed)
+                    }
+                }
 
             // Name
             Text(advisor.name)
@@ -115,6 +124,9 @@ struct AdvisorDetailView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var gameEngine: GameEngine
     @State private var showFireConfirmation = false
+
+    /// The advisor as the game currently has them (advice changes after REQUEST ALTERNATIVE).
+    private var liveAdvisor: Advisor { gameEngine.gameState?.advisors.first { $0.id == advisor.id } ?? advisor }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -220,7 +232,7 @@ struct AdvisorDetailView: View {
                     .padding()
 
                     // Current Advice
-                    if let advice = advisor.currentAdvice {
+                    if let advice = liveAdvisor.currentAdvice {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("CURRENT ADVICE:")
                                 .font(.system(.headline, design: .monospaced))
@@ -235,20 +247,23 @@ struct AdvisorDetailView: View {
                                 .background(Color.black.opacity(0.7))
                                 .border(AppSettings.terminalAmber, width: 2)
 
-                            // Action buttons
+                            // Action buttons — wired to the advice engine (see AdviceEngine.swift)
                             HStack(spacing: 16) {
                                 Button("ACCEPT ADVICE") {
+                                    gameEngine.acceptRecommendation(advisorID: advisor.id)
                                     dismiss()
                                 }
                                 .buttonStyle(WOPRButtonStyle(color: AppSettings.terminalGreen))
+                                .disabled(liveAdvisor.recommendedAction == nil || (gameEngine.gameState?.actionsRemaining ?? 0) == 0)
 
                                 Button("REJECT ADVICE") {
+                                    gameEngine.rejectRecommendation(advisorID: advisor.id)
                                     dismiss()
                                 }
                                 .buttonStyle(WOPRButtonStyle(color: AppSettings.terminalRed))
 
                                 Button("REQUEST ALTERNATIVE") {
-                                    // Alternative action
+                                    gameEngine.alternativeRecommendation(advisorID: advisor.id)
                                 }
                                 .buttonStyle(WOPRButtonStyle(color: AppSettings.terminalAmber))
                             }

@@ -236,6 +236,25 @@ final class AdviceEngineTests: XCTestCase {
         XCTAssertEqual(advice.stance, .oppose)
     }
 
+    @MainActor
+    func testAcceptingAStandingRecommendationCarriesItOut() {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .year)
+        let gs = engine.gameState!
+        guard let i = gs.advisors.firstIndex(where: { $0.roleKey == "state" && $0.isActive }),
+              let raw = gs.advisors[i].recommendedAction else { return XCTFail("State should have a recommendation") }
+        XCTAssertNotNil(PresidentialAction(rawValue: raw))
+        XCTAssertNotNil(gs.advisors[i].currentAdvice)
+        let before = gs.actionsUsedThisTurn
+        XCTAssertTrue(engine.acceptRecommendation(advisorID: gs.advisors[i].id))
+        XCTAssertEqual(gs.actionsUsedThisTurn, before + 1)
+
+        let previous = (gs.advisors[i].recommendedAction ?? "") + (gs.advisors[i].recommendedTarget ?? "")
+        engine.alternativeRecommendation(advisorID: gs.advisors[i].id)
+        let next = (gs.advisors[i].recommendedAction ?? "") + (gs.advisors[i].recommendedTarget ?? "")
+        XCTAssertNotEqual(previous, next, "REQUEST ALTERNATIVE proposes something else")
+    }
+
     func testOverruledAdvisorEventuallyResigns() {
         let gs = GameState(playerCountryID: "USA")
         guard let i = gs.advisors.firstIndex(where: { !$0.title.contains("President") }) else { return XCTFail() }

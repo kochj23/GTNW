@@ -113,7 +113,7 @@ struct UnifiedCommandCenter: View {
                 .font(.system(size: 18, weight: .bold))
             Text(resolving
                  ? "⏳ WORLD RESOLVING…"
-                 : "▶ YOUR TURN — Turn \(gameState.turn) · \(gameState.currentYear) · DEFCON \(gameState.defconLevel.rawValue)")
+                 : "▶ YOUR TURN — \(gameState.currentDateLabel.uppercased()) · \(gameState.actionsRemaining) ACTION(S) LEFT · DEFCON \(gameState.defconLevel.rawValue)")
                 .font(.system(size: 15, weight: .heavy, design: .monospaced))
             Spacer()
         }
@@ -228,7 +228,7 @@ struct UnifiedCommandCenter: View {
                                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalGreen)
 
-                            Text("(Turn \(gameEngine.gameState?.turn ?? 0))")
+                            Text("(\(gameEngine.gameState?.currentDateLabel ?? ""))")
                                 .font(.system(size: 12, weight: .medium, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalAmber)
 
@@ -359,7 +359,7 @@ struct UnifiedCommandCenter: View {
 
                 HStack(spacing: 12) {
                     statPill("☢️ \(player.nuclearWarheads)", color: GTNWColors.terminalRed)
-                    statPill("Turn \(gameState.turn)", color: GTNWColors.neonCyan)
+                    statPill(gameState.currentDateLabel, color: GTNWColors.neonCyan)
                     statPill("Wars: \(gameState.activeWars.count)", color: gameState.activeWars.count > 0 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
                 }
             }
@@ -1216,7 +1216,7 @@ struct UnifiedCommandCenter: View {
         guard let player = gameState.getPlayerCountry() else { return "ERROR" }
 
         return """
-        SITREP - TURN \(gameState.turn)
+        SITREP - \(gameState.currentDateLabel.uppercased())
         ══════════════════════════════════════
         NATION: \(player.flag) \(player.name)
         DEFCON: \(gameState.defconLevel.rawValue)
@@ -1498,7 +1498,7 @@ struct WarsDetailView: View {
                                         }
                                     }
 
-                                    Text("Started: Turn \(war.startTurn)")
+                                    Text("Started: \(gameState.dateLabel(forTurn: war.startTurn))")
                                         .font(.system(size: 11, design: .monospaced))
                                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                                 }
@@ -1571,7 +1571,7 @@ struct TreatiesDetailView: View {
                                     }
                                 }
 
-                                Text("Signed: Turn \(treaty.turn)")
+                                Text("Signed: \(gameState.dateLabel(forTurn: treaty.turn))")
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.6))
                                     .padding(.top, 4)

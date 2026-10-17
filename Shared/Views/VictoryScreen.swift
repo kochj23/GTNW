@@ -310,7 +310,7 @@ struct WOPRSecretEndingView: View {
                         .font(.system(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen.opacity(0.6))
                     Spacer()
-                    Text("TURN \(gameState.turn) | DEFCON \(gameState.defconLevel.rawValue)")
+                    Text("\(gameState.currentDateLabel.uppercased()) | DEFCON \(gameState.defconLevel.rawValue)")
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                 }

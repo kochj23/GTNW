@@ -148,7 +148,7 @@ struct MessageCard: View {
                         }
                     }
 
-                    Text("Turn \(message.turn)")
+                    Text(gameState.dateLabel(forTurn: message.turn))
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                 }

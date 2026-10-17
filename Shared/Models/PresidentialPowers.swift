@@ -216,7 +216,10 @@ extension GameEngine {
         }
 
         let fired = gameState.advisors[idx]
-        gameState.advisors.remove(at: idx)
+        guard fired.isActive else { return }
+        // Keep the record (status shows on the advisor rail) and appoint an acting replacement.
+        gameState.advisors[idx].status = .fired
+        gameState.advisors.append(AdviceEngine.appointActing(replacing: fired, sequence: gameState.advisors.count))
 
         // Remaining advisors become less loyal — unpredictability creates tension
         for i in gameState.advisors.indices {

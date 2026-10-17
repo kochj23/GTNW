@@ -202,6 +202,66 @@ enum AdviceEngine {
         }
     }
 
+    // MARK: Standing recommendations (Advisor detail ACCEPT / REJECT / ALTERNATIVE)
+
+    /// What the world looks like to the cabinet right now, in the terms Advisor.generateAdvice understands.
+    static func situation(in gs: GameState) -> GameSituation {
+        let player = gs.getPlayerCountry()
+        if gs.defconLevel.rawValue <= 2, let rival = player.flatMap({ p in gs.countries.filter { $0.nuclearWarheads > 0 && $0.id != p.id }.min { (p.diplomaticRelations[$0.id] ?? 0) < (p.diplomaticRelations[$1.id] ?? 0) } }) {
+            return .nuclearThreat(country: rival.id)
+        }
+        if gs.shadow.popularity < 35 || (player?.profile.outcry ?? 0) > 50 { return .domesticCrisis }
+        if let war = gs.activeWars.first { return .diplomaticCrisis(country: war.defender) }
+        if (player?.profile.anxieties.economic ?? 0) > 50 { return .economicSanctions }
+        return .covertOperation
+    }
+
+    /// The action a post would urge right now, skipping `excluding` (for REQUEST ALTERNATIVE).
+    static func recommendation(role: String, in gs: GameState, excluding: Set<String> = []) -> (PresidentialAction, String)? {
+        guard let player = gs.getPlayerCountry() else { return nil }
+        let others = gs.countries.filter { !$0.isDestroyed && !$0.isPlayerControlled }
+        func rel(_ c: Country) -> Int { player.diplomaticRelations[c.id] ?? 0 }
+        let rival = others.min { rel($0) < rel($1) }
+        let worriedFriend = others.filter { rel($0) > 20 }.max { $0.profile.anxieties.average < $1.profile.anxieties.average }
+        let needy = others.filter { rel($0) > -20 }.max { $0.profile.aidNeed.total < $1.profile.aidNeed.total }
+        let warVictim = gs.activeWars.compactMap { gs.getCountry(id: $0.defender) }.first { rel($0) > 0 && !$0.isPlayerControlled }
+        let swing = others.filter { abs(rel($0)) < 30 }.max { $0.profile.strategicValue < $1.profile.strategicValue }
+        var options: [(PresidentialAction, Country?)] = []
+        switch role {
+        case "state": options = [(.stateVisit, worriedFriend), (.mediateConflict, warVictim), (.sendAmbassador, swing), (.summit, rival)]
+        case "defense": options = [(.militaryAid, warVictim), (.jointExercise, worriedFriend), (.deployTroops, rival), (.defensivePact, swing)]
+        case "cia": options = [(.infiltrate, rival), (.stealSecrets, rival), (.fundOpposition, rival), (.deploySpies, swing)]
+        case "economic": options = [(.tradeDeal, swing), (.economicAid, needy), (.sanctions, rival), (.investment, worriedFriend)]
+        case "nsa": options = [(.armsControl, rival), (.summit, rival), (.nonAggression, swing), (.militaryAid, warVictim)]
+        case "press": options = [(.jointStatement, worriedFriend), (.cultural, swing), (.unCondemn, rival), (.foodAid, needy)]
+        default: options = [(.summit, rival), (.foodAid, needy), (.stateVisit, worriedFriend), (.tradeDeal, swing)]
+        }
+        for (a, c) in options {
+            guard let c, a.eraAvailableYear <= gs.currentYear, !excluding.contains(a.rawValue + c.id) else { continue }
+            return (a, c.id)
+        }
+        return nil
+    }
+
+    /// Refresh one advisor's spoken advice: the situation read (Advisor.generateAdvice) plus a concrete proposal.
+    static func refreshRecommendation(advisorIndex i: Int, in gs: GameState, excluding: Set<String> = []) {
+        guard gs.advisors.indices.contains(i), gs.advisors[i].isActive else { return }
+        var adv = gs.advisors[i]
+        adv.generateAdvice(for: situation(in: gs))
+        let role = adv.roleKey ?? "whc"
+        if let (action, target) = recommendation(role: role, in: gs, excluding: excluding) {
+            adv.recommendedAction = action.rawValue
+            adv.recommendedTarget = target
+            let name = gs.getCountry(id: target)?.name ?? target
+            adv.currentAdvice = (adv.currentAdvice ?? "") + " My recommendation: \(action.rawValue) — \(name)."
+        } else {
+            adv.recommendedAction = nil
+            adv.recommendedTarget = nil
+        }
+        adv.lastAdviceGiven = gs.currentDateLabel
+        gs.advisors[i] = adv
+    }
+
     // MARK: Advisor fates
 
     static let scandals = [
