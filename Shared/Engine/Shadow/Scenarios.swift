@@ -233,6 +233,8 @@ struct SaveSlotInfo: Identifiable, Equatable {
 }
 
 /// JSON save slots under Application Support/GTNW/Saves. Slot 0 is the autosave.
+/// This folder is the on-device cache of the slots; `GameStoreService` syncs it with the Games DB
+/// (see `Shared/Storage/`). Every load is size-capped and validated by `SaveCodec`.
 struct SaveManager {
     let folder: URL
     static let slotCount = 5
@@ -247,20 +249,38 @@ struct SaveManager {
     func url(slot: Int) -> URL { folder.appendingPathComponent(slot == 0 ? "autosave.json" : "slot\(slot).json") }
 
     func save(_ gs: GameState, slot: Int) throws {
+        try write(SaveCodec.encode(gs), slot: slot, modified: nil)
+    }
+
+    /// Write raw (already validated) payload bytes, optionally stamping the modification date (used when pulling from the DB).
+    func write(_ data: Data, slot: Int, modified: Date?) throws {
+        guard StoreValidation.slotRange.contains(slot) else { throw GameStoreError.invalid("slot \(slot) out of range") }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let enc = JSONEncoder()
-        enc.dateEncodingStrategy = .iso8601
-        let data = try enc.encode(gs)
         try data.write(to: url(slot: slot), options: .atomic)
+        if let modified { try FileManager.default.setAttributes([.modificationDate: modified], ofItemAtPath: url(slot: slot).path) }
+    }
+
+    /// Raw bytes of a slot, refusing anything over the payload cap before reading it.
+    func data(slot: Int) throws -> Data {
+        let u = url(slot: slot)
+        let size = (try FileManager.default.attributesOfItem(atPath: u.path)[.size] as? NSNumber)?.intValue ?? 0
+        guard size <= StoreValidation.maxPayloadBytes else { throw GameStoreError.invalid("save file is \(size) bytes") }
+        return try Data(contentsOf: u)
+    }
+
+    func modified(slot: Int) -> Date? {
+        (try? FileManager.default.attributesOfItem(atPath: url(slot: slot).path))?[.modificationDate] as? Date
     }
 
     func load(slot: Int) throws -> GameState {
-        let data = try Data(contentsOf: url(slot: slot))
-        return try Self.decode(data)
+        try Self.decode(data(slot: slot))
     }
 
-    /// Decode a save, accepting both ISO-8601 dates (current) and the default numeric encoding.
-    static func decode(_ data: Data) throws -> GameState {
+    /// Validated decode (size cap, JSON, sanity checks). Use this for anything read from disk or the network.
+    static func decode(_ data: Data) throws -> GameState { try SaveCodec.decode(data) }
+
+    /// Decode a save, accepting both ISO-8601 dates (current) and the default numeric encoding. No validation.
+    static func decodeUnchecked(_ data: Data) throws -> GameState {
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = .iso8601
         if let gs = try? dec.decode(GameState.self, from: data) { return gs }
@@ -269,9 +289,7 @@ struct SaveManager {
 
     func list() -> [SaveSlotInfo] {
         (0...Self.slotCount).compactMap { slot in
-            let u = url(slot: slot)
-            guard let attrs = try? FileManager.default.attributesOfItem(atPath: u.path),
-                  let mod = attrs[.modificationDate] as? Date else { return nil }
+            guard let mod = modified(slot: slot) else { return nil }
             var label = slot == 0 ? "Autosave" : "Slot \(slot)"
             if let gs = try? load(slot: slot) {
                 label += " — \(gs.currentDateLabel), turn \(gs.turn)"

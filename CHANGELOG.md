@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-10-17 — Games DB
+
+### Added
+- **Durable game state in the Nova Games Postgres** (database `games`, schema `gtnw`, not Nova's DB): save slots
+  and autosave, leaderboard, game history, scenario progress and achievements. `GameStore` protocol with Postgres
+  (PostgresNIO, TLS verify-full against the bundled games-pg CA, SCRAM), local cache and in-memory stores.
+- Versioned schema migrations (run as `gtnw_owner`) with check constraints and indexes.
+- **Local first, offline tolerant**: writes land on the device and queue, and a sync pass with retry and backoff
+  pushes them. A top-bar badge (DB ONLINE / SYNCING / OFFLINE / LOCAL) appears in both skins.
+- One-time, idempotent import of the legacy UserDefaults leaderboard and achievements and the save files, with a
+  timestamped backup first and a count check (`--migrate-store`).
+- Settings › Saves & DB: host and port override, plus one-time credential setup (SSH `getpw` or paste) into GTNW's
+  Data Protection keychain.
+
+### Changed
+- Settings (skin, sound, window, AI backend) stay in UserDefaults. The leaderboard and achievements no longer do.
+
 ## [3.0.0] - 2026-10-17 — The Situation Room
 
 ### Added

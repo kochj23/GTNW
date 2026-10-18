@@ -19,7 +19,6 @@ class AchievementEngine: ObservableObject {
     @Published var recentUnlock: Achievement?
     @Published var showUnlockAnimation = false
 
-    private let storage = UserDefaults.standard
     private var achievementPosters: [String: Data] = [:]
 
     private init() {
@@ -461,13 +460,13 @@ class AchievementEngine: ObservableObject {
     // MARK: - Persistence
 
     private func loadUnlocked() {
-        if let saved = storage.array(forKey: "gtnw_achievements") as? [String] {
-            unlockedAchievements = Set(saved)
-        }
+        // Durable copy lives in the Games DB / local store (moved out of UserDefaults `gtnw_achievements`).
+        unlockedAchievements = Set(GameStoreService.shared.records.achievements.map(\.id))
     }
 
     private func saveUnlocked() {
-        storage.set(Array(unlockedAchievements), forKey: "gtnw_achievements")
+        let known = Set(GameStoreService.shared.records.achievements.map(\.id))
+        for id in unlockedAchievements.subtracting(known) { GameStoreService.shared.unlockAchievement(id) }
     }
 
     func isUnlocked(_ id: String) -> Bool {

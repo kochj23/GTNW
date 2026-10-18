@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Data Protection keychain group for the Games DB credential (NovaGames CONTRACT §11): readable only by
+	     GTNW signed by the team, with no per-build keychain prompts. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.wopr.gtnw.macos</string>
+	</array>
+</dict>
+</plist>

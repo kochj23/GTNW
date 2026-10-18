@@ -418,6 +418,9 @@ GTNW/
     Design/                   ModernDesign + Theme (Modern / Retro EGA skins)
     Resources/                world_countries.json (Natural Earth, public domain)
     ShadowPack/               Optional local Shadow President art/sound loader
+    Storage/                  GameStore protocol, Postgres + local cache + in-memory stores,
+                              GameStoreService (sync/offline), legacy import, status badge,
+                              bundled games-pg CA (public cert)
     Models/                   38 files: GameState, Country, Crises,
                               Advisors, Alliances, World DB, Factbook,
                               AI backends, Presidential Powers, etc.
@@ -445,6 +448,42 @@ GTNW/
     WidgetData.swift          Data models
 ```
 
+### Durable game state: the Games DB
+
+Save slots and the autosave, the leaderboard, game history, scenario progress and achievements live in the
+dedicated **Nova Games Postgres** (database `games`, schema `gtnw`). This is not Nova's own database. Settings
+(skin, sound, window, AI backend) stay in `UserDefaults`.
+
+```mermaid
+flowchart LR
+    Game["GameEngine / Situation Room<br/>save · autosave · game over · achievements"] --> Service["GameStoreService<br/>(local first, then queue)"]
+    Service --> Local["LocalGameStore<br/>Application Support/GTNW<br/>Saves/*.json · records.json · pending.json"]
+    Service -- "sync pass<br/>Retry.run + reconnect backoff" --> PG["PostgresGameStore<br/>PostgresNIO · TLS verify-full<br/>pinned games-pg CA · SCRAM"]
+    PG --> DB[("games-pg<br/>schema gtnw<br/>save_slots · leaderboard · game_history<br/>scenario_progress · achievements<br/>schema_migrations")]
+    Keychain["Data Protection keychain<br/>nova-games-pg / gtnw, gtnw_owner"] -. password .-> PG
+    Service --> Badge["Top-bar badge<br/>DB ONLINE · SYNCING · OFFLINE · LOCAL"]
+```
+
+- **Local first.** Every write lands in the on-device cache and is queued in `pending.json`, so play never waits
+  on the network. A sync pass pushes the queue and pulls anything newer, for example slots saved on another Mac.
+- **Offline.** If the DB is unreachable, the game keeps going, writes stay pending, and the service retries with
+  backoff. The top bar shows `DB ONLINE`, `SYNCING`, `OFFLINE · n` (n writes pending) or `LOCAL` (no DB configured),
+  in both the Modern and Retro skins.
+- **Schema.** Versioned migrations (`GameStoreMigrations`) run as `gtnw_owner` and are recorded in
+  `gtnw.schema_migrations`. They add check constraints (slot range, payload size, score bounds) and indexes. At
+  runtime the app connects as `gtnw`, which has DML rights only.
+- **Security.** TLS is required, with `verify-full` against the bundled CA. Every value is a bound parameter.
+  Save payloads are JSON with a schema version, capped at 8 MiB and validated on load, so a corrupt or hostile save
+  is rejected. Passwords live only in GTNW's Data Protection keychain, never in UserDefaults, files or logs.
+- **Configuration.** The default host is `192.168.1.5:5433` (TLS name `nova-core3`). You can change it under
+  Settings › Saves & DB. That tab also does the **one-time credential setup**: *Fetch from core3 (SSH)* runs
+  `remote.sh getpw` with `BatchMode`, or you can paste the output of `deploy/deploy.sh macpw gtnw | pbcopy`.
+- **Migration.** On first run with a DB, the legacy `UserDefaults` leaderboard and achievements and the save files
+  are imported once. The import is idempotent (stable ids) and is checked by comparing counts. Before importing, the
+  defaults plist and the Saves folder are backed up to `/Volumes/Data/xcode/GTNW-backups/<timestamp>/`. Headless
+  run: `GTNW.app/Contents/MacOS/GTNW --migrate-store [--setup-credentials]`.
+- **iOS** uses the same store, and PostgresNIO builds for iOS. On the simulator the Mac's LAN address is reachable.
+
 ### Key Technologies
 
 - **SwiftUI** with AppKit integration on macOS
@@ -452,6 +491,7 @@ GTNW/
 - **WidgetKit** for macOS desktop widgets
 - **NWListener** (Network framework) for the local HTTP API server
 - **Security framework** for Keychain credential storage
+- **PostgresNIO** (SPM) for the Games DB
 - **F5-TTS** for voice cloning of world leaders
 - **Ollama / MLX** for local AI inference
 
@@ -468,7 +508,7 @@ GTNW/
 
 ### Privacy and Security
 
-- 100% local by default -- no internet required for core gameplay
+- No internet required for core gameplay; saves sync to the LAN Games DB when it is reachable and stay local otherwise
 - No telemetry, no tracking, no data collection
 - API keys stored in macOS Keychain (never in UserDefaults or source)
 - HTTP API bound to loopback only (127.0.0.1)
@@ -516,6 +556,7 @@ The tests use plain `Date()` timing with generous thresholds instead of `measure
 
 | Version | Date       | Highlights                                                    |
 |---------|------------|---------------------------------------------------------------|
+| 3.1.0   | Oct 2026   | Games DB: saves, leaderboard, history, scenario progress and achievements in the Nova Games Postgres, offline-first with sync |
 | 3.0.0   | Oct 2026   | Situation Room, real calendar (Day/Week/Month/Year), bordered map, advisors' advice, elections, budget, aid, War Room, scenarios + saves, Retro EGA skin, iOS target builds again |
 | 2.0.0   | May 2026   | Full multiplayer API, Nova email game hosting (nova_gtnw_host.py) |
 | 1.9.0   | May 2026   | XCTest suite (77 tests), warning fixes, QE pipeline           |

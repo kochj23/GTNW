@@ -16,6 +16,7 @@ struct GlobalThermalNuclearWarApp: App {
 
     init() {
         #if os(macOS)
+        if StoreMigrationCLI.isRequested { StoreMigrationCLI.runAndExit() }
         if LaunchSmoke.isRequested {
             // Frame smoke test: boot the full app hidden (never activates, never takes
             // focus, no API server), then quit cleanly. See tools/launch_smoke.sh.
@@ -34,7 +35,12 @@ struct GlobalThermalNuclearWarApp: App {
                 // Rebuild every screen when the skin changes so all theme tokens are re-read.
                 .id(themes.theme)
                 .preferredColorScheme(.dark)
-                .onAppear { gameEngine.autosaveManager = SaveManager() }
+                .onAppear {
+                    let store = GameStoreService.shared
+                    gameEngine.autosaveManager = store.local.saves
+                    gameEngine.store = store
+                    store.start()
+                }
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)
@@ -80,6 +86,7 @@ struct GlobalThermalNuclearWarApp: App {
                 ThemeSettingsView().tabItem { Label("Game", systemImage: "gamecontroller") }
                 AIBackendSettingsView().tabItem { Label("AI", systemImage: "cpu") }
                 ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
+                GameStoreSettingsView().tabItem { Label("Saves & DB", systemImage: "externaldrive.connected.to.line.below") }
             }
         }
         #endif
@@ -88,6 +95,42 @@ struct GlobalThermalNuclearWarApp: App {
 
 #if os(macOS)
 import AppKit
+
+/// `--migrate-store [--backup-dir PATH] [--setup-credentials]`: headless one-time import of legacy saves /
+/// leaderboard into the Games DB (backup first), print a JSON report, exit 0 when verified (or when no DB is
+/// configured). `--setup-credentials` first runs the SSH credential hand-off if the keychain has no password.
+enum StoreMigrationCLI {
+    static let flag = "--migrate-store"
+    static var isRequested: Bool { CommandLine.arguments.contains(flag) }
+
+    static func runAndExit() -> Never {
+        let args = CommandLine.arguments
+        let backupRoot = args.firstIndex(of: "--backup-dir").flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil }
+            .map { URL(fileURLWithPath: $0, isDirectory: true) } ?? LegacyStoreImport.defaultBackupRoot
+        if args.contains("--setup-credentials"),
+           KeychainGameStoreCredentials().password(account: GameStoreConfig.load().user) == nil {
+            do { print("credentials stored: \(try GameStoreSetup.fetchFromCore3())") }
+            catch { print("credential setup failed: \(error)") }
+        }
+        let service = GameStoreService.makeDefault()
+        let done = DispatchSemaphore(value: 0)
+        final class Box: @unchecked Sendable { var report = LegacyImportReport() }
+        let box = Box()
+        Task.detached {
+            box.report = await LegacyStoreImport.run(service: service, defaults: .standard, domain: Bundle.main.bundleIdentifier,
+                                                     backupRoot: backupRoot, alwaysBackup: true)
+            done.signal()
+        }
+        done.wait()
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: (try? enc.encode(box.report)) ?? Data(), as: UTF8.self))
+        // (service.status is published on the main actor, which this blocked thread never yields to; report from the run.)
+        print(service.remote == nil ? "status: no Games DB configured (local only)"
+              : box.report.synced ? "status: Games DB reachable, synced" : "status: Games DB unreachable, writes pending")
+        exit(box.report.verified || service.remote == nil ? 0 : 1)
+    }
+}
 
 /// `--launch-smoke`: start up, reach the run loop, then terminate with exit code 0.
 enum LaunchSmoke {

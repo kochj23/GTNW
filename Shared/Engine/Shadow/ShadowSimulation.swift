@@ -686,6 +686,7 @@ extension GameEngine {
     func saveGame(slot: Int, manager: SaveManager = SaveManager()) throws {
         guard let gs = gameState else { return }
         try manager.save(gs, slot: slot)
+        noteSlotSaved(slot, manager: manager)
         addLog("💾 Game saved to \(slot == 0 ? "autosave" : "slot \(slot)").", type: .info)
     }
 

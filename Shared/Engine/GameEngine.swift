@@ -30,6 +30,17 @@ class GameEngine: ObservableObject {
     /// When set (the app does this; tests don't), the game autosaves to slot 0 at the end of every turn.
     var autosaveManager: SaveManager? = nil
 
+    /// Durable game state (Games DB + local cache). The app sets it; tests leave it nil or inject one.
+    var store: GameStoreService? = nil {
+        didSet { if let store { leaderboardManager = LeaderboardManager(records: store.records.leaderboard) } }
+    }
+
+    /// Tell the store a slot file changed, when it lives in the store's slot folder.
+    func noteSlotSaved(_ slot: Int, manager: SaveManager) {
+        guard let store, manager.folder.standardizedFileURL == store.local.saves.folder.standardizedFileURL else { return }
+        store.slotSaved(slot)
+    }
+
     // MARK: - Brain-per-country system
 
     /// Whose turn it is / what the world is doing. Drives the UI banner and
@@ -207,7 +218,12 @@ class GameEngine: ObservableObject {
         logSystemUpdates()
 
         if let manager = autosaveManager, let gs = self.gameState, !gs.gameOver {
-            try? manager.save(gs, slot: 0)
+            do {
+                try manager.save(gs, slot: 0)
+                noteSlotSaved(0, manager: manager)
+            } catch {
+                print("[GameEngine] autosave failed: \(error)")
+            }
         }
     }
 
@@ -1628,6 +1644,7 @@ class GameEngine: ObservableObject {
             self.finalScore = score
             self.victoryType = nil
             self.showingVictoryScreen = true
+            recordGameOver(gameState, score: score, victory: nil)
             showGameOver()
             return
         }
@@ -1643,6 +1660,7 @@ class GameEngine: ObservableObject {
             self.finalScore = score
             self.victoryType = victory
             self.showingVictoryScreen = true
+            recordGameOver(gameState, score: score, victory: victory)
             showGameOver()
             return
         }
@@ -1664,6 +1682,14 @@ class GameEngine: ObservableObject {
             addLog("Global nuclear exchange detected!", type: .critical)
             addLog("The only winning move is not to play.", type: .critical)
         }
+    }
+
+    /// Leaderboard + game history + scenario progress for a finished game.
+    func recordGameOver(_ gameState: GameState, score: GameScore, victory: VictoryType?) {
+        let name = gameState.presidentsPlayed.last ?? "The President"
+        let entry = leaderboardManager.addEntry(playerName: name, score: score)
+        store?.recordGameOver(result: .make(from: gameState, score: score, victory: victory),
+                              leaderboard: LeaderboardRecord(entry: entry))
     }
 
     /// Show game over screen

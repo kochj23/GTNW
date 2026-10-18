@@ -117,10 +117,29 @@ struct GameScore: Codable {
 
 /// Leaderboard entry
 struct LeaderboardEntry: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var playerName: String
     var score: GameScore
     var rank: Int = 0
+
+    init(id: UUID = UUID(), playerName: String, score: GameScore, rank: Int = 0) {
+        self.id = id
+        self.playerName = playerName
+        self.score = score
+        self.rank = rank
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, playerName, score, rank }
+
+    /// Entries written before ids were persisted have no `id`; give them a stable one derived from their content.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        playerName = try c.decode(String.self, forKey: .playerName)
+        score = try c.decode(GameScore.self, forKey: .score)
+        rank = try c.decodeIfPresent(Int.self, forKey: .rank) ?? 0
+        id = try c.decodeIfPresent(UUID.self, forKey: .id)
+            ?? UUID.stable("gtnw-leaderboard|\(playerName)|\(score.finalScore)|\(score.playerCountry)|\(score.dateAchieved.timeIntervalSince1970)")
+    }
 
     var formattedDate: String {
         let formatter = DateFormatter()
@@ -129,57 +148,39 @@ struct LeaderboardEntry: Identifiable, Codable {
     }
 }
 
-/// Manages leaderboard persistence
+/// The in-memory, ranked leaderboard. Durable storage is `GameStoreService` (Games DB + local cache);
+/// pass `onAdd` to persist new entries.
 class LeaderboardManager: ObservableObject {
     @Published var entries: [LeaderboardEntry] = []
 
-    private let saveKey = "GTNW_Leaderboard"
     private let maxEntries = 100
-    private let defaults: UserDefaults
+    private let onAdd: ((LeaderboardEntry) -> Void)?
 
-    /// `defaults` is injectable so tests use a throwaway store instead of the player's real leaderboard.
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-        loadLeaderboard()
+    init(entries: [LeaderboardEntry] = [], onAdd: ((LeaderboardEntry) -> Void)? = nil) {
+        self.onAdd = onAdd
+        self.entries = entries
+        rerank()
+    }
+
+    convenience init(records: [LeaderboardRecord], onAdd: ((LeaderboardEntry) -> Void)? = nil) {
+        self.init(entries: records.map(LeaderboardEntry.init(record:)), onAdd: onAdd)
     }
 
     /// Add new entry to leaderboard
-    func addEntry(playerName: String, score: GameScore) {
+    @discardableResult
+    func addEntry(playerName: String, score: GameScore) -> LeaderboardEntry {
         let entry = LeaderboardEntry(playerName: playerName, score: score)
-
-        // Add to list
         entries.append(entry)
+        rerank()
+        onAdd?(entry)
+        return entries.first { $0.id == entry.id } ?? entry
+    }
 
-        // Sort by score
+    /// Sort by score, assign ranks, keep the top `maxEntries`.
+    private func rerank() {
         entries.sort { $0.score.finalScore > $1.score.finalScore }
-
-        // Assign ranks
-        for (index, _) in entries.enumerated() {
-            entries[index].rank = index + 1
-        }
-
-        // Keep only top entries
-        if entries.count > maxEntries {
-            entries = Array(entries.prefix(maxEntries))
-        }
-
-        saveLeaderboard()
-    }
-
-    /// Load leaderboard from persistent storage
-    func loadLeaderboard() {
-        guard let data = defaults.data(forKey: saveKey),
-              let decoded = try? JSONDecoder().decode([LeaderboardEntry].self, from: data) else {
-            entries = []
-            return
-        }
-        entries = decoded
-    }
-
-    /// Save leaderboard to persistent storage
-    func saveLeaderboard() {
-        guard let encoded = try? JSONEncoder().encode(entries) else { return }
-        defaults.set(encoded, forKey: saveKey)
+        if entries.count > maxEntries { entries = Array(entries.prefix(maxEntries)) }
+        for index in entries.indices { entries[index].rank = index + 1 }
     }
 
     /// Get top N entries

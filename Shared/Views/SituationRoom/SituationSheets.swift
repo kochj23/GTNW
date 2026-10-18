@@ -379,7 +379,7 @@ struct SaveLoadView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var slots: [SaveSlotInfo] = []
     @State private var message = ""
-    private let manager = SaveManager()
+    private let manager = GameStoreService.shared.local.saves
 
     var body: some View {
         SheetFrame(title: "Save / Load", icon: "externaldrive") {

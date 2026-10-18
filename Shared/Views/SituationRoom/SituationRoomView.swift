@@ -179,6 +179,7 @@ struct SituationTopBar: View {
                     .foregroundColor(GTNWColors.terminalRed)
             }
             Spacer()
+            StoreStatusBadge()
             if gameState.shadow.budgetReviewPending {
                 Button("BUDGET READY") { onSheet(.budget) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
             } else {

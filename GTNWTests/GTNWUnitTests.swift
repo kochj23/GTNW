@@ -515,23 +515,10 @@ final class WarAndTreatyTests: XCTestCase {
 
 final class LeaderboardTests: XCTestCase {
 
-    // LeaderboardManager persists to UserDefaults.standard["GTNW_Leaderboard"], which is
-    // shared process-wide. Without clearing it, entries accumulate across tests (and prior
-    // runs), polluting sort/rank assertions. Reset before and after each test for hermeticity.
-    private let leaderboardKey = "GTNW_Leaderboard"
-
-    override func setUp() {
-        super.setUp()
-        UserDefaults.standard.removeObject(forKey: leaderboardKey)
-    }
-
-    override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: leaderboardKey)
-        super.tearDown()
-    }
+    // LeaderboardManager is in-memory; durable storage is GameStoreService (see GameStoreTests).
 
     func testLeaderboardSorting() {
-        let manager = LeaderboardManager(defaults: UserDefaults(suiteName: "GTNWTests-\(UUID().uuidString)")!)
+        let manager = LeaderboardManager()
 
         var score1 = GameScore()
         score1.finalScore = 100
@@ -553,7 +540,7 @@ final class LeaderboardTests: XCTestCase {
     }
 
     func testLeaderboardRanking() {
-        let manager = LeaderboardManager(defaults: UserDefaults(suiteName: "GTNWTests-\(UUID().uuidString)")!)
+        let manager = LeaderboardManager()
 
         var score1 = GameScore()
         score1.finalScore = 1000
@@ -565,7 +552,7 @@ final class LeaderboardTests: XCTestCase {
     }
 
     func testBestScore() {
-        let manager = LeaderboardManager(defaults: UserDefaults(suiteName: "GTNWTests-\(UUID().uuidString)")!)
+        let manager = LeaderboardManager()
 
         var score = GameScore()
         score.finalScore = 750

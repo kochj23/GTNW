@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct LeaderboardView: View {
-    @StateObject var leaderboardManager = LeaderboardManager()
+    @StateObject var leaderboardManager = LeaderboardManager(records: GameStoreService.shared.records.leaderboard)
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
