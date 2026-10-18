@@ -126,12 +126,12 @@ struct WorldMapView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(country.flag)
-                    .font(.system(size: 40))
+                    .font(.scaled(size: 40))
                 VStack(alignment: .leading) {
                     Text(country.name)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                     Text(country.capital)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.scaled(size: 12, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
                 Spacer()
@@ -163,23 +163,23 @@ struct WorldMapView: View {
 
             if country.isPlayerControlled {
                 Text("YOUR NATION")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
         }
         .padding()
         .background(AppSettings.panelBackground.opacity(0.95))
         .border(AppSettings.terminalGreen, width: 2)
-        .frame(maxWidth: 500)
+        .frame(maxWidth: FontScale.w(500))
     }
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label + ":")
-                .font(.system(size: 11, design: .monospaced))
+                .font(.scaled(size: 11, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
             Text(value)
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }
     }

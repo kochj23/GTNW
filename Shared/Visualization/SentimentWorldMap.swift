@@ -214,7 +214,7 @@ struct SentimentWorldMapView: View {
 
                 // Legend and details
                 legendView
-                    .frame(width: 300)
+                    .frame(width: FontScale.w(300))
             }
         }
         .background(Color.black.opacity(0.9))
@@ -223,12 +223,12 @@ struct SentimentWorldMapView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("🗺️ Sentiment World Map")
-                .font(.title2)
+                .font(.scaled(.title2))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
             Text("Emotional state of nations")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
         }
         .padding()
@@ -250,22 +250,22 @@ struct SentimentWorldMapView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Emotional States:")
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 ForEach([NationalEmotion.vengeful, .fearful, .emboldened, .desperate, .confident, .paranoid, .neutral], id: \.self) { emotion in
                     HStack {
                         Circle()
                             .fill(emotion.color)
-                            .frame(width: 16, height: 16)
+                            .frame(width: FontScale.w(16), height: FontScale.h(16))
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(emotion.rawValue)
-                                .font(.caption)
+                                .font(.scaled(.caption))
                                 .fontWeight(.bold)
 
                             Text(emotion.description)
-                                .font(.caption2)
+                                .font(.scaled(.caption2))
                                 .foregroundColor(.white.opacity(0.6))
                         }
                         .foregroundColor(.white)
@@ -286,30 +286,30 @@ struct SentimentWorldMapView: View {
     private func selectedCountryDetails(_ country: Country, _ sentiment: NationalSentiment) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(country.name)
-                .font(.headline)
+                .font(.scaled(.headline))
                 .foregroundColor(.white)
 
             HStack {
                 Text("Feeling:")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                 Text(sentiment.primaryEmotion.rawValue)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
                     .foregroundColor(sentiment.primaryEmotion.color)
             }
 
             Text("Intensity: \(Int(sentiment.intensity * 100))%")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Factors:")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
 
                 ForEach(sentiment.factors, id: \.self) { factor in
                     Text("• \(factor)")
-                        .font(.caption2)
+                        .font(.scaled(.caption2))
                 }
             }
             .foregroundColor(.white.opacity(0.7))

@@ -211,29 +211,29 @@ struct DynamicCrisisView: View {
             optionsList
         }
         .padding(24)
-        .frame(maxWidth: 600)
+        .frame(maxWidth: FontScale.w(600))
     }
 
     private var severityHeader: some View {
         HStack {
             Text(crisis.severity.rawValue.uppercased())
-                .font(.caption).fontWeight(.bold)
+                .font(.scaled(.caption)).fontWeight(.bold)
                 .foregroundColor(crisis.severity.color)
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(crisis.severity.color.opacity(0.2))
                 .cornerRadius(8)
             Spacer()
-            Text(String(crisis.year)).font(.caption).foregroundColor(.white.opacity(0.6))
+            Text(String(crisis.year)).font(.scaled(.caption)).foregroundColor(.white.opacity(0.6))
         }
     }
 
     private var crisisContent: some View {
         VStack(spacing: 12) {
-            Text(crisis.title).font(.title2).fontWeight(.bold).foregroundColor(.white).multilineTextAlignment(.center)
+            Text(crisis.title).font(.scaled(.title2)).fontWeight(.bold).foregroundColor(.white).multilineTextAlignment(.center)
             if let imageData = crisis.imageData, let nsImage = PackPlatformImage(data: imageData) {
-                Image(packImage: nsImage).resizable().aspectRatio(contentMode: .fill).frame(height: 200).clipped().cornerRadius(12)
+                Image(packImage: nsImage).resizable().aspectRatio(contentMode: .fill).frame(height: FontScale.h(200)).clipped().cornerRadius(12)
             }
-            Text(crisis.description).font(.body).foregroundColor(.white.opacity(0.9)).padding().background(Color.black.opacity(0.3)).cornerRadius(10)
+            Text(crisis.description).font(.scaled(.body)).foregroundColor(.white.opacity(0.9)).padding().background(Color.black.opacity(0.3)).cornerRadius(10)
         }
     }
 
@@ -242,8 +242,8 @@ struct DynamicCrisisView: View {
             ForEach(Array(crisis.options.enumerated()), id: \.offset) { index, option in
                 Button(action: { selectedOption = index }) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(option.title).font(.headline).foregroundColor(.white)
-                        Text("→ \(option.description)").font(.caption).foregroundColor(.white.opacity(0.7))
+                        Text(option.title).font(.scaled(.headline)).foregroundColor(.white)
+                        Text("→ \(option.description)").font(.scaled(.caption)).foregroundColor(.white.opacity(0.7))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding()
                     .background(selectedOption == index ? Color.blue.opacity(0.3) : Color.gray.opacity(0.2))

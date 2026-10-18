@@ -266,12 +266,12 @@ struct NaturalLanguageIntelView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("🔍 Natural Language Intelligence")
-                .font(.title2)
+                .font(.scaled(.title2))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
             Text("Ask questions in plain English")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
         }
         .padding()
@@ -282,13 +282,17 @@ struct NaturalLanguageIntelView: View {
         HStack {
             TextField("Ask intelligence question...", text: $query)
                 .textFieldStyle(.roundedBorder)
-                .font(.body)
+                .font(.scaled(.body))
 
             Button(action: {
                 Task {
                     guard !query.isEmpty else { return }
-                    currentReport = try await intel.query(query, gameState: gameState)
-                    query = ""
+                    do {
+                        currentReport = try await intel.query(query, gameState: gameState)
+                        query = ""
+                    } catch {
+                        print("[Intel] query failed: \(error)")
+                    }
                 }
             }) {
                 HStack {
@@ -306,7 +310,7 @@ struct NaturalLanguageIntelView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Suggested Queries:")
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
                     .padding(.horizontal)
 
@@ -318,7 +322,7 @@ struct NaturalLanguageIntelView: View {
                             Image(systemName: "lightbulb")
                                 .foregroundColor(.yellow)
                             Text(suggestion)
-                                .font(.body)
+                                .font(.scaled(.body))
                                 .foregroundColor(.white)
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -341,12 +345,12 @@ struct NaturalLanguageIntelView: View {
                 // Query
                 VStack(alignment: .leading, spacing: 4) {
                     Text("YOUR QUERY:")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .fontWeight(.bold)
                         .foregroundColor(.white.opacity(0.7))
 
                     Text(report.query)
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
                 }
                 .padding()
@@ -356,12 +360,12 @@ struct NaturalLanguageIntelView: View {
                 // Response
                 VStack(alignment: .leading, spacing: 8) {
                     Text("INTELLIGENCE ASSESSMENT:")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .fontWeight(.bold)
                         .foregroundColor(.white.opacity(0.7))
 
                     Text(report.response)
-                        .font(.body)
+                        .font(.scaled(.body))
                         .foregroundColor(.white.opacity(0.9))
                 }
                 .padding()
@@ -372,7 +376,7 @@ struct NaturalLanguageIntelView: View {
                 if !report.threatAssessment.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("THREAT ASSESSMENT:")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .fontWeight(.bold)
                             .foregroundColor(.white.opacity(0.7))
 
@@ -391,7 +395,7 @@ struct NaturalLanguageIntelView: View {
                     Text("•")
                     Text(report.sources.joined(separator: ", "))
                 }
-                .font(.caption2)
+                .font(.scaled(.caption2))
                 .foregroundColor(.white.opacity(0.5))
                 .padding()
 
@@ -413,12 +417,12 @@ struct ThreatCard: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(threat.country.name)
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 ForEach(threat.reasons, id: \.self) { reason in
                     Text("• \(reason)")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.7))
                 }
             }
@@ -427,12 +431,12 @@ struct ThreatCard: View {
 
             VStack {
                 Text("\(threat.threatPercentage)%")
-                    .font(.title2)
+                    .font(.scaled(.title2))
                     .fontWeight(.bold)
                     .foregroundColor(threat.threatColor)
 
                 Text("THREAT")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.6))
             }
         }

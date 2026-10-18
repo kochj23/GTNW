@@ -47,7 +47,7 @@ struct ShadowPresidentMenu: View {
 
                     Spacer()
                 }
-                .frame(width: 250)
+                .frame(width: FontScale.w(250))
                 .background(GTNWColors.glassPanelDark)
 
                 // Actions list
@@ -59,7 +59,7 @@ struct ShadowPresidentMenu: View {
                     }
                     .padding()
                 }
-                .frame(minWidth: 500)
+                .frame(minWidth: FontScale.w(500))
 
                 // Details panel
                 if let action = selectedAction {
@@ -156,18 +156,18 @@ struct ShadowPresidentMenu: View {
                         }
                         .padding()
                     }
-                    .frame(width: 350)
+                    .frame(width: FontScale.w(350))
                     .background(GTNWColors.glassPanelDark)
                 }
             }
         }
-        .frame(minWidth: 1100, minHeight: 700)
+        .frame(minWidth: FontScale.w(1100), minHeight: FontScale.h(700))
         .overlay {
             if let anim = playingAnimation {
                 ZStack {
                     Color.black.opacity(0.85)
                     PackAnimationView(anim) { EmptyView() }
-                        .frame(maxWidth: 520, maxHeight: 520)
+                        .frame(maxWidth: FontScale.w(520), maxHeight: FontScale.h(520))
                 }
                 .onTapGesture { playingAnimation = nil; dismiss() }
                 .accessibilityLabel("Action animation, click to skip")
@@ -183,7 +183,7 @@ struct ShadowPresidentMenu: View {
             HStack(spacing: 10) {
                 Image(systemName: category.icon)
                     .foregroundColor(category.color)
-                    .frame(width: 24)
+                    .frame(width: FontScale.w(24))
                 Text(category.rawValue)
                     .font(GTNWFonts.terminal(size: 11, weight: .bold))
                     .foregroundColor(selectedCategory == category ? .black : category.color)
@@ -206,7 +206,7 @@ struct ShadowPresidentMenu: View {
             HStack(spacing: 12) {
                 Circle()
                     .fill(action.riskLevel.color)
-                    .frame(width: 10, height: 10)
+                    .frame(width: FontScale.w(10), height: FontScale.h(10))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(action.rawValue)

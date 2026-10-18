@@ -58,11 +58,11 @@ struct SimpleModernWorldMap: View {
                                     endRadius: 40
                                 )
                             )
-                            .frame(width: 80, height: 80)
+                            .frame(width: FontScale.w(80), height: FontScale.h(80))
                     }
 
                     Text(country.flag)
-                        .font(.system(size: 56))
+                        .font(.scaled(size: 56))
                 }
 
                 // Name
@@ -104,7 +104,7 @@ struct SimpleModernWorldMap: View {
                             .overlay(Capsule().stroke(alignmentColor(country.alignment).opacity(0.5), lineWidth: 1))
                     )
             }
-            .frame(height: 180)
+            .frame(height: FontScale.h(180))
             .frame(maxWidth: .infinity)
             .padding()
             .modernCard(
@@ -140,7 +140,7 @@ struct SimpleModernWorldMap: View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .foregroundColor(color)
-                .font(.system(size: 14))
+                .font(.scaled(size: 14))
             Text(label)
                 .font(GTNWFonts.caption())
                 .foregroundColor(GTNWColors.terminalAmber)
@@ -166,7 +166,7 @@ struct CountryDetailSheet: View {
                 // Header
                 HStack {
                     Text(country.flag)
-                        .font(.system(size: 72))
+                        .font(.scaled(size: 72))
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(country.name)
@@ -184,7 +184,7 @@ struct CountryDetailSheet: View {
 
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 32))
+                            .font(.scaled(size: 32))
                             .foregroundColor(GTNWColors.terminalRed)
                     }
                 }
@@ -233,7 +233,7 @@ struct CountryDetailSheet: View {
                 Spacer()
             }
         }
-        .frame(minWidth: 800, minHeight: 700)
+        .frame(minWidth: FontScale.w(800), minHeight: FontScale.h(700))
     }
 
     private func alignmentColor(_ alignment: PoliticalAlignment) -> Color {

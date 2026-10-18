@@ -359,13 +359,8 @@ struct PredictiveIntelligenceView: View {
             header
 
             // Tab selector
-            Picker("Analysis Type", selection: $selectedTab) {
-                Text("War Forecast").tag(0)
-                Text("DEFCON Trend").tag(1)
-                Text("Alliances").tag(2)
-                Text("Crises").tag(3)
-            }
-            .pickerStyle(.segmented)
+            ScaledSegmentedPicker(selection: $selectedTab,
+                                  options: [(0, "War Forecast"), (1, "DEFCON Trend"), (2, "Alliances"), (3, "Crises")])
             .padding()
 
             // Content
@@ -382,12 +377,12 @@ struct PredictiveIntelligenceView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("🔮 Predictive Intelligence")
-                .font(.title)
+                .font(.scaled(.title))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
             Text("ML-Powered Strategic Forecasting")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             if intelligence.isAnalyzing {
@@ -458,35 +453,35 @@ struct WarPredictionCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("\(prediction.attacker.name) → \(prediction.defender.name)")
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 Spacer()
 
                 Text("\(prediction.probabilityPercent)%")
-                    .font(.title3)
+                    .font(.scaled(.title3))
                     .fontWeight(.bold)
                     .foregroundColor(probabilityColor)
             }
 
             Text("Estimated: Turn \(prediction.estimatedTurn)")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             Divider()
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Indicators:")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
                     .foregroundColor(.white.opacity(0.8))
 
                 ForEach(prediction.reasons, id: \.self) { reason in
                     HStack {
                         Image(systemName: "chevron.right")
-                            .font(.caption2)
+                            .font(.scaled(.caption2))
                         Text(reason)
-                            .font(.caption)
+                            .font(.scaled(.caption))
                     }
                     .foregroundColor(.white.opacity(0.7))
                 }
@@ -494,10 +489,10 @@ struct WarPredictionCard: View {
 
             HStack {
                 Text("Confidence:")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.6))
                 Text("\(Int(prediction.confidence * 100))%")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .fontWeight(.bold)
                     .foregroundColor(.blue)
             }
@@ -527,11 +522,11 @@ struct DEFCONForecastCard: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Turn \(forecast.turn)")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.white.opacity(0.7))
 
                 Text("DEFCON \(forecast.predictedLevel)")
-                    .font(.title2)
+                    .font(.scaled(.title2))
                     .fontWeight(.bold)
                     .foregroundColor(defconColor)
             }
@@ -540,13 +535,13 @@ struct DEFCONForecastCard: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text("\(Int(forecast.confidence * 100))% confident")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.blue)
 
                 ProgressView(value: forecast.confidence)
                     .progressViewStyle(.linear)
                     .tint(.blue)
-                    .frame(width: 100)
+                    .frame(width: FontScale.w(100))
             }
         }
         .padding()
@@ -572,7 +567,7 @@ struct DEFCONForecastChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("DEFCON Trajectory")
-                .font(.headline)
+                .font(.scaled(.headline))
                 .foregroundColor(.white)
 
             // Simple visualization
@@ -581,15 +576,15 @@ struct DEFCONForecastChart: View {
                     VStack {
                         Rectangle()
                             .fill(defconColor(point.predictedLevel))
-                            .frame(width: 30, height: CGFloat(point.predictedLevel) * 30)
+                            .frame(width: FontScale.w(30), height: CGFloat(point.predictedLevel) * 30)
 
                         Text("T\(point.turn)")
-                            .font(.caption2)
+                            .font(.scaled(.caption2))
                             .foregroundColor(.white.opacity(0.5))
                     }
                 }
             }
-            .frame(height: 200)
+            .frame(height: FontScale.h(200))
         }
         .padding()
         .background(Color.black.opacity(0.3))
@@ -615,27 +610,27 @@ struct AlliancePredictionCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("\(prediction.country1.name) ↔ \(prediction.country2.name)")
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 Spacer()
 
                 Text("\(Int(prediction.probability * 100))%")
-                    .font(.title3)
+                    .font(.scaled(.title3))
                     .fontWeight(.bold)
                     .foregroundColor(.green)
             }
 
             Text("Est. Turn \(prediction.estimatedTurn)")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             ForEach(prediction.reasons, id: \.self) { reason in
                 HStack {
                     Image(systemName: "checkmark")
-                        .font(.caption2)
+                        .font(.scaled(.caption2))
                     Text(reason)
-                        .font(.caption)
+                        .font(.scaled(.caption))
                 }
                 .foregroundColor(.white.opacity(0.7))
             }
@@ -653,19 +648,19 @@ struct CrisisProbabilityCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(crisis.type)
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 Spacer()
 
                 Text("\(Int(crisis.probability * 100))%")
-                    .font(.title3)
+                    .font(.scaled(.title3))
                     .fontWeight(.bold)
                     .foregroundColor(.orange)
             }
 
             Text(crisis.description)
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             HStack {
@@ -673,7 +668,7 @@ struct CrisisProbabilityCard: View {
                 Text("•")
                 Text("Confidence: \(Int(crisis.confidence * 100))%")
             }
-            .font(.caption2)
+            .font(.scaled(.caption2))
             .foregroundColor(.white.opacity(0.5))
         }
         .padding()

@@ -240,22 +240,22 @@ struct CinematicPlayerView: View {
                         Image(packImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 800)
+                            .frame(maxWidth: FontScale.w(800))
                     } else if let packArt = Self.packArt(for: sequence.type, sceneIndex: currentSceneIndex) {
                         // Shadow President art from the local pack when the scene has no generated image
                         PackImage(packArt + ".aspect4x3", packArt) { EmptyView() }
-                            .frame(maxWidth: 800, maxHeight: 520)
+                            .frame(maxWidth: FontScale.w(800), maxHeight: FontScale.h(520))
                     }
 
                     // Scene title and text
                     VStack(spacing: 12) {
                         Text(scene.title.uppercased())
-                            .font(.title)
+                            .font(.scaled(.title))
                             .fontWeight(.bold)
                             .foregroundColor(.white)
 
                         Text(scene.voiceText)
-                            .font(.body)
+                            .font(.scaled(.body))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
@@ -268,7 +268,7 @@ struct CinematicPlayerView: View {
                     ForEach(0..<sequence.scenes.count, id: \.self) { index in
                         Circle()
                             .fill(index == currentSceneIndex ? Color.white : Color.white.opacity(0.3))
-                            .frame(width: 8, height: 8)
+                            .frame(width: FontScale.w(8), height: FontScale.h(8))
                     }
                 }
                 .padding()

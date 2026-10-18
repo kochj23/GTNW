@@ -352,19 +352,19 @@ struct TheLivingRoomView: View {
 
             // Leader video feed (portrait)
             leaderPortrait
-                .frame(height: 300)
+                .frame(height: FontScale.h(300))
 
             Divider()
 
             // Conversation transcript
             transcript
-                .frame(height: 250)
+                .frame(height: FontScale.h(250))
 
             Divider()
 
             // Player response controls
             responseControls
-                .frame(height: 150)
+                .frame(height: FontScale.h(150))
         }
         .background(Color.black)
     }
@@ -374,16 +374,16 @@ struct TheLivingRoomView: View {
             if let conversation = livingRoom.activeConversation {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("📞 In Conversation")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.green)
 
                     Text(conversation.leaderName)
-                        .font(.title2)
+                        .font(.scaled(.title2))
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
                     Text(conversation.withCountry.name)
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.7))
                 }
 
@@ -400,7 +400,7 @@ struct TheLivingRoomView: View {
                         Image(systemName: "speaker.wave.3.fill")
                             .foregroundColor(.green)
                         Text("Speaking...")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.green)
                     }
                 }
@@ -424,23 +424,23 @@ struct TheLivingRoomView: View {
                 VStack {
                     // Leader portrait (would be AI-generated in production)
                     Image(systemName: "person.circle.fill")
-                        .font(.system(size: 120))
+                        .font(.scaled(size: 120))
                         .foregroundColor(.blue)
 
                     Text(conversation.leaderName)
-                        .font(.title)
+                        .font(.scaled(.title))
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
                     Text(conversation.withCountry.name)
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white.opacity(0.7))
 
                     // Sentiment indicator
                     if let lastExchange = conversation.exchanges.last(where: { $0.speaker == .leader }),
                        let sentiment = lastExchange.sentiment {
                         Text(sentiment.overallSentiment.description.uppercased())
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .fontWeight(.bold)
                             .foregroundColor(sentimentColor(sentiment))
                             .padding(.horizontal, 12)
@@ -470,15 +470,10 @@ struct TheLivingRoomView: View {
             // Tone selector
             HStack {
                 Text("Your Tone:")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.white.opacity(0.7))
 
-                Picker("Tone", selection: $selectedTone) {
-                    ForEach(ConversationTone.allCases, id: \.self) { tone in
-                        Text(tone.rawValue).tag(tone)
-                    }
-                }
-                .pickerStyle(.segmented)
+                ScaledSegmentedPicker(selection: $selectedTone, options: ConversationTone.allCases.map { ($0, $0.rawValue) })
             }
 
             // Quick responses
@@ -524,11 +519,12 @@ struct TheLivingRoomView: View {
         guard !playerMessage.isEmpty else { return }
 
         Task {
-            try await livingRoom.playerResponds(
-                message: playerMessage,
-                tone: selectedTone
-            )
-            playerMessage = ""
+            do {
+                try await livingRoom.playerResponds(message: playerMessage, tone: selectedTone)
+                playerMessage = ""
+            } catch {
+                print("[LivingRoom] response failed: \(error)")
+            }
         }
     }
 
@@ -550,7 +546,7 @@ struct QuickResponseButton: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -583,12 +579,12 @@ struct ConversationBubble: View {
 
             VStack(alignment: exchange.speaker == .player ? .trailing : .leading, spacing: 4) {
                 Text(exchange.leaderName)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
                     .foregroundColor(.white.opacity(0.7))
 
                 Text(exchange.message)
-                    .font(.body)
+                    .font(.scaled(.body))
                     .foregroundColor(.white)
                     .padding(12)
                     .background(bubbleColor)
@@ -596,11 +592,11 @@ struct ConversationBubble: View {
 
                 if let sentiment = exchange.sentiment {
                     Text(sentiment.overallSentiment.description)
-                        .font(.caption2)
+                        .font(.scaled(.caption2))
                         .foregroundColor(.white.opacity(0.5))
                 }
             }
-            .frame(maxWidth: 400)
+            .frame(maxWidth: FontScale.w(400))
 
             if exchange.speaker == .leader {
                 Spacer()

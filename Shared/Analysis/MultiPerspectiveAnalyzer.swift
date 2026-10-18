@@ -247,12 +247,12 @@ struct MultiPerspectiveView: View {
                 // Header
                 VStack(spacing: 8) {
                     Text("⚔️ Multi-Perspective War Analysis")
-                        .font(.title)
+                        .font(.scaled(.title))
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
                     Text("\(analysis.war.aggressor) vs \(analysis.war.defender)")
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .padding()
@@ -266,12 +266,12 @@ struct MultiPerspectiveView: View {
                 if !analysis.consensus.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("✅ Agreed Upon:")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.green)
 
                         ForEach(analysis.consensus, id: \.self) { point in
                             Text("• \(point)")
-                                .font(.body)
+                                .font(.scaled(.body))
                                 .foregroundColor(.white.opacity(0.9))
                         }
                     }
@@ -284,12 +284,12 @@ struct MultiPerspectiveView: View {
                 if !analysis.keyDisagreements.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("⚠️ Key Disagreements:")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.orange)
 
                         ForEach(analysis.keyDisagreements, id: \.self) { disagreement in
                             Text("• \(disagreement)")
-                                .font(.body)
+                                .font(.scaled(.body))
                                 .foregroundColor(.white.opacity(0.9))
                         }
                     }
@@ -302,17 +302,17 @@ struct MultiPerspectiveView: View {
                 if !analysis.propagandaVsFacts.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("🎭 Propaganda Detected:")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.red)
 
                         ForEach(Array(analysis.propagandaVsFacts.keys.sorted()), id: \.self) { country in
                             HStack {
                                 Text(country)
-                                    .font(.caption)
+                                    .font(.scaled(.caption))
                                     .fontWeight(.bold)
 
                                 Text(analysis.propagandaVsFacts[country] ?? "")
-                                    .font(.caption)
+                                    .font(.scaled(.caption))
                             }
                             .foregroundColor(.white.opacity(0.8))
                         }
@@ -335,14 +335,14 @@ struct PerspectiveCard: View {
             // Country header
             HStack {
                 Text(perspective.country)
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .fontWeight(.bold)
                     .foregroundColor(.white)
 
                 Spacer()
 
                 Text(perspective.role.rawValue)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(roleColor.opacity(0.3))
@@ -352,26 +352,26 @@ struct PerspectiveCard: View {
 
             // Justification
             Text(perspective.justification)
-                .font(.body)
+                .font(.scaled(.body))
                 .foregroundColor(.white.opacity(0.9))
 
             // Goals
             VStack(alignment: .leading, spacing: 4) {
                 Text("Strategic Goals:")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
                     .foregroundColor(.white.opacity(0.7))
 
                 ForEach(perspective.strategicGoals, id: \.self) { goal in
                     Text("• \(goal)")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.7))
                 }
             }
 
             // Moral framing
             Text("Moral Frame: \(perspective.moralFraming)")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .italic()
                 .foregroundColor(.white.opacity(0.6))
 
@@ -382,12 +382,12 @@ struct PerspectiveCard: View {
                     ProgressView(value: perspective.propagandaLevel)
                         .progressViewStyle(.linear)
                         .tint(.red)
-                        .frame(width: 100)
+                        .frame(width: FontScale.w(100))
                     Text("\(Int(perspective.propagandaLevel * 100))%")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.red)
                 }
-                .font(.caption)
+                .font(.scaled(.caption))
             }
         }
         .padding()

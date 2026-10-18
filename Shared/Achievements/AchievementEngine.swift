@@ -532,7 +532,7 @@ struct AchievementUnlockView: View {
         VStack(spacing: 16) {
             // Rarity indicator
             Text(achievement.rarity.rawValue.uppercased())
-                .font(.caption)
+                .font(.scaled(.caption))
                 .fontWeight(.bold)
                 .foregroundColor(achievement.rarity.color)
                 .padding(.horizontal, 12)
@@ -542,21 +542,21 @@ struct AchievementUnlockView: View {
 
             // Icon
             Image(systemName: achievement.icon)
-                .font(.system(size: 60))
+                .font(.scaled(size: 60))
                 .foregroundColor(achievement.rarity.color)
 
             // Achievement name
             Text("ACHIEVEMENT UNLOCKED")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             Text(achievement.name)
-                .font(.title)
+                .font(.scaled(.title))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
             Text(achievement.description)
-                .font(.body)
+                .font(.scaled(.body))
                 .foregroundColor(.white.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -567,12 +567,12 @@ struct AchievementUnlockView: View {
                 Image(packImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 200, height: 300)
+                    .frame(width: FontScale.w(200), height: FontScale.h(300))
                     .cornerRadius(12)
             }
         }
         .padding(32)
-        .frame(width: 400)
+        .frame(width: FontScale.w(400))
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.black.opacity(0.9))
@@ -600,7 +600,7 @@ struct AchievementsView: View {
                 // Progress summary
                 VStack(spacing: 8) {
                     Text("Achievement Progress")
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
 
                     ProgressView(value: achievements.completionPercentage() / 100.0)
@@ -608,7 +608,7 @@ struct AchievementsView: View {
                         .tint(.blue)
 
                     Text("\(achievements.unlockedAchievements.count) / \(achievements.allAchievements().count) Unlocked")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .padding()
@@ -643,27 +643,27 @@ struct AchievementCardView: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: achievement.icon)
-                .font(.largeTitle)
+                .font(.scaled(.largeTitle))
                 .foregroundColor(isUnlocked ? achievement.rarity.color : .gray)
 
             Text(achievement.name)
-                .font(.caption)
+                .font(.scaled(.caption))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
 
             if isUnlocked {
                 Text("✅ UNLOCKED")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.green)
             } else {
                 Text("🔒 Locked")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.gray)
             }
         }
         .padding()
-        .frame(width: 150, height: 150)
+        .frame(width: FontScale.w(150), height: FontScale.h(150))
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.black.opacity(isUnlocked ? 0.5 : 0.2))

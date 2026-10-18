@@ -22,11 +22,11 @@ struct AdministrationSelectionView: View {
                 // Header
                 VStack(spacing: 10) {
                     Text("SELECT PRESIDENTIAL ADMINISTRATION")
-                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
 
                     Text("Nuclear Age: 1945-Present")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                 }
                 .padding(.top, 20)
@@ -46,18 +46,18 @@ struct AdministrationSelectionView: View {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(admin.president)
-                                                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                                                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                                                 .foregroundColor(AppSettings.terminalGreen)
 
                                             Text(admin.years)
-                                                .font(.system(size: 14, design: .monospaced))
+                                                .font(.scaled(size: 14, design: .monospaced))
                                                 .foregroundColor(AppSettings.terminalAmber)
                                         }
 
                                         Spacer()
 
                                         Text(admin.party)
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.scaled(size: 12, design: .monospaced))
                                             .foregroundColor(admin.party == "Republican" ? .red : .blue)
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 4)
@@ -67,7 +67,7 @@ struct AdministrationSelectionView: View {
 
                                     // Key advisors preview
                                     Text("\(admin.advisors.count) advisors including \(admin.advisors.prefix(3).map { $0.title }.joined(separator: ", "))")
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(.scaled(size: 12, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalGreen.opacity(0.7))
                                         .lineLimit(2)
                                 }
@@ -91,7 +91,7 @@ struct AdministrationSelectionView: View {
                         dismiss()
                     }) {
                         Text("USE DEFAULT (Trump 2025)")
-                            .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .semibold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalBackground)
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -102,7 +102,7 @@ struct AdministrationSelectionView: View {
                         dismiss()
                     }) {
                         Text("CANCEL")
-                            .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .semibold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -112,7 +112,7 @@ struct AdministrationSelectionView: View {
                 .padding()
             }
         }
-        .frame(minWidth: 600, minHeight: 700)
+        .frame(minWidth: FontScale.w(600), minHeight: FontScale.h(700))
     }
 }
 

@@ -12,6 +12,7 @@ import SwiftUI
 struct GlobalThermalNuclearWarApp: App {
     @StateObject private var gameEngine = GameEngine()
     @StateObject private var themes = ThemeManager.shared
+    @StateObject private var fontScale = FontScaleManager.shared
     @State private var showingAISettings = false
 
     init() {
@@ -32,14 +33,25 @@ struct GlobalThermalNuclearWarApp: App {
             MainTabView()
                 .environmentObject(gameEngine)
                 .environmentObject(themes)
-                // Rebuild every screen when the skin changes so all theme tokens are re-read.
-                .id(themes.theme)
+                // Default font for any Text without an explicit .font, scaled like everything else.
+                .font(.scaled(.body))
+                #if os(macOS)
+                // Native controls (segmented pickers, popups) ignore .font; grow them with the text.
+                .controlSize(FontScale.factor >= 1.5 ? .large : .regular)
+                // Minimum window that fits the scaled content (capped to the display).
+                .frame(minWidth: FontScale.w(1400), minHeight: FontScale.h(900))
+                #endif
+                // Rebuild every screen when the skin or text size changes so all theme/font tokens are re-read.
+                .id("\(themes.theme.rawValue)-\(fontScale.factor)")
                 .preferredColorScheme(.dark)
                 .onAppear {
                     let store = GameStoreService.shared
                     gameEngine.autosaveManager = store.local.saves
                     gameEngine.store = store
                     store.start()
+                    #if os(macOS)
+                    LaunchHooks.apply(to: gameEngine)
+                    #endif
                 }
         }
         #if os(macOS)
@@ -88,6 +100,9 @@ struct GlobalThermalNuclearWarApp: App {
                 ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
                 GameStoreSettingsView().tabItem { Label("Saves & DB", systemImage: "externaldrive.connected.to.line.below") }
             }
+            .font(.scaled(.body))
+            .controlSize(FontScale.factor >= 1.5 ? .large : .regular)
+            .id("\(themes.theme.rawValue)-\(fontScale.factor)")
         }
         #endif
     }
@@ -129,6 +144,27 @@ enum StoreMigrationCLI {
         print(service.remote == nil ? "status: no Games DB configured (local only)"
               : box.report.synced ? "status: Games DB reachable, synced" : "status: Games DB unreachable, writes pending")
         exit(box.report.verified || service.remote == nil ? 0 : 1)
+    }
+}
+
+/// Screenshot / QA launch options (skin and text size need no hook: pass `-GTNW.theme retro -GTNW.fontScale 2`,
+/// which the UserDefaults argument domain applies without changing saved preferences):
+///   `--start-scenario`  start the 1990 world scenario straight into the Situation Room
+///   `--open-settings`   open the Settings window after launch
+enum LaunchHooks {
+    static func apply(to engine: GameEngine) {
+        let args = CommandLine.arguments
+        if args.contains("--start-scenario"), engine.gameState == nil {
+            engine.startScenario(.world1990, turnLength: .month)
+        }
+        if args.contains("--open-settings") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                // The app menu's "Settings…" (⌘,) item, the same path the user takes.
+                guard let appMenu = NSApp.mainMenu?.items.first?.submenu,
+                      let index = appMenu.items.firstIndex(where: { $0.keyEquivalent == "," }) else { return }
+                appMenu.performActionForItem(at: index)
+            }
+        }
     }
 }
 

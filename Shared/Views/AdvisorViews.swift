@@ -28,7 +28,7 @@ struct AdvisorGridView: View {
             // Header
             HStack {
                 Text("EXECUTIVE ADVISORS")
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 22, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Spacer()
@@ -72,12 +72,12 @@ struct AdvisorCardView: View {
         VStack(spacing: 8) {
             // Portrait placeholder
             PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
-                .frame(width: 100, height: 100)
+                .frame(width: FontScale.w(100), height: FontScale.h(100))
                 .border(advisor.colorValue, width: 2)
                 .overlay(alignment: .bottom) {
                     if !advisor.isActive {
                         Text((advisor.status ?? .active).label.uppercased())
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 9, weight: .bold, design: .monospaced))
                             .foregroundColor(.black)
                             .padding(2)
                             .background(AppSettings.terminalRed)
@@ -86,19 +86,19 @@ struct AdvisorCardView: View {
 
             // Name
             Text(advisor.name)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .frame(height: 32)
+                .frame(height: FontScale.h(32))
 
             // Title
             Text(advisor.title)
-                .font(.system(.caption2, design: .monospaced))
+                .font(.scaled(.caption2, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .frame(height: 28)
+                .frame(height: FontScale.h(28))
 
             // Primary stat based on role
             if advisor.title.contains("President") {
@@ -112,7 +112,7 @@ struct AdvisorCardView: View {
         .padding(8)
         .background(Color.black.opacity(0.8))
         .border(AppSettings.terminalGreen, width: 1)
-        .frame(height: 220)
+        .frame(height: FontScale.h(220))
     }
 }
 
@@ -133,7 +133,7 @@ struct AdvisorDetailView: View {
             // Header
             HStack {
                 Text(advisor.title.uppercased())
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 22, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Spacer()
@@ -141,7 +141,7 @@ struct AdvisorDetailView: View {
                 Button("DISMISS") {
                     dismiss()
                 }
-                .font(.system(.body, design: .monospaced))
+                .font(.scaled(.body, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
             }
             .padding()
@@ -155,15 +155,15 @@ struct AdvisorDetailView: View {
                         // Portrait
                         VStack(spacing: 10) {
                             PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
-                                .frame(width: 200, height: 200)
+                                .frame(width: FontScale.w(200), height: FontScale.h(200))
                                 .border(advisor.colorValue, width: 3)
 
                             Text(advisor.name)
-                                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                                 .foregroundColor(advisor.colorValue)
 
                             Text(advisor.department)
-                                .font(.system(.caption, design: .monospaced))
+                                .font(.scaled(.caption, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                                 .multilineTextAlignment(.center)
                         }
@@ -171,7 +171,7 @@ struct AdvisorDetailView: View {
                         // Stats
                         VStack(alignment: .leading, spacing: 12) {
                             Text("PROFILE:")
-                                .font(.system(.headline, design: .monospaced))
+                                .font(.scaled(.headline, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
 
                             StatBar(label: "Expertise", value: advisor.expertise)
@@ -183,7 +183,7 @@ struct AdvisorDetailView: View {
                                 .background(AppSettings.terminalGreen)
 
                             Text("PERSONALITY:")
-                                .font(.system(.headline, design: .monospaced))
+                                .font(.scaled(.headline, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                                 .padding(.top, 8)
 
@@ -198,11 +198,11 @@ struct AdvisorDetailView: View {
                     // Bio
                     VStack(alignment: .leading, spacing: 8) {
                         Text("BACKGROUND:")
-                            .font(.system(.headline, design: .monospaced))
+                            .font(.scaled(.headline, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
 
                         Text(advisor.bio)
-                            .font(.system(.body, design: .monospaced))
+                            .font(.scaled(.body, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -214,13 +214,13 @@ struct AdvisorDetailView: View {
                     // Advice Areas
                     VStack(alignment: .leading, spacing: 8) {
                         Text("ADVICE SPECIALTIES:")
-                            .font(.system(.headline, design: .monospaced))
+                            .font(.scaled(.headline, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
 
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
                             ForEach(advisor.adviceAreas, id: \.self) { area in
                                 Text("☑ \(area.rawValue)")
-                                    .font(.system(.caption, design: .monospaced))
+                                    .font(.scaled(.caption, design: .monospaced))
                                     .foregroundColor(AppSettings.terminalAmber)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
@@ -235,11 +235,11 @@ struct AdvisorDetailView: View {
                     if let advice = liveAdvisor.currentAdvice {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("CURRENT ADVICE:")
-                                .font(.system(.headline, design: .monospaced))
+                                .font(.scaled(.headline, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalAmber)
 
                             Text("\"\(advice)\"")
-                                .font(.system(.body, design: .monospaced))
+                                .font(.scaled(.body, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                                 .italic()
                                 .padding()
@@ -281,7 +281,7 @@ struct AdvisorDetailView: View {
                                     Image(systemName: "person.fill.xmark")
                                     Text("DISMISS FROM CABINET")
                                 }
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                                 .foregroundColor(.black)
                                 .frame(maxWidth: .infinity)
                                 .padding(12)
@@ -290,7 +290,7 @@ struct AdvisorDetailView: View {
                             .buttonStyle(.plain)
 
                             Text("Firing \(advisor.title.lowercased()) will reduce cabinet morale and may affect public approval.")
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(.scaled(size: 11, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalRed.opacity(0.7))
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
@@ -353,7 +353,7 @@ struct PlaceholderAdvisorImage: View {
                 .border(color, width: 2)
 
             Text(initials)
-                .font(.system(size: 34, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 34, weight: .bold, design: .monospaced))
                 .foregroundColor(color)
         }
     }
@@ -367,9 +367,9 @@ struct StatBar: View {
     var body: some View {
         HStack(spacing: 8) {
             Text("\(label):")
-                .font(.system(.caption, design: .monospaced))
+                .font(.scaled(.caption, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
-                .frame(width: 100, alignment: .leading)
+                .frame(width: FontScale.w(100), alignment: .leading)
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
@@ -384,12 +384,12 @@ struct StatBar: View {
                         .frame(width: geometry.size.width * CGFloat(value) / 100.0)
                 }
             }
-            .frame(height: 16)
+            .frame(height: FontScale.h(16))
 
             Text("\(value)%")
-                .font(.system(.caption, design: .monospaced))
+                .font(.scaled(.caption, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
-                .frame(width: 40, alignment: .trailing)
+                .frame(width: FontScale.w(40), alignment: .trailing)
         }
     }
 
@@ -418,9 +418,9 @@ struct MiniStatBar: View {
     var body: some View {
         HStack(spacing: 4) {
             Text("\(label):")
-                .font(.system(.caption2, design: .monospaced))
+                .font(.scaled(.caption2, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
-                .frame(width: 30, alignment: .leading)
+                .frame(width: FontScale.w(30), alignment: .leading)
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
@@ -433,12 +433,12 @@ struct MiniStatBar: View {
                         .frame(width: geometry.size.width * CGFloat(value) / 100.0)
                 }
             }
-            .frame(height: 8)
+            .frame(height: FontScale.h(8))
 
             Text("\(value)%")
-                .font(.system(.caption2, design: .monospaced))
+                .font(.scaled(.caption2, design: .monospaced))
                 .foregroundColor(displayColor)
-                .frame(width: 30, alignment: .trailing)
+                .frame(width: FontScale.w(30), alignment: .trailing)
         }
     }
 
@@ -460,7 +460,7 @@ struct WOPRButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 17, weight: .bold, design: .monospaced))
+            .font(.scaled(size: 17, weight: .bold, design: .monospaced))
             .foregroundColor(color)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
@@ -478,11 +478,11 @@ struct DefconBadge: View {
     var body: some View {
         HStack(spacing: 4) {
             Text("DEFCON:")
-                .font(.system(.caption, design: .monospaced))
+                .font(.scaled(.caption, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 
             Text("\(level.rawValue)")
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .foregroundColor(level.color)
         }
         .padding(.horizontal, 8)

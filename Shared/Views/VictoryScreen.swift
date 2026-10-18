@@ -53,7 +53,7 @@ struct VictoryScreen: View {
                 HStack(spacing: 20) {
                     Button(action: onViewLeaderboard) {
                         Text("VIEW LEADERBOARD")
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                             .foregroundColor(.black)
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -62,7 +62,7 @@ struct VictoryScreen: View {
 
                     Button(action: onNewGame) {
                         Text("PLAY AGAIN")
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                             .foregroundColor(.black)
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -82,15 +82,15 @@ struct VictoryScreen: View {
     private func victoryHeader(victory: VictoryType) -> some View {
         VStack(spacing: 15) {
             Text("🏆 VICTORY 🏆")
-                .font(.system(size: 48, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 48, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
             Text(victory.rawValue.uppercased())
-                .font(.system(size: 32, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 
             Text(victory.description)
-                .font(.system(size: 16, design: .monospaced))
+                .font(.scaled(size: 16, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
@@ -103,19 +103,19 @@ struct VictoryScreen: View {
     private func defeatHeader() -> some View {
         VStack(spacing: 15) {
             Text("💀 GAME OVER 💀")
-                .font(.system(size: 48, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 48, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
 
             if let player = gameState.getPlayerCountry() {
                 if player.isDestroyed {
                     Text("YOUR NATION HAS BEEN DESTROYED")
-                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                 }
             }
 
             Text(gameState.gameOverReason)
-                .font(.system(size: 16, design: .monospaced))
+                .font(.scaled(size: 16, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
@@ -128,11 +128,11 @@ struct VictoryScreen: View {
     private func scoreDisplay() -> some View {
         VStack(spacing: 10) {
             Text("FINAL SCORE")
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 
             Text("\(score.finalScore)")
-                .font(.system(size: 64, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 64, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
             // Score Breakdown
@@ -149,7 +149,7 @@ struct VictoryScreen: View {
                 scoreRow("Economic Bonus", value: "+\(score.economicBonus)")
                 scoreRow("Difficulty Multiplier", value: "×\(String(format: "%.1f", score.difficultyMultiplier))")
             }
-            .font(.system(size: 14, design: .monospaced))
+            .font(.scaled(size: 14, design: .monospaced))
             .padding()
             .background(Color.black.opacity(0.5))
             .border(AppSettings.terminalGreen, width: 1)
@@ -170,7 +170,7 @@ struct VictoryScreen: View {
     private func statsDisplay() -> some View {
         VStack(spacing: 10) {
             Text("GAME STATISTICS")
-                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -190,10 +190,10 @@ struct VictoryScreen: View {
     private func statCard(_ label: String, value: String) -> some View {
         VStack(spacing: 5) {
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
             Text(label)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
         }
         .padding()
@@ -205,31 +205,31 @@ struct VictoryScreen: View {
         VStack(spacing: 10) {
             if victoryType == .peaceMaker {
                 Text("\"A STRANGE GAME.\"")
-                    .font(.system(size: 24, design: .monospaced))
+                    .font(.scaled(size: 24, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Text("\"THE ONLY WINNING MOVE IS NOT TO PLAY.\"")
-                    .font(.system(size: 24, design: .monospaced))
+                    .font(.scaled(size: 24, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Text("- WOPR")
-                    .font(.system(size: 18, design: .monospaced))
+                    .font(.scaled(size: 18, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             } else if victoryType != nil {
                 Text("\"SHALL WE PLAY ANOTHER GAME?\"")
-                    .font(.system(size: 20, design: .monospaced))
+                    .font(.scaled(size: 20, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Text("- WOPR")
-                    .font(.system(size: 16, design: .monospaced))
+                    .font(.scaled(size: 16, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             } else {
                 Text("\"WOULD YOU LIKE TO TRY AGAIN?\"")
-                    .font(.system(size: 20, design: .monospaced))
+                    .font(.scaled(size: 20, design: .monospaced))
                     .foregroundColor(AppSettings.terminalRed)
 
                 Text("- WOPR")
-                    .font(.system(size: 16, design: .monospaced))
+                    .font(.scaled(size: 16, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
         }
@@ -304,14 +304,14 @@ struct WOPRSecretEndingView: View {
                 // WOPR header
                 HStack {
                     Text("W O P R")
-                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                     Text("— WAR OPERATION PLAN RESPONSE")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen.opacity(0.6))
                     Spacer()
                     Text("\(gameState.currentDateLabel.uppercased()) | DEFCON \(gameState.defconLevel.rawValue)")
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.scaled(size: 12, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                 }
                 .padding()
@@ -325,7 +325,7 @@ struct WOPRSecretEndingView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(Array(displayedLines.enumerated()), id: \.offset) { idx, line in
                                 Text(line)
-                                    .font(.system(size: 16, design: .monospaced))
+                                    .font(.scaled(size: 16, design: .monospaced))
                                     .foregroundColor(lineColor(for: idx))
                                     .id(idx)
                             }
@@ -333,7 +333,7 @@ struct WOPRSecretEndingView: View {
                             // Cursor
                             if !showFinalMessage && cursorVisible {
                                 Text("_")
-                                    .font(.system(size: 16, design: .monospaced))
+                                    .font(.scaled(size: 16, design: .monospaced))
                                     .foregroundColor(AppSettings.terminalGreen)
                             }
                         }
@@ -353,41 +353,41 @@ struct WOPRSecretEndingView: View {
 
                     VStack(spacing: 16) {
                         Text("HOW ABOUT A NICE GAME OF CHESS?")
-                            .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
 
                         if showScore {
                             HStack(spacing: 40) {
                                 VStack(spacing: 4) {
                                     Text("TURNS SURVIVED")
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(.scaled(size: 12, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalAmber)
                                     Text("\(gameState.turn)")
-                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .font(.scaled(size: 36, weight: .bold, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalGreen)
                                 }
                                 VStack(spacing: 4) {
                                     Text("WARS STARTED")
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(.scaled(size: 12, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalAmber)
                                     Text("0")
-                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .font(.scaled(size: 36, weight: .bold, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalGreen)
                                 }
                                 VStack(spacing: 4) {
                                     Text("NUKES LAUNCHED")
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(.scaled(size: 12, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalAmber)
                                     Text("0")
-                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .font(.scaled(size: 36, weight: .bold, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalGreen)
                                 }
                                 VStack(spacing: 4) {
                                     Text("FINAL SCORE")
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(.scaled(size: 12, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalAmber)
                                     Text("\(score.finalScore)")
-                                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                        .font(.scaled(size: 36, weight: .bold, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalAmber)
                                 }
                             }
@@ -397,7 +397,7 @@ struct WOPRSecretEndingView: View {
 
                             Button(action: onNewGame) {
                                 Text("PLAY AGAIN")
-                                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                                    .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                                     .foregroundColor(.black)
                                     .padding(.horizontal, 40)
                                     .padding(.vertical, 12)

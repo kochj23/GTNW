@@ -73,27 +73,27 @@ struct GTNWColors {
 
 struct GTNWFonts {
     static func terminal(size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        Theme.isRetro ? EGA.font(size: size, weight: weight) : .system(size: size, weight: weight, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: size, weight: weight) : .scaled(size: size, weight: weight, design: .monospaced)
     }
 
     static func title() -> Font {
-        Theme.isRetro ? EGA.font(size: 48, weight: .bold) : .system(size: 48, weight: .bold, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 48, weight: .bold) : .scaled(size: 48, weight: .bold, design: .monospaced)
     }
 
     static func heading() -> Font {
-        Theme.isRetro ? EGA.font(size: 32, weight: .bold) : .system(size: 32, weight: .bold, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 32, weight: .bold) : .scaled(size: 32, weight: .bold, design: .monospaced)
     }
 
     static func subheading() -> Font {
-        Theme.isRetro ? EGA.font(size: 24, weight: .semibold) : .system(size: 24, weight: .semibold, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 24, weight: .semibold) : .scaled(size: 24, weight: .semibold, design: .monospaced)
     }
 
     static func body() -> Font {
-        Theme.isRetro ? EGA.font(size: 16, weight: .regular) : .system(size: 16, weight: .regular, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 16, weight: .regular) : .scaled(size: 16, weight: .regular, design: .monospaced)
     }
 
     static func caption() -> Font {
-        Theme.isRetro ? EGA.font(size: 12, weight: .regular) : .system(size: 12, weight: .regular, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: 12, weight: .regular) : .scaled(size: 12, weight: .regular, design: .monospaced)
     }
 }
 
@@ -268,7 +268,7 @@ struct DefconIndicator: View {
             // Animated circle
             Circle()
                 .fill(level.color)
-                .frame(width: 24, height: 24)
+                .frame(width: FontScale.w(24), height: FontScale.h(24))
                 .overlay(
                     Circle()
                         .stroke(level.color, lineWidth: 2)
@@ -309,7 +309,7 @@ struct StatCard: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 36))
+                .font(.scaled(size: 36))
                 .foregroundColor(color)
                 .neonGlow(color: color, radius: 8)
 
@@ -368,7 +368,7 @@ struct ModernButton: View {
         }) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 32))
+                    .font(.scaled(size: 32))
                     .foregroundColor(enabled ? color : color.opacity(0.3))
 
                 Text(title)
@@ -437,7 +437,7 @@ struct SectionHeader: View {
         HStack(spacing: 12) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.scaled(size: 24))
                     .foregroundColor(color)
             }
 
@@ -456,7 +456,7 @@ struct SectionHeader: View {
                         endPoint: .trailing
                     )
                 )
-                .frame(width: 200, height: 2)
+                .frame(width: FontScale.w(200), height: 2)
         }
         .padding(.horizontal)
     }
@@ -546,9 +546,9 @@ struct ThreatLevelIndicator: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .frame(height: 20)
+            .frame(height: FontScale.h(20))
         }
-        .frame(height: 50)
+        .frame(height: FontScale.h(50))
     }
 }
 

@@ -30,7 +30,7 @@ struct DetailedCrisisView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         // Description
                         Text(crisis.description)
-                            .font(.system(size: 16, design: .monospaced))
+                            .font(.scaled(size: 16, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                             .padding()
                             .background(Color.black.opacity(0.5))
@@ -53,7 +53,7 @@ struct DetailedCrisisView: View {
                             }
                         }) {
                             Text("CONFIRM DECISION")
-                                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                                 .foregroundColor(.black)
                                 .padding()
                                 .frame(maxWidth: .infinity)
@@ -64,7 +64,7 @@ struct DetailedCrisisView: View {
                             selectedOption = nil
                         }) {
                             Text("RECONSIDER")
-                                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                                 .foregroundColor(.black)
                                 .padding()
                                 .frame(maxWidth: .infinity)
@@ -83,7 +83,7 @@ struct DetailedCrisisView: View {
             // Severity Badge
             HStack(spacing: 15) {
                 Text(crisis.severity.description)
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                     .foregroundColor(crisis.severity.color)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
@@ -94,7 +94,7 @@ struct DetailedCrisisView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "clock.fill")
                         Text("\(crisisManager.crisisTimeRemaining)s")
-                            .font(.system(size: 24, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     }
                     .foregroundColor(crisisManager.crisisTimeRemaining < 15 ? AppSettings.terminalRed : AppSettings.terminalAmber)
                 }
@@ -102,7 +102,7 @@ struct DetailedCrisisView: View {
 
             // Title
             Text(crisis.title)
-                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 28, weight: .bold, design: .monospaced))
                 .foregroundColor(crisis.severity.color)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -120,7 +120,7 @@ struct DetailedCrisisView: View {
                 // Option Title
                 HStack {
                     Text(option.title)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                         .foregroundColor(selectedOption == index ? .black : AppSettings.terminalGreen)
 
                     Spacer()
@@ -128,13 +128,13 @@ struct DetailedCrisisView: View {
                     if selectedOption == index {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.black)
-                            .font(.system(size: 24))
+                            .font(.scaled(size: 24))
                     }
                 }
 
                 // Description
                 Text(option.description)
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(selectedOption == index ? .black : AppSettings.terminalGreen.opacity(0.8))
 
                 // Advisor Recommendation — resolve role title to actual name for current era
@@ -145,7 +145,7 @@ struct DetailedCrisisView: View {
                     HStack {
                         Image(systemName: "person.fill")
                         Text("Recommended by: \(advisorName)")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .italic()
                     }
                     .foregroundColor(selectedOption == index ? .black.opacity(0.7) : AppSettings.terminalAmber)
@@ -156,7 +156,7 @@ struct DetailedCrisisView: View {
                     HStack {
                         Image(systemName: "dice.fill")
                         Text("Success Chance: \(Int(option.successChance * 100))%")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                     }
                     .foregroundColor(selectedOption == index ? .black.opacity(0.7) : getSuccessColor(option.successChance))
                 }

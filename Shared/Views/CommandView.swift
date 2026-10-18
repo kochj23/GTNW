@@ -44,11 +44,11 @@ struct CommandView: View {
             // DEFCON
             HStack(spacing: 8) {
                 Text("DEFCON")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
 
                 Text("\(gameState.defconLevel.rawValue)")
-                    .font(.system(size: 32, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                     .foregroundColor(gameState.defconLevel.color)
             }
             .padding()
@@ -62,19 +62,19 @@ struct CommandView: View {
                 HStack(spacing: 15) {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(player.flag + " " + player.name)
-                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                         Text("☢️ \(player.nuclearWarheads) warheads")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                     }
 
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(gameState.currentDateLabel)
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                         Text("Wars: \(gameState.activeWars.count)")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(gameState.activeWars.count > 0 ? AppSettings.terminalRed : AppSettings.terminalGreen)
                     }
                 }
@@ -99,9 +99,9 @@ struct CommandView: View {
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .foregroundColor(.cyan)
-                    .font(.system(size: 18))
+                    .font(.scaled(size: 18))
                 Text("📊 AI STATS")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(.cyan)
 
                 Spacer()
@@ -110,9 +110,9 @@ struct CommandView: View {
                 HStack(spacing: 6) {
                     Circle()
                         .fill(gameEngine.aiBackend.activeBackend != nil ? Color.green : Color.gray)
-                        .frame(width: 8, height: 8)
+                        .frame(width: FontScale.w(8), height: FontScale.h(8))
                     Text(gameEngine.aiBackend.activeBackend?.rawValue.uppercased() ?? "LOCAL")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.scaled(size: 10, design: .monospaced))
                         .foregroundColor(gameEngine.aiBackend.activeBackend != nil ? AppSettings.terminalGreen : AppSettings.terminalAmber)
                 }
 
@@ -143,18 +143,18 @@ struct CommandView: View {
                     // Current tokens/sec (large display)
                     VStack(spacing: 6) {
                         Text("CURRENT")
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(.scaled(size: 11, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
 
                         Text(String(format: "%.1f", gameEngine.ollamaService.tokensPerSecond))
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .font(.scaled(size: 36, weight: .bold, design: .rounded))
                             .foregroundColor(.cyan)
 
                         Text("tok/sec")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(.scaled(size: 10, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber.opacity(0.7))
                     }
-                    .frame(minWidth: 100)
+                    .frame(minWidth: FontScale.w(100))
                     .padding()
                     .background(Color.cyan.opacity(0.1))
                     .border(Color.cyan, width: 2)
@@ -164,10 +164,10 @@ struct CommandView: View {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("AVERAGE")
-                                    .font(.system(size: 10, design: .monospaced))
+                                    .font(.scaled(size: 10, design: .monospaced))
                                     .foregroundColor(AppSettings.terminalAmber)
                                 Text(String(format: "%.1f t/s", gameEngine.ollamaService.averageTokensPerSecond))
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .font(.scaled(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(AppSettings.terminalGreen)
                             }
                             .padding(8)
@@ -179,10 +179,10 @@ struct CommandView: View {
                             // Peak tokens/sec
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("PEAK")
-                                    .font(.system(size: 10, design: .monospaced))
+                                    .font(.scaled(size: 10, design: .monospaced))
                                     .foregroundColor(AppSettings.terminalAmber)
                                 Text(String(format: "%.1f t/s", gameEngine.ollamaService.peakTokensPerSecond))
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .font(.scaled(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(AppSettings.terminalRed)
                             }
                             .padding(8)
@@ -202,7 +202,7 @@ struct CommandView: View {
                                         .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
                                         .scaleEffect(0.7)
                                     Text("PROCESSING")
-                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                                         .foregroundColor(.cyan)
                                 }
                                 .padding(8)
@@ -226,10 +226,10 @@ struct CommandView: View {
     private func statBox(label: String, value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 9, design: .monospaced))
+                .font(.scaled(size: 9, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber.opacity(0.7))
             Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.scaled(size: 16, weight: .bold, design: .rounded))
                 .foregroundColor(color)
         }
         .padding(8)
@@ -242,16 +242,16 @@ struct CommandView: View {
     private func commandPanel(gameState: GameState) -> some View {
         VStack(spacing: 15) {
             Text("COMMAND CONSOLE")
-                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             // Target selection
             HStack {
                 Text("TARGET:")
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
-                    .frame(width: 100, alignment: .leading)
+                    .frame(width: FontScale.w(100), alignment: .leading)
 
                 Button(action: {
                     pickerMode = .target
@@ -265,7 +265,7 @@ struct CommandView: View {
                             Text("SELECT TARGET")
                         }
                     }
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
                     .frame(maxWidth: .infinity)
                     .padding(10)
@@ -282,7 +282,7 @@ struct CommandView: View {
                 HStack(spacing: 8) {
                     TextField("Type command: 'attack Russia', 'build military'", text: $nlCommandText)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.scaled(size: 12, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                         .padding(10)
                         .background(Color.black)
@@ -293,7 +293,7 @@ struct CommandView: View {
 
                     Button(action: processNLCommand) {
                         Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.scaled(size: 24))
                             .foregroundColor(.cyan)
                     }
                     .disabled(nlCommandText.isEmpty)
@@ -302,7 +302,7 @@ struct CommandView: View {
 
                 if !nlCommandResponse.isEmpty {
                     Text(nlCommandResponse)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.scaled(size: 11, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -508,7 +508,7 @@ struct CommandView: View {
         }
         .sheet(isPresented: $showingSystemsView) {
             SystemsView(gameEngine: gameEngine)
-                .frame(minWidth: 800, minHeight: 600)
+                .frame(minWidth: FontScale.w(800), minHeight: FontScale.h(600))
         }
         .sheet(isPresented: $showingExecutiveOrderMenu) {
             if let gameState = gameEngine.gameState {
@@ -517,7 +517,7 @@ struct CommandView: View {
                     selectedTarget: selectedTarget,
                     gameState: gameState
                 )
-                .frame(minWidth: 600, minHeight: 500)
+                .frame(minWidth: FontScale.w(600), minHeight: FontScale.h(500))
             }
         }
         .sheet(isPresented: $showingPardonMenu) {
@@ -527,7 +527,7 @@ struct CommandView: View {
                     selectedTarget: selectedTarget,
                     gameState: gameState
                 )
-                .frame(minWidth: 600, minHeight: 500)
+                .frame(minWidth: FontScale.w(600), minHeight: FontScale.h(500))
             }
         }
         .sheet(isPresented: $showingAddressMenu) {
@@ -537,7 +537,7 @@ struct CommandView: View {
                     selectedTarget: selectedTarget,
                     gameState: gameState
                 )
-                .frame(minWidth: 600, minHeight: 500)
+                .frame(minWidth: FontScale.w(600), minHeight: FontScale.h(500))
             }
         }
     }
@@ -547,7 +547,7 @@ struct CommandView: View {
     private var logSection: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("SYSTEM LOG")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .padding(.horizontal)
 
@@ -555,13 +555,13 @@ struct CommandView: View {
                 LazyVStack(alignment: .leading, spacing: 3) {
                     ForEach(gameEngine.logMessages.suffix(50)) { log in
                         Text(log.message)
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(.scaled(size: 11, design: .monospaced))
                             .foregroundColor(logColor(for: log.type))
                             .padding(.horizontal)
                     }
                 }
             }
-            .frame(maxHeight: 200)
+            .frame(maxHeight: FontScale.h(200))
         }
         .padding(.vertical)
         .background(Color.black)
@@ -622,9 +622,9 @@ struct CommandView: View {
     private func featureBadge(icon: String, label: String, count: Int, color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(.scaled(size: 10))
             Text("\(label): \(count)")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 10, weight: .bold, design: .monospaced))
         }
         .foregroundColor(count > 0 ? color : AppSettings.terminalAmber.opacity(0.5))
         .padding(.horizontal, 8)
@@ -636,10 +636,10 @@ struct CommandView: View {
     private func actionButton(title: String, color: Color, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .foregroundColor(enabled ? Color.black : color.opacity(0.3))
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: 80)
+                .frame(maxWidth: .infinity, minHeight: FontScale.h(80))
                 .background(enabled ? color : Color.black)
                 .border(color, width: 2)
         }
@@ -648,7 +648,7 @@ struct CommandView: View {
 
     private func statPill(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 11, design: .monospaced))
+            .font(.scaled(size: 11, design: .monospaced))
             .foregroundColor(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -691,7 +691,7 @@ struct CountryPickerView: View {
             // Header
             HStack {
                 Text("🎯 SELECT TARGET NATION")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Spacer()
@@ -700,7 +700,7 @@ struct CountryPickerView: View {
                     dismiss()
                 }
                 .foregroundColor(AppSettings.terminalRed)
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
             }
             .padding()
             .background(Color.black)
@@ -713,7 +713,7 @@ struct CountryPickerView: View {
                 TextField("Search nations...", text: $searchText)
                     .textFieldStyle(.plain)
                     .foregroundColor(AppSettings.terminalGreen)
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
@@ -728,7 +728,7 @@ struct CountryPickerView: View {
 
             // Country count
             Text("\(filteredCountries.count) nations available")
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .padding(.bottom, 10)
 
@@ -742,30 +742,30 @@ struct CountryPickerView: View {
                         }) {
                             HStack(spacing: 15) {
                                 Text(country.flag)
-                                    .font(.system(size: 32))
+                                    .font(.scaled(size: 32))
 
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text(country.name)
-                                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                        .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalGreen)
 
                                     HStack(spacing: 10) {
                                         Text("☢️ \(country.nuclearWarheads)")
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.scaled(size: 12, design: .monospaced))
                                             .foregroundColor(country.nuclearWarheads > 0 ? AppSettings.terminalRed : AppSettings.terminalAmber)
 
                                         Text("•")
                                             .foregroundColor(AppSettings.terminalAmber)
 
                                         Text(country.alignment.rawValue)
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.scaled(size: 12, design: .monospaced))
                                             .foregroundColor(AppSettings.terminalAmber)
 
                                         Text("•")
                                             .foregroundColor(AppSettings.terminalAmber)
 
                                         Text("Pop: \(country.population.formatted(.number.notation(.compactName)))")
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.scaled(size: 12, design: .monospaced))
                                             .foregroundColor(AppSettings.terminalAmber)
                                     }
                                 }
@@ -786,7 +786,7 @@ struct CountryPickerView: View {
             }
         }
         .background(AppSettings.terminalBackground)
-        .frame(minWidth: 600, minHeight: 700)
+        .frame(minWidth: FontScale.w(600), minHeight: FontScale.h(700))
     }
 }
 
@@ -807,7 +807,7 @@ struct CovertOperationsMenu: View {
             // Header
             HStack {
                 Text("🕵️ COVERT OPERATIONS")
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 22, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Spacer()
@@ -815,7 +815,7 @@ struct CovertOperationsMenu: View {
                 Button("CANCEL") {
                     dismiss()
                 }
-                .font(.system(size: 14, design: .monospaced))
+                .font(.scaled(size: 14, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
             }
             .padding()
@@ -823,7 +823,7 @@ struct CovertOperationsMenu: View {
             .border(AppSettings.terminalGreen, width: 2)
 
             Text("TARGET: \(targetName)")
-                .font(.system(size: 16, design: .monospaced))
+                .font(.scaled(size: 16, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .padding()
 
@@ -879,22 +879,22 @@ struct CovertOperationsMenu: View {
             }
         }
         .background(AppSettings.terminalBackground)
-        .frame(width: 600, height: 700)
+        .frame(width: FontScale.w(600), height: FontScale.h(700))
     }
 
     private func covertOpButton(title: String, subtitle: String, effect: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(title)
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                     .foregroundColor(color)
 
                 Text(subtitle)
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Text("EFFECT: \(effect)")
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -921,7 +921,7 @@ struct SDIDeploymentMenu: View {
             // Header
             HStack {
                 Text("🛰️ STRATEGIC DEFENSE INITIATIVE")
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 22, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Spacer()
@@ -929,7 +929,7 @@ struct SDIDeploymentMenu: View {
                 Button("CANCEL") {
                     dismiss()
                 }
-                .font(.system(size: 14, design: .monospaced))
+                .font(.scaled(size: 14, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
             }
             .padding()
@@ -937,7 +937,7 @@ struct SDIDeploymentMenu: View {
             .border(AppSettings.terminalGreen, width: 2)
 
             Text("\"STAR WARS\" MISSILE DEFENSE SYSTEM")
-                .font(.system(size: 16, design: .monospaced))
+                .font(.scaled(size: 16, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .padding()
 
@@ -945,40 +945,40 @@ struct SDIDeploymentMenu: View {
             if let country = playerCountry {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CURRENT STATUS:")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
 
                     if country.hasSDI {
                         HStack {
                             Text("✅ SDI DEPLOYED")
-                                .font(.system(size: 14, design: .monospaced))
+                                .font(.scaled(size: 14, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                             Spacer()
                         }
                         HStack {
                             Text("Coverage:")
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(.scaled(size: 12, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalAmber)
                             Text("\(country.sdiCoverage)%")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                             Spacer()
                         }
                         HStack {
                             Text("Interception Rate:")
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(.scaled(size: 12, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalAmber)
                             Text("\(country.sdiInterceptionRate)%")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                             Spacer()
                         }
                     } else {
                         Text("❌ NO SDI SYSTEM")
-                            .font(.system(size: 14, design: .monospaced))
+                            .font(.scaled(size: 14, design: .monospaced))
                             .foregroundColor(AppSettings.terminalRed)
                         Text("Deploy a defensive system to protect against nuclear attacks")
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(.scaled(size: 11, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                     }
                 }
@@ -995,7 +995,7 @@ struct SDIDeploymentMenu: View {
                     if let country = playerCountry, !country.hasSDI {
                         // Deployment Options
                         Text("DEPLOYMENT OPTIONS:")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
@@ -1041,7 +1041,7 @@ struct SDIDeploymentMenu: View {
                     } else if let country = playerCountry, country.hasSDI {
                         // Upgrade Options
                         Text("UPGRADE OPTIONS:")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
@@ -1070,7 +1070,7 @@ struct SDIDeploymentMenu: View {
                             }
                         } else {
                             Text("✅ SYSTEM AT MAXIMUM CAPABILITY")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                                 .foregroundColor(AppSettings.terminalGreen)
                                 .padding()
                         }
@@ -1079,7 +1079,7 @@ struct SDIDeploymentMenu: View {
                     // Technical Details (Jane's Defence Weekly style)
                     VStack(alignment: .leading, spacing: 8) {
                         Text("SYSTEM COMPONENTS:")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
 
                         technicalDetail(icon: "🔬", text: "Space-based X-ray lasers (50 MW output)")
@@ -1089,7 +1089,7 @@ struct SDIDeploymentMenu: View {
                         technicalDetail(icon: "⚡", text: "Ground-based neutral particle beam weapons")
 
                         Text("\nTECHNICAL SPECIFICATIONS:")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                             .padding(.top)
 
@@ -1099,7 +1099,7 @@ struct SDIDeploymentMenu: View {
                         technicalDetail(icon: "💫", text: "Tracking capacity: 100 simultaneous targets")
 
                         Text("\nLIMITATIONS:")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                             .padding(.top)
 
@@ -1118,7 +1118,7 @@ struct SDIDeploymentMenu: View {
             }
         }
         .background(AppSettings.terminalBackground)
-        .frame(width: 700, height: 800)
+        .frame(width: FontScale.w(700), height: FontScale.h(800))
     }
 
     private func sdiDeploymentButton(title: String, cost: String, coverage: String, interception: String, description: String, color: Color, action: @escaping () -> Void) -> some View {
@@ -1126,36 +1126,36 @@ struct SDIDeploymentMenu: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text(title)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                         .foregroundColor(color)
                     Spacer()
                     Text(cost)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                 }
 
                 HStack(spacing: 20) {
                     HStack {
                         Text("Coverage:")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                         Text(coverage)
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(color)
                     }
 
                     HStack {
                         Text("Interception:")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                         Text(interception)
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(color)
                     }
                 }
 
                 Text(description)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1171,20 +1171,20 @@ struct SDIDeploymentMenu: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text(title)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                         .foregroundColor(color)
                     Spacer()
                     Text(cost)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                 }
 
                 Text("Improvement: \(improvement)")
-                    .font(.system(size: 13, design: .monospaced))
+                    .font(.scaled(size: 13, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Text(description)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1198,9 +1198,9 @@ struct SDIDeploymentMenu: View {
     private func technicalDetail(icon: String, text: String) -> some View {
         HStack(spacing: 10) {
             Text(icon)
-                .font(.system(size: 14))
+                .font(.scaled(size: 14))
             Text(text)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.scaled(size: 11, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }
     }
@@ -1229,7 +1229,7 @@ struct CyberWarfareMenu: View {
             // Header
             HStack {
                 Text("🖥️ CYBER WARFARE OPERATIONS")
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 22, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
                 Spacer()
@@ -1237,7 +1237,7 @@ struct CyberWarfareMenu: View {
                 Button("CANCEL") {
                     dismiss()
                 }
-                .font(.system(size: 14, design: .monospaced))
+                .font(.scaled(size: 14, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
             }
             .padding()
@@ -1249,7 +1249,7 @@ struct CyberWarfareMenu: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("TARGET: \(target.flag) \(target.name)")
-                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
 
                         HStack(spacing: 20) {
@@ -1272,7 +1272,7 @@ struct CyberWarfareMenu: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("YOUR CAPABILITIES:")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
 
                         HStack(spacing: 20) {
@@ -1293,7 +1293,7 @@ struct CyberWarfareMenu: View {
             // Proxy Selection
             HStack {
                 Text("COVER:")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
 
                 Button(action: {
@@ -1306,7 +1306,7 @@ struct CyberWarfareMenu: View {
                             Text("Direct Attack (No Cover)")
                         }
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
                     .padding(8)
                     .background(Color.black)
@@ -1327,7 +1327,7 @@ struct CyberWarfareMenu: View {
             ScrollView {
                 VStack(spacing: 15) {
                     Text("SELECT CYBER ATTACK TYPE:")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1373,11 +1373,11 @@ struct CyberWarfareMenu: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("YOUR CYBER DEFENSE:")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
 
                         Text("Level: \(player.cyberDefenseLevel.description)")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                     }
 
@@ -1389,7 +1389,7 @@ struct CyberWarfareMenu: View {
                             dismiss()
                         }) {
                             Text("⬆️ UPGRADE DEFENSE")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                                 .foregroundColor(Color.black)
                                 .padding(10)
                                 .background(AppSettings.terminalGreen)
@@ -1397,7 +1397,7 @@ struct CyberWarfareMenu: View {
                         }
                     } else {
                         Text("✅ MAX LEVEL")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                     }
                 }
@@ -1407,7 +1407,7 @@ struct CyberWarfareMenu: View {
             }
         }
         .background(AppSettings.terminalBackground)
-        .frame(width: 800, height: 900)
+        .frame(width: FontScale.w(800), height: FontScale.h(900))
     }
 
     // MARK: - Proxy Picker
@@ -1415,14 +1415,14 @@ struct CyberWarfareMenu: View {
     private var proxyPickerView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SELECT COVER")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
             Button("No Cover (Direct Attack)") {
                 selectedProxy = nil
                 showProxyPicker = false
             }
-            .font(.system(size: 12, design: .monospaced))
+            .font(.scaled(size: 12, design: .monospaced))
             .foregroundColor(AppSettings.terminalRed)
 
             Divider()
@@ -1434,10 +1434,10 @@ struct CyberWarfareMenu: View {
                 }) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(proxy.rawValue)
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
                         Text("Plausible Deniability: \(proxy.plausibleDeniability)%")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(.scaled(size: 10, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                     }
                 }
@@ -1445,14 +1445,14 @@ struct CyberWarfareMenu: View {
         }
         .padding()
         .background(AppSettings.terminalBackground)
-        .frame(width: 300)
+        .frame(width: FontScale.w(300))
     }
 
     // MARK: - Helper Views
 
     private func sectionHeader(_ title: String, color: Color) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .bold, design: .monospaced))
+            .font(.scaled(size: 13, weight: .bold, design: .monospaced))
             .foregroundColor(color)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
@@ -1461,10 +1461,10 @@ struct CyberWarfareMenu: View {
     private func statusIndicator(label: String, value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.scaled(size: 10, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
             Text(value)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .foregroundColor(color)
         }
     }
@@ -1491,13 +1491,13 @@ struct CyberWarfareMenu: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(attack.rawValue)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                         .foregroundColor(severityColor)
 
                     Spacer()
 
                     Text("$\((attack.cost / 1_000_000))M")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(canAfford ? AppSettings.terminalAmber : AppSettings.terminalRed)
                 }
 
@@ -1513,7 +1513,7 @@ struct CyberWarfareMenu: View {
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("EFFECTS:")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
 
                         if effects.economicDamage > 0 {
@@ -1540,7 +1540,7 @@ struct CyberWarfareMenu: View {
 
                 if !canAfford {
                     Text("❌ INSUFFICIENT FUNDS")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                         .padding(.top, 5)
                 }
@@ -1557,13 +1557,13 @@ struct CyberWarfareMenu: View {
     private func cyberStatBadge(icon: String, label: String, value: String) -> some View {
         HStack(spacing: 5) {
             Text(icon)
-                .font(.system(size: 12))
+                .font(.scaled(size: 12))
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.scaled(size: 9, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
                 Text(value)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
             }
         }
@@ -1572,9 +1572,9 @@ struct CyberWarfareMenu: View {
     private func effectLine(icon: String, text: String) -> some View {
         HStack(spacing: 5) {
             Text(icon)
-                .font(.system(size: 10))
+                .font(.scaled(size: 10))
             Text(text)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.scaled(size: 10, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }
     }
@@ -1597,10 +1597,10 @@ struct ProhibitedWeaponsMenu: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("🚀 SECRET WEAPONS PROGRAMS")
-                        .font(.system(size: 22, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 22, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                     Text("SALT I & II TREATY VIOLATIONS")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                 }
 
@@ -1609,7 +1609,7 @@ struct ProhibitedWeaponsMenu: View {
                 Button("CANCEL") {
                     dismiss()
                 }
-                .font(.system(size: 14, design: .monospaced))
+                .font(.scaled(size: 14, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
             }
             .padding()
@@ -1619,10 +1619,10 @@ struct ProhibitedWeaponsMenu: View {
             // Warning Banner
             VStack(spacing: 5) {
                 Text("⚠️ CLASSIFICATION: TOP SECRET ⚠️")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalRed)
                 Text("Detection will trigger international crisis and DEFCON escalation")
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.scaled(size: 11, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
             .frame(maxWidth: .infinity)
@@ -1635,7 +1635,7 @@ struct ProhibitedWeaponsMenu: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("CURRENT STATUS:")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
 
                         HStack(spacing: 20) {
@@ -1659,7 +1659,7 @@ struct ProhibitedWeaponsMenu: View {
             ScrollView {
                 VStack(spacing: 15) {
                     Text("SELECT WEAPONS PROGRAM TO DEVELOP:")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1670,7 +1670,7 @@ struct ProhibitedWeaponsMenu: View {
                     weaponProgramButton(weapon: .mobileLaunchers)
 
                     Text("CRUISE MISSILE PROGRAMS:")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 13, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 10)
@@ -1680,7 +1680,7 @@ struct ProhibitedWeaponsMenu: View {
                     weaponProgramButton(weapon: .bomberConversions)
 
                     Text("ADVANCED SYSTEMS:")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 13, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 10)
@@ -1693,7 +1693,7 @@ struct ProhibitedWeaponsMenu: View {
             }
         }
         .background(AppSettings.terminalBackground)
-        .frame(width: 900, height: 900)
+        .frame(width: FontScale.w(900), height: FontScale.h(900))
     }
 
     // MARK: - Helper Views
@@ -1701,10 +1701,10 @@ struct ProhibitedWeaponsMenu: View {
     private func statusBadge(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.scaled(size: 10, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
             Text(value)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }
     }
@@ -1725,18 +1725,18 @@ struct ProhibitedWeaponsMenu: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text(weapon.rawValue)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                         .foregroundColor(isAvailable ? AppSettings.terminalRed : Color.gray)
 
                     Spacer()
 
                     Text("$\((weapon.developmentCost / 1_000_000_000))B")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(canAfford ? AppSettings.terminalAmber : AppSettings.terminalRed)
                 }
 
                 Text(weapon.description)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.scaled(size: 11, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
 
                 HStack(spacing: 20) {
@@ -1747,7 +1747,7 @@ struct ProhibitedWeaponsMenu: View {
 
                 // Historical Context
                 Text(weapon.historicalContext)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.scaled(size: 10, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
                     .padding(.top, 5)
 
@@ -1756,7 +1756,7 @@ struct ProhibitedWeaponsMenu: View {
                 HStack(spacing: 5) {
                     Text("⚖️")
                     Text("If detected: \(impact.relationsPenalty) relations penalty, \(impact.treatyViolation ? "TREATY VIOLATION" : "No treaty violation")")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.scaled(size: 10, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                 }
                 .padding(.top, 3)
@@ -1764,19 +1764,19 @@ struct ProhibitedWeaponsMenu: View {
                 // Status
                 if alreadyDeployed {
                     Text("✅ ALREADY DEPLOYED")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                         .padding(.top, 5)
                 } else if inDevelopment {
                     if let program = gameEngine.gameState?.activeWeaponPrograms.first(where: { $0.weapon == weapon && $0.countryID == playerID }) {
                         Text("🔬 IN DEVELOPMENT (ready \(gameEngine.gameState?.dateLabel(forTurn: program.completionTurn) ?? "soon"))")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalAmber)
                             .padding(.top, 5)
                     }
                 } else if !canAfford {
                     Text("❌ INSUFFICIENT FUNDS")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                         .padding(.top, 5)
                 }
@@ -1793,13 +1793,13 @@ struct ProhibitedWeaponsMenu: View {
     private func weaponStatBadge(icon: String, label: String, value: String) -> some View {
         HStack(spacing: 5) {
             Text(icon)
-                .font(.system(size: 12))
+                .font(.scaled(size: 12))
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.scaled(size: 9, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
                 Text(value)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
             }
         }

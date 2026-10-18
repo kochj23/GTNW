@@ -250,8 +250,15 @@ private actor SyncDriver {
     init(service: GameStoreService) { self.service = service }
 
     @discardableResult
-    func run() async -> Bool {
-        if let t = inflight { again = true; return await t.value }
+    func run(retryStale: Bool = true) async -> Bool {
+        if let t = inflight {
+            again = true
+            let ok = await t.value
+            if ok || !retryStale { return ok }
+            // The pass we joined started before this request (e.g. while the DB was unreachable) and failed;
+            // give this caller a fresh pass instead of handing back that stale failure.
+            return await run(retryStale: false)
+        }
         retryTask?.cancel(); retryTask = nil
         let t = Task { await self.loop() }
         inflight = t

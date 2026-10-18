@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-10-17 — Text size
+
+### Added
+- **Text size setting** (Settings › Game): 1×, 1.5×, 2×, 2.5×. The default is **2× on macOS** and 1× on iOS/iPadOS,
+  where native Dynamic Type is kept. The choice is saved in UserDefaults (`GTNW.fontScale`) and applies live.
+- One central factor, `FontScale.factor`. Every font goes through `Font.scaled(size:weight:design:)`,
+  `Font.scaled(.style, design:)` (text styles mapped to their macOS point sizes), `Font.scaledCustom` (Retro Monaco),
+  `ThemeFont` or `EGA.font`. That covers about 665 font calls across both skins, `Theme`, `ModernDesign` and
+  `ModernDesignSystem`.
+- Scaled SwiftUI controls replace native AppKit ones that ignore `.font`: `ScaledSegmentedPicker`, `ScaledMenuPicker`,
+  `.scaledCheckbox`, and a themed **game tab bar** on macOS in place of the fixed-size `TabView` strip.
+- Tests:
+  - A source guard (Security) fails on any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`.
+  - Unit and Functional tests check the factor maths and persistence, and that every font path doubles.
+  - Frame tests check that the top bar, Situation Room, leaderboard, DB badge, Settings, scaled controls and tab bar
+    fit at 2× in both skins.
+  - 308 tests in total.
+
+### Changed
+- Layout at large text:
+  - About 280 fixed frames (panels, sheets, leaderboard columns, map labels, the DB status badge) now scale with
+    `FontScale.w`, `FontScale.h` and `FontScale.of`, capped to the screen.
+  - The minimum window scales the same way.
+  - The Situation Room top bar wraps onto two rows when it doesn't fit on one.
+- `GameEngine.aiBackend` is now a main-actor computed property.
+- `Codable` model ids are `var`, so they round-trip.
+
+### Fixed
+- Release builds now have zero compiler warnings on macOS and iOS (Swift 6 isolation, unused throwing tasks, Codable
+  ids, result-builder availability).
+- The iOS target builds again on iOS 15. `LabeledContent` and the macOS-only menu style are availability-gated.
+- `GameStoreService.syncNow()` no longer returns a stale failure. Before, a caller could join a pass that had started
+  while the DB was unreachable and get that pass's failure. Now the caller gets one fresh pass. This fixes a flaky
+  performance test.
+
 ## [3.1.0] - 2026-10-17 — Games DB
 
 ### Added

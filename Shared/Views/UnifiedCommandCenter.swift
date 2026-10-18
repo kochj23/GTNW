@@ -40,21 +40,21 @@ struct UnifiedCommandCenter: View {
                 HSplitView {
                     // LEFT: Command Panel
                     leftCommandPanel(gameState: gameState)
-                        .frame(minWidth: 500, maxWidth: 700)
+                        .frame(minWidth: FontScale.w(500), maxWidth: FontScale.w(700))
 
                     // RIGHT: Event Log + Terminal
                     rightTerminalPanel(gameState: gameState)
-                        .frame(minWidth: 500)
+                        .frame(minWidth: FontScale.w(500))
                 }
                 #else
                 HStack(spacing: 0) {
                     // LEFT: Command Panel
                     leftCommandPanel(gameState: gameState)
-                        .frame(minWidth: 200)
+                        .frame(minWidth: FontScale.w(200))
 
                     // RIGHT: Event Log + Terminal
                     rightTerminalPanel(gameState: gameState)
-                        .frame(minWidth: 200)
+                        .frame(minWidth: FontScale.w(200))
                 }
                 #endif
             }
@@ -110,11 +110,11 @@ struct UnifiedCommandCenter: View {
         let resolving = gameEngine.turnPhase == .resolving || gameEngine.isProcessingAITurn
         return HStack(spacing: 12) {
             Image(systemName: resolving ? "hourglass" : "play.fill")
-                .font(.system(size: 18, weight: .bold))
+                .font(.scaled(size: 18, weight: .bold))
             Text(resolving
                  ? "⏳ WORLD RESOLVING…"
                  : "▶ YOUR TURN — \(gameState.currentDateLabel.uppercased()) · \(gameState.actionsRemaining) ACTION(S) LEFT · DEFCON \(gameState.defconLevel.rawValue)")
-                .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                .font(.scaled(size: 15, weight: .heavy, design: .monospaced))
             Spacer()
         }
         .foregroundColor(resolving ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
@@ -162,7 +162,7 @@ struct UnifiedCommandCenter: View {
                 HStack(spacing: 12) {
                     Button(action: { showingAdvancedActions = true }) {
                         Label("ACTION HUB", systemImage: "square.grid.2x2.fill")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(RoundedRectangle(cornerRadius: 8).fill(GTNWColors.neonCyan.opacity(0.15))
@@ -174,7 +174,7 @@ struct UnifiedCommandCenter: View {
 
                     Button(action: { showingBrainAssignment = true }) {
                         Label("BRAINS", systemImage: "brain.head.profile")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(RoundedRectangle(cornerRadius: 8).fill(GTNWColors.neonPurple.opacity(0.15))
@@ -221,21 +221,21 @@ struct UnifiedCommandCenter: View {
                         HStack {
                             Circle()
                                 .fill(GTNWColors.terminalGreen)
-                                .frame(width: 12, height: 12)
+                                .frame(width: FontScale.w(12), height: FontScale.h(12))
                                 .shadow(color: GTNWColors.terminalGreen, radius: 4)
 
                             Text("🟢 LATEST EVENTS")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalGreen)
 
                             Text("(\(gameEngine.gameState?.currentDateLabel ?? ""))")
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .font(.scaled(size: 12, weight: .medium, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalAmber)
 
                             Spacer()
 
                             Text("↓ Scroll for History")
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.scaled(size: 10, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalAmber.opacity(0.6))
                         }
                         .padding(12)
@@ -262,7 +262,7 @@ struct UnifiedCommandCenter: View {
                     }
                 }
             }
-            .frame(minHeight: 300)
+            .frame(minHeight: FontScale.h(300))
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: [
@@ -283,7 +283,7 @@ struct UnifiedCommandCenter: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
                 }
-                .frame(height: 120)
+                .frame(height: FontScale.h(120))
                 .background(Color.black.opacity(0.7))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -314,7 +314,7 @@ struct UnifiedCommandCenter: View {
 
                     Button(action: { processCommand(gameState: gameState) }) {
                         Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.scaled(size: 24))
                             .foregroundColor(GTNWColors.terminalGreen)
                     }
                     .disabled(commandText.isEmpty)
@@ -350,7 +350,7 @@ struct UnifiedCommandCenter: View {
     private func playerStatusCard(player: Country, gameState: GameState) -> some View {
         HStack(spacing: 20) {
             Text(player.flag)
-                .font(.system(size: 64))
+                .font(.scaled(size: 64))
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(player.name)
@@ -374,13 +374,13 @@ struct UnifiedCommandCenter: View {
         Button(action: { showingCountryPicker = true }) {
             HStack(spacing: 12) {
                 Image(systemName: "scope")
-                    .font(.system(size: 24))
+                    .font(.scaled(size: 24))
                     .foregroundColor(GTNWColors.terminalRed)
 
                 if let targetID = selectedTarget,
                    let target = gameState.getCountry(id: targetID) {
                     Text(target.flag)
-                        .font(.system(size: 32))
+                        .font(.scaled(size: 32))
                     VStack(alignment: .leading, spacing: 4) {
                         Text(target.name)
                             .font(GTNWFonts.terminal(size: 16, weight: .bold))
@@ -394,7 +394,7 @@ struct UnifiedCommandCenter: View {
 
                 Spacer()
                 Image(systemName: "chevron.right.circle.fill")
-                    .font(.system(size: 24))
+                    .font(.scaled(size: 24))
             }
             .foregroundColor(GTNWColors.terminalGreen)
             .padding()
@@ -409,11 +409,11 @@ struct UnifiedCommandCenter: View {
             Button(action: { showingShadowMenu = true }) {
                 VStack(spacing: 12) {
                     Image(systemName: "list.bullet.rectangle.fill")
-                        .font(.system(size: 36))
+                        .font(.scaled(size: 36))
                         .foregroundColor(GTNWColors.neonPurple)
 
                     Text("SHADOW PRESIDENT")
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalGreen)
 
                     Text("132 Actions")
@@ -449,18 +449,18 @@ struct UnifiedCommandCenter: View {
                 Button(action: { showingWarheadPicker = true }) {
                     VStack(spacing: 8) {
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 32))
+                            .font(.scaled(size: 32))
                             .foregroundColor(GTNWColors.terminalRed)
 
                         Text("NUCLEAR\nSTRIKE")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 13, weight: .bold, design: .monospaced))
                             .foregroundColor(GTNWColors.terminalRed)
                             .multilineTextAlignment(.center)
 
                         // Show available warheads
                         if let player = gameState.getPlayerCountry(), player.nuclearWarheads > 0 {
                             Text("\(player.nuclearWarheads) available")
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.scaled(size: 10, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                         }
                     }
@@ -518,11 +518,11 @@ struct UnifiedCommandCenter: View {
                 }) {
                     VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 32))
+                            .font(.scaled(size: 32))
                             .foregroundColor(GTNWColors.terminalAmber)
 
                         Text("DECLARE\nWAR")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 13, weight: .bold, design: .monospaced))
                             .foregroundColor(GTNWColors.terminalAmber)
                             .multilineTextAlignment(.center)
                     }
@@ -598,7 +598,7 @@ struct UnifiedCommandCenter: View {
             Button(action: { showingRadiationDetails = true }) {
                 HStack(spacing: 12) {
                     Image(systemName: "radiation")
-                        .font(.system(size: 24))
+                        .font(.scaled(size: 24))
                         .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -606,7 +606,7 @@ struct UnifiedCommandCenter: View {
                             .font(GTNWFonts.caption())
                             .foregroundColor(GTNWColors.terminalAmber)
                         Text("\(gameState.globalRadiation)")
-                            .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                             .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
                     }
 
@@ -630,24 +630,24 @@ struct UnifiedCommandCenter: View {
     private func CompactStatCard(title: String, value: String, icon: String, color: Color, badge: Bool = false) -> some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 28))
+                .font(.scaled(size: 28))
                 .foregroundColor(color)
                 .shadow(color: color.opacity(0.5), radius: 4)
 
             if badge {
                 ZStack {
                     Text(value)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                         .foregroundColor(color)
 
                     Circle()
                         .fill(GTNWColors.terminalRed)
-                        .frame(width: 12, height: 12)
+                        .frame(width: FontScale.w(12), height: FontScale.h(12))
                         .offset(x: 15, y: -10)
                 }
             } else {
                 Text(value)
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                     .foregroundColor(color)
             }
 
@@ -670,7 +670,7 @@ struct UnifiedCommandCenter: View {
     private func eventRow(_ event: GameEvent) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(event.type.rawValue)
-                .font(.system(size: 16))
+                .font(.scaled(size: 16))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.message)
@@ -720,7 +720,7 @@ struct UnifiedCommandCenter: View {
                             // Availability indicator (green dot like TopGUI)
                             Circle()
                                 .fill(isBackendAvailable(backend) ? Color.green : Color.gray)
-                                .frame(width: 8, height: 8)
+                                .frame(width: FontScale.w(8), height: FontScale.h(8))
 
                             Text(backend.rawValue)
 
@@ -738,13 +738,13 @@ struct UnifiedCommandCenter: View {
                     // Status dot
                     Circle()
                         .fill(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
-                        .frame(width: 8, height: 8)
+                        .frame(width: FontScale.w(8), height: FontScale.h(8))
                         .shadow(color: AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed, radius: 3)
 
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 12))
+                        .font(.scaled(size: 12))
                     Text(AIBackendManager.shared.selectedBackend.rawValue)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
                 }
                 .foregroundColor(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
                 .padding(.horizontal, 10)
@@ -779,9 +779,9 @@ struct UnifiedCommandCenter: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "cpu")
-                            .font(.system(size: 12))
+                            .font(.scaled(size: 12))
                         Text(AIBackendManager.shared.selectedOllamaModel)
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
                             .lineLimit(1)
                     }
                     .foregroundColor(GTNWColors.neonCyan)
@@ -875,10 +875,10 @@ struct UnifiedCommandCenter: View {
         VStack(spacing: 0) {
             Rectangle()
                 .fill(GTNWColors.neonCyan.opacity(0.5))
-                .frame(height: 3)
+                .frame(height: FontScale.h(3))
 
             Text(log.message)
-                .font(.system(size: 18, weight: .black, design: .monospaced))
+                .font(.scaled(size: 18, weight: .black, design: .monospaced))
                 .foregroundColor(GTNWColors.neonCyan)
                 .shadow(color: GTNWColors.neonCyan, radius: 6)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -886,15 +886,15 @@ struct UnifiedCommandCenter: View {
 
             Rectangle()
                 .fill(GTNWColors.neonCyan.opacity(0.5))
-                .frame(height: 3)
+                .frame(height: FontScale.h(3))
         }
     }
 
     private func regularLogView(_ log: LogMessage) -> some View {
         HStack(alignment: .top, spacing: 12) {
             logIcon(log.type, message: log.message)
-                .font(.system(size: 18))
-                .frame(width: 28)
+                .font(.scaled(size: 18))
+                .frame(width: FontScale.w(28))
 
             VStack(alignment: .leading, spacing: 4) {
                 logMetadata(log)
@@ -915,7 +915,7 @@ struct UnifiedCommandCenter: View {
     private func logMetadata(_ log: LogMessage) -> some View {
         HStack(spacing: 8) {
             Text("[T\(extractTurnNumber(from: log) ?? gameEngine.gameState?.turn ?? 0)]")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                 .foregroundColor(GTNWColors.neonCyan)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -923,12 +923,12 @@ struct UnifiedCommandCenter: View {
                 .cornerRadius(3)
 
             Text(formatTimestamp(log.timestamp))
-                .font(.system(size: 10, design: .monospaced))
+                .font(.scaled(size: 10, design: .monospaced))
                 .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
 
             if log.type != .info && log.type != .system {
                 Text(logTypeLabel(log.type))
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 9, weight: .bold, design: .monospaced))
                     .foregroundColor(.white)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -942,7 +942,7 @@ struct UnifiedCommandCenter: View {
 
     private func logMessageText(_ log: LogMessage) -> some View {
         Text(log.message)
-            .font(.system(size: 13, weight: .medium, design: .monospaced))
+            .font(.scaled(size: 13, weight: .medium, design: .monospaced))
             .foregroundColor(logColor(log.type))
             .lineSpacing(2)
     }
@@ -954,27 +954,27 @@ struct UnifiedCommandCenter: View {
             if log.message.contains("=====") {
                 Rectangle()
                     .fill(GTNWColors.neonCyan)
-                    .frame(height: 4)
+                    .frame(height: FontScale.h(4))
                     .padding(.vertical, 10)
             }
 
             HStack(alignment: .top, spacing: 12) {
                 // Icon badge for log type
                 logIcon(log.type, message: log.message)
-                    .font(.system(size: 20))
-                    .frame(width: 30)
+                    .font(.scaled(size: 20))
+                    .frame(width: FontScale.w(30))
 
                 VStack(alignment: .leading, spacing: 6) {
                     // Main message with dynamic sizing
                     Text(log.message)
                         .font(
                             log.message.contains("=====") && log.message.contains("TURN") ?
-                                .system(size: 18, weight: .black, design: .monospaced) :
+                                .scaled(size: 18, weight: .black, design: .monospaced) :
                             log.message.contains("AI TURN SUMMARY") || log.message.contains("OLLAMA") ?
-                                .system(size: 15, weight: .bold, design: .monospaced) :
+                                .scaled(size: 15, weight: .bold, design: .monospaced) :
                             log.message.starts(with: "  •") ?
-                                .system(size: 14, design: .monospaced) :
-                                .system(size: 13, weight: .medium, design: .monospaced)
+                                .scaled(size: 14, design: .monospaced) :
+                                .scaled(size: 13, weight: .medium, design: .monospaced)
                         )
                         .foregroundColor(logColor(log.type))
                         .shadow(color: logColor(log.type).opacity(0.4), radius: 3)
@@ -984,9 +984,9 @@ struct UnifiedCommandCenter: View {
                     if log.type == .warning || log.type == .error || log.type == .critical {
                         HStack(spacing: 4) {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 10))
+                                .font(.scaled(size: 10))
                             Text(logTypeLabel(log.type))
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
@@ -1258,7 +1258,7 @@ struct UnifiedCommandCenter: View {
             Text(label)
                 .font(GTNWFonts.terminal(size: 11, weight: .bold))
                 .foregroundColor(GTNWColors.terminalAmber)
-                .frame(width: 100, alignment: .leading)
+                .frame(width: FontScale.w(100), alignment: .leading)
 
             Spacer()
 
@@ -1288,7 +1288,7 @@ struct DefconDetailView: View {
         VStack(spacing: 20) {
             HStack {
                 Text("🚨 DEFCON STATUS DETAILS")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(gameState.defconLevel.color)
                 Spacer()
                 Button("Close") { dismiss() }
@@ -1298,17 +1298,17 @@ struct DefconDetailView: View {
 
             VStack(alignment: .leading, spacing: 15) {
                 Text("CURRENT LEVEL: DEFCON \(gameState.defconLevel.rawValue)")
-                    .font(.system(size: 32, weight: .black, design: .monospaced))
+                    .font(.scaled(size: 32, weight: .black, design: .monospaced))
                     .foregroundColor(gameState.defconLevel.color)
 
                 Text(gameState.defconLevel.description)
-                    .font(.system(size: 16, design: .monospaced))
+                    .font(.scaled(size: 16, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
 
                 Divider()
 
                 Text("DEFCON LEVELS EXPLAINED:")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber)
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -1322,18 +1322,18 @@ struct DefconDetailView: View {
                 Divider()
 
                 Text("TRIGGERS:")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber)
 
                 Text("• Wars increase tension\n• Nuclear strikes raise DEFCON\n• Building nukes raises DEFCON\n• Peace over time lowers DEFCON")
-                    .font(.system(size: 13, design: .monospaced))
+                    .font(.scaled(size: 13, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
             }
             .padding()
 
             Spacer()
         }
-        .frame(width: 700, height: 600)
+        .frame(width: FontScale.w(700), height: FontScale.h(600))
         .background(Color.black)
         .border(gameState.defconLevel.color, width: 3)
     }
@@ -1341,16 +1341,16 @@ struct DefconDetailView: View {
     private func defconRow(_ level: Int, _ name: String, _ desc: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(level)")
-                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                 .foregroundColor(DefconLevel(rawValue: level)?.color ?? .white)
-                .frame(width: 30)
+                .frame(width: FontScale.w(30))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(name)
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
                 Text(desc)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.8))
             }
         }
@@ -1369,7 +1369,7 @@ struct NuclearPowersDetailView: View {
         VStack(spacing: 20) {
             HStack {
                 Text("☢️ NUCLEAR POWERS")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalRed)
                 Spacer()
                 Button("Close") { dismiss() }
@@ -1382,11 +1382,11 @@ struct NuclearPowersDetailView: View {
                     ForEach(gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.sorted(by: { $0.nuclearWarheads > $1.nuclearWarheads })) { country in
                         HStack(spacing: 15) {
                             Text(country.flag)
-                                .font(.system(size: 32))
+                                .font(.scaled(size: 32))
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(country.name)
-                                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalGreen)
 
                                 HStack(spacing: 20) {
@@ -1394,14 +1394,14 @@ struct NuclearPowersDetailView: View {
                                         Image(systemName: "flame.fill")
                                         Text("\(country.nuclearWarheads) warheads")
                                     }
-                                    .font(.system(size: 12, design: .monospaced))
+                                    .font(.scaled(size: 12, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalRed)
 
                                     HStack(spacing: 4) {
                                         Image(systemName: "person.3.fill")
                                         Text("\(country.population / 1_000_000)M people")
                                     }
-                                    .font(.system(size: 12, design: .monospaced))
+                                    .font(.scaled(size: 12, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalAmber)
 
                                     if !country.atWarWith.isEmpty {
@@ -1409,7 +1409,7 @@ struct NuclearPowersDetailView: View {
                                             Image(systemName: "exclamationmark.triangle.fill")
                                             Text("At war")
                                         }
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(.scaled(size: 12, design: .monospaced))
                                         .foregroundColor(.orange)
                                     }
                                 }
@@ -1428,7 +1428,7 @@ struct NuclearPowersDetailView: View {
 
             Spacer()
         }
-        .frame(width: 700, height: 600)
+        .frame(width: FontScale.w(700), height: FontScale.h(600))
         .background(Color.black)
         .border(GTNWColors.terminalRed, width: 3)
     }
@@ -1442,7 +1442,7 @@ struct WarsDetailView: View {
         VStack(spacing: 20) {
             HStack {
                 Text("⚔️ ACTIVE WARS")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(.orange)
                 Spacer()
                 Button("Close") { dismiss() }
@@ -1453,13 +1453,13 @@ struct WarsDetailView: View {
             if gameState.activeWars.isEmpty {
                 VStack(spacing: 20) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 64))
+                        .font(.scaled(size: 64))
                         .foregroundColor(GTNWColors.terminalGreen)
                     Text("NO ACTIVE WARS")
-                        .font(.system(size: 20, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalGreen)
                     Text("World at peace (for now)")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalAmber)
                 }
                 .frame(maxHeight: .infinity)
@@ -1473,33 +1473,33 @@ struct WarsDetailView: View {
                                     HStack(spacing: 20) {
                                         VStack {
                                             Text(aggressor.flag)
-                                                .font(.system(size: 40))
+                                                .font(.scaled(size: 40))
                                             Text(aggressor.name)
-                                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                                                 .foregroundColor(GTNWColors.terminalRed)
                                             Text("☢️ \(aggressor.nuclearWarheads)")
-                                                .font(.system(size: 12, design: .monospaced))
+                                                .font(.scaled(size: 12, design: .monospaced))
                                                 .foregroundColor(GTNWColors.terminalAmber)
                                         }
 
                                         Image(systemName: "arrow.right")
-                                            .font(.system(size: 30))
+                                            .font(.scaled(size: 30))
                                             .foregroundColor(.orange)
 
                                         VStack {
                                             Text(defender.flag)
-                                                .font(.system(size: 40))
+                                                .font(.scaled(size: 40))
                                             Text(defender.name)
-                                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                                                 .foregroundColor(GTNWColors.terminalGreen)
                                             Text("☢️ \(defender.nuclearWarheads)")
-                                                .font(.system(size: 12, design: .monospaced))
+                                                .font(.scaled(size: 12, design: .monospaced))
                                                 .foregroundColor(GTNWColors.terminalAmber)
                                         }
                                     }
 
                                     Text("Started: \(gameState.dateLabel(forTurn: war.startTurn))")
-                                        .font(.system(size: 11, design: .monospaced))
+                                        .font(.scaled(size: 11, design: .monospaced))
                                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                                 }
                                 .padding()
@@ -1515,7 +1515,7 @@ struct WarsDetailView: View {
 
             Spacer()
         }
-        .frame(width: 700, height: 600)
+        .frame(width: FontScale.w(700), height: FontScale.h(600))
         .background(Color.black)
         .border(Color.orange, width: 3)
     }
@@ -1529,7 +1529,7 @@ struct TreatiesDetailView: View {
         VStack(spacing: 20) {
             HStack {
                 Text("📜 TREATIES")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
                 Spacer()
                 Button("Close") { dismiss() }
@@ -1540,13 +1540,13 @@ struct TreatiesDetailView: View {
             if gameState.treaties.isEmpty {
                 VStack(spacing: 20) {
                     Image(systemName: "doc.text.fill")
-                        .font(.system(size: 64))
+                        .font(.scaled(size: 64))
                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.5))
                     Text("NO ACTIVE TREATIES")
-                        .font(.system(size: 20, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalAmber)
                     Text("No formal agreements in place")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                 }
                 .frame(maxHeight: .infinity)
@@ -1556,23 +1556,23 @@ struct TreatiesDetailView: View {
                         ForEach(Array(gameState.treaties.enumerated()), id: \.offset) { index, treaty in
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(treaty.type.rawValue)
-                                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalGreen)
 
                                 Text("Signatories:")
-                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalAmber)
 
                                 ForEach(treaty.signatories, id: \.self) { countryID in
                                     if let country = gameState.getCountry(id: countryID) {
                                         Text("\(country.flag) \(country.name)")
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.scaled(size: 12, design: .monospaced))
                                             .foregroundColor(GTNWColors.terminalGreen.opacity(0.8))
                                     }
                                 }
 
                                 Text("Signed: \(gameState.dateLabel(forTurn: treaty.turn))")
-                                    .font(.system(size: 10, design: .monospaced))
+                                    .font(.scaled(size: 10, design: .monospaced))
                                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.6))
                                     .padding(.top, 4)
                             }
@@ -1588,7 +1588,7 @@ struct TreatiesDetailView: View {
 
             Spacer()
         }
-        .frame(width: 700, height: 600)
+        .frame(width: FontScale.w(700), height: FontScale.h(600))
         .background(Color.black)
         .border(GTNWColors.terminalGreen, width: 3)
     }
@@ -1602,7 +1602,7 @@ struct RadiationDetailView: View {
         VStack(spacing: 20) {
             HStack {
                 Text("☢️ GLOBAL RADIATION")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
                 Spacer()
                 Button("Close") { dismiss() }
@@ -1612,7 +1612,7 @@ struct RadiationDetailView: View {
 
             VStack(alignment: .leading, spacing: 15) {
                 Text("CURRENT LEVEL: \(gameState.globalRadiation)")
-                    .font(.system(size: 32, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                     .foregroundColor(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
 
                 // Radiation scale
@@ -1635,18 +1635,18 @@ struct RadiationDetailView: View {
                                 .frame(width: geometry.size.width * min(Double(gameState.globalRadiation) / 500.0, 1.0))
                         }
                     }
-                    .frame(height: 30)
+                    .frame(height: FontScale.h(30))
 
                     Text("500+")
                         .foregroundColor(GTNWColors.terminalRed)
                 }
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .padding(.vertical)
 
                 Divider()
 
                 Text("EFFECTS:")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber)
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -1658,7 +1658,7 @@ struct RadiationDetailView: View {
                 }
 
                 Text("Nuclear Strikes: \(gameState.nuclearStrikes.count)")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalRed)
                     .padding(.top)
             }
@@ -1666,7 +1666,7 @@ struct RadiationDetailView: View {
 
             Spacer()
         }
-        .frame(width: 700, height: 600)
+        .frame(width: FontScale.w(700), height: FontScale.h(600))
         .background(Color.black)
         .border(gameState.globalRadiation > 100 ? GTNWColors.terminalRed : GTNWColors.terminalGreen, width: 3)
     }
@@ -1675,14 +1675,14 @@ struct RadiationDetailView: View {
         HStack(spacing: 12) {
             Circle()
                 .fill(gameState.globalRadiation >= range.lowerBound ? GTNWColors.terminalRed : Color.gray.opacity(0.3))
-                .frame(width: 12, height: 12)
+                .frame(width: FontScale.w(12), height: FontScale.h(12))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(name) (\(range.lowerBound)-\(range.upperBound))")
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 13, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
                 Text(desc)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.scaled(size: 11, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
             }
         }
@@ -1701,9 +1701,9 @@ struct CategoryButton: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.scaled(size: 14))
                 Text(title)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 10, weight: .bold, design: .monospaced))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)

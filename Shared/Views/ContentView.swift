@@ -37,23 +37,32 @@ struct ContentView: View {
 
     // MARK: - Start Screen
 
+    /// Scrolls when large text makes the start screen taller than the window; Spacers still centre it otherwise.
     private var startScreen: some View {
+        GeometryReader { g in
+            ScrollView(.vertical) {
+                startContent.frame(maxWidth: .infinity, minHeight: g.size.height)
+            }
+        }
+    }
+
+    private var startContent: some View {
         VStack(spacing: 30) {
             Spacer()
 
             // Title (WOPR style)
             VStack(spacing: 10) {
                 Text("W.O.P.R")
-                    .font(.system(size: 60, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 60, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.cyan)
                     .shadow(color: ModernColors.cyan.opacity(0.5), radius: 20)
 
                 Text("War Operation Plan Response")
-                    .font(.system(size: 18, design: .monospaced))
+                    .font(.scaled(size: 18, design: .monospaced))
                     .foregroundColor(ModernColors.yellow)
 
                 Text("GLOBAL THERMAL NUCLEAR WAR")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.statusCritical)
                     .shadow(color: ModernColors.statusCritical.opacity(0.5), radius: 10)
                     .padding(.top, 10)
@@ -64,12 +73,12 @@ struct ContentView: View {
             // Quote from the movie
             VStack(spacing: 5) {
                 Text("\"Shall we play a game?\"")
-                    .font(.system(size: 20, design: .monospaced))
+                    .font(.scaled(size: 20, design: .monospaced))
                     .italic()
                     .foregroundColor(ModernColors.cyan)
 
                 Text("- WOPR, 1983")
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(ModernColors.yellow)
             }
             .padding(.bottom, 30)
@@ -77,7 +86,7 @@ struct ContentView: View {
             // Difficulty selection
             VStack(spacing: 15) {
                 Text("SELECT DIFFICULTY")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.yellow)
 
                 ForEach(DifficultyLevel.allCases, id: \.self) { difficulty in
@@ -87,11 +96,11 @@ struct ContentView: View {
                         HStack {
                             Image(systemName: selectedDifficulty == difficulty ? "checkmark.circle.fill" : "circle")
                             Text(difficulty.rawValue.uppercased())
-                                .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                                .font(.scaled(size: 16, weight: .semibold, design: .monospaced))
                         }
                         .foregroundColor(selectedDifficulty == difficulty ? ModernColors.yellow : ModernColors.cyan)
                         .padding()
-                        .frame(maxWidth: 300)
+                        .frame(maxWidth: FontScale.w(300))
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(selectedDifficulty == difficulty ? ModernColors.cyan.opacity(0.15) : Color.white.opacity(0.05))
@@ -108,7 +117,7 @@ struct ContentView: View {
             // Administration selection
             VStack(spacing: 15) {
                 Text("SELECT ADMINISTRATION")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.yellow)
 
                 Button(action: {
@@ -117,11 +126,11 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "person.3.fill")
                         Text(selectedAdministration?.description ?? "Trump 2025 (Default)")
-                            .font(.system(size: 14, design: .monospaced))
+                            .font(.scaled(size: 14, design: .monospaced))
                     }
                     .foregroundColor(ModernColors.cyan)
                     .padding()
-                    .frame(maxWidth: 300)
+                    .frame(minWidth: FontScale.w(300))
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.white.opacity(0.05))
@@ -135,23 +144,25 @@ struct ContentView: View {
             .padding(.bottom, 20)
 
             // Calendar, elections and skin
-            HStack(spacing: 16) {
-                Picker("Each turn is", selection: $turnLength) {
-                    ForEach(TurnLength.allCases) { Text($0.displayName).tag($0) }
+            HStack(spacing: FontScale.of(20)) {
+                HStack(spacing: 8) {
+                    Text("Each turn is")
+                    ScaledSegmentedPicker(selection: $turnLength, options: TurnLength.allCases.map { ($0, $0.displayName) })
+                        .fixedSize()
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 300)
                 Toggle("Elections", isOn: $electionsEnabled)
-                Picker("Skin", selection: $themes.theme) {
-                    ForEach(GameTheme.allCases) { Text($0.displayName).tag($0) }
+                    .toggleStyle(.scaledCheckbox)
+                HStack(spacing: 8) {
+                    Text("Skin")
+                    ScaledMenuPicker(selection: $themes.theme, options: GameTheme.allCases.map { ($0, $0.displayName) })
+                        .frame(width: FontScale.of(150))
                 }
-                .frame(width: 200)
                 Button("SCENARIOS…") { showingScenarios = true }
                     .buttonStyle(ThemedButtonStyle(color: ModernColors.yellow))
             }
-            .font(.system(size: 13, design: .monospaced))
+            .font(.scaled(size: 13, design: .monospaced))
             Text("\(turnLength.actionsPerTurn) action\(turnLength.actionsPerTurn == 1 ? "" : "s") per \(turnLength.displayName.lowercased()) · the game starts on Inauguration Day")
-                .font(.system(size: 11, design: .monospaced))
+                .font(.scaled(size: 11, design: .monospaced))
                 .foregroundColor(ModernColors.textSecondary)
                 .padding(.bottom, 10)
 
@@ -165,10 +176,10 @@ struct ContentView: View {
                 )
             }) {
                 Text("INITIALIZE GAME (AS USA)")
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                     .foregroundColor(.black)
                     .padding()
-                    .frame(maxWidth: 300)
+                    .frame(maxWidth: FontScale.w(300))
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(ModernColors.cyan)
@@ -180,7 +191,7 @@ struct ContentView: View {
 
             // Warning
             Text("⚠️  WARNING: THE ONLY WINNING MOVE IS NOT TO PLAY  ⚠️")
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(ModernColors.statusCritical)
                 .padding()
         }
@@ -196,7 +207,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .frame(width: 640, height: 520)
+            .frame(width: FontScale.w(640), height: FontScale.h(520))
             .background(Theme.isRetro ? EGA.blue : Color.black)
         }
     }
@@ -216,17 +227,17 @@ struct ContentView: View {
         HSplitView {
             // Left panel - World status
             leftPanel
-                .frame(minWidth: 300, maxWidth: 400)
+                .frame(minWidth: FontScale.w(300), maxWidth: FontScale.w(400))
 
             // Center - World map
             centerPanel
-                .frame(minWidth: 500)
+                .frame(minWidth: FontScale.w(500))
 
             // Right panel - Game log
             rightPanel
-                .frame(minWidth: 300, maxWidth: 400)
+                .frame(minWidth: FontScale.w(300), maxWidth: FontScale.w(400))
         }
-        .frame(minWidth: 1200, minHeight: 800)
+        .frame(minWidth: FontScale.w(1200), minHeight: FontScale.h(800))
     }
     #endif
 
@@ -285,13 +296,13 @@ struct ContentView: View {
         HStack(spacing: 0) {
             // Left panel
             leftPanel
-                .frame(width: 500)
+                .frame(width: FontScale.w(500))
 
             // Center panel
             VStack {
                 centerPanel
                 rightPanel
-                    .frame(height: 300)
+                    .frame(height: FontScale.h(300))
             }
         }
     }
@@ -355,7 +366,7 @@ struct ContentView: View {
     private var rightPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SYSTEM LOG")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
                 .padding(.bottom, 5)
 
@@ -381,16 +392,16 @@ struct ContentView: View {
     private func defconDisplay(_ defcon: DefconLevel) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("DEFCON LEVEL")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
 
             Text("\(defcon.rawValue)")
-                .font(.system(size: 60, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 60, weight: .bold, design: .monospaced))
                 .foregroundColor(defconColor(defcon))
                 .shadow(color: defconColor(defcon).opacity(0.5), radius: 15)
 
             Text(defcon.description)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(defconColor(defcon))
         }
     }
@@ -409,14 +420,14 @@ struct ContentView: View {
     private func playerInfoSection(_ country: Country) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("YOUR NATION")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
 
             HStack {
                 Text(country.flag)
-                    .font(.system(size: 40))
+                    .font(.scaled(size: 40))
                 Text(country.name)
-                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .semibold, design: .monospaced))
             }
 
             VStack(alignment: .leading, spacing: 5) {
@@ -435,17 +446,17 @@ struct ContentView: View {
     private func nuclearPowersSection(_ countries: [Country]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("NUCLEAR POWERS")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
 
             ForEach(countries.filter { $0.nuclearWarheads > 0 && !$0.isDestroyed }.sorted(by: { $0.nuclearWarheads > $1.nuclearWarheads })) { country in
                 HStack {
                     Text(country.flag)
                     Text(country.code)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.scaled(size: 12, design: .monospaced))
                     Spacer()
                     Text("\(country.nuclearWarheads)")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                         .foregroundColor(country.isPlayerControlled ? ModernColors.yellow : ModernColors.cyan)
                 }
             }
@@ -455,7 +466,7 @@ struct ContentView: View {
     private func globalStatsSection(_ gameState: GameState) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("GLOBAL STATUS")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
 
             statRow("Turn:", "\(gameState.turn)")
@@ -473,7 +484,7 @@ struct ContentView: View {
                 gameEngine.endTurn()
             }) {
                 Text("END TURN")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -488,7 +499,7 @@ struct ContentView: View {
                 gameEngine.startNewGame()
             }) {
                 Text("NEW GAME")
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(ModernColors.cyan)
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -507,11 +518,11 @@ struct ContentView: View {
     private func statRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.scaled(size: 11, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
             Spacer()
             Text(value)
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
                 .foregroundColor(ModernColors.cyan)
         }
     }
@@ -519,10 +530,10 @@ struct ContentView: View {
     private func logMessageView(_ log: LogMessage) -> some View {
         HStack(alignment: .top, spacing: 5) {
             Text(logIcon(for: log.type))
-                .font(.system(size: 10))
+                .font(.scaled(size: 10))
 
             Text(log.message)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.scaled(size: 11, design: .monospaced))
                 .foregroundColor(logColor(for: log.type))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -577,7 +588,7 @@ struct CountrySelectionView: View {
 
             VStack {
                 Text("SELECT YOUR NATION")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.cyan)
                     .padding()
 
@@ -593,14 +604,14 @@ struct CountrySelectionView: View {
                     }) {
                         HStack {
                             Text(country.flag)
-                                .font(.system(size: 30))
+                                .font(.scaled(size: 30))
 
                             VStack(alignment: .leading) {
                                 Text(country.name)
-                                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                                    .font(.scaled(size: 14, weight: .semibold, design: .monospaced))
                                     .foregroundColor(ModernColors.textPrimary)
                                 Text("\(country.nuclearStatus.rawValue) • \(country.government.rawValue)")
-                                    .font(.system(size: 10, design: .monospaced))
+                                    .font(.scaled(size: 10, design: .monospaced))
                                     .foregroundColor(ModernColors.textSecondary)
                             }
 
@@ -620,7 +631,7 @@ struct CountrySelectionView: View {
                     dismiss()
                 }) {
                     Text("START GAME")
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                         .foregroundColor(.black)
                         .padding()
                         .frame(maxWidth: .infinity)

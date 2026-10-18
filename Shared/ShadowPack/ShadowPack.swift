@@ -300,20 +300,20 @@ struct ShadowPackSettingsView: View {
         Form {
             Section("Shadow President pack") {
                 LabeledContent("Status", value: pack.isInstalled ? "Installed — \(pack.count) assets" : "Not installed")
-                Text(pack.folder.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                Toggle("Use retro art (portraits, War Room, animations)", isOn: $pack.useRetroArt)
-                Toggle("Play retro sound effects", isOn: $pack.soundEnabled)
+                Text(pack.folder.path).font(.scaled(.caption)).foregroundStyle(.secondary).textSelection(.enabled)
+                Toggle("Use retro art (portraits, War Room, animations)", isOn: $pack.useRetroArt).toggleStyle(.scaledCheckbox)
+                Toggle("Play retro sound effects", isOn: $pack.soundEnabled).toggleStyle(.scaledCheckbox)
                 Button("Reload pack") { pack.reload() }
                 Button("Test sound") { pack.play("sfx.hail_to_chief") }.disabled(!pack.isInstalled)
             }
             Section {
                 Text("The pack is built locally from your own copy of Shadow President (1993) with tools/build_shadow_pack.py. "
                      + "It is personal data and is never part of the GTNW repository.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.scaled(.caption)).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
+        .frame(width: FontScale.w(460))
         .padding()
     }
 }

@@ -1326,14 +1326,9 @@ struct AIBackendSettingsView: View {
     var body: some View {
         Form {
             Section(header: Text("AI Backend Selection")) {
-                Picker("Backend", selection: $manager.selectedBackend) {
-                    ForEach(AIBackend.allCases, id: \.self) { backend in
-                        HStack {
-                            Image(systemName: backend.icon)
-                            Text(backend.rawValue)
-                        }
-                        .tag(backend)
-                    }
+                ScaledLabeledRow("Backend") {
+                    ScaledMenuPicker(selection: $manager.selectedBackend, options: AIBackend.allCases.map { ($0, $0.rawValue) })
+                        .frame(width: FontScale.of(220))
                 }
                 .onChange(of: manager.selectedBackend) { _ in
                     manager.saveSettings()
@@ -1343,7 +1338,7 @@ struct AIBackendSettingsView: View {
                 }
 
                 Text(manager.selectedBackend.description)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.secondary)
             }
 
@@ -1351,7 +1346,7 @@ struct AIBackendSettingsView: View {
                 HStack {
                     Circle()
                         .fill(manager.activeBackend != nil ? .green : .red)
-                        .frame(width: 10, height: 10)
+                        .frame(width: FontScale.w(10), height: FontScale.h(10))
 
                     if let active = manager.activeBackend {
                         Text("Active: \(active.rawValue)")
@@ -1414,10 +1409,9 @@ struct AIBackendSettingsView: View {
 
             if manager.isOllamaAvailable {
                 Section(header: Text("Ollama Configuration")) {
-                    Picker("Model", selection: $manager.selectedOllamaModel) {
-                        ForEach(manager.ollamaModels, id: \.self) { model in
-                            Text(model).tag(model)
-                        }
+                    ScaledLabeledRow("Model") {
+                        ScaledMenuPicker(selection: $manager.selectedOllamaModel, options: manager.ollamaModels.map { ($0, $0) })
+                            .frame(width: FontScale.of(260))
                     }
                     .onChange(of: manager.selectedOllamaModel) { _ in
                         manager.saveSettings()
@@ -1425,7 +1419,7 @@ struct AIBackendSettingsView: View {
 
                     if manager.ollamaModels.isEmpty {
                         Text("No models found. Pull a model: ollama pull llama2")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.orange)
                     }
                 }
@@ -1457,11 +1451,11 @@ struct AIBackendSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("TinyLLM provides OpenAI-compatible API on localhost:8000")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.secondary)
 
                         Link("TinyLLM by Jason Cox", destination: URL(string: "https://github.com/jasonacox/TinyLLM")!)
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.blue)
                     }
                 }
@@ -1477,15 +1471,15 @@ struct AIBackendSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("TinyChat: Fast chatbot interface with OpenAI-compatible API")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.secondary)
 
                         Link("TinyChat by Jason Cox", destination: URL(string: "https://github.com/jasonacox/tinychat")!)
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.blue)
 
                         Text("Default: http://localhost:8000")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -1501,15 +1495,15 @@ struct AIBackendSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("OpenWebUI: Self-hosted AI platform with OpenAI-compatible API")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.secondary)
 
                         Link("OpenWebUI Project", destination: URL(string: "https://github.com/open-webui/open-webui")!)
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.blue)
 
                         Text("Default: http://localhost:8080 or http://localhost:3000")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -1526,7 +1520,7 @@ struct AIBackendSettingsView: View {
 
                     Text("TinyLLM Setup:").bold()
                     Text("By Jason Cox (GitHub: jasonacox/TinyLLM)")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.blue)
                     Text("1. Clone: git clone https://github.com/jasonacox/TinyLLM")
                     Text("2. Run: docker-compose up -d")
@@ -1537,7 +1531,7 @@ struct AIBackendSettingsView: View {
 
                     Text("TinyChat Setup:").bold()
                     Text("By Jason Cox (GitHub: jasonacox/tinychat)")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.blue)
                     Text("1. Docker: docker run -d -p 8000:8000 jasonacox/tinychat:latest")
                     Text("2. Configure backend LLM (Ollama, OpenAI, etc.)")
@@ -1548,7 +1542,7 @@ struct AIBackendSettingsView: View {
 
                     Text("OpenWebUI Setup:").bold()
                     Text("Community Project (GitHub: open-webui/open-webui)")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.blue)
                     Text("1. Docker: docker run -d -p 3000:8080 ghcr.io/open-webui/open-webui:main")
                     Text("2. Or pip: pip install open-webui && open-webui serve")
@@ -1562,11 +1556,11 @@ struct AIBackendSettingsView: View {
                     Text("2. Install MLX: pip install mlx-lm")
                     Text("3. Path: /opt/homebrew/bin/python3")
                 }
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.secondary)
             }
         }
-        .frame(minWidth: 600, minHeight: 600)
+        .frame(minWidth: FontScale.w(600), minHeight: FontScale.h(600))
         .padding()
     }
 }

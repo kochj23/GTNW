@@ -15,7 +15,7 @@ struct StoreStatusBadge: View {
     var body: some View {
         let (color, icon) = style
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 10, weight: .bold))
+            Image(systemName: icon).font(.scaled(size: 10, weight: .bold))
             Text(store.status.shortLabel).font(ThemeFont.mono(10, .bold))
         }
         .foregroundColor(Theme.isRetro ? EGA.black : color)
@@ -50,43 +50,42 @@ struct GameStoreSettingsView: View {
     var body: some View {
         Form {
             Section("Games DB") {
-                Toggle("Sync saves, leaderboard and history to the Games DB", isOn: $config.enabled)
+                Toggle("Sync saves, leaderboard and history to the Games DB", isOn: $config.enabled).toggleStyle(.scaledCheckbox)
                 TextField("Host", text: $config.host)
                 TextField("Port", text: $portText)
                 TextField("TLS server name", text: $config.tlsServerName)
                 Text("CA: bundled games-pg CA, or \(GameStoreCA.overrideURL.path).")
-                    .font(.caption).foregroundColor(.secondary)
+                    .font(.scaled(.caption)).foregroundColor(.secondary)
                 HStack {
                     Button("Save & Reconnect") { apply() }
                     Button("Reset to defaults") { config = .defaults; portText = String(config.port) }
                     Spacer()
                     StoreStatusBadge(store: store)
                 }
-                Text(store.status.detail).font(.caption)
-                if !message.isEmpty { Text(message).font(.caption).foregroundColor(.red) }
+                Text(store.status.detail).font(.scaled(.caption))
+                if !message.isEmpty { Text(message).font(.scaled(.caption)).foregroundColor(.red) }
             }
             Section("Credentials (one-time setup)") {
                 Text(hasPassword ? "Password for \(config.user) is in GTNW's keychain." : "Not set up yet: GTNW saves on this device only.")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                 HStack {
                     Button("Fetch from core3 (SSH)") { fetchFromCore3() }
-                    Text("runs remote.sh getpw over ssh -o BatchMode=yes").font(.caption2).foregroundColor(.secondary)
+                    Text("runs remote.sh getpw over ssh -o BatchMode=yes").font(.scaled(.caption2)).foregroundColor(.secondary)
                 }
                 HStack {
-                    Picker("", selection: $pasteRole) {
-                        Text("gtnw").tag("gtnw"); Text("gtnw_owner").tag("gtnw_owner")
-                    }.frame(width: 120)
+                    ScaledMenuPicker(selection: $pasteRole, options: [("gtnw", "gtnw"), ("gtnw_owner", "gtnw_owner")])
+                        .frame(width: FontScale.of(130))
                     SecureField("or paste (deploy.sh macpw gtnw | pbcopy)", text: $pasted)
                     Button("Store") { storePasted() }.disabled(pasted.isEmpty)
                 }
             }
             Section("On this device") {
                 Text("Pending changes: \(store.pendingCount)")
-                if let counts { Text("Local cache: \(counts.description)").font(.caption) }
+                if let counts { Text("Local cache: \(counts.description)").font(.scaled(.caption)) }
             }
         }
         .padding()
-        .frame(width: 520)
+        .frame(width: FontScale.w(520))
         .onAppear {
             portText = String(config.port)
             Task { counts = try? await store.local.counts() }

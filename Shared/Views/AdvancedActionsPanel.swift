@@ -40,13 +40,13 @@ struct AdvancedActionsPanel: View {
                 Spacer(); Text("No active game.").foregroundColor(.secondary); Spacer()
             }
         }
-        .frame(minWidth: 560, minHeight: 620)
+        .frame(minWidth: FontScale.w(560), minHeight: FontScale.h(620))
     }
 
     private var header: some View {
         HStack {
             Text("🎯 ACTION HUB")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(GTNWColors.terminalGreen)
             Spacer()
             Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
@@ -70,7 +70,7 @@ struct AdvancedActionsPanel: View {
                     .foregroundColor(GTNWColors.neonCyan)
             }
         }
-        .font(.system(size: 12, weight: .medium, design: .monospaced))
+        .font(.scaled(size: 12, weight: .medium, design: .monospaced))
     }
 
     // MARK: - Sections
@@ -181,7 +181,7 @@ struct AdvancedActionsPanel: View {
     private func section<Content: View>(_ title: String, color: Color, @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                 .foregroundColor(color)
             content()
         }
@@ -212,12 +212,12 @@ struct GatedActionButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: systemImage).frame(width: 22)
-                Text(title).font(.system(size: 13, weight: .semibold, design: .monospaced))
+                Image(systemName: systemImage).frame(width: FontScale.w(22))
+                Text(title).font(.scaled(size: 13, weight: .semibold, design: .monospaced))
                 Spacer()
                 if let reason = reason {
                     Text(reason)
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(.black)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(GTNWColors.terminalAmber))
@@ -247,17 +247,17 @@ struct GatedMenuButton<Content: View>: View {
             menu()
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: systemImage).frame(width: 22)
-                Text(title).font(.system(size: 13, weight: .semibold, design: .monospaced))
+                Image(systemName: systemImage).frame(width: FontScale.w(22))
+                Text(title).font(.scaled(size: 13, weight: .semibold, design: .monospaced))
                 Spacer()
                 if let reason = reason {
                     Text(reason)
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(.black)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(GTNWColors.terminalAmber))
                 } else {
-                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 9))
+                    Image(systemName: "chevron.up.chevron.down").font(.scaled(size: 9))
                 }
             }
             .foregroundColor(reason == nil ? color : color.opacity(0.5))

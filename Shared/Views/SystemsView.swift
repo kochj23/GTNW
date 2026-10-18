@@ -34,7 +34,7 @@ struct SystemsView: View {
                     }
                     .padding(.horizontal)
                 }
-                .frame(height: 50)
+                .frame(height: FontScale.h(50))
                 .background(Color.black.opacity(0.3))
 
                 Divider()
@@ -68,7 +68,7 @@ struct SystemsView: View {
             HStack(spacing: 4) {
                 Text(icon)
                 Text(title)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -89,7 +89,7 @@ struct IntelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("🕵️ INTELLIGENCE & ESPIONAGE")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
             // Spy Networks
@@ -104,7 +104,7 @@ struct IntelView: View {
                         Text(net.compromised ? "🚨 COMPROMISED" : "✓ Active")
                             .foregroundColor(net.compromised ? .red : .green)
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -122,7 +122,7 @@ struct IntelView: View {
                         Text("Turn \(op.turn)")
                         Text(op.success ? "✓" : "...")
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -137,7 +137,7 @@ struct CrisisView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("⚠️ CRISIS EVENTS")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalRed)
 
             if systems.crises.isEmpty {
@@ -147,7 +147,7 @@ struct CrisisView: View {
                 ForEach(systems.crises) { crisis in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(crisis.type.rawValue.uppercased())
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalRed)
 
                         Text("⏰ Deadline: \(crisis.deadline) turns")
@@ -157,7 +157,7 @@ struct CrisisView: View {
                             Text("Options:")
                             ForEach(crisis.options, id: \.self) { option in
                                 Text("• \(option)")
-                                    .font(.system(size: 11, design: .monospaced))
+                                    .font(.scaled(size: 11, design: .monospaced))
                                     .foregroundColor(.gray)
                             }
                         }
@@ -186,7 +186,7 @@ struct WinterView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("❄️ NUCLEAR WINTER & ENVIRONMENT")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(.cyan)
 
             // Environmental State
@@ -202,7 +202,7 @@ struct WinterView: View {
 
             // Famine
             Text("🌾 FAMINE STATUS")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(.orange)
 
             Group {
@@ -216,7 +216,7 @@ struct WinterView: View {
 
             // Disease
             Text("🦠 DISEASE OUTBREAKS")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(.red)
 
             statusRow("Total Cases", "\(systems.disease.total)")
@@ -225,7 +225,7 @@ struct WinterView: View {
 
             // Refugees
             Text("👥 REFUGEE CRISIS")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(.yellow)
 
             statusRow("Total Refugees", "\(systems.refugees.total) million")
@@ -240,7 +240,7 @@ struct WinterView: View {
             Text(value)
                 .foregroundColor(.white)
         }
-        .font(.system(size: 12, design: .monospaced))
+        .font(.scaled(size: 12, design: .monospaced))
     }
 }
 
@@ -251,7 +251,7 @@ struct DiplomacyView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("📜 DIPLOMACY & TREATIES")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
             // Treaties
@@ -265,7 +265,7 @@ struct DiplomacyView: View {
                         Text(treaty.accepted ? "✓ Signed" : "⏳ Pending")
                             .foregroundColor(treaty.accepted ? .green : .yellow)
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -288,7 +288,7 @@ struct DiplomacyView: View {
                                 .foregroundColor(.green)
                         }
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -303,7 +303,7 @@ struct ProxyView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("🎖️ PROXY WARS & CONVENTIONAL WARFARE")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(.orange)
 
             // Proxy Wars
@@ -318,10 +318,10 @@ struct ProxyView: View {
                             Text("Strength: \(proxy.strength)%")
                         }
                         Text("Casualties: \(proxy.casualties)")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(.scaled(size: 10, design: .monospaced))
                             .foregroundColor(.gray)
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -342,7 +342,7 @@ struct EconomyView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("💰 ECONOMIC WARFARE")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(.yellow)
 
             // Sanctions
@@ -355,7 +355,7 @@ struct EconomyView: View {
                         Spacer()
                         Text("\(sanction.imposer) → \(sanction.target)")
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -372,7 +372,7 @@ struct EconomyView: View {
                         Spacer()
                         Text("Inflation: \(attack.inflation)%")
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -387,13 +387,13 @@ struct AIView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("🤖 AI PERSONALITIES")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(.purple)
 
             ForEach(Leader.presets, id: \.name) { leader in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(leader.name.uppercased())
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
 
                     HStack {
@@ -412,7 +412,7 @@ struct AIView: View {
                             .foregroundColor(.orange)
                     }
                 }
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .padding()
                 .background(Color.white.opacity(0.05))
                 .cornerRadius(4)
@@ -428,7 +428,7 @@ struct SubView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("🛥️ SUBMARINE WARFARE")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(.blue)
 
             // Submarines
@@ -448,10 +448,10 @@ struct SubView: View {
                             Spacer()
                             Text("Warheads: \(sub.warheads)")
                         }
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.scaled(size: 10, design: .monospaced))
                         .foregroundColor(.gray)
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -472,7 +472,7 @@ struct SpaceView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("🛰️ SPACE WARFARE")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(.cyan)
 
             // Satellites
@@ -486,7 +486,7 @@ struct SpaceView: View {
                         Text(sat.operational ? "✓ Operational" : "❌ Offline")
                             .foregroundColor(sat.operational ? .green : .red)
                     }
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.scaled(size: 12, design: .monospaced))
                     .foregroundColor(.gray)
                 }
             }
@@ -496,7 +496,7 @@ struct SpaceView: View {
             // Debris
             VStack(alignment: .leading, spacing: 8) {
                 Text("ORBITAL DEBRIS STATUS")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(systems.debris.kessler > 50 ? .red : .orange)
 
                 HStack {
@@ -516,7 +516,7 @@ struct SpaceView: View {
                     Text(systems.debris.zones.joined(separator: ", "))
                 }
             }
-            .font(.system(size: 12, design: .monospaced))
+            .font(.scaled(size: 12, design: .monospaced))
             .foregroundColor(.gray)
         }
     }
@@ -529,7 +529,7 @@ struct ScenarioView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("📚 HISTORICAL SCENARIOS")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
             ForEach(Scenario.all) { scenario in
@@ -541,10 +541,10 @@ struct ScenarioView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("\(scenario.name) (\(scenario.year))")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             Spacer()
                             Text(scenario.difficulty.rawValue)
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.scaled(size: 10, design: .monospaced))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
                                 .background(difficultyColor(scenario.difficulty).opacity(0.3))
@@ -552,11 +552,11 @@ struct ScenarioView: View {
                         }
 
                         Text(scenario.desc)
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(.scaled(size: 11, design: .monospaced))
                             .foregroundColor(.gray)
 
                         Text("🎯 \(scenario.objective)")
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(.scaled(size: 11, design: .monospaced))
                             .foregroundColor(.cyan)
                     }
                     .padding()

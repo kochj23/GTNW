@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import SwiftUI
 @testable import GTNW
 
 // MARK: - Country Model Tests
@@ -614,5 +615,63 @@ final class CodableTests: XCTestCase {
             let decoded = try JSONDecoder().decode(VictoryType.self, from: data)
             XCTAssertEqual(decoded, victoryType)
         }
+    }
+}
+
+// MARK: - Font scale
+
+final class FontScaleUnitTests: XCTestCase {
+    override func tearDown() { FontScale.forced = nil; super.tearDown() }
+
+    private func suite() -> UserDefaults {
+        let name = "gtnw-fontscale-\(UUID().uuidString)"
+        let d = UserDefaults(suiteName: name)!
+        d.removePersistentDomain(forName: name)
+        return d
+    }
+
+    func testPlatformDefaultIsTwoOnMacOS() {
+        #if os(macOS)
+        XCTAssertEqual(FontScale.platformDefault, 2.0)
+        #else
+        XCTAssertEqual(FontScale.platformDefault, 1.0)
+        #endif
+        XCTAssertEqual(FontScaleManager(defaults: suite()).factor, FontScale.platformDefault)
+        XCTAssertEqual(FontScale.steps, [1.0, 1.5, 2.0, 2.5])
+    }
+
+    func testStoredFactorIsClampedToTheOfferedRange() {
+        let d = suite()
+        d.set(9.0, forKey: FontScaleManager.defaultsKey)
+        XCTAssertEqual(FontScaleManager(defaults: d).factor, 2.5)
+        d.set(0.2, forKey: FontScaleManager.defaultsKey)
+        XCTAssertEqual(FontScaleManager(defaults: d).factor, 1.0)
+    }
+
+    func testLengthsScaleWithTheFactor() {
+        FontScale.forced = 2
+        XCTAssertEqual(FontScale.factor, 2)
+        XCTAssertEqual(FontScale.of(120), 240)
+        XCTAssertEqual(FontScale.w(80), 160)
+        XCTAssertEqual(FontScale.h(22), 44)
+        // Sheets and windows never outgrow the display.
+        XCTAssertLessThanOrEqual(FontScale.w(2_000), max(2_000, FontScale.screenSize.width))
+        XCTAssertLessThanOrEqual(FontScale.h(1_000), max(1_000, FontScale.screenSize.height))
+        XCTAssertGreaterThanOrEqual(FontScale.h(5_000), 5_000, "capping never shrinks below the 1× size")
+        FontScale.forced = 1
+        XCTAssertEqual(FontScale.w(700), 700)
+    }
+
+    func testTextStylePointSizesMatchThePlatform() {
+        #if os(macOS)
+        XCTAssertEqual(FontScale.pointSize(.caption), 10)
+        XCTAssertEqual(FontScale.pointSize(.body), 13)
+        XCTAssertEqual(FontScale.pointSize(.headline), 13)
+        XCTAssertEqual(FontScale.pointSize(.title), 22)
+        XCTAssertEqual(FontScale.pointSize(.largeTitle), 26)
+        XCTAssertEqual(FontScale.defaultWeight(.headline), .bold)
+        #endif
+        XCTAssertEqual(FontScale.label(2), "2×")
+        XCTAssertEqual(FontScale.label(1.5), "1.5×")
     }
 }

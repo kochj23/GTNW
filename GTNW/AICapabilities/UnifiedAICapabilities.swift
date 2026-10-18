@@ -663,10 +663,10 @@ struct UnifiedAIStatusView: View {
     private func statBox(_ label: String, _ value: String, _ color: Color) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 32, weight: .bold))
+                .font(.scaled(size: 32, weight: .bold))
                 .foregroundColor(color)
             Text(label)
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.secondary)
         }
         .frame(minWidth: 120)
@@ -679,13 +679,13 @@ struct UnifiedAIStatusView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(category.rawValue)
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 Spacer()
 
                 Text("\(available)/\(caps.count)")
-                    .font(.subheadline)
+                    .font(.scaled(.subheadline))
                     .foregroundColor(.white.opacity(0.8))
             }
 
@@ -712,11 +712,11 @@ struct UnifiedAIStatusView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(capability.name)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.medium)
 
                 Text(capability.description)
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }

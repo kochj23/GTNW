@@ -70,7 +70,7 @@ struct ModernCommandView: View {
     private func playerStatusCard(player: Country, gameState: GameState) -> some View {
         HStack(spacing: 20) {
             Text(player.flag)
-                .font(.system(size: 72))
+                .font(.scaled(size: 72))
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(player.name)
@@ -95,7 +95,7 @@ struct ModernCommandView: View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "scope")
-                    .font(.system(size: 24))
+                    .font(.scaled(size: 24))
                     .foregroundColor(GTNWColors.terminalRed)
 
                 Text("TARGET SELECTION")
@@ -110,7 +110,7 @@ struct ModernCommandView: View {
                     if let targetID = selectedTarget,
                        let target = gameState.getCountry(id: targetID) {
                         Text(target.flag)
-                            .font(.system(size: 32))
+                            .font(.scaled(size: 32))
                         VStack(alignment: .leading) {
                             Text(target.name)
                                 .font(GTNWFonts.terminal(size: 18, weight: .bold))
@@ -121,7 +121,7 @@ struct ModernCommandView: View {
                         Image(systemName: "chevron.right")
                     } else {
                         Image(systemName: "target")
-                            .font(.system(size: 24))
+                            .font(.scaled(size: 24))
                         Text("SELECT TARGET NATION")
                             .font(GTNWFonts.terminal(size: 18, weight: .bold))
                         Spacer()

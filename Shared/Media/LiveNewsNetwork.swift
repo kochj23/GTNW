@@ -222,7 +222,7 @@ struct NewsNetworkView: View {
                 }) {
                     VStack(spacing: 4) {
                         Text(outlet.rawValue)
-                            .font(.caption)
+                            .font(.scaled(.caption))
                             .fontWeight(selectedOutlet == outlet ? .bold : .regular)
 
                         if selectedOutlet == outlet {
@@ -253,7 +253,7 @@ struct NewsArticleCard: View {
             // Outlet badge
             HStack {
                 Text(article.outlet.rawValue)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
                     .foregroundColor(article.outlet.color)
                     .padding(.horizontal, 8)
@@ -264,13 +264,13 @@ struct NewsArticleCard: View {
                 Spacer()
 
                 Text(formatTime(article.timestamp))
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.5))
             }
 
             // Headline
             Text(article.headline)
-                .font(.title3)
+                .font(.scaled(.title3))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
@@ -279,21 +279,21 @@ struct NewsArticleCard: View {
                 Image(packImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 200)
+                    .frame(height: FontScale.h(200))
                     .clipped()
                     .cornerRadius(8)
             }
 
             // Body
             Text(article.body)
-                .font(.body)
+                .font(.scaled(.body))
                 .foregroundColor(.white.opacity(0.9))
                 .lineLimit(5)
 
             // Bias indicator
             HStack {
                 Text("Bias:")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.6))
 
                 BiasIndicator(score: article.biasScore)
@@ -301,7 +301,7 @@ struct NewsArticleCard: View {
                 Spacer()
 
                 Text("Sentiment:")
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.6))
 
                 SentimentIndicator(score: article.sentiment)
@@ -330,17 +330,17 @@ struct BiasIndicator: View {
         HStack(spacing: 4) {
             Rectangle()
                 .fill(Color.blue)
-                .frame(width: 30, height: 8)
+                .frame(width: FontScale.w(30), height: FontScale.h(8))
                 .opacity(score < -0.3 ? 1.0 : 0.3)
 
             Rectangle()
                 .fill(Color.gray)
-                .frame(width: 30, height: 8)
+                .frame(width: FontScale.w(30), height: FontScale.h(8))
                 .opacity(abs(score) < 0.3 ? 1.0 : 0.3)
 
             Rectangle()
                 .fill(Color.red)
-                .frame(width: 30, height: 8)
+                .frame(width: FontScale.w(30), height: FontScale.h(8))
                 .opacity(score > 0.3 ? 1.0 : 0.3)
         }
     }
@@ -353,7 +353,7 @@ struct SentimentIndicator: View {
         HStack(spacing: 2) {
             ForEach(0..<5) { index in
                 Image(systemName: sentimentIcon(index))
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(sentimentColor)
             }
         }

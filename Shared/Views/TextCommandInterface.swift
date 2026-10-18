@@ -31,21 +31,21 @@ struct TextCommandInterface: View {
                     HSplitView {
                         // Left: Event Log
                         eventLogPanel(gameState: gameState)
-                            .frame(minWidth: 400)
+                            .frame(minWidth: FontScale.w(400))
 
                         // Right: Command Input
                         commandInputPanel(gameState: gameState)
-                            .frame(minWidth: 500)
+                            .frame(minWidth: FontScale.w(500))
                     }
                     #else
                     HStack(spacing: 0) {
                         // Left: Event Log
                         eventLogPanel(gameState: gameState)
-                            .frame(minWidth: 200)
+                            .frame(minWidth: FontScale.w(200))
 
                         // Right: Command Input
                         commandInputPanel(gameState: gameState)
-                            .frame(minWidth: 200)
+                            .frame(minWidth: FontScale.w(200))
                     }
                     #endif
                 }
@@ -75,7 +75,7 @@ struct TextCommandInterface: View {
                         HStack(spacing: 4) {
                             Circle()
                                 .fill(GTNWColors.terminalGreen)
-                                .frame(width: 8, height: 8)
+                                .frame(width: FontScale.w(8), height: FontScale.h(8))
                             Text("MLX AI ONLINE")
                                 .font(GTNWFonts.caption())
                                 .foregroundColor(GTNWColors.terminalGreen)
@@ -163,7 +163,7 @@ struct TextCommandInterface: View {
         HStack(alignment: .top, spacing: 12) {
             // Icon
             Text(event.type.rawValue)
-                .font(.system(size: 20))
+                .font(.scaled(size: 20))
 
             VStack(alignment: .leading, spacing: 4) {
                 // Message
@@ -259,7 +259,7 @@ struct TextCommandInterface: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
                 }
-                .frame(height: 200)
+                .frame(height: FontScale.h(200))
                 .background(Color.black.opacity(0.7))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -292,7 +292,7 @@ struct TextCommandInterface: View {
 
                     Button(action: processCommand) {
                         Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.scaled(size: 24))
                             .foregroundColor(GTNWColors.terminalGreen)
                     }
                     .disabled(commandText.isEmpty)

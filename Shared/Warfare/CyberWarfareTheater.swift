@@ -185,7 +185,7 @@ struct CyberWarfareView: View {
             HStack(spacing: 0) {
                 // Attack selector
                 attackSelector
-                    .frame(width: 300)
+                    .frame(width: FontScale.w(300))
 
                 Divider()
 
@@ -199,12 +199,12 @@ struct CyberWarfareView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("💻 Cyber Warfare Theater")
-                .font(.title2)
+                .font(.scaled(.title2))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
             Text("\(cyber.activeOperations.count) operations conducted")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
         }
         .padding()
@@ -215,7 +215,7 @@ struct CyberWarfareView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Select Attack Type:")
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 ForEach(CyberAttackType.allCases, id: \.self) { type in
@@ -229,15 +229,11 @@ struct CyberWarfareView: View {
                 Divider()
 
                 Text("Attribution:")
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
-                Picker("Attribution", selection: $selectedAttribution) {
-                    ForEach([AttributionLevel.anonymous, .deniable, .traceable, .overt], id: \.self) { level in
-                        Text(level.rawValue).tag(level)
-                    }
-                }
-                .pickerStyle(.segmented)
+                ScaledSegmentedPicker(selection: $selectedAttribution,
+                                      options: [AttributionLevel.anonymous, .deniable, .traceable, .overt].map { ($0, $0.rawValue) })
 
                 Button("Execute Attack") {
                     executeAttack()
@@ -281,13 +277,13 @@ struct AttackTypeCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(type.rawValue)
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
 
                     Spacer()
 
                     Text(riskLabel)
-                        .font(.caption2)
+                        .font(.scaled(.caption2))
                         .fontWeight(.bold)
                         .foregroundColor(riskColor)
                         .padding(.horizontal, 8)
@@ -297,7 +293,7 @@ struct AttackTypeCard: View {
                 }
 
                 Text(type.rawValue)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -341,25 +337,25 @@ struct CyberOperationCard: View {
                     .foregroundColor((operation.success ?? false) ? .green : .red)
 
                 Text(operation.type.rawValue)
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 Spacer()
 
                 if operation.wasDetected {
                     Text("🔍 ATTRIBUTED")
-                        .font(.caption2)
+                        .font(.scaled(.caption2))
                         .foregroundColor(.red)
                 }
             }
 
             Text("\(operation.attackerID) → \(operation.targetID)")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
 
             if operation.success == true {
                 Text("Operation succeeded")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.green)
             }
         }
@@ -371,12 +367,12 @@ struct CyberOperationCard: View {
     private func damageIndicator(_ label: String, _ value: Int) -> some View {
         VStack(spacing: 2) {
             Text("\(value)%")
-                .font(.caption)
+                .font(.scaled(.caption))
                 .fontWeight(.bold)
                 .foregroundColor(damageColor(value))
 
             Text(label)
-                .font(.caption2)
+                .font(.scaled(.caption2))
                 .foregroundColor(.white.opacity(0.5))
         }
     }

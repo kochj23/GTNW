@@ -20,7 +20,8 @@ class GameEngine: ObservableObject {
     @Published var newsManager = NewsManager()
     @Published var leaderboardManager = LeaderboardManager()
     @Published var eventLogger = EventLogger()
-    @Published var aiBackend = AIBackendManager.shared
+    /// The shared AI backend (main-actor isolated; a nested ObservableObject is not re-published anyway).
+    @MainActor var aiBackend: AIBackendManager { .shared }
     @Published var showingVictoryScreen = false
     @Published var showingLeaderboard = false
     @Published var victoryType: VictoryType?

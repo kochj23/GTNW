@@ -75,9 +75,9 @@ enum EGA {
     /// The retro typeface: a monospaced bitmap-style face.
     static func font(size: CGFloat, weight: Font.Weight = .regular) -> Font {
         #if os(macOS)
-        return Font.custom("Monaco", size: size).weight(weight == .regular ? .regular : .bold)
+        return Font.scaledCustom("Monaco", size: size).weight(weight == .regular ? .regular : .bold)
         #else
-        return Font.custom("Courier", size: size).weight(weight == .regular ? .regular : .bold)
+        return Font.scaledCustom("Courier", size: size).weight(weight == .regular ? .regular : .bold)
         #endif
     }
 }
@@ -143,7 +143,7 @@ struct ThemedButtonStyle: ButtonStyle {
                     .background(RetroBevel(fill: prominent ? EGA.lightGray : EGA.blue, raised: !configuration.isPressed))
             } else {
                 configuration.label
-                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                     .foregroundColor(prominent ? .black : color)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(RoundedRectangle(cornerRadius: 8).fill(prominent ? color : color.opacity(configuration.isPressed ? 0.3 : 0.12)))
@@ -162,7 +162,7 @@ extension View {
 /// Theme-aware font helper for new views.
 enum ThemeFont {
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        Theme.isRetro ? EGA.font(size: size, weight: weight) : .system(size: size, weight: weight, design: .monospaced)
+        Theme.isRetro ? EGA.font(size: size, weight: weight) : .scaled(size: size, weight: weight, design: .monospaced)
     }
 }
 
@@ -176,20 +176,31 @@ struct ThemeSettingsView: View {
     var body: some View {
         Form {
             Section("Look") {
-                Picker("Skin", selection: $themes.theme) {
-                    ForEach(GameTheme.allCases) { Text($0.displayName).tag($0) }
+                ScaledLabeledRow("Skin") {
+                    ScaledMenuPicker(selection: $themes.theme, options: GameTheme.allCases.map { ($0, $0.displayName) })
+                        .frame(width: FontScale.of(160))
                 }
                 Text("Retro uses the 16-colour EGA palette and beveled panels. Shadow Pack art appears when the pack is installed.")
-                    .font(.caption).foregroundColor(.secondary)
+                    .font(.scaled(.caption)).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                FontScalePicker()
+                Text("Scales every font in the game. Default \(FontScale.label(FontScale.platformDefault)).")
+                    .font(.scaled(.caption)).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Section("New games") {
-                Picker("Turn length", selection: $turnLength) {
-                    ForEach(TurnLength.allCases) { Text("\($0.displayName) (\($0.actionsPerTurn) action\($0.actionsPerTurn == 1 ? "" : "s"))").tag($0.rawValue) }
+                ScaledLabeledRow("Turn length") {
+                    ScaledMenuPicker(selection: $turnLength, options: TurnLength.allCases.map {
+                        ($0.rawValue, "\($0.displayName) (\($0.actionsPerTurn) action\($0.actionsPerTurn == 1 ? "" : "s"))")
+                    })
+                    .frame(width: FontScale.of(180))
                 }
-                Toggle("Presidential elections", isOn: $elections)
+                ScaledLabeledRow("") {
+                    Toggle("Presidential elections", isOn: $elections).toggleStyle(.scaledCheckbox)
+                }
             }
         }
         .padding()
-        .frame(minWidth: 420)
+        .frame(minWidth: FontScale.of(420))
     }
 }

@@ -409,3 +409,88 @@ final class AITransportSecurityTests: XCTestCase {
         XCTAssertThrowsError(try manager.load(slot: 1))
     }
 }
+
+// MARK: - Font scale guard
+
+/// Source guard: every font in the app must go through `FontScale` (Font.scaled / ThemeFont / GTNWFonts / EGA.font),
+/// otherwise it ignores the Text size setting and stays tiny at 2×. Fails on any unscaled `.font(` call or raw
+/// `.system(size:)`, `.system(.style…)`, `Font.custom`, NSFont or UIFont construction outside FontScale.swift.
+final class FontScaleSourceGuardTests: XCTestCase {
+
+    static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    }
+
+    static func appSources() throws -> [URL] {
+        var out: [URL] = []
+        for dir in ["Shared", "GTNW"] {
+            let base = repoRoot.appendingPathComponent(dir)
+            guard let e = FileManager.default.enumerator(at: base, includingPropertiesForKeys: nil) else { continue }
+            for case let url as URL in e where url.pathExtension == "swift" && url.lastPathComponent != "FontScale.swift" {
+                out.append(url)
+            }
+        }
+        return out
+    }
+
+    static let allowedFontArguments = [".scaled(", "ThemeFont.", "GTNWFonts.", "EGA.font("]
+    static let bannedConstructors = [".system(size:", "Font.system(", "Font.custom(", "NSFont", "UIFont"]
+
+    static func violations(in source: String, file: String) -> [String] {
+        var found: [String] = []
+        let lines = source.components(separatedBy: "\n")
+        for (i, raw) in lines.enumerated() {
+            let line = raw.components(separatedBy: "//").first ?? raw
+            for banned in bannedConstructors where line.contains(banned) {
+                found.append("\(file):\(i + 1): unscaled \(banned) — use Font.scaled(...)")
+            }
+            if line.range(of: #"\.system\(\.[a-zA-Z0-9]+"#, options: .regularExpression) != nil {
+                found.append("\(file):\(i + 1): unscaled text style — use Font.scaled(.style, design:)")
+            }
+            var rest = Substring(line)
+            while let r = rest.range(of: ".font(") {
+                let arg = rest[r.upperBound...].trimmingCharacters(in: .whitespaces)
+                // `EGA.font(` / `func font(` are font helpers, not the `.font(` modifier.
+                if r.lowerBound > rest.startIndex,
+                   let prev = rest[rest.index(before: r.lowerBound)].unicodeScalars.first,
+                   CharacterSet.alphanumerics.contains(prev) {
+                    rest = rest[r.upperBound...]
+                    continue
+                }
+                // A multi-line `.font(` continues on the next line; the banned-constructor scan covers its branches.
+                if !arg.isEmpty && !allowedFontArguments.contains(where: { arg.hasPrefix($0) }) {
+                    found.append("\(file):\(i + 1): .font(\(arg.prefix(40))) bypasses FontScale")
+                }
+                rest = rest[r.upperBound...]
+            }
+        }
+        return found
+    }
+
+    func testNoUnscaledFontCalls() throws {
+        let files = try Self.appSources()
+        XCTAssertGreaterThan(files.count, 50, "source tree not found at \(Self.repoRoot.path)")
+        var all: [String] = []
+        var fontCalls = 0
+        for url in files {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            fontCalls += text.components(separatedBy: ".font(").count - 1
+            all += Self.violations(in: text, file: url.lastPathComponent)
+        }
+        XCTAssertGreaterThan(fontCalls, 700, "expected the app's .font( calls to be scanned")
+        XCTAssertTrue(all.isEmpty, "Unscaled fonts:\n" + all.joined(separator: "\n"))
+    }
+
+    /// The guard itself must catch each bypass form.
+    func testGuardCatchesBypasses() {
+        for bad in ["Text(\"x\").font(.caption)", "Text(\"x\").font(.system(size: 12))",
+                    "let f = Font.system(size: 9)", "x.font(.system(.body, design: .monospaced))",
+                    "NSFont.systemFont(ofSize: 12)", "Font.custom(\"Menlo\", size: 12)"] {
+            XCTAssertFalse(Self.violations(in: bad, file: "t").isEmpty, "guard missed: \(bad)")
+        }
+        for ok in ["Text(\"x\").font(.scaled(.caption))", "x.font(.scaled(size: 12, weight: .bold))",
+                   "x.font(ThemeFont.mono(11))", "x.font(GTNWFonts.body())", "x.font(EGA.font(size: 12))"] {
+            XCTAssertTrue(Self.violations(in: ok, file: "t").isEmpty, "false positive: \(ok)")
+        }
+    }
+}

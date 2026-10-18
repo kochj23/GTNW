@@ -36,7 +36,7 @@ struct BrainAssignmentView: View {
                 List {
                     Section {
                         Text("Every unassigned country uses the fast Rule-Based AI. Set a country to \"This Session\" for true PvP against a live Claude Code session, \"Gateway-Claude\" for an always-on opponent, or any local / frontier model.")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
                     ForEach(filteredCountries(gameState), id: \.id) { country in
@@ -50,7 +50,7 @@ struct BrainAssignmentView: View {
                 Spacer()
             }
         }
-        .frame(minWidth: 520, minHeight: 560)
+        .frame(minWidth: FontScale.w(520), minHeight: FontScale.h(560))
         .onAppear(perform: loadModels)
     }
 
@@ -58,10 +58,10 @@ struct BrainAssignmentView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("🧠 WHO PLAYS EACH COUNTRY?")
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
                 Text("Brain per country · PvP + PvE")
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.scaled(size: 11, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.8))
             }
             Spacer()
@@ -87,18 +87,18 @@ struct BrainAssignmentView: View {
         let current = gameEngine.brain(for: country.id)
         let isPlayer = gameEngine.gameState?.playerCountryID == country.id
         return HStack(spacing: 12) {
-            Text(country.flag).font(.system(size: 28))
+            Text(country.flag).font(.scaled(size: 28))
             VStack(alignment: .leading, spacing: 2) {
                 Text(country.name)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                    .font(.scaled(size: 14, weight: .semibold, design: .monospaced))
                 Text("☢️ \(country.nuclearWarheads) · mil \(country.militaryStrength)")
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.scaled(size: 10, design: .monospaced))
                     .foregroundColor(.secondary)
             }
             Spacer()
             if isPlayer {
                 Text("YOU")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.neonCyan)
             }
             brainMenu(for: country.id, current: current)
@@ -141,9 +141,9 @@ struct BrainAssignmentView: View {
                 Image(systemName: icon(for: current))
                 Text(current.displayName)
                     .lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9))
+                Image(systemName: "chevron.up.chevron.down").font(.scaled(size: 9))
             }
-            .font(.system(size: 12, weight: .medium, design: .monospaced))
+            .font(.scaled(size: 12, weight: .medium, design: .monospaced))
             .foregroundColor(color(for: current))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -151,7 +151,7 @@ struct BrainAssignmentView: View {
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(color(for: current).opacity(0.5), lineWidth: 1))
             .cornerRadius(6)
         }
-        .frame(width: 220)
+        .frame(width: FontScale.w(220))
     }
 
     private func icon(for brain: AIBrain) -> String {

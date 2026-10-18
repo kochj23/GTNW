@@ -34,7 +34,7 @@ struct SituationRoomView: View {
     var body: some View {
         GeometryReader { geo in
             Group {
-                if geo.size.width < 1000 { compactLayout } else { wideLayout }
+                if geo.size.width < FontScale.w(1000) { compactLayout } else { wideLayout }
             }
         }
         .padding(8)
@@ -68,12 +68,8 @@ struct SituationRoomView: View {
             ScrollView(.horizontal, showsIndicators: false) { SituationTopBar(gameState: gameState, onSheet: { sheet = $0 }) }
             mapControls
             VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
-                .frame(minHeight: 220)
-            Picker("", selection: $compactPanel) {
-                Text("Dossier").tag(0)
-                Text("Advisors").tag(1)
-            }
-            .pickerStyle(.segmented)
+                .frame(minHeight: FontScale.h(220))
+            ScaledSegmentedPicker(selection: $compactPanel, options: [(0, "Dossier"), (1, "Advisors")])
             Group {
                 if compactPanel == 0 {
                     CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
@@ -83,7 +79,7 @@ struct SituationRoomView: View {
             }
             .frame(maxHeight: .infinity)
             ScrollView(.horizontal, showsIndicators: false) {
-                ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 }).frame(minWidth: 900)
+                ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 }).frame(minWidth: FontScale.w(900))
             }
             NewsTicker(items: gameState.shadow.ticker)
         }
@@ -94,7 +90,7 @@ struct SituationRoomView: View {
             SituationTopBar(gameState: gameState, onSheet: { sheet = $0 })
             HStack(alignment: .top, spacing: 6) {
                 AdvisorRail(gameState: gameState, selected: selected, briefingRole: $briefingRole)
-                    .frame(width: 190)
+                    .frame(width: FontScale.w(190))
                 VStack(spacing: 4) {
                     mapControls
                     VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
@@ -104,7 +100,7 @@ struct SituationRoomView: View {
                 .padding(6)
                 .themedPanel(retroFill: EGA.lightGray)
                 CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
-                    .frame(width: 300)
+                    .frame(width: FontScale.w(300))
             }
             ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 })
             NewsTicker(items: gameState.shadow.ticker)
@@ -113,15 +109,14 @@ struct SituationRoomView: View {
 
     private var mapControls: some View {
         HStack(spacing: 8) {
-            Picker("", selection: $zoom) {
-                ForEach(MapZoom.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 240)
-            Picker("Filter", selection: $filter) {
-                ForEach(MapFilter.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .frame(width: 240)
+            // Retro draws these on the light-gray EGA panel: dark text there.
+            ScaledSegmentedPicker(selection: $zoom, options: MapZoom.allCases.map { ($0, $0.rawValue) },
+                                  textColor: Theme.isRetro ? .black : .primary)
+                .fixedSize()
+            Text("Filter").font(ThemeFont.mono(12)).foregroundColor(Theme.isRetro ? .black : .primary)
+            ScaledMenuPicker(selection: $filter, options: MapFilter.allCases.map { ($0, $0.rawValue) },
+                             textColor: Theme.isRetro ? .black : .primary)
+                .frame(width: FontScale.of(150))
             Spacer()
             Button { sheet = .warRoom } label: { Label("War Room", systemImage: "shield.lefthalf.filled") }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed))
@@ -140,10 +135,41 @@ struct SituationTopBar: View {
     @EnvironmentObject var gameEngine: GameEngine
     @ObservedObject var gameState: GameState
     let onSheet: (SituationRoomView.SituationSheet) -> Void
+    /// `.auto` in the app; layout tests measure each half on its own.
+    enum Part { case auto, statsOnly, controlsOnly }
+    var part: Part = .auto
 
     var body: some View {
         let eval = WorldEvaluation.evaluate(gameState)
-        HStack(spacing: 14) {
+        Group {
+            if part == .statsOnly {
+                HStack(spacing: 14) { stats(eval) }
+            } else if part == .controlsOnly {
+                HStack(spacing: 14) { controls }
+            } else {
+                autoBar(eval)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .themedPanel()
+    }
+
+    /// At large text sizes the bar no longer fits one row: wrap the controls onto a second row instead of
+    /// pushing the whole Situation Room wider than the window. (A plain function: ViewThatFits needs iOS 16.)
+    private func autoBar(_ eval: WorldEvaluation) -> AnyView {
+        if #available(macOS 13, iOS 16, *) {
+            return AnyView(ViewThatFits(in: .horizontal) {
+                HStack(spacing: 14) { stats(eval); Spacer(minLength: 14); controls }
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 14) { stats(eval); Spacer(minLength: 0) }
+                    HStack(spacing: 14) { Spacer(minLength: 0); controls }
+                }
+            })
+        }
+        return AnyView(HStack(spacing: 14) { stats(eval); Spacer(minLength: 14); controls })
+    }
+
+    @ViewBuilder private func stats(_ eval: WorldEvaluation) -> some View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(gameState.currentDateLabel.uppercased())
                     .font(ThemeFont.mono(18, .bold))
@@ -178,8 +204,10 @@ struct SituationTopBar: View {
                 Text("IMPEACHMENT \(gameState.shadow.impeachmentStage)/3").font(ThemeFont.mono(11, .bold))
                     .foregroundColor(GTNWColors.terminalRed)
             }
-            Spacer()
-            StoreStatusBadge()
+    }
+
+    @ViewBuilder private var controls: some View {
+            StoreStatusBadge().fixedSize()
             if gameState.shadow.budgetReviewPending {
                 Button("BUDGET READY") { onSheet(.budget) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
             } else {
@@ -191,13 +219,10 @@ struct SituationTopBar: View {
             }
             .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
             .disabled(gameEngine.isProcessingAITurn || gameState.gameOver)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .themedPanel()
     }
 
     private var divider: some View {
-        Rectangle().fill(Theme.isRetro ? EGA.lightGray : Color.cyan.opacity(0.3)).frame(width: 1, height: 30)
+        Rectangle().fill(Theme.isRetro ? EGA.lightGray : Color.cyan.opacity(0.3)).frame(width: 1, height: FontScale.h(30))
     }
 
     private var electionLine: String {
@@ -307,7 +332,7 @@ struct AdvisorBriefingSheet: View {
             }
         }
         .padding(16)
-        .frame(width: 520)
+        .frame(width: FontScale.w(520))
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
@@ -337,7 +362,7 @@ struct CountryDossier: View {
                 let rel = player?.diplomaticRelations[c.id] ?? 0
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(c.flag).font(.system(size: 30))
+                        Text(c.flag).font(.scaled(size: 30))
                         VStack(alignment: .leading, spacing: 0) {
                             Text(c.name.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
                             Text("\(c.region.rawValue) · \(p.ideology.rawValue)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
@@ -397,16 +422,16 @@ struct CountryDossier: View {
                     Rectangle().fill(MapFilter.rampColor(band: good ? 6 - band : band)).frame(width: g.size.width * clamped)
                 }
             }
-            .frame(height: 7)
+            .frame(height: FontScale.h(7))
         }
     }
 
     private func pips(_ label: String, _ value: Int, _ name: String) -> some View {
         HStack(spacing: 3) {
-            Text(label).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).frame(width: 70, alignment: .leading)
+            Text(label).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).frame(width: FontScale.w(70), alignment: .leading)
             ForEach(1...6, id: \.self) { i in
                 Rectangle().fill(i <= value ? GTNWColors.terminalAmber : (Theme.isRetro ? EGA.black : Color.white.opacity(0.1)))
-                    .frame(width: 10, height: 8)
+                    .frame(width: FontScale.w(10), height: FontScale.h(8))
             }
             Text(name.uppercased()).font(ThemeFont.mono(9, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
         }
@@ -426,14 +451,14 @@ struct ActionLadder: View {
             Text(target.map { "TARGET: \($0.flag) \($0.name.uppercased())" } ?? "SELECT A TARGET")
                 .font(ThemeFont.mono(11, .bold))
                 .foregroundColor(GTNWColors.terminalAmber)
-                .frame(width: 230, alignment: .leading)
+                .frame(width: FontScale.w(230), alignment: .leading)
                 .lineLimit(1)
             ForEach(EscalationRung.allCases) { rung in
                 Button { onRung(rung) } label: {
                     HStack(spacing: 6) {
                         Image(systemName: rung.icon)
                         Text(rung.title.uppercased())
-                        if rung != .nuclear { Image(systemName: "chevron.right").font(.system(size: 9)) }
+                        if rung != .nuclear { Image(systemName: "chevron.right").font(.scaled(size: 9)) }
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -467,7 +492,7 @@ struct NewsTicker: View {
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { ctx in
             GeometryReader { g in
                 let speed = 60.0
-                let width = max(g.size.width, CGFloat(line.count) * 7.2)
+                let width = max(g.size.width, CGFloat(line.count) * 7.2 * FontScale.factor)
                 let offset = CGFloat(ctx.date.timeIntervalSince(start) * speed).truncatingRemainder(dividingBy: width + g.size.width)
                 Text(line.isEmpty ? "NO NEWS" : line)
                     .font(ThemeFont.mono(12, .bold))
@@ -476,7 +501,7 @@ struct NewsTicker: View {
                     .offset(x: g.size.width - offset)
             }
         }
-        .frame(height: 22)
+        .frame(height: FontScale.h(22))
         .clipped()
         .padding(.horizontal, 6)
         .themedPanel(retroFill: EGA.black)
@@ -516,7 +541,7 @@ struct ActionLadderSheet: View {
                         ForEach(actions) { a in
                             Button { action = a } label: {
                                 HStack {
-                                    Circle().fill(a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen).frame(width: 7, height: 7)
+                                    Circle().fill(a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen).frame(width: FontScale.w(7), height: FontScale.h(7))
                                     Text(a.rawValue).font(ThemeFont.mono(11, .bold))
                                     Spacer()
                                 }
@@ -528,7 +553,7 @@ struct ActionLadderSheet: View {
                         }
                     }
                 }
-                .frame(width: 240)
+                .frame(width: FontScale.w(240))
                 .themedPanel(retroFill: EGA.black)
                 VStack(alignment: .leading, spacing: 10) {
                     if let a = action {
@@ -553,17 +578,17 @@ struct ActionLadderSheet: View {
                     }
                     Spacer()
                 }
-                .frame(width: 430)
+                .frame(width: FontScale.w(430))
             }
         }
         .padding(14)
-        .frame(width: 720, height: 480)
+        .frame(width: FontScale.w(720), height: FontScale.h(480))
         .background(Theme.isRetro ? EGA.blue : Color.black)
         .overlay {
             if let anim = playingAnimation {
                 ZStack {
                     Color.black.opacity(0.9)
-                    PackAnimationView(anim) { EmptyView() }.frame(maxWidth: 420, maxHeight: 420)
+                    PackAnimationView(anim) { EmptyView() }.frame(maxWidth: FontScale.w(420), maxHeight: FontScale.h(420))
                 }
                 .onTapGesture { playingAnimation = nil; dismiss() }
             }

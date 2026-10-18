@@ -251,7 +251,7 @@ struct PlayerProfile: Codable {
 }
 
 struct PlayerAction: Codable {
-    let id = UUID()
+    var id = UUID()
     let category: AIActionCategory
     let actionName: String
     let target: String
@@ -283,12 +283,12 @@ struct PlayerProfileView: View {
                 // Header
                 VStack(spacing: 8) {
                     Text("🎯 Your Playstyle")
-                        .font(.title)
+                        .font(.scaled(.title))
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
                     Text("\(profile.gamesPlayed) games • \(profile.totalActions) actions")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .padding()
@@ -296,11 +296,11 @@ struct PlayerProfileView: View {
                 // Preferred category
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Preferred Strategy")
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
 
                     Text(profile.preferredCategory.rawValue)
-                        .font(.title2)
+                        .font(.scaled(.title2))
                         .fontWeight(.bold)
                         .foregroundColor(.blue)
                 }
@@ -312,7 +312,7 @@ struct PlayerProfileView: View {
                 // Tendencies
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Action Breakdown")
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
 
                     tendencyBar("Diplomatic", profile.diplomaticTendency, .blue)
@@ -328,7 +328,7 @@ struct PlayerProfileView: View {
                 if !profile.patterns.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Identified Patterns")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.white)
 
                         ForEach(profile.patterns, id: \.self) { pattern in
@@ -336,7 +336,7 @@ struct PlayerProfileView: View {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .foregroundColor(.orange)
                                 Text(pattern)
-                                    .font(.caption)
+                                    .font(.scaled(.caption))
                                     .foregroundColor(.white.opacity(0.8))
                             }
                         }
@@ -350,7 +350,7 @@ struct PlayerProfileView: View {
                 if !profile.weaknesses.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("⚠️ Exploitable Weaknesses")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.white)
 
                         ForEach(profile.weaknesses, id: \.self) { weakness in
@@ -358,13 +358,13 @@ struct PlayerProfileView: View {
                                 Image(systemName: "exclamationmark.triangle")
                                     .foregroundColor(.red)
                                 Text(weakness)
-                                    .font(.caption)
+                                    .font(.scaled(.caption))
                                     .foregroundColor(.white.opacity(0.8))
                             }
                         }
 
                         Text("AI opponents will exploit these weaknesses")
-                            .font(.caption2)
+                            .font(.scaled(.caption2))
                             .foregroundColor(.red.opacity(0.7))
                             .italic()
                     }
@@ -388,11 +388,11 @@ struct PlayerProfileView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(label)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.white.opacity(0.8))
                 Spacer()
                 Text("\(Int(value * 100))%")
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .fontWeight(.bold)
                     .foregroundColor(color)
             }
@@ -406,12 +406,12 @@ struct PlayerProfileView: View {
     private func statBox(_ label: String, _ value: Int, _ suffix: String, _ color: Color) -> some View {
         VStack(spacing: 4) {
             Text("\(value)\(suffix)")
-                .font(.title2)
+                .font(.scaled(.title2))
                 .fontWeight(.bold)
                 .foregroundColor(color)
 
             Text(label)
-                .font(.caption2)
+                .font(.scaled(.caption2))
                 .foregroundColor(.white.opacity(0.6))
         }
         .frame(maxWidth: .infinity)

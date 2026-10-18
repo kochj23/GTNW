@@ -19,13 +19,13 @@ private struct PowerMenuHeader: View {
         VStack(spacing: 6) {
             HStack {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.scaled(.title2))
                 Text(title)
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 20, weight: .bold, design: .monospaced))
             }
             .foregroundColor(AppSettings.terminalGreen)
             Text(subtitle)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
         }
         .padding()
@@ -50,23 +50,23 @@ private struct PowerOptionRow: View {
         Button(action: onSelect) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: icon)
-                    .font(.title3)
+                    .font(.scaled(.title3))
                     .foregroundColor(isEnabled ? accentColor : .gray)
-                    .frame(width: 30)
+                    .frame(width: FontScale.w(30))
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(title)
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(isEnabled ? .white : .gray)
                         if requiresTarget && !hasTarget {
                             Text("(select target first)")
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.scaled(size: 10, design: .monospaced))
                                 .foregroundColor(.orange)
                         }
                     }
                     Text(description)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.scaled(size: 11, design: .monospaced))
                         .foregroundColor(isEnabled ? AppSettings.terminalGreen.opacity(0.8) : .gray)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -219,7 +219,7 @@ struct PresidentialAddressMenuView: View {
                     Label("Congressional Support: \(player.congressionalSupport)%",
                           systemImage: "person.3.fill")
                 }
-                .font(.system(size: 11, design: .monospaced))
+                .font(.scaled(size: 11, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .padding(.horizontal)
                 .padding(.vertical, 8)

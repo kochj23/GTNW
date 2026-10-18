@@ -26,19 +26,19 @@ struct WarRoomView: View {
         VStack(spacing: 10) {
             HStack {
                 PackImage("warroom.sword") {
-                    Image(systemName: "shield.lefthalf.filled").font(.title).foregroundColor(GTNWColors.terminalRed)
+                    Image(systemName: "shield.lefthalf.filled").font(.scaled(.title)).foregroundColor(GTNWColors.terminalRed)
                 }
-                .frame(width: 32, height: 32)
+                .frame(width: FontScale.w(32), height: FontScale.h(32))
                 PackImage("warroom.title") {
                     Text("THE WAR ROOM").font(ThemeFont.mono(22, .bold)).foregroundColor(GTNWColors.terminalRed)
                 }
-                .frame(maxHeight: 28)
+                .frame(maxHeight: FontScale.h(28))
                 Spacer()
                 Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
                 Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle())
             }
             HStack(alignment: .top, spacing: 10) {
-                frontList.frame(width: 280)
+                frontList.frame(width: FontScale.w(280))
                 if let f = fronts.first(where: { $0.id == selectedFront }) ?? fronts.first(where: { $0.status == .fighting }) {
                     frontDetail(f)
                 } else {
@@ -50,10 +50,10 @@ struct WarRoomView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            operationsLog.frame(height: 120)
+            operationsLog.frame(height: FontScale.h(120))
         }
         .padding(14)
-        .frame(width: 940, height: 640)
+        .frame(width: FontScale.w(940), height: FontScale.h(640))
         .background(Theme.isRetro ? EGA.black : Color.black)
         .onAppear { ShadowPack.shared.play("sfx.warroom_enter") }
     }
@@ -103,7 +103,7 @@ struct WarRoomView: View {
             }
             if f.status == .fighting {
                 HStack(spacing: 8) {
-                    Stepper("Troops: \(Int(troopStep))K", value: $troopStep, in: 10...500, step: 10).frame(width: 170)
+                    Stepper("Troops: \(Int(troopStep))K", value: $troopStep, in: 10...500, step: 10).frame(width: FontScale.w(170))
                     if !usIsBelligerent {
                         Button("SEND TO \(name(f.defender).uppercased())") { act { gameEngine.commitTroops(frontID: f.id, side: f.defender, thousands: troopStep) } }
                             .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen)).disabled(f.usSide == f.attacker)
@@ -178,7 +178,7 @@ struct WarRoomView: View {
                     Rectangle().fill(GTNWColors.terminalRed).frame(width: g.size.width * (f.attackerMomentum + 1) / 2)
                 }
             }
-            .frame(height: 10)
+            .frame(height: FontScale.h(10))
         }
     }
 
@@ -186,16 +186,16 @@ struct WarRoomView: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
             HStack {
-                Text("").frame(width: 130, alignment: .leading)
-                Text(code(f.attacker)).frame(width: 60, alignment: .trailing)
-                Text(code(f.defender)).frame(width: 60, alignment: .trailing)
+                Text("").frame(width: FontScale.w(130), alignment: .leading)
+                Text(code(f.attacker)).frame(width: FontScale.w(60), alignment: .trailing)
+                Text(code(f.defender)).frame(width: FontScale.w(60), alignment: .trailing)
             }
             .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.neonCyan)
             ForEach(rows, id: \.0) { r in
                 HStack {
-                    Text(r.0).frame(width: 130, alignment: .leading)
-                    Text("\(r.1)").frame(width: 60, alignment: .trailing)
-                    Text("\(r.2)").frame(width: 60, alignment: .trailing)
+                    Text(r.0).frame(width: FontScale.w(130), alignment: .leading)
+                    Text("\(r.1)").frame(width: FontScale.w(60), alignment: .trailing)
+                    Text("\(r.2)").frame(width: FontScale.w(60), alignment: .trailing)
                 }
                 .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
             }

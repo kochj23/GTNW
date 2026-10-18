@@ -274,12 +274,12 @@ struct EconomicImpactView: View {
                 // Header
                 VStack(spacing: 8) {
                     Text("💰 Economic Warfare Simulation")
-                        .font(.title2)
+                        .font(.scaled(.title2))
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
                     Text("\(simulation.sanctioner.name) vs \(simulation.target.name)")
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white.opacity(0.7))
                 }
 
@@ -293,7 +293,7 @@ struct EconomicImpactView: View {
                 if !simulation.affectedCountries.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("⚠️ Collateral Damage:")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.white)
 
                         ForEach(simulation.affectedCountries.prefix(5), id: \.country.id) { effect in
@@ -304,7 +304,7 @@ struct EconomicImpactView: View {
                                 Text("-\(String(format: "%.1f", effect.gdpImpact))%")
                                     .foregroundColor(.orange)
                             }
-                            .font(.caption)
+                            .font(.scaled(.caption))
                         }
                     }
                     .padding()
@@ -316,7 +316,7 @@ struct EconomicImpactView: View {
                 if !simulation.alternativeRoutes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("🔄 Alternative Trade Routes:")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                             .foregroundColor(.white)
 
                         ForEach(simulation.alternativeRoutes.prefix(5), id: \.partner.id) { route in
@@ -329,7 +329,7 @@ struct EconomicImpactView: View {
                                 Text("• \(route.timeToEstablish) turns")
                                     .foregroundColor(.gray)
                             }
-                            .font(.caption)
+                            .font(.scaled(.caption))
                         }
                     }
                     .padding()
@@ -340,16 +340,16 @@ struct EconomicImpactView: View {
                 // Recovery time
                 VStack(spacing: 8) {
                     Text("Recovery Estimate")
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
 
                     Text("\(simulation.recoveryTimeYears) years")
-                        .font(.title)
+                        .font(.scaled(.title))
                         .fontWeight(.bold)
                         .foregroundColor(.blue)
 
                     Text("Confidence: \(Int(simulation.confidence * 100))%")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.6))
                 }
                 .padding()
@@ -363,16 +363,16 @@ struct EconomicImpactView: View {
     private func impactCard(_ label: String, _ value: Double, _ color: Color) -> some View {
         VStack(spacing: 8) {
             Text("-\(String(format: "%.1f", value))%")
-                .font(.title)
+                .font(.scaled(.title))
                 .fontWeight(.bold)
                 .foregroundColor(color)
 
             Text(label)
-                .font(.caption)
+                .font(.scaled(.caption))
                 .foregroundColor(.white.opacity(0.7))
         }
         .padding()
-        .frame(minWidth: 120)
+        .frame(minWidth: FontScale.w(120))
         .background(color.opacity(0.2))
         .cornerRadius(12)
     }

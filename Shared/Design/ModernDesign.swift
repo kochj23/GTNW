@@ -148,7 +148,7 @@ struct ModernButtonStyle: ButtonStyle {
                 }
             )
             .foregroundColor(style == .outlined ? color : (style == .glass ? ModernColors.textPrimary : .white))
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .font(.scaled(size: 14, weight: .semibold, design: .rounded))
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .shadow(color: color.opacity(0.3), radius: configuration.isPressed ? 5 : 8)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
@@ -173,7 +173,7 @@ struct ModernHeader: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(.system(size: size.fontSize, weight: .bold, design: .rounded))
+            .font(.scaled(size: size.fontSize, weight: .bold, design: .rounded))
             .foregroundColor(ModernColors.textPrimary)
     }
 }
@@ -338,13 +338,13 @@ struct CircularGauge: View {
             if showValue {
                 VStack(spacing: 2) {
                     Text(String(format: "%.0f", animatedValue))
-                        .font(.system(size: size > 60 ? 24 : 16, weight: .bold, design: .rounded))
+                        .font(.scaled(size: size > 60 ? 24 : 16, weight: .bold, design: .rounded))
                         .foregroundColor(ModernColors.textPrimary)
                         .animation(.easeInOut(duration: 0.6), value: animatedValue)
 
                     if let label = label {
                         Text(label)
-                            .font(.system(size: size > 60 ? 10 : 8, weight: .medium, design: .rounded))
+                            .font(.scaled(size: size > 60 ? 10 : 8, weight: .medium, design: .rounded))
                             .foregroundColor(ModernColors.textSecondary)
                     }
                 }
@@ -381,7 +381,7 @@ struct MiniGauge: View {
                 .shadow(color: color.opacity(0.5), radius: 3)
                 .animation(.easeInOut(duration: 0.6), value: animatedValue)
         }
-        .frame(width: 40, height: 40)
+        .frame(width: FontScale.w(40), height: FontScale.h(40))
         .onAppear {
             animatedValue = value
         }

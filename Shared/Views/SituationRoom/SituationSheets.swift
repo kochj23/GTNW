@@ -63,7 +63,7 @@ struct BudgetView: View {
                     slider("Research & investment", \.research, step: 0.1)
                     slider("Foreign aid", \.foreignAid, step: 0.05)
                 }
-                .frame(width: 400)
+                .frame(width: FontScale.w(400))
                 VStack(alignment: .leading, spacing: 6) {
                     Text("PROJECTION").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.neonCyan)
                     row("Revenue", String(format: "%.1f%% of GDP", proj.revenue))
@@ -85,7 +85,7 @@ struct BudgetView: View {
                     .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
             }
         }
-        .frame(width: 820, height: 560)
+        .frame(width: FontScale.w(820), height: FontScale.h(560))
         .onAppear { if !loaded { draft = gameState.shadow.budget; loaded = true } }
     }
 
@@ -125,7 +125,7 @@ struct BudgetView: View {
                     }
                 }
             }
-            .frame(height: 18)
+            .frame(height: FontScale.h(18))
         }
     }
 }
@@ -147,12 +147,12 @@ struct AidSheet: View {
                     .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
                 ForEach(AidCategory.allCases) { cat in
                     HStack(spacing: 10) {
-                        Image(systemName: cat.icon).frame(width: 18)
-                        Text(cat.label).frame(width: 120, alignment: .leading)
-                        Text(String(format: "needs $%.1fB", c.profile.aidNeed[cat])).frame(width: 110, alignment: .leading)
+                        Image(systemName: cat.icon).frame(width: FontScale.w(18))
+                        Text(cat.label).frame(width: FontScale.w(120), alignment: .leading)
+                        Text(String(format: "needs $%.1fB", c.profile.aidNeed[cat])).frame(width: FontScale.w(110), alignment: .leading)
                             .foregroundColor(GTNWColors.neonCyan)
                         Stepper(String(format: "$%.1fB", package[cat]), value: Binding(get: { package[cat] }, set: { package[cat] = max(0, $0) }), in: 0...50, step: 0.5)
-                            .frame(width: 160)
+                            .frame(width: FontScale.w(160))
                         let sent = gameState.shadow.aidSent[countryID]?[cat] ?? 0
                         if sent > 0 { Text(String(format: "sent $%.1fB", sent)).foregroundColor(GTNWColors.terminalAmber) }
                     }
@@ -179,7 +179,7 @@ struct AidSheet: View {
             }
             Spacer()
         }
-        .frame(width: 640, height: 420)
+        .frame(width: FontScale.w(640), height: FontScale.h(420))
     }
 }
 
@@ -198,12 +198,12 @@ struct WorldEvaluationView: View {
                     meter("U.S. QUALITY OF LIFE", e.usQualityOfLife)
                     meter("WORLD QUALITY OF LIFE", e.worldQualityOfLife)
                 }
-                .frame(width: 360)
+                .frame(width: FontScale.w(360))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("WORLD PEACE LEVEL").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.neonCyan)
                     ForEach(PeaceLevel.allCases.reversed(), id: \.rawValue) { level in
                         HStack {
-                            Rectangle().fill(MapFilter.rampColor(band: min(6, level.rawValue + 1))).frame(width: 26, height: 18)
+                            Rectangle().fill(MapFilter.rampColor(band: min(6, level.rawValue + 1))).frame(width: FontScale.w(26), height: FontScale.h(18))
                                 .overlay(level == e.peaceLevel ? Text("◀").font(ThemeFont.mono(12, .bold)).foregroundColor(.white).offset(x: 24) : nil)
                             Text(level.label.uppercased()).font(ThemeFont.mono(11, level == e.peaceLevel ? .bold : .regular))
                                 .foregroundColor(level == e.peaceLevel ? GTNWColors.terminalAmber : (Theme.isRetro ? EGA.lightGray : .gray))
@@ -224,7 +224,7 @@ struct WorldEvaluationView: View {
             }
             Spacer()
         }
-        .frame(width: 720, height: 520)
+        .frame(width: FontScale.w(720), height: FontScale.h(520))
     }
 
     private func meter(_ title: String, _ v: Double, label: String? = nil) -> some View {
@@ -240,16 +240,16 @@ struct WorldEvaluationView: View {
                     Rectangle().fill(MapFilter.rampColor(band: 6 - min(6, Int(max(0, min(99.9, v)) / 100 * 7)))).frame(width: g.size.width * max(0, min(1, v / 100)))
                 }
             }
-            .frame(height: 12)
+            .frame(height: FontScale.h(12))
         }
     }
 
     private func summary(_ label: String, _ a: Double, _ b: Double) -> some View {
         HStack {
-            Text(label).frame(width: 200, alignment: .leading).foregroundColor(Theme.isRetro ? EGA.white : .white)
-            Text(String(format: "%.0f", a)).frame(width: 60).foregroundColor(GTNWColors.neonCyan)
+            Text(label).frame(width: FontScale.w(200), alignment: .leading).foregroundColor(Theme.isRetro ? EGA.white : .white)
+            Text(String(format: "%.0f", a)).frame(width: FontScale.w(60)).foregroundColor(GTNWColors.neonCyan)
             Text("→").foregroundColor(GTNWColors.neonCyan)
-            Text(String(format: "%.0f", b)).frame(width: 60).foregroundColor(b >= a ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
+            Text(String(format: "%.0f", b)).frame(width: FontScale.w(60)).foregroundColor(b >= a ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
         }
         .font(ThemeFont.mono(11))
     }
@@ -273,22 +273,22 @@ struct CityView: View {
                     VStack(spacing: -12) {
                         Spacer()
                         HStack(alignment: .bottom, spacing: 6) {
-                            tile(.military, layout).frame(width: 104)
-                            tile(.downtown, layout).frame(width: 151)
-                            tile(.industry, layout).frame(width: 78)
-                            tile(.nuclear, layout).frame(width: 67)
+                            tile(.military, layout).frame(width: FontScale.w(104))
+                            tile(.downtown, layout).frame(width: FontScale.w(151))
+                            tile(.industry, layout).frame(width: FontScale.w(78))
+                            tile(.nuclear, layout).frame(width: FontScale.w(67))
                         }
                         HStack(alignment: .bottom, spacing: 6) {
-                            tile(.housing, layout).frame(width: 157)
-                            tile(.parks, layout).frame(width: 154)
-                            tile(.airport, layout).frame(width: 111)
+                            tile(.housing, layout).frame(width: FontScale.w(157))
+                            tile(.parks, layout).frame(width: FontScale.w(154))
+                            tile(.airport, layout).frame(width: FontScale.w(111))
                         }
-                        Rectangle().fill(Theme.isRetro ? EGA.green : Color.green.opacity(0.35)).frame(height: 14)
+                        Rectangle().fill(Theme.isRetro ? EGA.green : Color.green.opacity(0.35)).frame(height: FontScale.h(14))
                     }
                     .scaleEffect(1.35, anchor: .bottom)
                     if layout.burning { BurningOverlay() }
                 }
-                .frame(height: 380)
+                .frame(height: FontScale.h(380))
                 .clipped()
                 HStack(spacing: 14) {
                     ForEach(CityTile.allCases) { t in
@@ -297,7 +297,7 @@ struct CityView: View {
                 }
             }
         }
-        .frame(width: 760, height: 500)
+        .frame(width: FontScale.w(760), height: FontScale.h(500))
     }
 
     @ViewBuilder
@@ -408,7 +408,7 @@ struct SaveLoadView: View {
             if !message.isEmpty { Text(message).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalRed) }
             Spacer()
         }
-        .frame(width: 660, height: 600)
+        .frame(width: FontScale.w(660), height: FontScale.h(600))
         .onAppear { slots = manager.list() }
     }
 
@@ -449,9 +449,9 @@ struct ElectionNightView: View {
     var body: some View {
         VStack(spacing: 14) {
             PackAnimationView("anim.election.cuts", loop: true) {
-                Image(systemName: "checkmark.seal.fill").font(.system(size: 60)).foregroundColor(GTNWColors.terminalAmber)
+                Image(systemName: "checkmark.seal.fill").font(.scaled(size: 60)).foregroundColor(GTNWColors.terminalAmber)
             }
-            .frame(height: 120)
+            .frame(height: FontScale.h(120))
             Text("ELECTION NIGHT — \(GameCalendar.format(result.date).uppercased())").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
             HStack(spacing: 30) {
                 VStack { Text("YOU").font(ThemeFont.mono(12)); Text(String(format: "%.1f%%", result.playerShare)).font(ThemeFont.mono(26, .bold)) }
@@ -464,7 +464,7 @@ struct ElectionNightView: View {
             Button("CONTINUE") { dismiss() }.buttonStyle(ThemedButtonStyle(prominent: true))
         }
         .padding(24)
-        .frame(width: 560)
+        .frame(width: FontScale.w(560))
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
@@ -486,16 +486,16 @@ struct DomesticEndingBanner: View {
                 drawn("flame.fill", "CIVIL WAR")
             }
         }
-        .frame(maxHeight: 220)
+        .frame(maxHeight: FontScale.h(220))
     }
 
     private func drawn(_ icon: String, _ text: String) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 54))
+            Image(systemName: icon).font(.scaled(size: 54))
             Text(text).font(ThemeFont.mono(20, .bold))
         }
         .foregroundColor(GTNWColors.terminalRed)
-        .frame(maxWidth: .infinity, minHeight: 160)
+        .frame(maxWidth: .infinity, minHeight: FontScale.h(160))
         .themedPanel(retroFill: EGA.black)
     }
 }

@@ -66,7 +66,7 @@ struct ModernCountryPicker: View {
                 }
             }
         }
-        .frame(minWidth: 900, minHeight: 800)
+        .frame(minWidth: FontScale.w(900), minHeight: FontScale.h(800))
     }
 
     private var header: some View {
@@ -114,7 +114,7 @@ struct ModernCountryPicker: View {
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 3),
+                .frame(height: FontScale.h(3)),
             alignment: .bottom
         )
     }
@@ -125,7 +125,7 @@ struct ModernCountryPicker: View {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(GTNWColors.neonCyan)
-                    .font(.system(size: 20))
+                    .font(.scaled(size: 20))
 
                 TextField("Search nations...", text: $searchText)
                     .textFieldStyle(.plain)
@@ -213,7 +213,7 @@ struct ModernCountryPicker: View {
             HStack(spacing: 16) {
                 // Flag
                 Text(country.flag)
-                    .font(.system(size: 48))
+                    .font(.scaled(size: 48))
 
                 VStack(alignment: .leading, spacing: 8) {
                     // Name
@@ -238,7 +238,7 @@ struct ModernCountryPicker: View {
                 Spacer()
 
                 Image(systemName: "chevron.right.circle.fill")
-                    .font(.system(size: 24))
+                    .font(.scaled(size: 24))
                     .foregroundColor(GTNWColors.terminalGreen)
             }
             .padding(16)

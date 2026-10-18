@@ -539,3 +539,66 @@ final class AIOpponentFunctionalTests: XCTestCase {
         XCTAssertEqual(e.gameState?.playerCountryID, "USA", "failed load must not wipe the game in progress")
     }
 }
+
+// MARK: - Font scale (functional)
+
+#if os(macOS)
+import SwiftUI
+import AppKit
+
+/// The factor actually changes rendered text, for every font path the app uses, and the Settings choice persists.
+@MainActor
+final class FontScaleFunctionalTests: XCTestCase {
+    override func tearDown() { FontScale.forced = nil; Theme.forced = nil; super.tearDown() }
+
+    private func idealSize<V: View>(_ view: V) -> CGSize {
+        NSHostingController(rootView: view.fixedSize()).sizeThatFits(in: CGSize(width: 10_000, height: 10_000))
+    }
+
+    private func ratio(_ make: @escaping () -> Font) -> CGFloat {
+        FontScale.forced = 1
+        let small = idealSize(Text("WOPR 1983").font(make()))
+        FontScale.forced = 2
+        let big = idealSize(Text("WOPR 1983").font(make()))
+        return big.height / small.height
+    }
+
+    func testEveryFontPathDoublesAtTwoX() {
+        let paths: [(String, () -> Font)] = [
+            ("fixed", { .scaled(size: 14, weight: .bold, design: .monospaced) }),
+            ("style", { .scaled(.caption) }),
+            ("style+design", { .scaled(.headline, design: .monospaced) }),
+            ("ThemeFont", { ThemeFont.mono(11) }),
+            ("GTNWFonts", { GTNWFonts.body() }),
+            ("EGA (retro)", { EGA.font(size: 12) }),
+        ]
+        for (name, make) in paths {
+            for theme in GameTheme.allCases {
+                Theme.forced = theme
+                XCTAssertEqual(ratio(make), 2, accuracy: 0.25, "\(name) in \(theme) did not scale 2×")
+            }
+        }
+    }
+
+    func testTextSizeSettingPersistsAndIsReadLive() {
+        let name = "gtnw-fontscale-fn-\(UUID().uuidString)"
+        let d = UserDefaults(suiteName: name)!
+        defer { d.removePersistentDomain(forName: name) }
+        let m = FontScaleManager(defaults: d)
+        m.factor = 1.5
+        XCTAssertEqual(d.double(forKey: FontScaleManager.defaultsKey), 1.5)
+        XCTAssertEqual(FontScaleManager(defaults: d).factor, 1.5, "a relaunch keeps the choice")
+
+        // The live factor follows the shared manager (the app root rebuilds on change).
+        let shared = FontScaleManager.shared
+        let saved = shared.factor
+        defer { shared.factor = saved }
+        shared.factor = 2.5
+        XCTAssertEqual(FontScale.factor, 2.5)
+        let at25 = idealSize(Text("X").font(.scaled(size: 20))).height
+        shared.factor = 1
+        let at1 = idealSize(Text("X").font(.scaled(size: 20))).height
+        XCTAssertEqual(at25 / at1, 2.5, accuracy: 0.3)
+    }
+}
+#endif

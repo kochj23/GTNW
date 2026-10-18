@@ -58,7 +58,7 @@ enum NewsSeverity: String, Codable {
 }
 
 struct NewsEvent: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     var headline: String
     var source: NewsSource
     var severity: NewsSeverity

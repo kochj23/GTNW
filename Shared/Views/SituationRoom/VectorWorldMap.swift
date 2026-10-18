@@ -247,11 +247,11 @@ struct VectorWorldMap: View {
                 Group {
                     if struck.contains(id) {
                         PackImage("map.nuke_marker1") {
-                            Text("☢").font(.system(size: 16)).foregroundColor(Theme.isRetro ? EGA.yellow : .yellow)
+                            Text("☢").font(.scaled(size: 16)).foregroundColor(Theme.isRetro ? EGA.yellow : .yellow)
                         }
-                        .frame(width: 22, height: 20)
+                        .frame(width: FontScale.w(22), height: FontScale.h(20))
                     } else {
-                        Text("⚔").font(.system(size: 13, weight: .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        Text("⚔").font(.scaled(size: 13, weight: .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                             .shadow(color: .black, radius: 1)
                     }
                 }
@@ -367,7 +367,7 @@ struct MapLegend: View {
             default:
                 Text(filter.highIsGood ? "low" : "calm").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 ForEach(0..<7, id: \.self) { b in
-                    Rectangle().fill(MapFilter.rampColor(band: filter.highIsGood ? 6 - b : b)).frame(width: 16, height: 9)
+                    Rectangle().fill(MapFilter.rampColor(band: filter.highIsGood ? 6 - b : b)).frame(width: FontScale.w(16), height: FontScale.h(9))
                 }
                 Text(filter.highIsGood ? "high" : "crisis").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
@@ -376,7 +376,7 @@ struct MapLegend: View {
 
     private func swatch(_ c: Color, _ label: String) -> some View {
         HStack(spacing: 3) {
-            Rectangle().fill(c).frame(width: 12, height: 9)
+            Rectangle().fill(c).frame(width: FontScale.w(12), height: FontScale.h(9))
             Text(label).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
         }
     }

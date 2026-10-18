@@ -25,13 +25,13 @@ enum IntelType: String, Codable, CaseIterable {
 }
 
 struct SpyNetwork: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let owner: String, location: String, deployed: Int
     var strength: Int, cover: Int, compromised = false
 }
 
 struct IntelOp: GameOperation {
-    let id = UUID()
+    var id = UUID()
     let initiatorID: String, targetID: String, turn: Int
     let type: IntelType
     var success = false
@@ -45,7 +45,7 @@ enum Crisis: String, Codable, CaseIterable {
 }
 
 struct SimpleCrisis: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let type: Crisis, turn: Int
     var deadline: Int, resolved = false
     var options: [String] = []
@@ -87,13 +87,13 @@ enum TreatyKind: String, Codable {
 }
 
 struct TreatyProposal: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let proposer: String, targets: [String], type: TreatyKind
     var accepted = false
 }
 
 struct Verification: GameOperation {
-    let id = UUID()
+    var id = UUID()
     let initiatorID: String, targetID: String, turn: Int
     var success = false, cheating = false
 }
@@ -104,14 +104,14 @@ enum ProxyType: String, Codable {
 }
 
 struct ProxyWar: GameOperation {
-    let id = UUID()
+    var id = UUID()
     let initiatorID: String, targetID: String, turn: Int
     let type: ProxyType
     var success = false, strength = 50, casualties = 0
 }
 
 struct ArmsSale: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let seller: String, buyer: String, weapon: String, qty: Int, price: Int
 }
 
@@ -122,12 +122,12 @@ enum Sanction: String, Codable, CaseIterable {
 }
 
 struct EconSanction: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let imposer: String, target: String, type: Sanction
 }
 
 struct CurrencyAttack: GameOperation {
-    let id = UUID()
+    var id = UUID()
     let initiatorID: String, targetID: String, turn: Int
     var success = false, invest: Int = 0, inflation = 0
 }
@@ -171,7 +171,7 @@ enum SubLoc: String, Codable {
 }
 
 struct Sub: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let owner: String, subClass: SubClass, deployed: Int
     var loc: SubLoc = .patrol, warheads: Int, detected = false, stealth: Int
     init(owner: String, type: SubClass, turn: Int) {
@@ -181,7 +181,7 @@ struct Sub: Identifiable, Codable {
 }
 
 struct ASW: GameOperation {
-    let id = UUID()
+    var id = UUID()
     let initiatorID: String, targetID: String, turn: Int
     var success = false
 }
@@ -194,13 +194,13 @@ enum SatType: String, Codable, CaseIterable {
 }
 
 struct Sat: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let owner: String, type: SatType, launched: Int
     var operational = true, destroyed = false
 }
 
 struct ASAT: GameOperation {
-    let id = UUID()
+    var id = UUID()
     let initiatorID: String, targetID: String, turn: Int
     var success = false, debris = 0
 }
@@ -219,7 +219,7 @@ struct WarPair: Codable {
 }
 
 struct Scenario: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let name: String, year: Int, desc: String, objective: String
     let defcon: DefconLevel, wars: [WarPair], warheads: Int
     let relations: [String:[String:Int]], events: [String]

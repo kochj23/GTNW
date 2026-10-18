@@ -280,15 +280,15 @@ struct VoiceMessagePlayerView: View {
             HStack {
                 Image(systemName: "person.circle.fill")
                     .foregroundColor(sentimentColor)
-                    .font(.title2)
+                    .font(.scaled(.title2))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(message.leaderName)
-                        .font(.headline)
+                        .font(.scaled(.headline))
                         .foregroundColor(.white)
 
                     Text(message.from.name)
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.white.opacity(0.7))
                 }
 
@@ -296,7 +296,7 @@ struct VoiceMessagePlayerView: View {
 
                 // Sentiment indicator
                 Text(message.sentiment.overallSentiment.description.uppercased())
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .fontWeight(.bold)
                     .foregroundColor(sentimentColor)
                     .padding(.horizontal, 8)
@@ -307,7 +307,7 @@ struct VoiceMessagePlayerView: View {
 
             // Message text
             Text(message.text)
-                .font(.body)
+                .font(.scaled(.body))
                 .foregroundColor(.white.opacity(0.9))
                 .padding(.vertical, 8)
 
@@ -325,7 +325,7 @@ struct VoiceMessagePlayerView: View {
                     HStack {
                         Image(systemName: isPlaying ? "stop.circle.fill" : "play.circle.fill")
                         Text(isPlaying ? "Stop" : "Play Voice")
-                            .font(.caption)
+                            .font(.scaled(.caption))
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
@@ -338,7 +338,7 @@ struct VoiceMessagePlayerView: View {
                 Spacer()
 
                 Text(formatTimestamp(message.timestamp))
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.5))
             }
         }

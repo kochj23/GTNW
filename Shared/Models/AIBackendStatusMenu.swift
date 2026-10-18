@@ -66,7 +66,7 @@ struct AIBackendStatusMenu: View {
             // Main status dot
             Circle()
                 .fill(statusColor)
-                .frame(width: 10, height: 10)
+                .frame(width: FontScale.w(10), height: FontScale.h(10))
                 .overlay(
                     Circle()
                         .stroke(statusColor.opacity(0.3), lineWidth: 2)
@@ -78,12 +78,12 @@ struct AIBackendStatusMenu: View {
             if !compact {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(statusText)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.scaled(size: 11, weight: .semibold))
                         .foregroundColor(statusColor)
 
                     if let backend = manager.activeBackend {
                         Text(backend.rawValue)
-                            .font(.system(size: 9))
+                            .font(.scaled(size: 9))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -158,14 +158,14 @@ struct AIBackendStatusMenu: View {
             HStack(spacing: 4) {
                 Image(systemName: "cpu")
                 Text("Backend")
-                    .font(.system(size: 11))
+                    .font(.scaled(size: 11))
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 8))
+                    .font(.scaled(size: 8))
             }
             .foregroundColor(accentColor)
         }
         .menuStyle(.borderlessButton)
-        .frame(height: 24)
+        .frame(height: FontScale.h(24))
     }
 
     // MARK: - Model Selector
@@ -190,15 +190,15 @@ struct AIBackendStatusMenu: View {
             HStack(spacing: 4) {
                 Image(systemName: "brain")
                 Text(truncateModelName(manager.selectedOllamaModel))
-                    .font(.system(size: 11))
+                    .font(.scaled(size: 11))
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 8))
+                    .font(.scaled(size: 8))
             }
             .foregroundColor(accentColor)
         }
         .menuStyle(.borderlessButton)
-        .frame(height: 24)
+        .frame(height: FontScale.h(24))
     }
 
     // MARK: - Action Buttons
@@ -215,7 +215,7 @@ struct AIBackendStatusMenu: View {
                 }
             }) {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 11))
+                    .font(.scaled(size: 11))
                     .foregroundColor(accentColor)
                     .rotationEffect(.degrees(isRefreshing ? 360 : 0))
                     .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isRefreshing)
@@ -226,7 +226,7 @@ struct AIBackendStatusMenu: View {
             // Settings Button
             Button(action: { showSettings = true }) {
                 Image(systemName: "gear")
-                    .font(.system(size: 11))
+                    .font(.scaled(size: 11))
                     .foregroundColor(accentColor)
             }
             .buttonStyle(.plain)

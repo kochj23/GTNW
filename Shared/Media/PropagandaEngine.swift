@@ -291,7 +291,7 @@ struct PropagandaGalleryView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Text("\(propaganda.propagandaGallery.count) posters")
-                        .font(.caption)
+                        .font(.scaled(.caption))
                         .foregroundColor(.secondary)
                 }
             }
@@ -309,22 +309,22 @@ struct PosterCardView: View {
                 Image(packImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 300)
+                    .frame(maxHeight: FontScale.h(300))
                     .cornerRadius(8)
             }
 
             // Poster info
             VStack(alignment: .leading, spacing: 4) {
                 Text(poster.title)
-                    .font(.headline)
+                    .font(.scaled(.headline))
                     .foregroundColor(.white)
 
                 Text(poster.country.name)
-                    .font(.caption)
+                    .font(.scaled(.caption))
                     .foregroundColor(.white.opacity(0.7))
 
                 Text(poster.event)
-                    .font(.caption2)
+                    .font(.scaled(.caption2))
                     .foregroundColor(.white.opacity(0.5))
             }
             .padding(8)

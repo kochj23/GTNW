@@ -10,7 +10,13 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var gameEngine: GameEngine
-    @State private var selectedTab = 0
+    @State private var selectedTab = MainTabView.launchTab
+
+    /// `--tab N` (QA / screenshots) opens a game tab directly: 0 Situation Room, 5 Command, 1 Map, 2 Systems, 3 Advisors, 4 Intel.
+    static var launchTab: Int {
+        let args = CommandLine.arguments
+        return args.firstIndex(of: "--tab").flatMap { args.indices.contains($0 + 1) ? Int(args[$0 + 1]) : nil } ?? 0
+    }
     @State private var electionShown: Date?
 
     var body: some View {
@@ -20,58 +26,8 @@ struct MainTabView: View {
                 .environmentObject(gameEngine)
         } else {
             // Game tabs
-            TabView(selection: $selectedTab) {
-                // The Situation Room: map, advisors, dossier, escalation ladder, news (home screen)
-                SituationRoomView(gameState: gameEngine.gameState!)
-                    .environmentObject(gameEngine)
-                    .tabItem {
-                        Label("Situation Room", systemImage: "map.fill")
-                    }
-                    .tag(0)
-
-                // Unified Command Center (Commands + Terminal + Event Log)
-                UnifiedCommandCenter()
-                    .environmentObject(gameEngine)
-                    .tabItem {
-                        Label("Command", systemImage: "command.circle.fill")
-                    }
-                    .tag(5)
-
-                // World Map
-                SimpleModernWorldMap(gameState: gameEngine.gameState!)
-                    .tabItem {
-                        Label("World Map", systemImage: "globe")
-                    }
-                    .tag(1)
-
-                // Systems
-                SystemsView(gameEngine: gameEngine)
-                    .tabItem {
-                        Label("Systems", systemImage: "cpu")
-                    }
-                    .tag(2)
-
-                // Advisors
-                if let gameState = gameEngine.gameState {
-                    AdvisorGridView(advisors: gameState.advisors)
-                        .environmentObject(gameEngine)
-                        .tabItem {
-                            Label("Advisors", systemImage: "person.3.fill")
-                        }
-                        .tag(3)
-                }
-
-                // Intelligence
-                IntelligenceView()
-                    .environmentObject(gameEngine)
-                    .tabItem {
-                        Label("Intelligence", systemImage: "eye.fill")
-                    }
-                    .tag(4)
-            }
-            #if os(macOS)
-            .frame(minWidth: 1400, minHeight: 900)
-            #endif
+            gameTabs
+            // (The minimum window size is set once, at the app root, scaled with the text.)
             .overlay(
                 // Crisis Event Overlay
                 Group {
@@ -121,7 +77,82 @@ struct MainTabView: View {
             }
         }
     }
+
+    /// The game tabs in display order: (tag, title, SF Symbol).
+    static let tabs: [(tag: Int, title: String, icon: String)] = [
+        (0, "Situation Room", "map.fill"), (5, "Command", "command.circle.fill"), (1, "World Map", "globe"),
+        (2, "Systems", "cpu"), (3, "Advisors", "person.3.fill"), (4, "Intelligence", "eye.fill"),
+    ]
+
+    @ViewBuilder
+    private func tabContent(_ tag: Int, _ gameState: GameState) -> some View {
+        switch tag {
+        // The Situation Room: map, advisors, dossier, escalation ladder, news (home screen)
+        case 0: SituationRoomView(gameState: gameState).environmentObject(gameEngine)
+        // Unified Command Center (Commands + Terminal + Event Log)
+        case 5: UnifiedCommandCenter().environmentObject(gameEngine)
+        case 1: SimpleModernWorldMap(gameState: gameState)
+        case 2: SystemsView(gameEngine: gameEngine)
+        case 3: AdvisorGridView(advisors: gameState.advisors).environmentObject(gameEngine)
+        default: IntelligenceView().environmentObject(gameEngine)
+        }
+    }
+
+    @ViewBuilder
+    private var gameTabs: some View {
+        if let gameState = gameEngine.gameState {
+            #if os(macOS)
+            // macOS draws TabView's strip natively at a fixed size; this bar uses the scaled fonts instead.
+            VStack(spacing: 0) {
+                GameTabBar(selection: $selectedTab)
+                tabContent(selectedTab, gameState)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            #else
+            TabView(selection: $selectedTab) {
+                ForEach(Self.tabs, id: \.tag) { tab in
+                    tabContent(tab.tag, gameState)
+                        .tabItem { Label(tab.title, systemImage: tab.icon) }
+                        .tag(tab.tag)
+                }
+            }
+            #endif
+        }
+    }
 }
+
+#if os(macOS)
+/// The macOS game tab bar: one themed button per tab, text scaled with `FontScale`.
+struct GameTabBar: View {
+    @Binding var selection: Int
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(MainTabView.tabs, id: \.tag) { tab in
+                let on = tab.tag == selection
+                Button { selection = tab.tag } label: {
+                    Label(tab.title, systemImage: tab.icon)
+                        .font(ThemeFont.mono(11, on ? .bold : .regular))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .foregroundColor(on ? (Theme.isRetro ? .black : .white) : (Theme.isRetro ? EGA.lightGray : .secondary))
+                        .background(
+                            RoundedRectangle(cornerRadius: Theme.isRetro ? 0 : 6)
+                                .fill(on ? (Theme.isRetro ? EGA.lightGray : Color.accentColor.opacity(0.8)) : Color.clear)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .frame(maxWidth: .infinity)
+        .background(Theme.isRetro ? EGA.blue : Color.black.opacity(0.35))
+    }
+}
+#endif
 
 // MARK: - Intelligence View (New)
 
@@ -134,7 +165,7 @@ struct IntelligenceView: View {
                 if let gameState = gameEngine.gameState {
                     // Header
                     Text("🔍 INTELLIGENCE BRIEFING")
-                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
                         .padding()
 
@@ -167,13 +198,13 @@ struct IntelligenceView: View {
                             ForEach(gameState.countries.filter { $0.nuclearWarheads > 0 }.sorted { $0.nuclearWarheads > $1.nuclearWarheads }) { country in
                                 HStack {
                                     Text(country.flag)
-                                        .font(.system(size: 24))
+                                        .font(.scaled(size: 24))
                                     Text(country.name)
-                                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                                        .font(.scaled(size: 14, weight: .semibold, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalGreen)
                                     Spacer()
                                     Text("☢️ \(country.nuclearWarheads)")
-                                        .font(.system(size: 14, design: .monospaced))
+                                        .font(.scaled(size: 14, design: .monospaced))
                                         .foregroundColor(AppSettings.terminalRed)
                                 }
                                 .padding(.vertical, 5)
@@ -191,16 +222,16 @@ struct IntelligenceView: View {
                                     let relation = player.diplomaticRelations[country.id] ?? 0
                                     HStack {
                                         Text(country.flag)
-                                            .font(.system(size: 20))
+                                            .font(.scaled(size: 20))
                                         Text(country.name)
-                                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                            .font(.scaled(size: 12, weight: .semibold, design: .monospaced))
                                             .foregroundColor(AppSettings.terminalGreen)
                                         Spacer()
                                         Text(relationshipText(relation))
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.scaled(size: 12, design: .monospaced))
                                             .foregroundColor(relationshipColor(relation))
                                         Text("\(relation > 0 ? "+" : "")\(relation)")
-                                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                                             .foregroundColor(relationshipColor(relation))
                                     }
                                     .padding(.vertical, 3)
@@ -218,7 +249,7 @@ struct IntelligenceView: View {
     private func intelligenceCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 15) {
             Text(title)
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 18, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 
             content()
@@ -232,11 +263,11 @@ struct IntelligenceView: View {
     private func statRow(_ label: String, value: String) -> some View {
         HStack {
             Text(label + ":")
-                .font(.system(size: 14, design: .monospaced))
+                .font(.scaled(size: 14, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }
     }
@@ -247,19 +278,19 @@ struct IntelligenceView: View {
                 if let aggressor = gameState.getCountry(id: war.aggressor),
                    let defender = gameState.getCountry(id: war.defender) {
                     Text("\(aggressor.flag) \(aggressor.name)")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                     Text("⚔️")
                     Text("\(defender.flag) \(defender.name)")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalRed)
                 }
             }
             Text("Intensity: \(String(repeating: "▮", count: war.intensity)) (\(war.intensity)/10)")
-                .font(.system(size: 12, design: .monospaced))
+                .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
             Text("Since \(gameState.dateLabel(forTurn: war.startTurn))")
-                .font(.system(size: 10, design: .monospaced))
+                .font(.scaled(size: 10, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
         }
         .padding(.vertical, 5)

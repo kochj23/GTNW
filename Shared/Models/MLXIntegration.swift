@@ -309,7 +309,7 @@ class EventLogger: ObservableObject {
 }
 
 struct GameEvent: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     var message: String
     var type: EventType
     var country: String?

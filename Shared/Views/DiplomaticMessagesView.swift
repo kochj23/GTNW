@@ -24,7 +24,7 @@ struct DiplomaticMessagesView: View {
             // Header
             HStack {
                 Image(systemName: "envelope.fill")
-                    .font(.title)
+                    .font(.scaled(.title))
                     .foregroundColor(GTNWColors.neonCyan)
 
                 Text("DIPLOMATIC MESSAGES")
@@ -33,7 +33,7 @@ struct DiplomaticMessagesView: View {
 
                 if unreadCount > 0 {
                     Text("(\(unreadCount) unread)")
-                        .font(.system(size: 14, design: .monospaced))
+                        .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalRed)
                 }
 
@@ -54,7 +54,7 @@ struct DiplomaticMessagesView: View {
                 // Empty state
                 VStack(spacing: 20) {
                     Image(systemName: "tray")
-                        .font(.system(size: 64))
+                        .font(.scaled(size: 64))
                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.5))
 
                     Text("No Diplomatic Messages")
@@ -65,7 +65,7 @@ struct DiplomaticMessagesView: View {
                         .font(GTNWFonts.body())
                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: 400)
+                        .frame(maxWidth: FontScale.w(400))
                 }
                 .frame(maxHeight: .infinity)
             } else {
@@ -83,7 +83,7 @@ struct DiplomaticMessagesView: View {
                 }
             }
         }
-        .frame(width: 700, height: 600)
+        .frame(width: FontScale.w(700), height: FontScale.h(600))
         .background(Color.black)
         .border(GTNWColors.neonCyan, width: 2)
     }
@@ -133,23 +133,23 @@ struct MessageCard: View {
             HStack {
                 // Country flag/icon
                 Text(fromCountry?.flag ?? "🏳️")
-                    .font(.system(size: 32))
+                    .font(.scaled(size: 32))
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("From: \(fromCountry?.name ?? message.from)")
-                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                             .foregroundColor(GTNWColors.terminalGreen)
 
                         if !message.read {
                             Circle()
                                 .fill(GTNWColors.terminalRed)
-                                .frame(width: 8, height: 8)
+                                .frame(width: FontScale.w(8), height: FontScale.h(8))
                         }
                     }
 
                     Text(gameState.dateLabel(forTurn: message.turn))
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.scaled(size: 12, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
                 }
 
@@ -161,11 +161,11 @@ struct MessageCard: View {
                    let relations = country.diplomaticRelations[playerID] {
                     VStack(spacing: 4) {
                         Text("Relations")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(.scaled(size: 10, design: .monospaced))
                             .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
 
                         Text("\(relations)")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(relationColor(relations))
                     }
                     .padding(8)
@@ -178,7 +178,7 @@ struct MessageCard: View {
 
             // Message content
             Text(message.content)
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .font(.scaled(size: 14, weight: .medium, design: .monospaced))
                 .foregroundColor(GTNWColors.terminalAmber)
                 .lineSpacing(4)
                 .padding(12)
@@ -189,7 +189,7 @@ struct MessageCard: View {
             // Action buttons — contextual based on message type
             VStack(alignment: .leading, spacing: 8) {
                 Text("RESPOND:")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.scaled(size: 10, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber.opacity(0.7))
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -381,9 +381,9 @@ struct ActionButton: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.scaled(size: 12))
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
             }
             .foregroundColor(.white)
             .padding(.horizontal, 12)

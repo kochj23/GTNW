@@ -37,6 +37,7 @@
 		229A0D1F5A663D4CEE959DD7 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
 		22ECE3B26B1A098E3371A5E1 /* UnifiedAICapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA12DC249885D2FDDED18F24 /* UnifiedAICapabilities.swift */; };
 		2717DAD271F33C80CAA4E1BA /* AIMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECB96BC2F3C16F08080563A /* AIMove.swift */; };
+		29C376F595D747EF80E61005 /* FontScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27371408F87320221E20362 /* FontScale.swift */; };
 		2B76DF08711E46FDE51A69CC /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82425DE3FD9CB58460F8BA5C /* MLXIntegration.swift */; };
 		2C848CB7F1440044297B7FBA /* PostgresGameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701102036BC53F821A7D94AB /* PostgresGameStore.swift */; };
 		2D2B124B51188CEF8EC3803E /* GameCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5839CC57563336D8720136 /* GameCalendar.swift */; };
@@ -223,6 +224,7 @@
 		FC936ACCA23F8DC791756906 /* LocalGameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57E66BC543A1CBA41B4C6CF /* LocalGameStore.swift */; };
 		FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
 		FDA0817763260DF5A2653FC1 /* EconomicWarfareSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */; };
+		FE238D6F4C2B1EAE305745A8 /* FontScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27371408F87320221E20362 /* FontScale.swift */; };
 		WIDGET001A /* GTNWWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET001F /* GTNWWidget.swift */; };
 		WIDGET002A /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET002F /* WidgetData.swift */; };
 		WIDGET003A /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET003F /* SharedDataManager.swift */; };
@@ -327,6 +329,7 @@
 		9D1A418AA229ADEE47B81E9D /* AIBackendManager+Generation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "AIBackendManager+Generation.swift"; path = "Shared/Models/AIBackendManager+Generation.swift"; sourceTree = "<group>"; };
 		9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPackTests.swift; sourceTree = "<group>"; };
 		A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalCrises_PreNuclear.swift; sourceTree = "<group>"; };
+		A27371408F87320221E20362 /* FontScale.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FontScale.swift; path = Shared/Design/FontScale.swift; sourceTree = SOURCE_ROOT; };
 		A57E66BC543A1CBA41B4C6CF /* LocalGameStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalGameStore.swift; sourceTree = "<group>"; };
 		A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
 		A6185E106DC2A29C4F647FD4 /* AnalysisUnified.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnalysisUnified.swift; path = GTNW/AICapabilities/AnalysisUnified.swift; sourceTree = "<group>"; };
@@ -744,6 +747,7 @@
 			children = (
 				34CF53E773D67381802521E1 /* ModernDesign.swift */,
 				0DA0AC7158FC18AE8575791A /* Theme.swift */,
+				A27371408F87320221E20362 /* FontScale.swift */,
 			);
 			name = Design;
 			sourceTree = "<group>";
@@ -1029,6 +1033,7 @@
 				5D18AD76DBCA881E2BC6DC05 /* LegacyStoreImport.swift in Sources */,
 				C1623ADBD12DD7CB5E27D243 /* LocalGameStore.swift in Sources */,
 				2C848CB7F1440044297B7FBA /* PostgresGameStore.swift in Sources */,
+				29C376F595D747EF80E61005 /* FontScale.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1156,6 +1161,7 @@
 				B412B56BCEA45BC76D3284D4 /* LegacyStoreImport.swift in Sources */,
 				FC936ACCA23F8DC791756906 /* LocalGameStore.swift in Sources */,
 				E3A6138DA1901B58438150AC /* PostgresGameStore.swift in Sources */,
+				FE238D6F4C2B1EAE305745A8 /* FontScale.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1435,7 +1441,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1447,7 +1453,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.9.0;
+				MARKETING_VERSION = 3.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1465,7 +1471,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1477,7 +1483,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.9.0;
+				MARKETING_VERSION = 3.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
