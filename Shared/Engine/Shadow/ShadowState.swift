@@ -102,6 +102,13 @@ struct ShadowState: Codable {
     /// Advisor id -> how many times the player has gone against their advice recently (drives resignations).
     var advisorGrievances: [String: Int] = [:]
 
+    // Play history (schema `play` in the Games DB)
+    /// The play session this game is in. A new game or scenario starts one; loading a save starts a fresh one.
+    /// The finished game's `game_history` row uses the same id, so the two join.
+    var playSessionID: UUID?
+    /// Wall-clock time the current play session started.
+    var playSessionStartedAt: Date?
+
     mutating func post(_ text: String, date: Date, severity: Int = 0) {
         ticker.append(TickerItem(date: date, text: text, severity: severity))
         if ticker.count > 120 { ticker.removeFirst(ticker.count - 120) }
@@ -116,6 +123,7 @@ struct ShadowState: Codable {
         case popularity, polls, electionsEnabled, lastElection, termsWon, impeachmentStage, ruthlessness
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
+        case playSessionID, playSessionStartedAt
     }
 
     init() {}
@@ -144,6 +152,8 @@ struct ShadowState: Codable {
         ticker = try c.decodeIfPresent([TickerItem].self, forKey: .ticker) ?? []
         startSnapshot = try c.decodeIfPresent(PresidencySnapshot.self, forKey: .startSnapshot)
         advisorGrievances = try c.decodeIfPresent([String: Int].self, forKey: .advisorGrievances) ?? [:]
+        playSessionID = try c.decodeIfPresent(UUID.self, forKey: .playSessionID)
+        playSessionStartedAt = try c.decodeIfPresent(Date.self, forKey: .playSessionStartedAt)
     }
 }
 

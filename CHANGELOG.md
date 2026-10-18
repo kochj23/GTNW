@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-10-18 — Play history
+
+### Added
+- **Play-session logging** to the shared `play` schema of the Nova Games DB (`play.sessions`, `play.events`) for
+  Nova's game reporter. `game='gtnw'`, `client='mac'`, player = the store's player id.
+  - A new game or scenario starts a session; loading a save to continue starts a new one with `resumed_from_turn`.
+  - The session id and wall-clock start are kept on the game (`ShadowState.playSessionID`, `playSessionStartedAt`;
+    older saves load without them).
+  - Each turn: `ticker` events for new items with severity ≥ 2, `nuclear_strike` events, and an upsert of
+    `last_seen_at`, `actions` (turns this session) and a running summary. Also `game_start` and `game_over` events.
+  - Game over: `ended_at`, `outcome` (`victory`/`defeat`), `score` and the full summary (the contract's GTNW keys,
+    capped lists, under 64 KB). The `gtnw.game_history` row now uses the session id, so the two join.
+  - Starting another game closes the open session as `abandoned`; quitting the app closes it as `quit`.
+- New `PendingOp` cases `playSession` / `playEvent` on the existing offline-first queue: same retry and backoff; a
+  newer upsert replaces the queued one in place (staying ahead of its events); play events are shed first when the
+  queue is full; rows the DB rejects, or a missing `play` grant, are dropped and never block saves.
+- 19 tests across all seven categories (327 in total).
+
 ## [3.1.1] - 2026-10-17 — Text size
 
 ### Added

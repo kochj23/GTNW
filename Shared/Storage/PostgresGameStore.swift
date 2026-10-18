@@ -439,6 +439,38 @@ actor PostgresGameStore: GameStore {
         }
     }
 
+    // MARK: Play history (schema `play`, shared by every Nova game; RLS keeps us to rows written as `gtnw`)
+
+    func upsertPlaySession(_ r: PlaySessionRecord) async throws {
+        try StoreValidation.check(r)
+        let player = config.playerID, game = PlayHistory.game, summary = String(decoding: r.summary, as: UTF8.self)
+        try await withConnection { conn in
+            try await conn.query("""
+                INSERT INTO play.sessions (id, game, client, player, started_at, last_seen_at, ended_at, outcome, score, actions, summary)
+                VALUES (\(r.id), \(game), \(r.client), \(player), \(r.startedAt), \(r.lastSeenAt), \(r.endedAt), \(r.outcome),
+                        \(r.score), \(r.actions), \(summary)::jsonb)
+                ON CONFLICT (id) DO UPDATE SET
+                    last_seen_at = GREATEST(play.sessions.last_seen_at, EXCLUDED.last_seen_at),
+                    actions = GREATEST(play.sessions.actions, EXCLUDED.actions),
+                    ended_at = EXCLUDED.ended_at, outcome = EXCLUDED.outcome, score = EXCLUDED.score,
+                    summary = EXCLUDED.summary
+                WHERE play.sessions.ended_at IS NULL
+                """, logger: self.logger)
+        }
+    }
+
+    func addPlayEvent(_ e: PlayEventRecord) async throws {
+        try StoreValidation.check(e)
+        let detail = String(decoding: e.detail, as: UTF8.self)
+        try await withConnection { conn in
+            try await conn.query("""
+                INSERT INTO play.events (session_id, seq, ts, kind, detail)
+                VALUES (\(e.sessionID), \(e.seq), \(e.ts), \(e.kind), \(detail)::jsonb)
+                ON CONFLICT (session_id, seq) DO NOTHING
+                """, logger: self.logger)
+        }
+    }
+
     func counts() async throws -> StoreCounts {
         let player = config.playerID
         return try await withConnection { conn in

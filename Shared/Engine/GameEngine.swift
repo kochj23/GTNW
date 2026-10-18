@@ -36,6 +36,9 @@ class GameEngine: ObservableObject {
         didSet { if let store { leaderboardManager = LeaderboardManager(records: store.records.leaderboard) } }
     }
 
+    /// The current play session (schema `play` in the Games DB); see PlayHistory.swift.
+    var playSession: PlaySessionTracker? = nil
+
     /// Tell the store a slot file changed, when it lives in the store's slot folder.
     func noteSlotSaved(_ slot: Int, manager: SaveManager) {
         guard let store, manager.folder.standardizedFileURL == store.local.saves.folder.standardizedFileURL else { return }
@@ -110,6 +113,7 @@ class GameEngine: ObservableObject {
         logMessages = []
         showingGameOver = false
         setupShadowSystems()
+        beginPlaySession()
 
         addLog("WOPR SYSTEM INITIALIZED", type: .system)
         addLog("GREETINGS PROFESSOR FALKEN", type: .system)
@@ -226,6 +230,7 @@ class GameEngine: ObservableObject {
                 print("[GameEngine] autosave failed: \(error)")
             }
         }
+        playSessionTurnEnded()
     }
 
     private func logFeatureNotifications() {
@@ -1689,7 +1694,9 @@ class GameEngine: ObservableObject {
     func recordGameOver(_ gameState: GameState, score: GameScore, victory: VictoryType?) {
         let name = gameState.presidentsPlayed.last ?? "The President"
         let entry = leaderboardManager.addEntry(playerName: name, score: score)
-        store?.recordGameOver(result: .make(from: gameState, score: score, victory: victory),
+        // The game_history row shares the play session's id (a fresh UUID when no session is running).
+        let id = finishPlaySession(score: score, victory: victory) ?? UUID()
+        store?.recordGameOver(result: .make(from: gameState, score: score, victory: victory, id: id),
                               leaderboard: LeaderboardRecord(entry: entry))
     }
 

@@ -122,6 +122,11 @@ protocol GameStore: AnyObject, Sendable {
     func unlock(_ achievement: AchievementRecord) async throws
     func achievements() async throws -> [AchievementRecord]
 
+    /// Play history (schema `play`). Idempotent per id; an ended session is never changed again.
+    func upsertPlaySession(_ record: PlaySessionRecord) async throws
+    /// Idempotent per (session, seq).
+    func addPlayEvent(_ event: PlayEventRecord) async throws
+
     func counts() async throws -> StoreCounts
 }
 

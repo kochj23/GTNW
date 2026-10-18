@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-308%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.1.1-blue)
+![Tests](https://img.shields.io/badge/tests-327%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.1.2-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -520,22 +520,43 @@ GTNW/
   tools/                   Map converter, Shadow Pack builder, coordination bridge, launch smoke
 ```
 
+### Play history (schema `play`, new in 3.1.2)
+
+Every sitting is logged to the shared `play` schema in the same Games DB (`play.sessions` + `play.events`, see
+NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what was played. Rows are `game='gtnw'`,
+`client='mac'`, `player` = the store's player id, written as role `gtnw` (row-level security keeps it to its own rows).
+
+| When | What is written |
+|------|-----------------|
+| New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
+| Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
+| End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Game over | Event `game_over`; final upsert with `ended_at`, `outcome` (`victory`/`defeat`), `score` and the full summary. The `gtnw.game_history` row uses the session id, so they join (`history_id`) |
+| Starting another game mid-game / quitting the app | The open session is closed as `abandoned` / `quit` (best effort; otherwise the reader's 30-minute idle rule ends it) |
+
+The summary uses the contract's GTNW keys (scenario, country, difficulty, turn length, dates, turns, won, victory type,
+reason, scores, casualties, strikes, wars, covert ops, DEFCON, radiation, impeachment, terms, popularity start/peak/end,
+congressional and war support, polls ≤ 60, strikes ≤ 60, fronts, aid, budget, ticker ≤ 60, war log ≤ 40) and is
+kept under 64 KB. It all goes through the same offline-first queue: logging never blocks a turn, waits while the DB
+is down, and a row the DB rejects (or a missing `play` grant) is dropped instead of holding up saves. Without a
+Games DB (tests, `LOCAL`), nothing is queued.
+
 ---
 
 ## Testing
 
-The suite has **308 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **327 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 140 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, **font scale maths, persistence and clamping** |
-| **Functional** | 41 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, **every font path doubles at 2× and the Text size setting persists and applies live** |
-| **Security** | 45 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, **source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`** |
-| **Integration** | 13 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote |
-| **Performance** | 15 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync |
-| **Retry** | 34 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry |
-| **Frame** | 20 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; **at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating** |
+| **Unit** | 143 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 44 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 48 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 16 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 17 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 37 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 22 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -559,6 +580,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.1.2 | Oct 2026 | Play history: every sitting logged to the shared `play` schema for Nova's game reporter |
 | 3.1.1 | Oct 2026 | Text size setting (2× default on macOS), every font scaled, crisp scaled controls, layout fixes, zero Release warnings |
 | 3.1.0 | Oct 2026 | Games DB: saves, leaderboard, history, scenario progress and achievements in Postgres, offline-first |
 | 3.0.0 | Oct 2026 | Situation Room, calendar turns, bordered map, advisors' advice, elections, budget, aid, War Room, scenarios, Retro EGA skin |

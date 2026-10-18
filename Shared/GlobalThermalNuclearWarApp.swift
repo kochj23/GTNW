@@ -53,6 +53,12 @@ struct GlobalThermalNuclearWarApp: App {
                     LaunchHooks.apply(to: gameEngine)
                     #endif
                 }
+                #if os(macOS)
+                // Best effort: close the open play session as "quit" (queued; it reaches the DB on the next sync).
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    gameEngine.endPlaySession(outcome: "quit")
+                }
+                #endif
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)

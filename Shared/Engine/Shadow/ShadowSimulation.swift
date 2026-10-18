@@ -57,6 +57,7 @@ extension GameEngine {
         crisisManager.activeCrisis = nil
         setupShadowSystems()
         gameState?.shadow.post(s.summary, date: gameState?.currentDate ?? s.startDate, severity: 1)
+        beginPlaySession()
         addLog("SCENARIO: \(s.title.uppercased())", type: .system)
         addLog(s.summary, type: .info)
     }
@@ -696,6 +697,8 @@ extension GameEngine {
         showingGameOver = false
         gameState = gs
         if gs.shadow.startSnapshot == nil { setupShadowSystems(electionsEnabled: gs.shadow.electionsEnabled) }
+        // Continuing a save is a new sitting: a new play session that notes where it picked up.
+        beginPlaySession(resumedFromTurn: gs.turn)
         addLog("📂 Loaded \(slot == 0 ? "autosave" : "slot \(slot)") — \(gs.currentDateLabel).", type: .info)
     }
 }

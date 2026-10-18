@@ -131,6 +131,7 @@
 		8431A94897B37311332FCB6A /* DynamicCrisisGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B62F448E991AD0276155180 /* DynamicCrisisGenerator.swift */; };
 		84AEEC2EDF1D3058CDCA2CA6 /* WarRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3084946F5F3166E1B5D4F709 /* WarRoomView.swift */; };
 		854167CE65FCF346BA800663 /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F2CAFFC239692E6D4C5120 /* GameEngine.swift */; };
+		8557487B22FE59152EA37957 /* PlayHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 450B6CD473A3E78919DFE7DE /* PlayHistory.swift */; };
 		8569A7DAA01842F8884843A2 /* MilitaryAllianceSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 014D013914894F15AB986F12 /* MilitaryAllianceSystem.swift */; };
 		871F3746E1D5AA2E551969F2 /* Advisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DCC47475BC4E6E381CED1 /* Advisor.swift */; };
 		8A1688E63AF0BBC8CCBAEE84 /* ShadowPresidentActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390F0A0E2E09FCC51716B234 /* ShadowPresidentActions.swift */; };
@@ -166,6 +167,7 @@
 		ACC11E4790145ECDFE5FA822 /* PopularityModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4F29FFBC9C4273E5CAE7FF /* PopularityModel.swift */; };
 		AF28774C81756009FAC7CBC3 /* GameEngineBrains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */; };
 		B1049F1B49E379C0D930122E /* Scenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1E648FBDD7B264076FCFDA /* Scenarios.swift */; };
+		B122C634555F35D2F9A58FA7 /* GameStorePlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E3884FA806C06896E2D725 /* GameStorePlayTests.swift */; };
 		B15C2D44346545AF2C91BB42 /* PropagandaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77A18618B97CC2F0FBC4F8DA /* PropagandaEngine.swift */; };
 		B3A56622AE3C641209272325 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
 		B412B56BCEA45BC76D3284D4 /* LegacyStoreImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B461821C69E93A2EC585B98 /* LegacyStoreImport.swift */; };
@@ -193,6 +195,7 @@
 		CDC8A64EC7294EAFA55258B0 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
 		D08760BD9EDB0421A311DEB3 /* PostgresNIO in Frameworks */ = {isa = PBXBuildFile; productRef = 7DF04C569F76046C2FBC0571 /* PostgresNIO */; };
 		D1AEE746E0771199654D4B8C /* Country.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4591D208BA4670CBA98E76 /* Country.swift */; };
+		D2B064DA8A17BE10AE578508 /* PlayHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 450B6CD473A3E78919DFE7DE /* PlayHistory.swift */; };
 		D2C6520DE8C15A54A52E2895 /* games-pg-ca.crt in Resources */ = {isa = PBXBuildFile; fileRef = D297009CC5433C554EF90F2A /* games-pg-ca.crt */; };
 		D31714E3CFC04A2FB56720BA /* AIBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80D288D0C83D8EB60BA776D4 /* AIBrain.swift */; };
 		D3CF98B02AF7E45EED42621A /* EconomyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B789017E194BE2CA8D93A8D /* EconomyModels.swift */; };
@@ -287,6 +290,7 @@
 		3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTNWFunctionalTests.swift; sourceTree = "<group>"; };
 		3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScoringSystem.swift; sourceTree = "<group>"; };
 		3FA7A49314ADF98CD22BB912 /* NaturalLanguageIntel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NaturalLanguageIntel.swift; sourceTree = "<group>"; };
+		450B6CD473A3E78919DFE7DE /* PlayHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlayHistory.swift; sourceTree = "<group>"; };
 		471DD73534619E7BB9F50EE0 /* GameStoreService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameStoreService.swift; sourceTree = "<group>"; };
 		4F961F9A3D52CD1EC10D97CF /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
 		5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GTNWTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -298,6 +302,7 @@
 		5EFC468BB40351CE42893C87 /* NewsFeed.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewsFeed.swift; sourceTree = "<group>"; };
 		60C2DF9147061D64BD249A28 /* SituationRoomView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SituationRoomView.swift; path = Shared/Views/SituationRoom/SituationRoomView.swift; sourceTree = SOURCE_ROOT; };
 		60D0B51B989A94270AE3580D /* AdvisorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorViews.swift; sourceTree = "<group>"; };
+		65E3884FA806C06896E2D725 /* GameStorePlayTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameStorePlayTests.swift; sourceTree = "<group>"; };
 		683E810F11DA27011DB780CB /* CinematicEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CinematicEngine.swift; sourceTree = "<group>"; };
 		6DB4D84116FC98A46D9A304E /* WorldEvaluation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldEvaluation.swift; sourceTree = "<group>"; };
 		6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameEngineBrains.swift; sourceTree = "<group>"; };
@@ -441,6 +446,7 @@
 				A57E66BC543A1CBA41B4C6CF /* LocalGameStore.swift */,
 				701102036BC53F821A7D94AB /* PostgresGameStore.swift */,
 				D297009CC5433C554EF90F2A /* games-pg-ca.crt */,
+				450B6CD473A3E78919DFE7DE /* PlayHistory.swift */,
 			);
 			name = Storage;
 			path = Storage;
@@ -505,6 +511,7 @@
 				D9ABF650AA6646237E6281BB /* GTNWIntegrationTests.swift */,
 				D856B041446F1FA1E01777EB /* GTNWFrameTests.swift */,
 				5D467968FAB7262BA7A2FF54 /* GameStoreTests.swift */,
+				65E3884FA806C06896E2D725 /* GameStorePlayTests.swift */,
 			);
 			path = GTNWTests;
 			sourceTree = "<group>";
@@ -1034,6 +1041,7 @@
 				C1623ADBD12DD7CB5E27D243 /* LocalGameStore.swift in Sources */,
 				2C848CB7F1440044297B7FBA /* PostgresGameStore.swift in Sources */,
 				29C376F595D747EF80E61005 /* FontScale.swift in Sources */,
+				D2B064DA8A17BE10AE578508 /* PlayHistory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1054,6 +1062,7 @@
 				73074820DCF4BF775AC784E0 /* GTNWIntegrationTests.swift in Sources */,
 				81A915F7F280AB6C24EE2A03 /* GTNWFrameTests.swift in Sources */,
 				634BF8435107BB2914F1ED7C /* GameStoreTests.swift in Sources */,
+				B122C634555F35D2F9A58FA7 /* GameStorePlayTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1162,6 +1171,7 @@
 				FC936ACCA23F8DC791756906 /* LocalGameStore.swift in Sources */,
 				E3A6138DA1901B58438150AC /* PostgresGameStore.swift in Sources */,
 				FE238D6F4C2B1EAE305745A8 /* FontScale.swift in Sources */,
+				8557487B22FE59152EA37957 /* PlayHistory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1325,7 +1335,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
@@ -1338,7 +1348,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.1.1;
+				MARKETING_VERSION = 3.1.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1407,7 +1417,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1426,7 +1436,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.1.1;
+				MARKETING_VERSION = 3.1.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1445,7 +1455,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1457,7 +1467,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.1.1;
+				MARKETING_VERSION = 3.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1475,7 +1485,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1487,7 +1497,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.1.1;
+				MARKETING_VERSION = 3.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

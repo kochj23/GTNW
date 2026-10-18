@@ -14,6 +14,8 @@ actor InMemoryGameStore: GameStore {
     private var results: [UUID: GameResultRecord] = [:]
     private var progress: [String: ScenarioProgress] = [:]
     private var unlocked: [String: AchievementRecord] = [:]
+    private(set) var playSessions: [UUID: PlaySessionRecord] = [:]
+    private(set) var playEvents: [UUID: [Int: PlayEventRecord]] = [:]
 
     /// Flip to false to make every call throw `.unreachable` (simulated outage).
     var reachable = true
@@ -88,6 +90,28 @@ actor InMemoryGameStore: GameStore {
         try gate()
         return unlocked.values.sorted { $0.id < $1.id }
     }
+
+    /// Same rules as play.sql + the contract's upsert: last_seen/actions only grow, an ended session is frozen.
+    func upsertPlaySession(_ r: PlaySessionRecord) async throws {
+        try gate()
+        try StoreValidation.check(r)
+        guard var old = playSessions[r.id] else { playSessions[r.id] = r; return }
+        guard old.endedAt == nil else { return }
+        old.lastSeenAt = max(old.lastSeenAt, r.lastSeenAt)
+        old.actions = max(old.actions, r.actions)
+        old.endedAt = r.endedAt; old.outcome = r.outcome; old.score = r.score; old.summary = r.summary
+        guard old.endedAt.map({ $0 >= old.startedAt }) ?? true else { throw GameStoreError.invalid("ended before start") }
+        playSessions[r.id] = old
+    }
+
+    func addPlayEvent(_ e: PlayEventRecord) async throws {
+        try gate()
+        try StoreValidation.check(e)
+        guard playSessions[e.sessionID] != nil else { throw GameStoreError.invalid("rejected by the database (23503)") }
+        if playEvents[e.sessionID]?[e.seq] == nil { playEvents[e.sessionID, default: [:]][e.seq] = e }
+    }
+
+    func events(_ session: UUID) -> [PlayEventRecord] { (playEvents[session] ?? [:]).values.sorted { $0.seq < $1.seq } }
 
     func counts() async throws -> StoreCounts {
         try gate()

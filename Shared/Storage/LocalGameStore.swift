@@ -17,11 +17,28 @@ enum PendingOp: Codable, Equatable, Sendable {
     case leaderboard(LeaderboardRecord)
     case result(GameResultRecord)
     case achievement(AchievementRecord)
+    /// Upsert a `play.sessions` row. A newer op for the same session replaces the queued one in place
+    /// (so it stays ahead of that session's events, which need the row to exist).
+    case playSession(PlaySessionRecord)
+    case playEvent(PlayEventRecord)
 
     var slot: Int? {
         switch self {
         case .putSlot(let s), .deleteSlot(let s): return s
         default: return nil
+        }
+    }
+
+    var playSessionID: UUID? {
+        if case .playSession(let r) = self { return r.id }
+        return nil
+    }
+
+    /// Play-history ops are best effort: first to go when the queue is full, dropped when the DB refuses them.
+    var isPlayHistory: Bool {
+        switch self {
+        case .playSession, .playEvent: return true
+        default: return false
         }
     }
 }
@@ -94,8 +111,21 @@ final class LocalGameStore: GameStore, @unchecked Sendable {
     func enqueue(_ op: PendingOp) {
         locked {
             if let slot = op.slot { queue.removeAll { $0.slot == slot } }
-            if !queue.contains(op) { queue.append(op) }
-            if queue.count > Self.maxPending { queue.removeFirst(queue.count - Self.maxPending) }
+            if let id = op.playSessionID, let i = queue.firstIndex(where: { $0.playSessionID == id }) {
+                queue[i] = op
+            } else if !queue.contains(op) {
+                queue.append(op)
+            }
+            if queue.count > Self.maxPending {
+                // Shed play events first (oldest first), then anything oldest.
+                var excess = queue.count - Self.maxPending
+                queue.removeAll { op in
+                    guard excess > 0, case .playEvent = op else { return false }
+                    excess -= 1
+                    return true
+                }
+                if excess > 0 { queue.removeFirst(excess) }
+            }
             write(queue, "pending.json")
         }
     }
@@ -195,6 +225,12 @@ final class LocalGameStore: GameStore, @unchecked Sendable {
     }
 
     func achievements() async throws -> [AchievementRecord] { locked { records.achievements } }
+
+    // MARK: GameStore — play history (only the Games DB keeps it; locally it lives in the pending queue)
+
+    func upsertPlaySession(_ record: PlaySessionRecord) async throws { try StoreValidation.check(record) }
+
+    func addPlayEvent(_ event: PlayEventRecord) async throws { try StoreValidation.check(event) }
 
     func counts() async throws -> StoreCounts {
         let slots = StoreValidation.slotRange.filter { saves.modified(slot: $0) != nil }.count

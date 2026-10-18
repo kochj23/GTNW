@@ -140,6 +140,19 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
         enqueue(.achievement(a))
     }
 
+    /// Play history: queued only when there is a Games DB to send it to (it has no local use).
+    func playSessionUpdated(_ record: PlaySessionRecord) { enqueuePlay(.playSession(record), check: { try StoreValidation.check(record) }) }
+
+    func playEvent(_ event: PlayEventRecord) { enqueuePlay(.playEvent(event), check: { try StoreValidation.check(event) }) }
+
+    private func enqueuePlay(_ op: PendingOp, check: () throws -> Void) {
+        guard remote != nil else { return }
+        do { try check() } catch { print("[GameStore] play history entry rejected: \(error)"); return }
+        local.enqueue(op)
+        if status != .syncing { publish(status: .offline(pending: pendingCount)) }
+        requestSync()
+    }
+
     private func enqueue(_ op: PendingOp) {
         local.enqueue(op)
         changed()
@@ -203,9 +216,17 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
                 case .leaderboard(let r): try await remote.addLeaderboard(r)
                 case .result(let r): try await remote.addResult(r)
                 case .achievement(let a): try await remote.unlock(a)
+                case .playSession(let r): try await remote.upsertPlaySession(r)
+                case .playEvent(let e): try await remote.addPlayEvent(e)
                 }
                 local.complete(op)
             } catch let e as GameStoreError {
+                // Play history never holds up the game's own writes: a missing grant/table drops it too.
+                if op.isPlayHistory, case .schemaNotReady = e {
+                    print("[GameStore] dropping play history the DB can't take: \(e)")
+                    local.complete(op)
+                    continue
+                }
                 guard case .invalid = e else { throw e }
                 print("[GameStore] dropping a write the store rejected: \(e)")   // never retry hostile/corrupt data
                 local.complete(op)
