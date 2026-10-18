@@ -178,7 +178,7 @@ extension GameEngine {
                 case .economic: type = .economicCollapse
                 case .social: type = .civilUnrest
                 }
-                let crisis = crisisManager.createCrisis(type: type, gameState: gs)
+                guard let crisis = crisisManager.createCrisis(type: type, gameState: gs) else { continue }
                 crisisManager.presentCrisis(crisis)
                 addLog("🚨 ANXIETY SPIKE → CRISIS: \(crisis.title)", type: .critical)
             }

@@ -23,7 +23,7 @@ final class RetryProbe: @unchecked Sendable {
     var calls: Int { lock.lock(); defer { lock.unlock() }; return _calls }
     var sleeps: [TimeInterval] { lock.lock(); defer { lock.unlock() }; return _sleeps }
     @discardableResult func hit() -> Int { lock.lock(); defer { lock.unlock() }; _calls += 1; return _calls }
-    var sleeper: RetrySleeper { { [self] s in lock.lock(); _sleeps.append(s); lock.unlock() } }
+    var sleeper: RetrySleeper { { [self] s in lock.withLock { _sleeps.append(s) } } }
 }
 
 enum Stub {

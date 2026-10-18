@@ -103,6 +103,20 @@ final class CrisisResolutionSafetyTests: XCTestCase {
 
         XCTAssertEqual(gs.defconLevel, .defcon1, "defconChange -10 from DEFCON 3 must clamp to 1")
     }
+
+    // Regression (3.1.2 crash, 2026-10-18): End Turn rolled a Military Coup with no armed
+    // non-player country left and `randomElement()!` trapped. Every crisis type must
+    // return nil or a valid crisis in a world with no eligible country, never crash.
+    func testCrisisFactoriesSurviveDisarmedWorld() {
+        let manager = CrisisManager()
+        var gs = GameState(playerCountryID: "USA")
+        for i in gs.countries.indices { gs.countries[i].nuclearWarheads = 0 }
+        for type in CrisisEventType.allCases { _ = manager.createCrisis(type: type, gameState: gs) }
+        XCTAssertNil(manager.createCrisis(type: .militaryCoup, gameState: gs))
+
+        gs.countries = gs.countries.filter { $0.isPlayerControlled }
+        for type in CrisisEventType.allCases { _ = manager.createCrisis(type: type, gameState: gs) }
+    }
 }
 
 // MARK: - GameScore Arithmetic

@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 
 /// Crisis event types that can occur during gameplay
-enum CrisisEventType: String, Codable {
+enum CrisisEventType: String, Codable, CaseIterable {
     case falseAlarm = "False Alarm"
     case nuclearAccident = "Nuclear Accident"
     case terroristThreat = "Terrorist Threat"
@@ -166,7 +166,8 @@ class CrisisManager: ObservableObject {
     }
 
     /// Create a specific crisis event
-    func createCrisis(type: CrisisEventType, gameState: GameState) -> CrisisEvent {
+    /// nil when no country qualifies for that crisis (e.g. no armed rivals left late in a game).
+    func createCrisis(type: CrisisEventType, gameState: GameState) -> CrisisEvent? {
         switch type {
         case .falseAlarm:
             return createFalseAlarmCrisis(gameState: gameState)
@@ -203,8 +204,8 @@ class CrisisManager: ObservableObject {
 
     // MARK: - Crisis Factories
 
-    private func createFalseAlarmCrisis(gameState: GameState) -> CrisisEvent {
-        let enemy = gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isPlayerControlled }.randomElement()!
+    private func createFalseAlarmCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let enemy = gameState.countries.filter({ $0.nuclearWarheads > 0 && !$0.isPlayerControlled }).randomElement() else { return nil }
 
         return CrisisEvent(
             type: .falseAlarm,
@@ -294,8 +295,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createNuclearAccidentCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { $0.nuclearWarheads > 0 }.randomElement()!
+    private func createNuclearAccidentCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ $0.nuclearWarheads > 0 }).randomElement() else { return nil }
 
         return CrisisEvent(
             type: .nuclearAccident,
@@ -381,8 +382,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createTerroristThreatCrisis(gameState: GameState) -> CrisisEvent {
-        let target = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createTerroristThreatCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let target = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
 
         return CrisisEvent(
             type: .terroristThreat,
@@ -468,8 +469,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createRogueCommanderCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { $0.nuclearWarheads > 10 }.randomElement()!
+    private func createRogueCommanderCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ $0.nuclearWarheads > 10 }).randomElement() else { return nil }
         let warheads = Int.random(in: 5...20)
 
         return CrisisEvent(
@@ -556,8 +557,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createCyberAttackCrisis(gameState: GameState) -> CrisisEvent {
-        let enemy = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createCyberAttackCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let enemy = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
 
         return CrisisEvent(
             type: .cyberAttack,
@@ -642,8 +643,8 @@ class CrisisManager: ObservableObject {
     }
 
     // Stub implementations for remaining crisis types
-    private func createMilitaryCoupCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { $0.nuclearWarheads > 0 && !$0.isPlayerControlled }.randomElement()!
+    private func createMilitaryCoupCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ $0.nuclearWarheads > 0 && !$0.isPlayerControlled }).randomElement() else { return nil }
         let generalNames = ["General Alexei Volkov", "Colonel Chen Zhao", "General Hassan Al-Sayed", "Marshal Kim Yong-chol", "General Dmitri Petrov"]
         let general = generalNames.randomElement()!
         let units = ["3rd Mechanized Division", "Strategic Rocket Forces", "Republican Guard", "82nd Airborne Brigade", "Naval Infantry Brigade"]
@@ -750,8 +751,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createEspionageCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createEspionageCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         let agentNames = ["Sarah Chen", "Viktor Sokolov", "Abdul Rahman", "Li Wei", "Maria Volkov", "Hassan Al-Din"]
         let agent = agentNames.randomElement()!
         let coverJobs = ["embassy attaché", "trade representative", "journalist", "NGO worker", "academic researcher", "tech company employee"]
@@ -857,13 +858,13 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createDiplomaticIncidentCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createDiplomaticIncidentCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         return createSimpleCrisis(type: .diplomaticIncident, title: "🏛️ Embassy Attack in \(country.name)", country: country, gameState: gameState)
     }
 
-    private func createEconomicCollapseCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createEconomicCollapseCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         let debtB = Int.random(in: 50...500)
         let unemployment = Int.random(in: 25...60)
         return createDetailedCrisis(
@@ -875,8 +876,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createSatelliteFailureCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { $0.nuclearWarheads > 10 }.randomElement()!
+    private func createSatelliteFailureCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ $0.nuclearWarheads > 10 }).randomElement() else { return nil }
         let satellites = ["DSP-23", "SBIRS GEO-5", "NRO L-82", "Oko-7"]
         let sat = satellites.randomElement()!
         return createDetailedCrisis(
@@ -888,8 +889,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createCivilUnrestCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createCivilUnrestCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         let protesters = Int.random(in: 50_000...1_000_000)
         let deaths = Int.random(in: 10...500)
         return createDetailedCrisis(
@@ -901,8 +902,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createWeaponsMalfunctionCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { $0.nuclearWarheads > 5 }.randomElement()!
+    private func createWeaponsMalfunctionCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ $0.nuclearWarheads > 5 }).randomElement() else { return nil }
         let weaponType = [gameState.deliverySystemLabel, gameState.slbmLabel, "tactical nuke"].randomElement()!
         let warheads = Int.random(in: 1...5)
         return createDetailedCrisis(
@@ -914,8 +915,8 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createRadiationLeakCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { $0.nuclearWarheads > 0 }.randomElement()!
+    private func createRadiationLeakCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ $0.nuclearWarheads > 0 }).randomElement() else { return nil }
         let facility = ["\(country.name) Nuclear Lab", "Weapons Facility", "Enrichment Plant"].randomElement()!
         let leakAmount = Int.random(in: 100...5000)
         return createDetailedCrisis(
@@ -927,13 +928,13 @@ class CrisisManager: ObservableObject {
         )
     }
 
-    private func createSpyRingCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createSpyRingCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         return createSimpleCrisis(type: .spyRingUncovered, title: "Spy Ring Uncovered", country: country, gameState: gameState)
     }
 
-    private func createAssassinationCrisis(gameState: GameState) -> CrisisEvent {
-        let country = gameState.countries.filter { !$0.isPlayerControlled }.randomElement()!
+    private func createAssassinationCrisis(gameState: GameState) -> CrisisEvent? {
+        guard let country = gameState.countries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         let leaders = ["Prime Minister", "President", "Supreme Leader", "Chancellor", "King", "General Secretary"]
         let leaderTitle = leaders.randomElement()!
         let leaderNames = ["Vladimir Ivanov", "Chen Wei", "Mohammad Al-Rashid", "Kim Jong-nam", "Dmitri Volkov", "Hassan Rouhani", "Viktor Orban"]

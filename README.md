@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-327%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.1.2-blue)
+![Tests](https://img.shields.io/badge/tests-328%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.1.3-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -545,7 +545,7 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **327 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **328 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
@@ -580,6 +580,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.1.3 | Oct 2026 | Fix: no more End Turn crash when a random crisis has no eligible country left late in a game |
 | 3.1.2 | Oct 2026 | Play history: every sitting logged to the shared `play` schema for Nova's game reporter |
 | 3.1.1 | Oct 2026 | Text size setting (2× default on macOS), every font scaled, crisp scaled controls, layout fixes, zero Release warnings |
 | 3.1.0 | Oct 2026 | Games DB: saves, leaderboard, history, scenario progress and achievements in Postgres, offline-first |
