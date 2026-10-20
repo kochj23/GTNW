@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-10-19 — Terms of surrender
+
+### Added
+- **Annex or choose the government after a U.S. victory.** When a country surrenders to the United States (or to a
+  side the U.S. committed troops to), a *Terms of Surrender* sheet opens with one line from the relevant advisor on
+  each option:
+  - **Annex as a U.S. territory**: `Country.territoryOf`. The territory takes the owner's colour on the Alliances map
+    and is hatched with a dashed border and a `U.S. TERRITORY` tag on every map filter; the legend gains *Territory*,
+    the dossier and Map-tab cards a badge, and the hover line reads "U.S. TERRITORY — <name>". Its arsenal is seized
+    into the U.S. stockpile, it joins the U.S. alliance and computer turns skip it. Occupation: unrest +40 (insurgent
+    attacks instead of a change of government), stability −25, output −30%, relations with Eastern-bloc countries −20,
+    others −10, U.S. allies −3, and ruthlessness +15.
+  - **Choose the new government**: Democratic Republic, Constitutional Monarchy, Military Junta, Communist One-Party
+    State, Theocracy, Provisional Government or Client State (`PostWarGovernment`), each setting government type,
+    ideology, camp, stability, relations, ambition and ethic. A client state joins the victor's alliance.
+- `ShadowState.pendingSettlements` holds open choices; an unanswered one falls back at the next turn to the previous
+  behaviour (a government shaped like the victor's).
+- 14 tests: routing for U.S., U.S.-backed and AI-vs-AI victories; annexation (arsenal, alliance, map label, world
+  reaction); every government type; the client-state alliance; the next-turn default; unknown ids ignored; save/load
+  round trip and pre-3.2 saves; territories never toppled by unrest; performance; and a snapshot render of the map and
+  sheet in both skins (`Screenshots/3.2.0/`).
+
+### Unchanged
+- Surrenders between computer-run countries still install a government shaped like the victor's.
+- Saves from 3.1.x load with no territories and nothing pending.
+
 ## [3.1.3] - 2026-10-18 — Crisis crash fix
 
 ### Fixed

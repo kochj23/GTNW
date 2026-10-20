@@ -196,13 +196,24 @@ struct VectorWorldMap: View {
                         guard path.boundingRect.intersects(CGRect(origin: .zero, size: size)) else { continue }
                         let ownerID = WorldMapData.owner(of: s.id, in: present)
                         var fill = unclaimedColor
+                        var territory = false
                         if let o = ownerID, let c = byID[o] {
                             fill = c.isDestroyed ? Color.black : filter.color(c, player: player)
+                            // A territory takes its owner's colour on the Alliances map, and is hatched on every map.
+                            if let ownerOf = c.territoryOf, !c.isDestroyed {
+                                territory = true
+                                if filter == .alignment, let own = byID[ownerOf] { fill = filter.color(own, player: player) }
+                            }
                             if o == selectedCountryID { fill = Theme.isRetro ? EGA.lightMagenta : Color(red: 1.0, green: 0.85, blue: 0.25) }
                             else if o == hoverID { fill = Theme.isRetro ? EGA.lightRed : fill.opacity(0.55) }
                         }
                         ctx.fill(path, with: .color(fill))
-                        ctx.stroke(path, with: .color(borderColor), lineWidth: zoom == .world ? 0.5 : 1)
+                        if territory {
+                            Self.hatch(&ctx, path)
+                            ctx.stroke(path, with: .color(Self.territoryInk), style: StrokeStyle(lineWidth: zoom == .world ? 1 : 1.6, dash: [3, 2]))
+                        } else {
+                            ctx.stroke(path, with: .color(borderColor), lineWidth: zoom == .world ? 0.5 : 1)
+                        }
                     }
                     // Countries with no outline (micro-states, East Germany…) get a dot.
                     for c in gameState.countries where !hasShape(c.id) && !c.isDestroyed {
@@ -233,6 +244,24 @@ struct VectorWorldMap: View {
     private var borderColor: Color { Theme.isRetro ? EGA.yellow : Color.cyan.opacity(0.45) }
     private var unclaimedColor: Color { Theme.isRetro ? EGA.darkGray : Color.gray.opacity(0.25) }
 
+    /// Ink for territory hatching and borders.
+    static var territoryInk: Color { Theme.isRetro ? EGA.white : Color.white.opacity(0.7) }
+
+    /// Diagonal stripes clipped to a path: how the map marks a territory under any filter.
+    static func hatch(_ ctx: inout GraphicsContext, _ path: Path, spacing: CGFloat = 5) {
+        var layer = ctx
+        layer.clip(to: path)
+        let r = path.boundingRect
+        var stripes = Path()
+        var x = r.minX - r.height
+        while x < r.maxX {
+            stripes.move(to: CGPoint(x: x, y: r.maxY))
+            stripes.addLine(to: CGPoint(x: x + r.height, y: r.minY))
+            x += spacing
+        }
+        layer.stroke(stripes, with: .color(territoryInk), lineWidth: 0.8)
+    }
+
     private func hasShape(_ id: String) -> Bool {
         data.shapes.contains { $0.id == id } || WorldMapData.historicalOwners[id] != nil
     }
@@ -241,6 +270,17 @@ struct VectorWorldMap: View {
     private func markers(transform t: CGAffineTransform, byID: [String: Country]) -> some View {
         let struck = Set(gameState.nuclearStrikes.map(\.target))
         let warring = Set(gameState.shadow.fronts.filter { $0.status == .fighting }.map(\.defender))
+        ForEach(gameState.countries.filter { $0.isTerritory && !$0.isDestroyed }, id: \.id) { c in
+            let owner = c.territoryOf.flatMap { byID[$0] }
+            Text(CombatModel.territoryTitle(ownerID: c.territoryOf ?? "", ownerName: owner?.name ?? ""))
+                .font(ThemeFont.mono(zoom == .world ? 7 : 9, .bold))
+                .foregroundColor(Theme.isRetro ? EGA.white : .white)
+                .padding(.horizontal, 2)
+                .background(Theme.isRetro ? EGA.blue : Color.blue.opacity(0.7))
+                .position(CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t))
+                .offset(y: 12)
+                .allowsHitTesting(false)
+        }
         ForEach(Array(struck.union(warring)).sorted(), id: \.self) { id in
             if let c = byID[id] {
                 let pt = CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t)
@@ -265,6 +305,10 @@ struct VectorWorldMap: View {
         let id = hoverID ?? selectedCountryID
         let text: String = {
             guard let id, let c = byID[id] else { return "Click a country" }
+            if let o = c.territoryOf {
+                let owner = byID[o]
+                return "\(owner?.flag ?? "") \(CombatModel.territoryTitle(ownerID: o, ownerName: owner?.name ?? "")) — \(c.name)"
+            }
             return "\(c.flag) \(c.name) / \(c.region.rawValue)"
         }()
         return Text(text)
@@ -362,6 +406,7 @@ struct MapLegend: View {
                 ForEach([("Western", PoliticalAlignment.western), ("Eastern", .eastern), ("Non-aligned", .nonAligned), ("Independent", .independent)], id: \.0) { item in
                     swatch(MapFilter.alignment.color(Country.legendStub(item.1), player: nil), item.0)
                 }
+                territorySwatch
             case .ideology:
                 Text("Coloured by ideology — hover a country for details").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
             default:
@@ -371,6 +416,19 @@ struct MapLegend: View {
                 }
                 Text(filter.highIsGood ? "high" : "crisis").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
+        }
+    }
+
+    /// "Territory": the owner's colour under diagonal hatching, as drawn on the map.
+    private var territorySwatch: some View {
+        HStack(spacing: 3) {
+            Canvas { ctx, size in
+                let r = Path(CGRect(origin: .zero, size: size))
+                ctx.fill(r, with: .color(MapFilter.alignment.color(Country.legendStub(.western), player: nil)))
+                VectorWorldMap.hatch(&ctx, r, spacing: 3)
+            }
+            .frame(width: FontScale.w(12), height: FontScale.h(9))
+            Text("Territory").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
         }
     }
 

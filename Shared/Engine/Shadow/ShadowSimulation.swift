@@ -70,6 +70,7 @@ extension GameEngine {
         let from = gs.previousTurnDate, to = gs.currentDate
         let scale = gs.scale
 
+        applyOverdueSettlements()
         processScriptedEvents(from: from, to: to)
         updateAnxietiesAndSociety(scale: scale)
         syncFronts()
@@ -151,6 +152,16 @@ extension GameEngine {
             // Leadership tracks stability.
             p.leadership = min(100, max(5, p.leadership * keep + (Double(c.stability) * 0.7 + 15) * (1 - keep)))
             gs.countries[i].profile = p
+
+            // Unrest in a territory is an insurgency against its owner, not a change of government.
+            if c.isTerritory {
+                if p.outcry > 85 && Double.random(in: 0..<1) < scale.probability(annual: 0.5) {
+                    gs.countries[i].stability = max(0, c.stability - 5)
+                    if c.territoryOf == gs.playerCountryID { gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 1) }
+                    gs.shadow.post("Insurgents strike occupation forces in \(c.name).", date: gs.currentDate, severity: 2)
+                }
+                continue
+            }
 
             // Governments under enough pressure fall.
             if !c.isPlayerControlled && p.outcry > 85 && c.stability < 20
@@ -315,6 +326,12 @@ extension GameEngine {
             if gs.countries[di].isPlayerControlled {
                 gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 25)
                 gs.shadow.post("The United States accepts humiliating terms from \(aName).", date: gs.currentDate, severity: 3)
+            } else if f.attacker == player || f.usSide == f.attacker {
+                // A U.S. victory: the President decides the country's future (annex it, or choose its government).
+                if !gs.shadow.pendingSettlements.contains(where: { $0.loser == f.defender }) {
+                    gs.shadow.pendingSettlements.append(PostWarSettlement(loser: f.defender, victor: f.attacker, date: gs.currentDate))
+                }
+                gs.shadow.post("\(dName) surrenders to \(aName). Washington must decide its future.", date: gs.currentDate, severity: 3)
             } else {
                 var loser = gs.countries[di]
                 CombatModel.installGovernment(on: &loser, by: gs.countries[ai])
@@ -332,6 +349,60 @@ extension GameEngine {
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(verdict == .attackerWon ? "\(dName) surrendered to \(aName)" : "\(aName) withdrew from \(dName)").")
         ShadowPack.shared.play(verdict == .attackerWon ? "sfx.war6" : "sfx.negotiation")
         self.gameState = gs
+    }
+
+    /// Carry out the President's decision for a vanquished country. Unknown ids are ignored.
+    @discardableResult
+    func settle(_ settlementID: UUID, choice: SettlementChoice) -> Bool {
+        guard let gs = gameState, let si = gs.shadow.pendingSettlements.firstIndex(where: { $0.id == settlementID }) else { return false }
+        let s = gs.shadow.pendingSettlements.remove(at: si)
+        guard let li = gs.countries.firstIndex(where: { $0.id == s.loser }),
+              let vi = gs.countries.firstIndex(where: { $0.id == s.victor }) else { self.gameState = gs; return false }
+        let name = gs.countries[li].name
+        var loser = gs.countries[li]
+        switch choice {
+        case .annex:
+            let owner = gs.countries[gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) ?? vi]
+            let seized = CombatModel.annex(&loser, to: owner)
+            gs.countries[li] = loser
+            if let oi = gs.countries.firstIndex(where: { $0.id == owner.id }) {
+                gs.countries[oi].nuclearWarheads += seized
+                gs.countries[oi].strategicNukes += seized
+                gs.countries[oi].alliances.insert(loser.id)
+                gs.countries[oi].diplomaticRelations[loser.id] = 100
+            }
+            // The world reacts: rivals furious, everyone else uneasy, allies quiet.
+            for i in gs.countries.indices where !gs.countries[i].isDestroyed && !gs.countries[i].isTerritory
+                && gs.countries[i].id != owner.id {
+                let hit = gs.countries[i].alliances.contains(owner.id) ? -3 : (gs.countries[i].alignment == .eastern ? -20 : -10)
+                modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: hit)
+            }
+            gs.shadow.ruthlessness += 15
+            let title = CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)
+            let owned = owner.id == "USA" ? "U.S." : owner.name
+            gs.shadow.post("\(name) is annexed as a \(owned) territory. \(seized > 0 ? "\(seized) warheads seized. " : "")Occupation begins.",
+                           date: gs.currentDate, severity: 3)
+            gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(name) annexed as \(title).")
+        case .government(let g):
+            CombatModel.installChosenGovernment(g, on: &loser, by: gs.countries[vi])
+            gs.countries[li] = loser
+            if g == .clientState { gs.countries[vi].alliances.insert(loser.id) }
+            gs.countries[vi].diplomaticRelations[loser.id] = loser.diplomaticRelations[s.victor] ?? 0
+            gs.shadow.post("A new government is installed in \(loser.capital): \(name) becomes a \(g.title.lowercased()).", date: gs.currentDate, severity: 3)
+            gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(name) — \(g.title) installed.")
+        case .victorsModel:
+            CombatModel.installGovernment(on: &loser, by: gs.countries[vi])
+            gs.countries[li] = loser
+            gs.shadow.post("A new government is installed in \(loser.capital).", date: gs.currentDate, severity: 3)
+        }
+        self.gameState = gs
+        return true
+    }
+
+    /// Settlements the President didn't decide during the turn get the pre-3.2 default.
+    func applyOverdueSettlements() {
+        guard let gs = gameState else { return }
+        for s in gs.shadow.pendingSettlements where s.date < gs.currentDate { settle(s.id, choice: .victorsModel) }
     }
 
     /// Commit (or recall, with a negative amount) U.S. troops to a front, on one side.

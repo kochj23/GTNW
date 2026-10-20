@@ -366,7 +366,14 @@ struct CountryDossier: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Text(c.name.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
                             Text("\(c.region.rawValue) · \(p.ideology.rawValue)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                            Text(c.government.rawValue.uppercased()).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                         }
+                    }
+                    if let o = c.territoryOf {
+                        Text(CombatModel.territoryTitle(ownerID: o, ownerName: gameState.getCountry(id: o)?.name ?? ""))
+                            .font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Theme.isRetro ? EGA.lightBlue : Color.blue.opacity(0.7))
                     }
                     if !c.isPlayerControlled {
                         gauge("RELATIONS", Double(rel + 100) / 200, text: "\(rel)", good: true)

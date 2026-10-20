@@ -147,3 +147,140 @@ enum CombatModel {
         loser.atWarWith.remove(winner.id)
     }
 }
+
+// MARK: - After a U.S. victory: annex, or choose the new government (3.2.0)
+
+/// The governments the President can stand up in a vanquished country instead of annexing it.
+enum PostWarGovernment: String, Codable, CaseIterable, Identifiable {
+    case democraticRepublic, constitutionalMonarchy, militaryJunta, communistState, theocracy, provisional, clientState
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .democraticRepublic: return "Democratic Republic"
+        case .constitutionalMonarchy: return "Constitutional Monarchy"
+        case .militaryJunta: return "Military Junta"
+        case .communistState: return "Communist One-Party State"
+        case .theocracy: return "Theocracy"
+        case .provisional: return "Provisional Government"
+        case .clientState: return "Client State"
+        }
+    }
+
+    /// What the choice does, in one line, for the choice sheet.
+    var summary: String {
+        switch self {
+        case .democraticRepublic: return "Elections within two years. Western-leaning, middling stability, friendly to Washington."
+        case .constitutionalMonarchy: return "Restore a crown under a constitution. The steadiest option; sides with the victor."
+        case .militaryJunta: return "Generals keep order. Unstable, ambitious and independent; thin gratitude."
+        case .communistState: return "A one-party state. Stable enough, but it turns toward the Eastern Bloc."
+        case .theocracy: return "Clerics take power. Non-aligned, restless and cool toward the U.S."
+        case .provisional: return "A caretaker council until elections. Fragile at first; leans no one's way yet."
+        case .clientState: return "A strongman who owes you everything. Allied and loyal, resented at home."
+        }
+    }
+
+    /// The table that drives everything else: government, ideology, camp, stability, relation with the victor,
+    /// unrest added, ambition, ethic, and whether it joins the victor's alliance.
+    fileprivate var traits: (gov: GovernmentType, ideology: LeaderIdeology, alignment: PoliticalAlignment?, stability: Int,
+                             relation: Int, unrest: Double, ambition: Int, ethic: Int, allied: Bool) {
+        switch self {   // alignment nil = take the victor's camp
+        case .democraticRepublic: return (.republic, .liberalDemocracy, .western, 45, 55, 15, 2, 4, false)
+        case .constitutionalMonarchy: return (.monarchy, .constitutionalMonarchy, nil, 55, 45, 10, 2, 4, false)
+        case .militaryJunta: return (.military, .militaryJunta, .independent, 25, 20, 30, 4, 2, false)
+        case .communistState: return (.communist, .communism, .eastern, 50, -20, 10, 3, 3, false)
+        case .theocracy: return (.theocracy, .theocracy, .nonAligned, 40, -10, 20, 3, 3, false)
+        case .provisional: return (.republic, .developingDemocracy, .nonAligned, 30, 35, 25, 1, 3, false)
+        case .clientState: return (.authoritarian, .nationalism, nil, 35, 85, 30, 1, 2, true)
+        }
+    }
+}
+
+/// What the President decided for a vanquished country. `victorsModel` is the pre-3.2 behavior (a government shaped
+/// like the victor's) and the default when no choice is made before the next turn.
+enum SettlementChoice: Codable, Hashable {
+    case annex
+    case government(PostWarGovernment)
+    case victorsModel
+}
+
+/// A surrender that is waiting for the President's decision.
+struct PostWarSettlement: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var loser: String
+    var victor: String
+    var date: Date
+}
+
+extension CombatModel {
+    /// Map / dossier label for a territory: "U.S. TERRITORY" for the United States, else "<OWNER> TERRITORY".
+    static func territoryTitle(ownerID: String, ownerName: String) -> String {
+        ownerID == "USA" ? "U.S. TERRITORY" : "\(ownerName.uppercased()) TERRITORY"
+    }
+
+    /// Annex the loser as the owner's territory. Its arsenal is seized (the caller adds the returned warheads to the
+    /// owner), it stops acting on its own, and occupation brings unrest and a hit to output while it is rebuilt.
+    @discardableResult
+    static func annex(_ loser: inout Country, to owner: Country) -> Int {
+        let seized = loser.nuclearWarheads
+        loser.territoryOf = owner.id
+        loser.alignment = owner.alignment
+        loser.government = owner.government
+        loser.atWarWith = []
+        loser.alliances = [owner.id]
+        loser.diplomaticRelations[owner.id] = 100
+        loser.nuclearWarheads = 0; loser.tacticalNukes = 0; loser.strategicNukes = 0
+        loser.icbmCount = 0; loser.submarineLaunchedMissiles = 0; loser.bombers = 0
+        loser.nuclearStatus = .none
+        loser.aggressionLevel = 5
+        loser.stability = max(5, loser.stability - 25)
+        loser.economicStrength = max(1, loser.economicStrength * 7 / 10)
+        loser.gdp *= 0.7
+        var p = loser.profile
+        p.ideology = owner.profile.ideology
+        p.ambition = 1
+        p.leadership = 25
+        p.outcry = min(100, p.outcry + 40)   // occupation breeds insurgency
+        loser.profile = p
+        return seized
+    }
+
+    /// Stand up the government the President chose. The victor's own relation is set by the table; the caller
+    /// handles alliances on the victor's side.
+    static func installChosenGovernment(_ type: PostWarGovernment, on loser: inout Country, by victor: Country) {
+        let t = type.traits
+        loser.government = t.gov
+        loser.alignment = t.alignment ?? victor.alignment
+        loser.stability = t.stability
+        loser.diplomaticRelations[victor.id] = t.relation
+        loser.atWarWith.remove(victor.id)
+        if t.allied { loser.alliances.insert(victor.id) }
+        loser.electionCycle = (t.gov == .republic || t.gov == .democracy) ? (type == .provisional ? 2 : 8) : 0
+        var p = loser.profile
+        p.ideology = t.ideology
+        p.ambition = t.ambition
+        p.ethic = t.ethic
+        p.leadership = 30
+        p.outcry = min(100, p.outcry + t.unrest)
+        loser.profile = p
+    }
+
+    /// One line per option from the cabinet, shown on the choice sheet. Keyed by Situation Room role.
+    static func advisorTake(on choice: SettlementChoice) -> (role: String, text: String) {
+        switch choice {
+        case .annex: return ("state", "Annexation will cost us at the UN and every capital that remembers being a colony.")
+        case .victorsModel: return ("whc", "Let them copy our system and stand on their own feet.")
+        case .government(let g):
+            switch g {
+            case .democraticRepublic: return ("state", "A democracy is the only settlement the world will call legitimate.")
+            case .constitutionalMonarchy: return ("nsa", "A crown gives people something older than the war to rally around.")
+            case .militaryJunta: return ("defense", "The generals can hold the country. Whether they stay ours is another matter.")
+            case .communistState: return ("cia", "Installing a party state hands Moscow a client. I strongly advise against it.")
+            case .theocracy: return ("cia", "The clerics have the street, but they will not take orders from Washington.")
+            case .provisional: return ("economic", "A caretaker council keeps the aid flowing while the new constitution is written.")
+            case .clientState: return ("defense", "A loyal strongman means basing rights and a friendly vote. The people will hate him.")
+            }
+        }
+    }
+}

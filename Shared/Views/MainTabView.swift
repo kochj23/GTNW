@@ -71,6 +71,11 @@ struct MainTabView: View {
                     .environmentObject(gameEngine)
             }
             .sheet(item: Binding(
+                get: { gameEngine.warRoomOpen ? nil : gameEngine.gameState?.shadow.pendingSettlements.first },
+                set: { _ in })) { s in
+                if let gs = gameEngine.gameState { SettlementSheet(gameState: gs, settlement: s).environmentObject(gameEngine) }
+            }
+            .sheet(item: Binding(
                 get: { gameEngine.gameState?.shadow.lastElection.flatMap { $0.date == electionShown ? nil : $0 } },
                 set: { if $0 == nil { electionShown = gameEngine.gameState?.shadow.lastElection?.date } })) { result in
                 ElectionNightView(result: result)

@@ -60,7 +60,7 @@ extension GameEngine {
         var remoteJobs: [(id: String, brain: AIBrain, request: MoveRequest)] = []
         var ruleBasedIDs: [String] = []
 
-        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
             let assigned = brain(for: country.id)
             switch assigned {
             case .human:

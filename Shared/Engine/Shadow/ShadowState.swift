@@ -89,6 +89,9 @@ struct ShadowState: Codable {
     // War Room
     var fronts: [WarFront] = []
     var warLog: [String] = []
+    /// Surrenders to the U.S. waiting for the President's choice: annex, or pick the new government (3.2.0).
+    /// Unanswered ones fall back to the victor's-model government at the next turn.
+    var pendingSettlements: [PostWarSettlement] = []
 
     // Scenario
     var scenarioID: String?
@@ -123,7 +126,7 @@ struct ShadowState: Codable {
         case popularity, polls, electionsEnabled, lastElection, termsWon, impeachmentStage, ruthlessness
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
-        case playSessionID, playSessionStartedAt
+        case playSessionID, playSessionStartedAt, pendingSettlements
     }
 
     init() {}
@@ -154,6 +157,7 @@ struct ShadowState: Codable {
         advisorGrievances = try c.decodeIfPresent([String: Int].self, forKey: .advisorGrievances) ?? [:]
         playSessionID = try c.decodeIfPresent(UUID.self, forKey: .playSessionID)
         playSessionStartedAt = try c.decodeIfPresent(Date.self, forKey: .playSessionStartedAt)
+        pendingSettlements = try c.decodeIfPresent([PostWarSettlement].self, forKey: .pendingSettlements) ?? []
     }
 }
 

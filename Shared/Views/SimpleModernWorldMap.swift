@@ -93,7 +93,9 @@ struct SimpleModernWorldMap: View {
                 }
 
                 // Status badge
-                Text(country.alignment.rawValue.uppercased())
+                Text(country.isTerritory ? CombatModel.territoryTitle(ownerID: country.territoryOf ?? "",
+                                                                      ownerName: gameState.getCountry(id: country.territoryOf ?? "")?.name ?? "")
+                                         : country.alignment.rawValue.uppercased())
                     .font(GTNWFonts.terminal(size: 9, weight: .semibold))
                     .foregroundColor(alignmentColor(country.alignment))
                     .padding(.horizontal, 8)

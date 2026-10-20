@@ -155,6 +155,10 @@ struct Country: Identifiable, Codable, Hashable {
     // read it through `profile`, which derives a default when missing.
     var leaderProfile: CountryProfile? = nil
 
+    /// The country that annexed this one after a war (3.2.0), e.g. "USA" for a U.S. territory. nil = sovereign.
+    /// Optional so saves from before 3.2.0 load as sovereign.
+    var territoryOf: String? = nil
+
     // NOTE: CIA World Factbook data is accessed via country.factbook (WorldFactbookRecord)
     // This keeps the Codable-compliant Country struct lean; Factbook data is static reference.
 
@@ -177,7 +181,7 @@ struct Country: Identifiable, Codable, Hashable {
         case cyberAttacksReceived, cyberAttacksLaunched, isUnderCyberAttack
         case activeWeaponPrograms, deployedProhibitedWeapons, hasABMSystem
         case hasMIRVTechnology, hasMobileLaunchers, hasASATWeapons, treatyViolations
-        case leaderProfile
+        case leaderProfile, territoryOf
     }
 
     // Initializer
@@ -309,6 +313,9 @@ struct Country: Identifiable, Codable, Hashable {
     var factbook: WorldFactbookRecord {
         WorldFactbookDatabase.record(for: id)
     }
+
+    /// True once a victor has annexed this country as its territory.
+    var isTerritory: Bool { territoryOf != nil }
 
     /// Calculate total nuclear capability score
     var nuclearCapability: Int {

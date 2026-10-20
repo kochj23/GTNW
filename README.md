@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-328%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.1.3-blue)
+![Tests](https://img.shields.io/badge/tests-342%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.2.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -105,8 +105,44 @@ Everything happens on one screen:
 
 ### War and peace
 
-- **War Room**: fronts with weekly fighting, morale, and U.S. troop commitments. A country that surrenders gets a
-  new government.
+- **War Room**: fronts with weekly fighting, morale, and U.S. troop commitments. A country that surrenders to
+  another computer-run country gets a government shaped like the victor's.
+- **Terms of surrender (new in 3.2.0)**: when a country surrenders to the United States (or to a side the U.S.
+  fought for), you decide its future on a WOPR-style *Terms of Surrender* screen, with a one-line take from the
+  relevant advisor on every option:
+  - **Annex it as a U.S. territory.** The map shows it in U.S. blue under white hatching with a dashed border and a
+    `U.S. TERRITORY` tag, under every map filter; the legend has a *Territory* entry and the dossier a badge. Its
+    nuclear arsenal is seized into the U.S. stockpile, it joins the U.S. alliance, and it stops acting on its own.
+    Occupation has costs: unrest that turns into insurgent attacks (never a change of government), output cut by 30%
+    while it is rebuilt, relations with rivals down 20 and with everyone else down 10 (allies 3), and more outrage
+    at home.
+  - **Let it form a new government of your choosing**: Democratic Republic, Constitutional Monarchy, Military Junta,
+    Communist One-Party State, Theocracy, Provisional Government or Client State. Each sets the country's
+    government, ideology, camp, stability and relations with Washington (see the table below).
+  - The screen can't be dismissed. A choice still open when you end the turn falls back to the pre-3.2 settlement
+    (a government shaped like the victor's). Saves keep territories and open choices; older saves load unchanged.
+
+  | New government | Camp | Stability | Relations with U.S. | Notes |
+  |---|---|---:|---:|---|
+  | Democratic Republic | Western | 45 | +55 | Elections every 8 turns |
+  | Constitutional Monarchy | Victor's | 55 | +45 | The steadiest choice |
+  | Military Junta | Independent | 25 | +20 | Least stable, ambitious |
+  | Communist One-Party State | Eastern | 50 | −20 | Turns toward Moscow |
+  | Theocracy | Non-aligned | 40 | −10 | Restless |
+  | Provisional Government | Non-aligned | 30 | +35 | Elections in 2 turns |
+  | Client State | Victor's | 35 | +85 | Joins the U.S. alliance; resented at home |
+
+  ```mermaid
+  flowchart TD
+      F[Front resolves: attacker won] --> Q{Did the U.S. attack,<br/>or fight on the winning side?}
+      Q -- no --> V[Victor installs a government<br/>shaped like its own]
+      Q -- yes --> P[ShadowState.pendingSettlements<br/>Terms of Surrender sheet]
+      P --> A[Annex as U.S. territory]
+      P --> G[Choose the new government<br/>7 types]
+      P -. still open at next turn .-> V
+      A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
+      G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
 - **Military alliances** with era-accurate membership:
   - NATO's Article 5 brings in every member, with members from 1949 up to Sweden in 2024.
   - The Warsaw Pact exists from 1955 to 1991.
@@ -545,18 +581,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **328 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **342 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 143 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 44 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 48 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 16 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 17 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 37 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 22 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 144 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 50 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 49 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 18 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 18 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 38 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 24 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -580,6 +616,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.2.0 | Oct 2026 | Terms of surrender: annex a vanquished country as a U.S. territory (shown on the map) or choose its new government |
 | 3.1.3 | Oct 2026 | Fix: no more End Turn crash when a random crisis has no eligible country left late in a game |
 | 3.1.2 | Oct 2026 | Play history: every sitting logged to the shared `play` schema for Nova's game reporter |
 | 3.1.1 | Oct 2026 | Text size setting (2× default on macOS), every font scaled, crisp scaled controls, layout fixes, zero Release warnings |

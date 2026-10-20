@@ -23,6 +23,8 @@ class GameEngine: ObservableObject {
     /// The shared AI backend (main-actor isolated; a nested ObservableObject is not re-published anyway).
     @MainActor var aiBackend: AIBackendManager { .shared }
     @Published var showingVictoryScreen = false
+    /// True while the War Room sheet is up, so the surrender-terms sheet presents from there instead of the root.
+    @Published var warRoomOpen = false
     @Published var showingLeaderboard = false
     @Published var victoryType: VictoryType?
     @Published var finalScore: GameScore?
@@ -255,7 +257,7 @@ class GameEngine: ObservableObject {
         print("[GameEngine] ===== Processing AI Turns with \(backend.rawValue.uppercased()) =====")
         addLog("🤖 Using \(backend.rawValue.uppercased()) AI (Real LLM decisions)...", type: .info)
 
-        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
             print("[GameEngine] 🤖 Calling AI backend for \(country.name)...")
 
             if let response = await generateCountryDecisionWithAI(country: country, gameState: gameState) {
@@ -330,7 +332,7 @@ class GameEngine: ObservableObject {
         print("[GameEngine] ===== Processing AI Turns with FALLBACK =====")
         addLog("⚪ Using local AI (enhanced rule-based)", type: .info)
 
-        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
+        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
             let action = determineAIActionEnhanced(for: country)
             print("[GameEngine] ⚪ FALLBACK decision for \(country.name): \(action)")
             executeAIAction(action, for: country, reason: nil)

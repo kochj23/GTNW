@@ -57,6 +57,32 @@ final class SnapshotRenderTests: XCTestCase {
         }
     }
 
+    /// 3.2.0: a U.S. territory on the map, the dossier badge, and the Terms of Surrender sheet.
+    @MainActor
+    func testRenderTerritoryAndSurrenderTerms() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        for target in ["MEX", "VEN"] {
+            engine.declareWar(aggressor: "USA", defender: target)
+            engine.syncFronts()
+            let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.defender == target && $0.status == .fighting })
+            engine.resolveFront(index: i, verdict: .attackerWon)
+        }
+        let mex = try XCTUnwrap(gs.shadow.pendingSettlements.first { $0.loser == "MEX" })
+        XCTAssertTrue(engine.settle(mex.id, choice: .annex))
+        let ven = try XCTUnwrap(gs.shadow.pendingSettlements.first { $0.loser == "VEN" })
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            print("SNAPSHOT \(try render(SituationRoomView(gameState: gs).environmentObject(engine), size: CGSize(width: 1500, height: 940), name: "territory-situation-\(t)").path)")
+            print("SNAPSHOT \(try render(SettlementSheet(gameState: gs, settlement: ven, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(1000)), name: "surrender-terms-\(t)").path)")
+            let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant(nil), zoom: .constant(.world), filter: .constant(.alignment))
+            print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "territory-map-\(t)").path)")
+        }
+    }
+
     /// The same screens at 2× text (sizes scaled like the app's frames), for visual review of clipping.
     @MainActor
     func testRenderKeyScreensAtTwoX() throws {

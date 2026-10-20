@@ -55,7 +55,11 @@ struct WarRoomView: View {
         .padding(14)
         .frame(width: FontScale.w(940), height: FontScale.h(640))
         .background(Theme.isRetro ? EGA.black : Color.black)
-        .onAppear { ShadowPack.shared.play("sfx.warroom_enter") }
+        .onAppear { ShadowPack.shared.play("sfx.warroom_enter"); gameEngine.warRoomOpen = true }
+        .onDisappear { gameEngine.warRoomOpen = false }
+        .sheet(item: Binding(get: { gameState.shadow.pendingSettlements.first }, set: { _ in })) { s in
+            SettlementSheet(gameState: gameState, settlement: s).environmentObject(gameEngine)
+        }
     }
 
     private var frontList: some View {

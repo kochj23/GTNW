@@ -507,3 +507,211 @@ final class ThemeTests: XCTestCase {
         XCTAssertEqual(EGA.ramp.count, 7)
     }
 }
+
+// MARK: - Terms of surrender: annex as a territory, or choose the new government (3.2.0)
+
+@MainActor
+final class PostWarSettlementTests: XCTestCase {
+
+    /// A fresh game where the U.S. has just beaten `target`. Returns the engine and the pending settlement.
+    private func usVictory(over target: String) throws -> (GameEngine, GameState, PostWarSettlement) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        _ = try XCTUnwrap(gs.getCountry(id: target), "\(target) missing from the default world")
+        engine.declareWar(aggressor: "USA", defender: target)
+        engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.attacker == "USA" && $0.defender == target })
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        let s = try XCTUnwrap(gs.shadow.pendingSettlements.first { $0.loser == target })
+        return (engine, gs, s)
+    }
+
+    // Functional: routing
+
+    func testUSVictoryAsksThePresidentInsteadOfInstallingAGovernment() throws {
+        let engine = GameEngine(); engine.startNewGame(turnLength: .month)
+        let before = try XCTUnwrap(engine.gameState?.getCountry(id: "CUB"))
+        let (_, gs, s) = try usVictory(over: "CUB")
+        XCTAssertEqual(s.victor, "USA")
+        let cub = try XCTUnwrap(gs.getCountry(id: "CUB"))
+        XCTAssertEqual(cub.government, before.government, "nothing is installed until the President decides")
+        XCTAssertFalse(cub.isTerritory)
+        XCTAssertFalse(cub.atWarWith.contains("USA"))
+    }
+
+    func testAIVersusAIVictoryIsUnchanged() throws {
+        let engine = GameEngine(); engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.declareWar(aggressor: "BRA", defender: "ARG")
+        engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.attacker == "BRA" && $0.defender == "ARG" })
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        XCTAssertTrue(gs.shadow.pendingSettlements.isEmpty, "AI-vs-AI surrenders never ask the President")
+        XCTAssertEqual(gs.getCountry(id: "ARG")?.alignment, gs.getCountry(id: "BRA")?.alignment)
+        XCTAssertFalse(gs.getCountry(id: "ARG")!.isTerritory)
+    }
+
+    func testVictoryWithUSTroopsOnTheWinningSideAlsoAsks() throws {
+        let engine = GameEngine(); engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.declareWar(aggressor: "BRA", defender: "ARG")
+        engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.attacker == "BRA" && $0.defender == "ARG" })
+        XCTAssertTrue(engine.commitTroops(frontID: gs.shadow.fronts[i].id, side: "BRA", thousands: 50))
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        XCTAssertEqual(gs.shadow.pendingSettlements.first?.loser, "ARG")
+    }
+
+    // Functional: annexation and the map
+
+    func testAnnexMakesAUSTerritoryAndSeizesTheArsenal() throws {
+        let (engine, gs, s) = try usVictory(over: "PRK")
+        let usBefore = try XCTUnwrap(gs.getCountry(id: "USA")).nuclearWarheads
+        let seized = try XCTUnwrap(gs.getCountry(id: "PRK")).nuclearWarheads
+        XCTAssertTrue(engine.settle(s.id, choice: .annex))
+        let prk = try XCTUnwrap(gs.getCountry(id: "PRK")), usa = try XCTUnwrap(gs.getCountry(id: "USA"))
+        XCTAssertEqual(prk.territoryOf, "USA")
+        XCTAssertTrue(prk.isTerritory)
+        XCTAssertEqual(prk.alignment, usa.alignment, "a territory shows in its owner's colour on the Alliances map")
+        XCTAssertEqual(prk.nuclearWarheads, 0)
+        XCTAssertEqual(usa.nuclearWarheads, usBefore + seized)
+        XCTAssertTrue(usa.alliances.contains("PRK"))
+        XCTAssertGreaterThan(prk.profile.outcry, 39, "occupation breeds an insurgency")
+        XCTAssertTrue(gs.shadow.pendingSettlements.isEmpty)
+        XCTAssertEqual(CombatModel.territoryTitle(ownerID: "USA", ownerName: usa.name), "U.S. TERRITORY")
+        XCTAssertEqual(CombatModel.territoryTitle(ownerID: "GBR", ownerName: "United Kingdom"), "UNITED KINGDOM TERRITORY")
+        XCTAssertTrue(gs.shadow.ticker.last?.text.contains("U.S. territory") ?? false)
+    }
+
+    func testAnnexationAngersRivalsMoreThanAllies() throws {
+        let (engine, gs, s) = try usVictory(over: "CUB")
+        let rus0 = gs.getCountry(id: "RUS")?.diplomaticRelations["USA"] ?? 0
+        let gbr = try XCTUnwrap(gs.getCountry(id: "GBR"))
+        let gbr0 = gbr.diplomaticRelations["USA"] ?? 0
+        let ruth0 = gs.shadow.ruthlessness
+        engine.settle(s.id, choice: .annex)
+        let rusDrop = rus0 - (gs.getCountry(id: "RUS")?.diplomaticRelations["USA"] ?? 0)
+        let gbrDrop = gbr0 - (gs.getCountry(id: "GBR")?.diplomaticRelations["USA"] ?? 0)
+        XCTAssertGreaterThan(rusDrop, gbrDrop)
+        XCTAssertGreaterThan(gs.shadow.ruthlessness, ruth0)
+    }
+
+    // Unit: every government type
+
+    func testEachGovernmentTypeHasItsOwnCharacter() throws {
+        let gs = GameState(playerCountryID: "USA")
+        let usa = try XCTUnwrap(gs.getCountry(id: "USA"))
+        let base = try XCTUnwrap(gs.getCountry(id: "CUB"))
+        var result: [PostWarGovernment: Country] = [:]
+        for g in PostWarGovernment.allCases {
+            var c = base
+            CombatModel.installChosenGovernment(g, on: &c, by: usa)
+            result[g] = c
+            XCTAssertFalse(c.atWarWith.contains("USA"), g.title)
+            XCTAssertFalse(g.summary.isEmpty)
+        }
+        XCTAssertEqual(result[.democraticRepublic]?.government, .republic)
+        XCTAssertEqual(result[.democraticRepublic]?.profile.ideology, .liberalDemocracy)
+        XCTAssertEqual(result[.democraticRepublic]?.alignment, .western)
+        XCTAssertGreaterThan(result[.democraticRepublic]!.electionCycle, 0)
+        XCTAssertEqual(result[.constitutionalMonarchy]?.government, .monarchy)
+        XCTAssertEqual(result[.constitutionalMonarchy]?.alignment, usa.alignment)
+        XCTAssertEqual(result[.militaryJunta]?.government, .military)
+        XCTAssertEqual(result[.militaryJunta]?.alignment, .independent)
+        XCTAssertEqual(result[.communistState]?.alignment, .eastern)
+        XCTAssertLessThan(result[.communistState]!.diplomaticRelations["USA"]!, 0)
+        XCTAssertEqual(result[.theocracy]?.government, .theocracy)
+        XCTAssertEqual(result[.provisional]?.electionCycle, 2, "a caretaker council calls elections soon")
+        XCTAssertEqual(result[.clientState]?.alignment, usa.alignment)
+        XCTAssertTrue(result[.clientState]!.alliances.contains("USA"))
+        // A junta is the least stable; a client state is the friendliest; a monarchy is the steadiest.
+        let stab = result.mapValues(\.stability), rel = result.mapValues { $0.diplomaticRelations["USA"] ?? 0 }
+        XCTAssertEqual(stab.min { $0.value < $1.value }?.key, .militaryJunta)
+        XCTAssertEqual(stab.max { $0.value < $1.value }?.key, .constitutionalMonarchy)
+        XCTAssertEqual(rel.max { $0.value < $1.value }?.key, .clientState)
+        for g in PostWarGovernment.allCases { XCTAssertNil(result[g]?.territoryOf, "a new government is sovereign") }
+    }
+
+    func testClientStateJoinsTheVictorsAlliance() throws {
+        let (engine, gs, s) = try usVictory(over: "CUB")
+        engine.settle(s.id, choice: .government(.clientState))
+        XCTAssertTrue(gs.getCountry(id: "USA")!.alliances.contains("CUB"))
+        XCTAssertEqual(gs.getCountry(id: "CUB")?.profile.ideology, .nationalism)
+        XCTAssertTrue(gs.shadow.ticker.last?.text.contains("client state") ?? false)
+    }
+
+    // Retry / default: an unanswered choice falls back to the pre-3.2 settlement
+
+    func testUnansweredChoiceDefaultsToTheVictorsModelNextTurn() throws {
+        let (engine, gs, s) = try usVictory(over: "CUB")
+        gs.shadow.pendingSettlements[0].date = Date.distantPast
+        engine.applyOverdueSettlements()
+        XCTAssertTrue(gs.shadow.pendingSettlements.isEmpty)
+        let cub = try XCTUnwrap(gs.getCountry(id: "CUB"))
+        XCTAssertEqual(cub.alignment, gs.getCountry(id: "USA")?.alignment)
+        XCTAssertFalse(cub.isTerritory)
+        XCTAssertFalse(engine.settle(s.id, choice: .annex), "an answered settlement can't be answered twice")
+    }
+
+    // Security: bad input is a no-op
+
+    func testUnknownSettlementIsIgnored() throws {
+        let (engine, gs, _) = try usVictory(over: "CUB")
+        let snapshot = gs.getCountry(id: "CUB")
+        XCTAssertFalse(engine.settle(UUID(), choice: .annex))
+        XCTAssertEqual(gs.getCountry(id: "CUB"), snapshot)
+        XCTAssertEqual(gs.shadow.pendingSettlements.count, 1)
+    }
+
+    // Integration: save / load
+
+    func testTerritoriesAndPendingChoicesSurviveSaveAndLoad() throws {
+        let (engine, gs, s) = try usVictory(over: "CUB")
+        engine.settle(s.id, choice: .annex)
+        engine.declareWar(aggressor: "USA", defender: "VEN")
+        engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.defender == "VEN" && $0.status == .fighting })
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        let data = try JSONEncoder().encode(gs)
+        let loaded = try JSONDecoder().decode(GameState.self, from: data)
+        XCTAssertEqual(loaded.getCountry(id: "CUB")?.territoryOf, "USA")
+        XCTAssertEqual(loaded.shadow.pendingSettlements.map(\.loser), ["VEN"])
+    }
+
+    func testSavesFromBefore320LoadAsSovereignWithNothingPending() throws {
+        let (_, gs, _) = try usVictory(over: "CUB")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "pendingSettlements"); json["shadow"] = shadow
+        json["countries"] = (json["countries"] as? [[String: Any]])?.map { var c = $0; c.removeValue(forKey: "territoryOf"); return c }
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(loaded.shadow.pendingSettlements.isEmpty)
+        XCTAssertFalse(loaded.countries.contains { $0.isTerritory })
+    }
+
+    // Frame: territories are never toppled by unrest; it becomes an insurgency
+
+    func testTerritoryUnrestIsAnInsurgencyNotACoup() throws {
+        let (engine, gs, s) = try usVictory(over: "CUB")
+        engine.settle(s.id, choice: .annex)
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "CUB" })
+        for _ in 0..<12 {
+            gs.countries[i].profile.outcry = 100; gs.countries[i].stability = 5
+            engine.processShadowTurn()
+        }
+        let cub = try XCTUnwrap(gs.getCountry(id: "CUB"))
+        XCTAssertEqual(cub.territoryOf, "USA")
+        XCTAssertEqual(cub.government, gs.getCountry(id: "USA")?.government)
+    }
+
+    // Performance
+
+    func testChoosingAGovernmentIsCheap() throws {
+        let gs = GameState(playerCountryID: "USA")
+        let usa = try XCTUnwrap(gs.getCountry(id: "USA")), base = try XCTUnwrap(gs.getCountry(id: "CUB"))
+        measure {
+            for _ in 0..<500 { for g in PostWarGovernment.allCases { var c = base; CombatModel.installChosenGovernment(g, on: &c, by: usa) } }
+        }
+    }
+}

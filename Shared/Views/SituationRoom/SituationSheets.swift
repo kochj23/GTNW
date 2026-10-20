@@ -499,3 +499,77 @@ struct DomesticEndingBanner: View {
         .themedPanel(retroFill: EGA.black)
     }
 }
+
+// MARK: - Terms of surrender (3.2.0)
+
+/// After a U.S. victory: annex the vanquished country as a U.S. territory, or let it form a new government of the
+/// President's choosing. The cabinet weighs in on each option. The sheet can't be swiped away; an unanswered choice
+/// defaults to the pre-3.2 settlement at the next turn.
+struct SettlementSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @ObservedObject var gameState: GameState
+    let settlement: PostWarSettlement
+    /// Offscreen snapshots can't render scroll views; they pass false.
+    var scrolls = true
+
+    var body: some View {
+        let loser = gameState.getCountry(id: settlement.loser)
+        let owner = gameState.getPlayerCountry()
+        let territory = CombatModel.territoryTitle(ownerID: owner?.id ?? "USA", ownerName: owner?.name ?? "")
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "flag.2.crossed")
+                Text("TERMS OF SURRENDER")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(17, .bold))
+            .foregroundColor(GTNWColors.terminalAmber)
+            Text("> \(loser?.flag ?? "") \((loser?.name ?? settlement.loser).uppercased()) HAS SURRENDERED. WHAT ARE YOUR ORDERS, MR. PRESIDENT?")
+                .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.neonCyan)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Group { if scrolls { ScrollView { options(loser: loser, territory: territory) } } else { options(loser: loser, territory: territory) } }
+        }
+        .padding(16)
+        .frame(minWidth: FontScale.w(640), minHeight: FontScale.h(600))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+        .interactiveDismissDisabled()
+        .onAppear { ShadowPack.shared.play("sfx.warroom_enter") }
+    }
+
+    private func options(loser: Country?, territory: String) -> some View {
+                VStack(alignment: .leading, spacing: 8) {
+                    option(title: "ANNEX AS \(territory) — \((loser?.name ?? "").uppercased())",
+                           summary: "Its arsenal is seized and it flies our flag on the map. Occupation means insurgents, lost output "
+                                  + "while it is rebuilt, and anger abroad: rivals by 20, the rest of the world by 10.",
+                           choice: .annex, button: "ANNEX", color: GTNWColors.terminalRed)
+                    Text("OR LET \((loser?.name ?? "IT").uppercased()) FORM A NEW GOVERNMENT:")
+                        .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
+                    ForEach(PostWarGovernment.allCases) { g in
+                        option(title: g.title.uppercased(), summary: g.summary, choice: .government(g), button: "INSTALL",
+                               color: GTNWColors.terminalGreen)
+                    }
+                }
+    }
+
+    private func option(title: String, summary: String, choice: SettlementChoice, button: String, color: Color) -> some View {
+        let take = CombatModel.advisorTake(on: choice)
+        let who = AdviceEngine.advisor(for: take.role, in: gameState.advisors)?.name ?? AdviceEngine.roleTitle(take.role)
+        return HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(ThemeFont.mono(12, .bold)).foregroundColor(color)
+                Text(summary).font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("\(who.uppercased()): \u{201C}\(take.text)\u{201D}").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button(button) { gameEngine.settle(settlement.id, choice: choice) }
+                .buttonStyle(ThemedButtonStyle(color: color, prominent: true))
+                .accessibilityLabel("\(button) — \(title)")
+        }
+        .padding(8)
+        .themedPanel()
+    }
+}
