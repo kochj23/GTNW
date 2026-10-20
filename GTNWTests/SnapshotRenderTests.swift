@@ -143,5 +143,53 @@ final class SnapshotRenderTests: XCTestCase {
                              size: CGSize(width: 1100, height: 600), name: "integration-territory-after-load")
         XCTAssertGreaterThan((try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0, 10_000)
     }
+
+    /// 3.3.0: an 1850 world with unclaimed Africa (world + region zoom, Nigeria selected), its dossier, the naming
+    /// sheet after a claim, the rename sheet, and the annex option with its optional name field.
+    @MainActor
+    func testRenderUnclaimedLandsAndNamingSheet() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand("KEN"))
+        XCTAssertTrue(engine.renameTerritory("KEN", to: "New Albion"))
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            for zoom in [MapZoom.world, .region] {
+                let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("NGA"), zoom: .constant(zoom), filter: .constant(.alignment))
+                print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "unclaimed-map-\(zoom.rawValue.lowercased())-\(t)").path)")
+            }
+            let other = VectorWorldMap(gameState: gs, selectedCountryID: .constant(nil), zoom: .constant(.world), filter: .constant(.unrest))
+            print("SNAPSHOT \(try render(VStack { other; MapLegend(filter: .unrest, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "unclaimed-map-unrest-\(t)").path)")
+            let dossiers = HStack(alignment: .top) {
+                CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NGA").frame(width: FontScale.w(300))
+                CountryDossier(gameState: gs, country: gs.getCountry(id: "KEN"), onSheet: { _ in }, scrolls: false).frame(width: FontScale.w(300))
+            }.environmentObject(engine)
+            print("SNAPSHOT \(try render(dossiers, size: CGSize(width: FontScale.w(620), height: FontScale.h(760)), name: "unclaimed-dossier-\(t)").path)")
+            let naming = TerritoryNameSheet(gameState: gs, countryID: "KEN", newlyClaimed: true, live: false, name: "Kenya").environmentObject(engine)
+            print("SNAPSHOT \(try render(naming, size: CGSize(width: FontScale.w(560), height: FontScale.h(260)), name: "naming-sheet-\(t)").path)")
+            let rename = TerritoryNameSheet(gameState: gs, countryID: "KEN", live: false, name: "<b>Robert'); --</b>").environmentObject(engine)
+            print("SNAPSHOT \(try render(rename, size: CGSize(width: FontScale.w(560), height: FontScale.h(260)), name: "rename-sheet-\(t)").path)")
+        }
+    }
+
+    /// Integration (3.3.0): claim → name → save → load in a fresh engine → the map still draws the named territory.
+    @MainActor
+    func testClaimedLandSurvivesSaveLoadAndRendersOnTheMap() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand("NGA"))
+        XCTAssertTrue(engine.renameTerritory("NGA", to: "New Albion"))
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.getCountry(id: "NGA")?.name, "New Albion")
+        XCTAssertTrue(loaded.getCountry(id: "NGA")?.isTerritory ?? false)
+        let map = VectorWorldMap(gameState: loaded, selectedCountryID: .constant("NGA"), zoom: .constant(.region), filter: .constant(.alignment))
+        let url = try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black),
+                             size: CGSize(width: 1100, height: 600), name: "integration-claimed-after-load")
+        XCTAssertGreaterThan((try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0, 10_000)
+    }
 }
 #endif
