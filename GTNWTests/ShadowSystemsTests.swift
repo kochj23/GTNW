@@ -806,7 +806,7 @@ final class UnclaimedLandTests: XCTestCase {
         XCTAssertLessThanOrEqual(land.profile.outcry, 20, "no occupation insurgency: nobody governed it")
         XCTAssertFalse(gs.unclaimedLandIDs.contains("NGA"))
         XCTAssertEqual(gs.actionsUsedThisTurn, used0 + 1)
-        XCTAssertEqual(gs.shadow.ruthlessness, ruth0 + 5)
+        XCTAssertEqual(gs.shadow.ruthlessness, ruth0 + ExpansionModel.politics(year: 1850, nth: 1).ruthlessness, accuracy: 1e-9)   // 3.7.0 era politics
         XCTAssertTrue(gs.getCountry(id: "USA")!.alliances.contains("NGA"))
         XCTAssertTrue(gs.shadow.ticker.last?.text.contains("U.S. territory") ?? false)
 
@@ -1718,5 +1718,226 @@ final class ArsenalPlayHistoryTests: XCTestCase {
         let used = try XCTUnwrap(events.first { $0.kind == "wmd_used" })
         XCTAssertEqual(PlayFixtures.detail(used)["legal_status"] as? String, "treatyBanned")
         XCTAssertTrue((PlayFixtures.detail(used)["treaty"] as? String)?.contains("Chemical Weapons Convention") ?? false)
+    }
+}
+
+// MARK: - Territory wealth and the politics of expansion (3.7.0)
+
+@MainActor
+final class ExpansionTests: XCTestCase {
+
+    private func game(_ admin: Administration, turn: TurnLength = .week) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: admin, turnLength: turn)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    /// Claim `ids` (5K troops each, actions refilled as a player with time would have), spread over `turns` turns,
+    /// running the full Shadow turn between them; then play on `after` more turns. Returns the stages seen.
+    @discardableResult
+    private func spree(_ engine: GameEngine, _ gs: GameState, ids: [String], turns: Int, after: Int) -> [Int] {
+        var stages: [Int] = []
+        let perTurn = Int((Double(ids.count) / Double(turns)).rounded(.up))
+        var queue = ids[...]
+        for _ in 0..<(turns + after) {
+            for _ in 0..<perTurn where !queue.isEmpty {
+                gs.actionsUsedThisTurn = 0
+                let id = queue.removeFirst()
+                XCTAssertTrue(engine.claimLand(id, troops: 5), id)
+                engine.renameTerritory(id, to: "Gimme \(id)")
+            }
+            gs.turn += 1
+            engine.processShadowTurn()
+            stages.append(gs.shadow.impeachmentStage)
+            if gs.shadow.domesticEnding != nil { break }
+        }
+        return stages
+    }
+
+    // Retry / rebalance: Jordan's 3.3.0 session must no longer end in removal
+
+    func testJordans1913PatternNoLongerEndsInRemoval() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        let lands = Array(gs.unclaimedLandIDs.sorted().prefix(27))
+        XCTAssertEqual(lands.count, 27)
+        let pop0 = gs.shadow.popularity
+        let stages = spree(engine, gs, ids: lands, turns: 8, after: 26)
+        print("REPLAY popularity \(pop0) -> \(gs.shadow.popularity), ruthlessness \(gs.shadow.ruthlessness), stages \(stages)")
+        XCTAssertNotEqual(gs.shadow.domesticEnding, .impeached, "27 modest claims in 1913 must not get the President removed")
+        XCTAssertLessThan(stages.max() ?? 0, 3, "the House never votes")
+        XCTAssertGreaterThan(gs.shadow.resourceEarnings, 0, "the land pays")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("is now producing") })
+    }
+
+    func testAnAbsurdSpreeStillRisksImpeachment() throws {
+        let (engine, gs) = try game(Advisor.fillmoreAdministration())
+        let lands = gs.unclaimedLandIDs.sorted()
+        XCTAssertGreaterThanOrEqual(lands.count, 47)
+        let stages = spree(engine, gs, ids: lands, turns: 1, after: 12)
+        XCTAssertGreaterThanOrEqual(stages.max() ?? 0, 1, "47 lands in a week brings Congress down on the President")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("WARNING from the Chief of Staff") }, "and he is warned first")
+    }
+}
+
+@MainActor
+final class TerritoryWealthTests: XCTestCase {
+
+    private func game(_ admin: Administration?, turn: TurnLength = .month) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: admin, turnLength: turn)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    /// Move the calendar on and run only the territory step.
+    private func years(_ engine: GameEngine, _ gs: GameState, _ n: Int) {
+        for _ in 0..<(n * 12) { gs.turn += 1; engine.processTerritoryEconomy() }
+    }
+
+    // Unit: era-accurate resources
+
+    func testResourcesFollowHistory() {
+        let k = { (id: String, y: Int) in Set(ExpansionModel.deposits(for: id, year: y).map(\.kind)) }
+        XCTAssertFalse(k("LBY", 1950).contains(.oil)); XCTAssertTrue(k("LBY", 1960).contains(.oil), "Libyan oil from 1959")
+        XCTAssertFalse(k("NGA", 1950).contains(.oil)); XCTAssertTrue(k("NGA", 1957).contains(.oil), "Oloibiri 1956")
+        XCTAssertTrue(k("COD", 1900).contains(.rubber)); XCTAssertFalse(k("COD", 1925).contains(.rubber), "the rubber boom ended")
+        XCTAssertFalse(k("COD", 1930).contains(.uranium)); XCTAssertTrue(k("COD", 1944).contains(.uranium))
+        XCTAssertFalse(k("ZAF", 1880).contains(.gold)); XCTAssertTrue(k("ZAF", 1890).contains(.gold), "Witwatersrand 1886")
+        XCTAssertTrue(k("GHA", 1900).contains(.cocoa)); XCTAssertTrue(k("ZMB", 1930).contains(.copper))
+        XCTAssertFalse(k("ZMB", 1920).contains(.copper), "the Copperbelt opened c.1928")
+        XCTAssertEqual(k("ERI", 1913), [.agriculture], "lands without a table entry farm a little")
+        for (_, list) in ExpansionModel.deposits { for d in list { XCTAssertGreaterThan(d.value, 0); if let to = d.to { XCTAssertGreaterThan(to, d.from) } } }
+    }
+
+    func testRampUpHoldAndPolitics() {
+        XCTAssertEqual(ExpansionModel.rampUp(yearsHeld: 0.4), 0); XCTAssertEqual(ExpansionModel.rampUp(yearsHeld: 2), 1)
+        XCTAssertEqual(ExpansionModel.rampUp(yearsHeld: 1.25), 0.5, accuracy: 0.001)
+        XCTAssertEqual(ExpansionModel.holdFactor(stability: 60, garrison: 5), 1)
+        XCTAssertLessThan(ExpansionModel.holdFactor(stability: 10, garrison: 1), ExpansionModel.holdFactor(stability: 60, garrison: 5))
+        XCTAssertGreaterThan(ExpansionModel.holdFactor(stability: 0, garrison: 0), 0, "neglect hurts but never zeroes")
+        XCTAssertGreaterThan(ExpansionModel.politics(year: 1900, nth: 1).popularity, 0, "a small imperial-era claim is popular")
+        XCTAssertLessThan(ExpansionModel.politics(year: 1950, nth: 1).popularity, 0, "UN-era annexation is not")
+        XCTAssertGreaterThan(ExpansionModel.politics(year: 1950, nth: 1).ruthlessness, ExpansionModel.politics(year: 1900, nth: 1).ruthlessness)
+        var last = -1.0
+        for n in 1...80 {   // gentle first, steep for a spree
+            let r = ExpansionModel.politics(year: 1910, nth: n).ruthlessness
+            XCTAssertGreaterThanOrEqual(r, last); last = r
+        }
+        XCTAssertLessThan(ExpansionModel.politics(year: 1910, nth: 5).ruthlessness, 1)
+        XCTAssertGreaterThan(ExpansionModel.politics(year: 1910, nth: 50).ruthlessness, 6)
+        XCTAssertEqual(ExpansionModel.risk(pressure: 13), .high); XCTAssertEqual(ExpansionModel.risk(pressure: 8), .rising)
+        XCTAssertEqual(ExpansionModel.risk(pressure: 0), .none)
+    }
+
+    // Functional: land pays, scores and helps the forces
+
+    func testClaimedGoldFieldsPayAndScore() throws {
+        let (engine, gs) = try game(Advisor.mckinleyAdministration())
+        let gdp0 = gs.getPlayerCountry()!.gdp
+        let score0 = GameScore.calculate(from: gs, victoryType: nil).expansionBonus ?? 0
+        XCTAssertTrue(engine.claimLand("ZAF"))
+        years(engine, gs, 3)
+        let row = try XCTUnwrap(ExpansionModel.ledger(gs).first { $0.country.id == "ZAF" })
+        XCTAssertGreaterThan(row.income, 0)
+        XCTAssertTrue(row.resources.contains(.gold))
+        XCTAssertGreaterThan(gs.shadow.resourceEarnings, 0)
+        XCTAssertGreaterThan(gs.getPlayerCountry()!.gdp, gdp0)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("is now producing") && $0.text.contains("gold") })
+        XCTAssertGreaterThan(GameScore.calculate(from: gs, victoryType: nil).expansionBonus ?? 0, score0 + 99, "land and wealth score")
+    }
+
+    func testAnnexedCountriesPayTributeAndNeglectCosts() throws {
+        let (engine, gs) = try game(nil)
+        engine.declareWar(aggressor: "USA", defender: "CUB")
+        engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.defender == "CUB" && $0.status == .fighting })
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        XCTAssertTrue(engine.settle(gs.shadow.pendingSettlements[0].id, choice: .annex))
+        years(engine, gs, 3)
+        let cub = try XCTUnwrap(gs.getCountry(id: "CUB"))
+        let held = ExpansionModel.annualIncome(cub, in: gs)
+        XCTAssertGreaterThan(held, 0)
+        gs.shadow.garrisons["CUB"] = 0.5
+        let ci = try XCTUnwrap(gs.countries.firstIndex { $0.id == "CUB" })
+        gs.countries[ci].stability = 5
+        XCTAssertLessThan(ExpansionModel.annualIncome(gs.countries[ci], in: gs), held, "a neglected territory pays less")
+    }
+
+    func testStrategicOilFuelsTheAirArmInItsEra() throws {
+        let (engine, gs) = try game(Advisor.trumanAdministration(), turn: .year)
+        XCTAssertTrue(engine.claimLand("LBY"))
+        for _ in 0..<16 { gs.turn += 1; engine.processTerritoryEconomy() }   // past Libya's 1959 oil
+        XCTAssertTrue(ExpansionModel.strategic(gs).contains(.oil))
+        let pool = Double(AttackSizing.aircraftPool(gs.getPlayerCountry()!, year: gs.currentYear, lost: gs.shadow.aircraftLost))
+        XCTAssertGreaterThan(AttackSizing.available(.aircraft, in: gs), pool, "oil fuels a larger air arm")
+        XCTAssertFalse(ExpansionModel.strategic(gs).contains(.rubber), "rubber only counts in the world wars")
+    }
+
+    // Security
+
+    func testRiskReadoutAndHostileInputs() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        gs.shadow.ruthlessness = 200; gs.shadow.popularity = 10
+        XCTAssertEqual(engine.impeachmentRisk().risk, .high)
+        gs.shadow.expansionLog = Array(repeating: gs.currentDate, count: 40)   // mid-spree, the next claim adds pressure
+        XCTAssertGreaterThan(engine.pressureAfterNextClaim(), engine.impeachmentRisk().pressure)
+        XCTAssertTrue(ExpansionModel.politics(year: 1910, nth: 10_000).ruthlessness.isFinite)
+        XCTAssertEqual(ExpansionModel.deposits(for: "ZZZ", year: 1900).map(\.kind), [.agriculture])
+        let old = try JSONDecoder().decode(GameScore.self, from: Data(#"{"baseScore":1,"turnsPlayed":2,"nuclearVirgin":true,"casualtyPenalty":0,"allianceBonus":0,"treatyBonus":0,"economicBonus":0,"difficultyMultiplier":1,"finalScore":3,"playerCountry":"USA","dateAchieved":0}"#.utf8))
+        XCTAssertNil(old.expansionBonus, "older score records decode")
+    }
+
+    // Retry: expansion state survives a reload; old saves decode
+
+    func testExpansionStateSurvivesSaveAndOldSavesLoad() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        XCTAssertTrue(engine.claimLand("NGA"))
+        years(engine, gs, 1)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.expansionLog, gs.shadow.expansionLog)
+        XCTAssertEqual(loaded.shadow.claimDates, gs.shadow.claimDates)
+        XCTAssertEqual(loaded.shadow.resourceEarnings, gs.shadow.resourceEarnings)
+        XCTAssertEqual(loaded.shadow.producing, gs.shadow.producing)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["expansionLog", "claimDates", "producing", "resourceEarnings", "impeachmentWarned"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.expansionLog.isEmpty)
+        XCTAssertGreaterThan(ExpansionModel.annualIncome(old.getCountry(id: "NGA")!, in: old), 0, "old territories count as long held")
+    }
+
+    // Performance
+
+    func testLedgerIsCheapWithManyTerritories() throws {
+        let (engine, gs) = try game(Advisor.fillmoreAdministration())
+        for id in gs.unclaimedLandIDs.sorted() { gs.actionsUsedThisTurn = 0; engine.claimLand(id) }
+        measure { for _ in 0..<100 { _ = ExpansionModel.ledger(gs); _ = ExpansionModel.strategic(gs) } }
+    }
+}
+
+// MARK: - Play history: "Gotit is now producing copper" (3.7.0)
+
+final class TerritoryWealthPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testTerritoryProducingIsLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", administration: Advisor.hooverAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        XCTAssertTrue(e.claimLand("ZMB"))
+        XCTAssertTrue(e.renameTerritory("ZMB", to: "Gotit"))
+        for _ in 0..<12 { gs.turn += 1; e.processTerritoryEconomy() }
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        let ev = try XCTUnwrap(events.first { $0.kind == "territory_producing" })
+        XCTAssertEqual(PlayFixtures.detail(ev)["name"] as? String, "Gotit")
+        XCTAssertTrue((PlayFixtures.detail(ev)["resources"] as? String)?.contains("copper") ?? false)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasPrefix("Gotit is now producing copper") })
     }
 }

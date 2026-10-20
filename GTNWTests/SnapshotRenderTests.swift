@@ -282,5 +282,33 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(view, size: CGSize(width: FontScale.w(560), height: FontScale.h(760)), name: "arsenal-lines-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.7.0: the Resources panel, the impeachment-risk badge and the claim warning, in both skins.
+    @MainActor
+    func testRenderTerritoryWealth() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        for (id, name) in [("ZMB", "Gotit"), ("ERI", "Gimme"), ("GHA", "Gold Coast"), ("COD", "Rubberland"), ("ZAF", "")] {
+            gs.actionsUsedThisTurn = 0
+            if gs.unclaimedLandIDs.contains(id) { XCTAssertTrue(engine.claimLand(id)); if !name.isEmpty { engine.renameTerritory(id, to: name) } }
+        }
+        for _ in 0..<30 { gs.turn += 1; engine.processTerritoryEconomy() }
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            print("SNAPSHOT \(try render(ResourcesSheet(gameState: gs, scrolls: false), size: CGSize(width: FontScale.w(640), height: FontScale.h(560)), name: "resources-\(t)").path)")
+            gs.shadow.ruthlessness = 30.5; gs.shadow.popularity = 31
+            let log = gs.shadow.expansionLog
+            gs.shadow.expansionLog = Array(repeating: gs.currentDate, count: 20)   // mid-spree: the next claim tips it
+            let bar = SituationTopBar(gameState: gs, onSheet: { _ in }, part: .statsOnly).environmentObject(engine)
+            print("SNAPSHOT \(try render(bar, size: CGSize(width: FontScale.w(900), height: FontScale.h(70)), name: "impeachment-risk-\(t)").path)")
+            let dossier = CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NGA")
+                .environmentObject(engine).frame(width: FontScale.w(300))
+            print("SNAPSHOT \(try render(dossier, size: CGSize(width: FontScale.w(320), height: FontScale.h(420)), name: "claim-warning-\(t)").path)")
+            gs.shadow.ruthlessness = 0; gs.shadow.popularity = 50; gs.shadow.expansionLog = log
+        }
+    }
 }
 #endif
