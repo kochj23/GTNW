@@ -102,6 +102,35 @@ struct WorldCountriesDatabase {
              + territories
     }
 
+    // MARK: - Unclaimed lands (3.3.0)
+
+    /// African lands removed before ~1960 (see `countriesForYear`). No era entity covers this ground.
+    static let postColonialAfrica: Set<String> = ["NGA","ETH","KEN","TZA","GHA","CIV","SEN","CMR",
+                                                  "ZMB","ZWE","MOZ","AGO","COD","COG","GAB","CAF",
+                                                  "TCD","MLI","BFA","NER","GIN","GNB","SLE","LBR",
+                                                  "GMB","TGO","BEN","RWA","BDI","SSD","ERI","DJI",
+                                                  "SOM","UGA","MDG","MUS","SYC","COM","CPV","STP",
+                                                  "NAM","BWA","LSO","SWZ","MWI"]
+
+    /// Lands with no country in the game before the given year, which the President may claim (3.3.0).
+    /// Only removals that NO era entity stands in for count: pre-1960 Africa, Libya before 1951, South Africa
+    /// before 1910. Removals covered by a predecessor (Soviet republics → Russian Empire / USSR, Germany, the
+    /// Yugoslav and Czechoslovak states, Korea, Ottoman and British-ruled lands…) are never unclaimed.
+    static let unclaimedLands: [(ids: Set<String>, until: Int)] = [
+        (postColonialAfrica, 1960),
+        (["LBY"], 1951),
+        (["ZAF"], 1910),
+    ]
+
+    /// Ids of the lands nobody governs in `year` (each also removed by `countriesForYear`).
+    static func unclaimedLandIDs(year: Int) -> Set<String> {
+        unclaimedLands.reduce(into: Set<String>()) { out, e in if year < e.until { out.formUnion(e.ids) } }
+    }
+
+    /// The modern-map template for a land (name, flag, capital, coordinates, region), or nil.
+    static func template(id: String) -> CountryTemplate? { templatesByID[id] }
+    private static let templatesByID = Dictionary(allCountries().map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+
     // MARK: - Era-Filtered Countries
 
     /// Returns countries appropriate for the given year with historical adjustments.
@@ -235,12 +264,6 @@ struct WorldCountriesDatabase {
         // Many African nations gained independence ~1960
         // Remove the most historically significant absences before 1960
         if year < 1960 {
-            let postColonialAfrica = ["NGA","ETH","KEN","TZA","GHA","CIV","SEN","CMR",
-                                      "ZMB","ZWE","MOZ","AGO","COD","COG","GAB","CAF",
-                                      "TCD","MLI","BFA","NER","GIN","GNB","SLE","LBR",
-                                      "GMB","TGO","BEN","RWA","BDI","SSD","ERI","DJI",
-                                      "SOM","UGA","MDG","MUS","SYC","COM","CPV","STP",
-                                      "NAM","BWA","LSO","SWZ","MWI"]
             countries.removeAll { postColonialAfrica.contains($0.id) }
         }
 

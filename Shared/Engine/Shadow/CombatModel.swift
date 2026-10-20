@@ -284,3 +284,33 @@ extension CombatModel {
         }
     }
 }
+
+// MARK: - Unclaimed lands and naming territories (3.3.0)
+
+extension CombatModel {
+    /// Longest name the President can give a territory.
+    static let maxTerritoryNameLength = 40
+
+    /// A territory name as the President typed it, trimmed; nil if empty, longer than 40 characters, or carrying
+    /// newlines or other control characters. Anything else is kept verbatim (it is only ever shown as plain text).
+    static func validTerritoryName(_ raw: String) -> String? {
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= maxTerritoryNameLength,
+              !name.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) || CharacterSet.newlines.contains($0) })
+        else { return nil }
+        return name
+    }
+
+    /// An unclaimed land taken by `owner`: a new country on the land's modern outline, annexed on the spot like a
+    /// 3.2.0 territory. Nobody lived under a government there to resist, so it starts quieter than an occupation.
+    static func claim(_ land: CountryTemplate, for owner: Country) -> Country {
+        var c = land.toCountry()
+        annex(&c, to: owner)
+        c.militaryStrength = 5   // a small garrison; there was no army to defeat
+        c.stability = 50
+        var p = c.profile
+        p.outcry = min(p.outcry, 20)
+        c.profile = p
+        return c
+    }
+}

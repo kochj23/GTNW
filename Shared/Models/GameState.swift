@@ -107,6 +107,13 @@ class GameState: ObservableObject, Codable {
     /// The in-game calendar year, derived from the current date.
     var currentYear: Int { GameCalendar.year(of: currentDate) }
 
+    /// Lands no country governs in this game (3.3.0): those the start year left without a country, minus any the
+    /// President has since claimed (a claimed land becomes a country with the same id). Derived, so it survives
+    /// save / load with no new fields and older saves get it too.
+    var unclaimedLandIDs: Set<String> {
+        WorldCountriesDatabase.unclaimedLandIDs(year: eraStartYear).subtracting(countries.map(\.id))
+    }
+
     // MARK: - Era-aware delivery system labels
 
     /// Label for the icbmCount stat — changes based on what actually existed in the era.

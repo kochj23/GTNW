@@ -188,6 +188,7 @@ struct VectorWorldMap: View {
             let present = Set(gameState.countries.map(\.id))
             let byID = Dictionary(gameState.countries.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             let player = gameState.getPlayerCountry()
+            let unclaimed = gameState.unclaimedLandIDs
             ZStack(alignment: .bottomLeading) {
                 Canvas { ctx, size in
                     ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(oceanColor))
@@ -197,6 +198,11 @@ struct VectorWorldMap: View {
                         let ownerID = WorldMapData.owner(of: s.id, in: present)
                         var fill = unclaimedColor
                         var territory = false
+                        // Land no government holds in this era (3.3.0): parchment under every filter, and selectable.
+                        if ownerID == nil, unclaimed.contains(s.id) {
+                            fill = s.id == selectedCountryID ? (Theme.isRetro ? EGA.lightMagenta : Color(red: 1.0, green: 0.85, blue: 0.25))
+                                 : (s.id == hoverID ? (Theme.isRetro ? EGA.lightRed : Self.claimableColor.opacity(0.55)) : Self.claimableColor)
+                        }
                         if let o = ownerID, let c = byID[o] {
                             fill = c.isDestroyed ? Color.black : filter.color(c, player: player)
                             // A territory takes its owner's colour on the Alliances map, and is hatched on every map.
@@ -223,17 +229,17 @@ struct VectorWorldMap: View {
                                  with: .color(c.id == selectedCountryID ? EGA.lightRed : filter.color(c, player: player)))
                     }
                 }
-                markers(transform: t, byID: byID)
-                hoverLabel(byID: byID)
+                markers(transform: t, byID: byID, unclaimed: unclaimed)
+                hoverLabel(byID: byID, unclaimed: unclaimed)
             }
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onEnded { v in
-                if let id = hit(v.location, transform: t, present: present) {
+                if let id = hit(v.location, transform: t, present: present, unclaimed: unclaimed) {
                     selectedCountryID = id
                     if zoom == .world { ShadowPack.shared.play("sfx.boop", volume: 0.4) }
                 }
             })
-            .modifier(HoverTracker { loc in hoverID = loc.flatMap { hit($0, transform: t, present: present) } })
+            .modifier(HoverTracker { loc in hoverID = loc.flatMap { hit($0, transform: t, present: present, unclaimed: unclaimed) } })
             .clipped()
         }
     }
@@ -243,6 +249,9 @@ struct VectorWorldMap: View {
     private var oceanColor: Color { Theme.isRetro ? EGA.blue : Color(red: 0.02, green: 0.06, blue: 0.14) }
     private var borderColor: Color { Theme.isRetro ? EGA.yellow : Color.cyan.opacity(0.45) }
     private var unclaimedColor: Color { Theme.isRetro ? EGA.darkGray : Color.gray.opacity(0.25) }
+
+    /// Unclaimed land (3.3.0): parchment on the modern map, light gray on the EGA map (unplayable land stays dark gray).
+    static var claimableColor: Color { Theme.isRetro ? EGA.lightGray : Color(red: 0.80, green: 0.72, blue: 0.52).opacity(0.6) }
 
     /// Ink for territory hatching and borders.
     static var territoryInk: Color { Theme.isRetro ? EGA.white : Color.white.opacity(0.7) }
@@ -267,9 +276,24 @@ struct VectorWorldMap: View {
     }
 
     @ViewBuilder
-    private func markers(transform t: CGAffineTransform, byID: [String: Country]) -> some View {
+    private func markers(transform t: CGAffineTransform, byID: [String: Country], unclaimed: Set<String>) -> some View {
         let struck = Set(gameState.nuclearStrikes.map(\.target))
         let warring = Set(gameState.shadow.fronts.filter { $0.status == .fighting }.map(\.defender))
+        // UNCLAIMED tags: the land selected or under the pointer, plus (zoomed in) every land wide enough to hold one.
+        let pinned = unclaimed.intersection([selectedCountryID, hoverID].compactMap { $0 })
+        let roomy = zoom == .world ? [] : unclaimed.filter { id in
+            (data.shapes.first { $0.id == id }?.bounds.applying(t).width ?? 0) > FontScale.w(70)
+        }
+        let tagged = pinned.union(roomy)
+        ForEach(tagged.sorted().compactMap { WorldCountriesDatabase.template(id: $0) }, id: \.id) { land in
+            Text("UNCLAIMED")
+                .font(ThemeFont.mono(zoom == .world ? 7 : 9, .bold))
+                .foregroundColor(Theme.isRetro ? EGA.black : .black)
+                .padding(.horizontal, 2)
+                .background(Theme.isRetro ? EGA.yellow : Color(red: 0.93, green: 0.87, blue: 0.70))
+                .position(CGPoint(x: land.lon, y: -land.lat).applying(t))
+                .allowsHitTesting(false)
+        }
         ForEach(gameState.countries.filter { $0.isTerritory && !$0.isDestroyed }, id: \.id) { c in
             let owner = c.territoryOf.flatMap { byID[$0] }
             Text(CombatModel.territoryTitle(ownerID: c.territoryOf ?? "", ownerName: owner?.name ?? ""))
@@ -301,9 +325,12 @@ struct VectorWorldMap: View {
         }
     }
 
-    private func hoverLabel(byID: [String: Country]) -> some View {
+    private func hoverLabel(byID: [String: Country], unclaimed: Set<String>) -> some View {
         let id = hoverID ?? selectedCountryID
         let text: String = {
+            if let id, unclaimed.contains(id) {
+                return "UNCLAIMED LAND — \(WorldCountriesDatabase.template(id: id)?.name ?? id)"
+            }
             guard let id, let c = byID[id] else { return "Click a country" }
             if let o = c.territoryOf {
                 let owner = byID[o]
@@ -311,7 +338,7 @@ struct VectorWorldMap: View {
             }
             return "\(c.flag) \(c.name) / \(c.region.rawValue)"
         }()
-        return Text(text)
+        return Text(verbatim: text)
             .font(ThemeFont.mono(12, .bold))
             .foregroundColor(Theme.isRetro ? EGA.white : .white)
             .padding(.horizontal, 8).padding(.vertical, 4)
@@ -325,15 +352,19 @@ struct VectorWorldMap: View {
     private func viewRect(aspect: CGFloat) -> CGRect {
         var r = Self.worldRect
         let selected = selectedCountryID.flatMap { gameState.getCountry(id: $0) }
+        // An unclaimed land frames like a country, from its template.
+        let land = selected == nil ? selectedCountryID.flatMap { WorldCountriesDatabase.template(id: $0) } : nil
+        let unclaimed = gameState.unclaimedLandIDs
         switch zoom {
         case .world: break
         case .region:
-            if let sel = selected {
-                let ids = Set(gameState.countries.filter { $0.region == sel.region }.map(\.id))
+            if let region = selected?.region ?? land?.region {
+                let ids = Set(gameState.countries.filter { $0.region == region }.map(\.id))
+                    .union(unclaimed.filter { WorldCountriesDatabase.template(id: $0)?.region == region })
                 r = bounds(for: ids) ?? r
             }
         case .country:
-            if let sel = selected { r = bounds(for: [sel.id])?.insetBy(dx: -4, dy: -4) ?? r }
+            if let id = selected?.id ?? land?.id { r = bounds(for: [id])?.insetBy(dx: -4, dy: -4) ?? r }
         }
         // Keep the aspect ratio of the view so outlines aren't stretched.
         let minW: CGFloat = 12
@@ -348,7 +379,8 @@ struct VectorWorldMap: View {
         let present = Set(gameState.countries.map(\.id))
         var out: CGRect?
         for s in data.shapes {
-            guard let o = WorldMapData.owner(of: s.id, in: present), ids.contains(o) else { continue }
+            let o = WorldMapData.owner(of: s.id, in: present) ?? s.id   // unowned outlines: unclaimed land (3.3.0)
+            guard ids.contains(o) else { continue }
             // Ignore far-flung overseas territories when framing (e.g. French Guiana for France).
             out = out.map { $0.union(s.bounds) } ?? s.bounds
         }
@@ -364,10 +396,11 @@ struct VectorWorldMap: View {
         return CGAffineTransform(a: sx, b: 0, c: 0, d: sy, tx: -rect.minX * sx, ty: -rect.minY * sy)
     }
 
-    private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>) -> String? {
+    private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>) -> String? {
         let p = location.applying(t.inverted())
         for s in data.shapes where s.bounds.contains(p) && s.path.contains(p) {
             if let o = WorldMapData.owner(of: s.id, in: present) { return o }
+            if unclaimed.contains(s.id) { return s.id }
         }
         // Dots for shapeless countries.
         let near = gameState.countries.filter { !hasShape($0.id) }.min {
@@ -398,6 +431,8 @@ private struct HoverTracker: ViewModifier {
 /// Legend for the current filter.
 struct MapLegend: View {
     let filter: MapFilter
+    /// Adds an "Unclaimed" swatch (3.3.0) when the era has land nobody governs.
+    var showUnclaimed = false
 
     var body: some View {
         HStack(spacing: 4) {
@@ -416,6 +451,7 @@ struct MapLegend: View {
                 }
                 Text(filter.highIsGood ? "high" : "crisis").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
+            if showUnclaimed { swatch(VectorWorldMap.claimableColor, "Unclaimed") }
         }
     }
 

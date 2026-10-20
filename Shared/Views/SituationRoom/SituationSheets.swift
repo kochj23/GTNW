@@ -509,8 +509,10 @@ struct SettlementSheet: View {
     @EnvironmentObject var gameEngine: GameEngine
     @ObservedObject var gameState: GameState
     let settlement: PostWarSettlement
-    /// Offscreen snapshots can't render scroll views; they pass false.
+    /// Offscreen snapshots can't render scroll views (or text fields); they pass false.
     var scrolls = true
+    /// Optional new name for the country if annexed (3.3.0); blank keeps its name.
+    @State private var annexName = ""
 
     var body: some View {
         let loser = gameState.getCountry(id: settlement.loser)
@@ -544,6 +546,7 @@ struct SettlementSheet: View {
                            summary: "Its arsenal is seized and it flies our flag on the map. Occupation means insurgents, lost output "
                                   + "while it is rebuilt, and anger abroad: rivals by 20, the rest of the world by 10.",
                            choice: .annex, button: "ANNEX", color: GTNWColors.terminalRed)
+                    TerritoryNameField(text: $annexName, placeholder: "Rename it (optional) — blank keeps \(loser?.name ?? "its name")", live: scrolls)
                     Text("OR LET \((loser?.name ?? "IT").uppercased()) FORM A NEW GOVERNMENT:")
                         .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
                     ForEach(PostWarGovernment.allCases) { g in
@@ -565,11 +568,108 @@ struct SettlementSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Button(button) { gameEngine.settle(settlement.id, choice: choice) }
+            Button(button) {
+                let rename = choice == .annex && !annexName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                if gameEngine.settle(settlement.id, choice: choice), rename { gameEngine.renameTerritory(settlement.loser, to: annexName) }
+            }
                 .buttonStyle(ThemedButtonStyle(color: color, prominent: true))
+                .disabled(choice == .annex && !annexName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                          && CombatModel.validTerritoryName(annexName) == nil)
                 .accessibilityLabel("\(button) — \(title)")
         }
         .padding(8)
         .themedPanel()
+    }
+}
+
+// MARK: - Naming a territory (3.3.0)
+
+/// The name box used by the naming sheet and the annex option. Offscreen snapshots can't render text fields, so
+/// `live: false` draws the same box as plain text.
+struct TerritoryNameField: View {
+    @Binding var text: String
+    let placeholder: String
+    var live = true
+
+    var body: some View {
+        let invalid = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && CombatModel.validTerritoryName(text) == nil
+        VStack(alignment: .leading, spacing: 2) {
+            Group {
+                if live {
+                    TextField(placeholder, text: $text).textFieldStyle(.plain)
+                } else {
+                    Text(verbatim: text.isEmpty ? placeholder : text).opacity(text.isEmpty ? 0.5 : 1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .font(ThemeFont.mono(13, .bold))
+            .foregroundColor(Theme.isRetro ? EGA.yellow : .white)
+            .padding(6)
+            .background(Theme.isRetro ? EGA.black : Color.white.opacity(0.08))
+            .overlay(Rectangle().stroke(invalid ? GTNWColors.terminalRed : GTNWColors.neonCyan, lineWidth: 1))
+            if invalid {
+                Text("1–\(CombatModel.maxTerritoryNameLength) characters on one line.")
+                    .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+            }
+        }
+    }
+}
+
+/// Name a territory: right after an unclaimed land is taken (`newlyClaimed`), or to rename any U.S. territory from
+/// its dossier. Prefilled with the current name (a claimed land starts with its modern name); KEEP leaves it as is.
+struct TerritoryNameSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let countryID: String
+    var newlyClaimed = false
+    /// Offscreen snapshots can't render text fields; they pass false.
+    var live = true
+    @State private var name: String
+
+    init(gameState: GameState, countryID: String, newlyClaimed: Bool = false, live: Bool = true, name: String? = nil) {
+        self.gameState = gameState
+        self.countryID = countryID
+        self.newlyClaimed = newlyClaimed
+        self.live = live
+        _name = State(initialValue: name ?? gameState.getCountry(id: countryID)?.name ?? "")
+    }
+
+    var body: some View {
+        let c = gameState.getCountry(id: countryID)
+        let owner = gameState.getPlayerCountry()
+        let title = CombatModel.territoryTitle(ownerID: owner?.id ?? "USA", ownerName: owner?.name ?? "")
+        let valid = CombatModel.validTerritoryName(name)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: newlyClaimed ? "flag.fill" : "pencil")
+                Text(newlyClaimed ? "NAME THE NEW TERRITORY" : "RENAME TERRITORY")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(17, .bold))
+            .foregroundColor(GTNWColors.terminalAmber)
+            Text(verbatim: newlyClaimed
+                 ? "> THE FLAG FLIES OVER \((c?.name ?? countryID).uppercased()). IT IS NOW A \(title). WHAT SHALL WE CALL IT, MR. PRESIDENT?"
+                 : "> \((c?.name ?? countryID).uppercased()) IS A \(title). WHAT SHOULD IT BE CALLED?")
+                .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.neonCyan)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            TerritoryNameField(text: $name, placeholder: "Territory name", live: live)
+            HStack {
+                Button { dismiss() } label: { Text(verbatim: "KEEP \((c?.name ?? "").uppercased())").lineLimit(1) }
+                    .buttonStyle(ThemedButtonStyle())
+                Spacer()
+                Button(newlyClaimed ? "NAME IT" : "RENAME") {
+                    if gameEngine.renameTerritory(countryID, to: name) { dismiss() }
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                .disabled(valid == nil || c?.territoryOf != gameState.playerCountryID)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(560))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }

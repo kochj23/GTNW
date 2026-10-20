@@ -294,6 +294,12 @@ extension GameEngine {
         sendPlaySession(gs, t, now: now, closing: outcome)
     }
 
+    /// A decision worth its own event the moment it happens (3.3.0: `claimed_land`, `renamed_territory`).
+    func logPlayEvent(_ kind: String, detail: [String: Any], now: Date = Date()) {
+        guard let gs = gameState, let t = playSession, t.game === gs, !t.ended, store?.remote != nil else { return }
+        sendPlayEvent(t, kind: kind, detail: detail, now: now)
+    }
+
     // MARK: Helpers
 
     private func logNewPlayEvents(_ gs: GameState, _ t: PlaySessionTracker, now: Date) {

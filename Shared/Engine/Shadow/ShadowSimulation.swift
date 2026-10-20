@@ -405,6 +405,50 @@ extension GameEngine {
         for s in gs.shadow.pendingSettlements where s.date < gs.currentDate { settle(s.id, choice: .victorsModel) }
     }
 
+    /// Send an expedition to an unclaimed land (3.3.0). There's no government or army to fight, so it is taken at
+    /// once as a U.S. territory, at the cost of one action and a little goodwill abroad (rivals by 5, others by 2).
+    /// The caller then asks the President to name it. False if the land isn't unclaimed or no action is left.
+    @discardableResult
+    func claimLand(_ id: String) -> Bool {
+        guard let gs = gameState, gs.actionsRemaining > 0, gs.unclaimedLandIDs.contains(id),
+              let land = WorldCountriesDatabase.template(id: id), let owner = gs.getPlayerCountry(),
+              let oi = gs.countries.firstIndex(where: { $0.id == owner.id }) else { return false }
+        let claimed = CombatModel.claim(land, for: owner)
+        gs.countries.append(claimed)
+        gs.countries[oi].alliances.insert(id)
+        gs.countries[oi].diplomaticRelations[id] = 100
+        for i in gs.countries.indices where !gs.countries[i].isDestroyed && !gs.countries[i].isTerritory
+            && gs.countries[i].id != owner.id && !gs.countries[i].alliances.contains(owner.id) {
+            modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: gs.countries[i].alignment == .eastern ? -5 : -2)
+        }
+        gs.shadow.ruthlessness += 5
+        let owned = owner.id == "USA" ? "U.S." : owner.name
+        gs.shadow.post("An expedition plants the flag in \(claimed.name). It is now a \(owned) territory.", date: gs.currentDate, severity: 2)
+        gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): unclaimed \(claimed.name) claimed as \(CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)).")
+        logPlayEvent("claimed_land", detail: ["land": id, "name": PlayHistory.text(claimed.name), "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        completePlayerAction()
+        return true
+    }
+
+    /// Give one of the President's territories a new name (3.3.0). False for an invalid name (see
+    /// `CombatModel.validTerritoryName`) or a country that isn't the player's territory. Renaming to the current
+    /// name is accepted and changes nothing, so a resubmitted sheet is harmless.
+    @discardableResult
+    func renameTerritory(_ id: String, to raw: String) -> Bool {
+        guard let gs = gameState, let name = CombatModel.validTerritoryName(raw),
+              let i = gs.countries.firstIndex(where: { $0.id == id && $0.territoryOf == gs.playerCountryID }) else { return false }
+        let old = gs.countries[i].name
+        guard name != old else { return true }
+        gs.countries[i].name = name
+        gs.shadow.post("\(old) is renamed \(name) by order of the President.", date: gs.currentDate, severity: 1)
+        gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(old) renamed \(name).")
+        logPlayEvent("renamed_territory", detail: ["land": id, "old_name": PlayHistory.text(old), "name": PlayHistory.text(name),
+                                                   "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        return true
+    }
+
     /// Commit (or recall, with a negative amount) U.S. troops to a front, on one side.
     @discardableResult
     func commitTroops(frontID: UUID, side: String, thousands: Double) -> Bool {

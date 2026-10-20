@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-10-20 — Unclaimed lands
+
+### Added
+- **Claim land no country holds in your era.** `WorldCountriesDatabase.unclaimedLands` lists the lands the era filter
+  removes with no era entity standing in for them: the 45 post-colonial African states before 1960, Libya before 1951
+  and South Africa before 1910. Removals a predecessor covers (Soviet republics → Russian Empire / USSR, Germany, the
+  Yugoslav and Czechoslovak states, Korea, Ottoman / British-ruled lands…) never count. `GameState.unclaimedLandIDs`
+  = that table for the start year minus lands already claimed, so it needs no new saved fields.
+- Unclaimed land is drawn parchment (modern) / light gray (EGA) under every map filter, is selectable, gets an
+  `UNCLAIMED` tag (selected or hovered at world zoom; every land wide enough when zoomed in), a hover line, an
+  *Unclaimed* legend swatch and a dossier ("Unclaimed land — no government, no army") with **Send expedition**.
+- `GameEngine.claimLand(_:)`: no army to fight, so the land becomes a U.S. territory at once (`CombatModel.claim`,
+  reusing 3.2.0 annexation) for one action, ruthlessness +5, relations −5 rivals / −2 others / 0 allies, unrest capped
+  at 20 and a small garrison. Computer-run countries never claim land; unclaimed land never takes a turn.
+- **Naming territories.** `TerritoryNameSheet` opens after a claim (prefilled with the land's modern name) and from
+  **Rename** on the dossier of any U.S. territory; the 3.2.0 annex option takes an optional new name (blank keeps the
+  old one). `GameEngine.renameTerritory(_:to:)` and `CombatModel.validTerritoryName`: trimmed, 1–40 characters, no
+  newlines or control characters; names are shown as plain text. Renaming to the same name is a no-op.
+- Play history: events `claimed_land` and `renamed_territory` (with the names) via `GameEngine.logPlayEvent`.
+- 19 tests across all seven categories (364 total); snapshots in `Screenshots/3.3.0/`.
+
+### Unchanged
+- Saves from 3.2.x and earlier load as before; an 1850 save from before 3.3.0 shows its African lands unclaimed.
+
 ## [3.2.0] - 2026-10-19 — Terms of surrender
 
 ### Added

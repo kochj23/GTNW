@@ -23,11 +23,13 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename
         var id: String { rawValue }
     }
 
     private var selected: Country? { selectedCountryID.flatMap { gameState.getCountry(id: $0) } }
+    /// The selected map outline when it is unclaimed land (3.3.0).
+    private var selectedLand: String? { selectedCountryID.flatMap { gameState.unclaimedLandIDs.contains($0) ? $0 : nil } }
 
     @State private var compactPanel = 0
 
@@ -55,6 +57,9 @@ struct SituationRoomView: View {
             case .city: CityView(gameState: gameState, countryID: selectedCountryID ?? gameState.playerCountryID)
             case .warRoom: WarRoomView(gameState: gameState).environmentObject(gameEngine)
             case .saves: SaveLoadView().environmentObject(gameEngine)
+            case .nameClaim, .rename:
+                TerritoryNameSheet(gameState: gameState, countryID: selectedCountryID ?? "", newlyClaimed: s == .nameClaim)
+                    .environmentObject(gameEngine)
             }
         }
         .sheet(item: Binding(get: { briefingRole.map(BriefingRole.init) }, set: { briefingRole = $0?.id })) { role in
@@ -72,7 +77,7 @@ struct SituationRoomView: View {
             ScaledSegmentedPicker(selection: $compactPanel, options: [(0, "Dossier"), (1, "Advisors")])
             Group {
                 if compactPanel == 0 {
-                    CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
+                    CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 }, unclaimedID: selectedLand)
                 } else {
                     AdvisorRail(gameState: gameState, selected: selected, briefingRole: $briefingRole)
                 }
@@ -95,11 +100,11 @@ struct SituationRoomView: View {
                     mapControls
                     VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
                         .overlay(Rectangle().stroke(Theme.isRetro ? EGA.lightGray : Color.cyan.opacity(0.4), lineWidth: Theme.isRetro ? 3 : 1))
-                    MapLegend(filter: filter).frame(maxWidth: .infinity, alignment: .leading)
+                    MapLegend(filter: filter, showUnclaimed: !gameState.unclaimedLandIDs.isEmpty).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(6)
                 .themedPanel(retroFill: EGA.lightGray)
-                CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 })
+                CountryDossier(gameState: gameState, country: selected, onSheet: { sheet = $0 }, unclaimedID: selectedLand)
                     .frame(width: FontScale.w(300))
             }
             ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 })
@@ -346,12 +351,45 @@ struct CountryDossier: View {
     let onSheet: (SituationRoomView.SituationSheet) -> Void
     /// Offscreen snapshots can't render scroll views; they pass false.
     var scrolls = true
+    /// Set when the selection is unclaimed land rather than a country (3.3.0).
+    var unclaimedID: String? = nil
 
     var body: some View {
         Group {
             if scrolls { ScrollView { dossier } } else { dossier }
         }
         .themedPanel(retroFill: EGA.blue)
+    }
+
+    /// Unclaimed land (3.3.0): nobody to talk to, nobody to fight. One action sends an expedition to take it.
+    private func landDossier(_ id: String) -> some View {
+        let land = WorldCountriesDatabase.template(id: id)
+        let owner = gameState.getPlayerCountry()
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("🏳").font(.scaled(size: 30))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: (land?.name ?? id).uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
+                    Text(verbatim: land?.region.rawValue ?? "").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
+            Text("UNCLAIMED")
+                .font(ThemeFont.mono(11, .bold)).foregroundColor(.black)
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .background(VectorWorldMap.claimableColor)
+            Text("Unclaimed land — no government, no army.")
+                .font(ThemeFont.mono(11)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("An expedition takes it at once as a \(owner.map { $0.id == "USA" ? "U.S." : $0.name } ?? "U.S.") territory. "
+                 + "Costs one action and a little goodwill abroad: rivals by 5, the rest of the world by 2.")
+                .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("SEND EXPEDITION") { if gameEngine.claimLand(id) { onSheet(.nameClaim) } }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver)
+                .accessibilityLabel("Send an expedition to claim \(land?.name ?? id)")
+        }
+        .padding(8)
     }
 
     @ViewBuilder
@@ -370,10 +408,17 @@ struct CountryDossier: View {
                         }
                     }
                     if let o = c.territoryOf {
-                        Text(CombatModel.territoryTitle(ownerID: o, ownerName: gameState.getCountry(id: o)?.name ?? ""))
-                            .font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Theme.isRetro ? EGA.lightBlue : Color.blue.opacity(0.7))
+                        HStack {
+                            Text(CombatModel.territoryTitle(ownerID: o, ownerName: gameState.getCountry(id: o)?.name ?? ""))
+                                .font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Theme.isRetro ? EGA.lightBlue : Color.blue.opacity(0.7))
+                            Spacer()
+                            if o == gameState.playerCountryID {
+                                Button("RENAME") { onSheet(.rename) }.buttonStyle(ThemedButtonStyle())
+                                    .accessibilityLabel("Rename \(c.name)")
+                            }
+                        }
                     }
                     if !c.isPlayerControlled {
                         gauge("RELATIONS", Double(rel + 100) / 200, text: "\(rel)", good: true)
@@ -409,6 +454,8 @@ struct CountryDossier: View {
                     .padding(.top, 4)
                 }
                 .padding(8)
+            } else if let id = unclaimedID {
+                landDossier(id)
             } else {
                 Text("Select a country on the map.").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.neonCyan).padding()
             }
