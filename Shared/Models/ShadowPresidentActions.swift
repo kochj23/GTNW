@@ -92,6 +92,11 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
     case defensivePact = "Defensive Pact"
     case noFlyZone = "No-Fly Zone"
     case dmz = "DMZ"
+    // Era weapons catalog (3.6.0): shown with their legal status, see ArsenalCatalog.
+    case chemicalAttack = "Chemical Attack"
+    case biologicalAttack = "Biological Attack"
+    case restartChemical = "Restart Chemical Program"
+    case restartBiological = "Restart Biological Program"
 
     // ECONOMIC (18)
     case economicAid = "Economic Aid"
@@ -215,6 +220,13 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
         // Special forces formalized in WWII
         case .specialForces:                     return 1942
 
+        // Chemical and biological (3.6.0): first U.S. use 1917 / program 1943; restarts only once the stockpile is gone.
+        // ArsenalCatalog / isAvailable(on:) refine these by date and legal status.
+        case .chemicalAttack:                    return 1917
+        case .biologicalAttack:                  return 1943
+        case .restartChemical:                   return 2023
+        case .restartBiological:                 return 1970
+
         // Demilitarized zones — post WWII concept
         case .dmz:                               return 1945
 
@@ -280,7 +292,8 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
         if ["deployTroops", "withdrawTroops", "militaryExercise", "jointExercise", "sellWeapons",
             "provideTraining", "establishBase", "closeBase", "navalBlockade", "airPatrol",
             "bombardment", "airStrike", "groundInvasion", "amphAssault", "specialForces",
-            "peacekeeping", "militaryAid", "defensivePact", "noFlyZone", "dmz"].contains(name) {
+            "peacekeeping", "militaryAid", "defensivePact", "noFlyZone", "dmz",
+            "chemicalAttack", "biologicalAttack"].contains(name) {
             return .military
         }
         
@@ -297,7 +310,8 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
             "sabotageNuke", "stealTech", "plantEvidence", "blackmail", "bribe",
             "fundOpposition", "armResistance", "trainInsurgents", "extractAsset", "turnAgent",
             "poison", "cyberAttack", "hackElection", "disruptComms", "stealSecrets",
-            "defectSci", "smuggleWeapons", "blackMarket", "drugOps", "terrorSupport"].contains(name) {
+            "defectSci", "smuggleWeapons", "blackMarket", "drugOps", "terrorSupport",
+            "restartChemical", "restartBiological"].contains(name) {
             return .covert
         }
         
@@ -336,6 +350,10 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
         case .navalBlockade: return "Block shipping (-60 relations, WAR)"
         case .airStrike: return "Precision bombing (-70 relations, WAR)"
         case .groundInvasion: return "Full invasion (-100 relations, WAR)"
+        case .chemicalAttack: return "Use chemical weapons (WAR; world opinion by legal status)"
+        case .biologicalAttack: return "Use biological weapons (WAR; world opinion by legal status)"
+        case .restartChemical: return "Secretly rebuild a chemical arsenal (2 years; may be discovered)"
+        case .restartBiological: return "Secretly rebuild a biological arsenal (3 years; may be discovered)"
         case .economicAid: return "Grant $5B (+25 relations)"
         case .sanctions: return "Economic sanctions (-40 relations)"
         case .freezeAssets: return "Freeze foreign assets (-35 relations)"

@@ -25,7 +25,7 @@ struct ShadowPresidentMenu: View {
     private var filteredActions: [PresidentialAction] {
         PresidentialAction.allCases.filter {
             $0.category == selectedCategory &&
-            $0.eraAvailableYear <= gameState.currentYear
+            $0.isAvailable(on: gameState.currentDate)
         }
     }
 

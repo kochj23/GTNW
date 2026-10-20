@@ -1854,6 +1854,9 @@ extension GameEngine {
         case .joinNATO, .mutualDefense, .defensivePact:
             formAlliance(country1: playerID, country2: targetID)
             return
+        case .chemicalAttack, .biologicalAttack, .restartChemical, .restartBiological:
+            if playerID == gameState.playerCountryID { executeWMD(action, target: targetID) }
+            return
         default:
             break
         }

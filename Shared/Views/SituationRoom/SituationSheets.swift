@@ -894,3 +894,37 @@ struct FleetOrderSheet: View {
         return Text(line).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen).fixedSize(horizontal: false, vertical: true)
     }
 }
+
+// MARK: - Era arsenal line (3.6.0)
+
+/// Under an action: what the U.S. actually had for it this year, its legal status and treaty (restricted and banned
+/// options are labelled, never hidden), and why a chemical / biological order can't go ahead yet.
+struct ArsenalLine: View {
+    let action: PresidentialAction
+    @ObservedObject var gameState: GameState
+    var problem: String?
+
+    var body: some View {
+        let year = gameState.currentYear
+        let examples = ArsenalCatalog.examples(for: action, year: year)
+        let status = action.wmd.map { ArsenalCatalog.legalStatus($0, on: gameState.currentDate) } ?? ArsenalCatalog.status(for: action, year: year)
+        let treaty = action.wmd.map { ArsenalCatalog.treatyLabel($0, year: year) }
+            ?? ArsenalCatalog.optionIDs(for: action).first.flatMap(ArsenalCatalog.option)?.note(in: year)
+                .map { note in String((note.components(separatedBy: ". ").first ?? note).components(separatedBy: "; ").first!.prefix(110)) }
+        VStack(alignment: .leading, spacing: 3) {
+            if !examples.isEmpty {
+                Text(verbatim: "ARSENAL \(year): " + examples.prefix(4).joined(separator: " · "))
+                    .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            }
+            if let status, status != .legal || action.wmd != nil {
+                Text(verbatim: "\(status.label.uppercased())\(treaty.map { " — \($0)" } ?? "")")
+                    .font(ThemeFont.mono(10, .bold))
+                    .foregroundColor(status == .legal ? GTNWColors.terminalAmber : GTNWColors.terminalRed)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let problem {
+                Text(verbatim: problem).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed)
+            }
+        }
+    }
+}

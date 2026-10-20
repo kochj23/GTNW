@@ -72,6 +72,7 @@ extension GameEngine {
 
         applyOverdueSettlements()
         processFleets()
+        processWMDPrograms()
         processScriptedEvents(from: from, to: to)
         updateAnxietiesAndSociety(scale: scale)
         syncFronts()
@@ -775,6 +776,11 @@ extension GameEngine {
     /// `size` (3.4.0) is the offensive's size from the sizing step; nil (or the Standard preset) is the pre-3.4 attack.
     func performAdvisedAction(_ action: PresidentialAction, targetID: String, advice: ActionAdvice?, size: AttackSize? = nil) {
         guard let gs = gameState else { return }
+        // 3.6.0: nothing the era didn't have (no nukes before Trinity), and chemical / biological only when possible.
+        guard action.isAvailable(on: gs.currentDate) else {
+            addLog("❌ \(action.rawValue) is not available in \(gs.currentYear).", type: .error); return
+        }
+        if action.wmd != nil, let problem = wmdProblem(action) { addLog("❌ \(action.rawValue): \(problem)", type: .error); return }
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size)
         // Nuclear launches record their own fallout in launchNuclearStrike.
         if action.rung != .nuclear { recordPlayerAction(rung: action.rung, hostile: action.isHostile, detected: false) }

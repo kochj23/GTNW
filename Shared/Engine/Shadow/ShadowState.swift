@@ -98,6 +98,8 @@ struct ShadowState: Codable {
     var garrisons: [String: Double] = [:]
     /// Fleets the President has sent out (3.5.0): under way or on station until recalled.
     var fleetDeployments: [FleetDeployment] = []
+    /// Restarted chemical / biological programs by kind (3.6.0).
+    var wmdPrograms: [String: WMDProgram] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -132,7 +134,7 @@ struct ShadowState: Codable {
         case popularity, polls, electionsEnabled, lastElection, termsWon, impeachmentStage, ruthlessness
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
-        case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments
+        case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
     }
 
     init() {}
@@ -167,6 +169,7 @@ struct ShadowState: Codable {
         aircraftLost = try c.decodeIfPresent(Int.self, forKey: .aircraftLost) ?? 0
         garrisons = try c.decodeIfPresent([String: Double].self, forKey: .garrisons) ?? [:]
         fleetDeployments = try c.decodeIfPresent([FleetDeployment].self, forKey: .fleetDeployments) ?? []
+        wmdPrograms = try c.decodeIfPresent([String: WMDProgram].self, forKey: .wmdPrograms) ?? [:]
     }
 }
 

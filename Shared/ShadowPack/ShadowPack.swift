@@ -280,6 +280,8 @@ extension ShadowPack {
             return ("anim.socreform", "sfx.social_reform")
         case "nuclearTest", "sellNukeTech", "nukeSharing":
             return ("anim.threaten", "sfx.nuclear_threat")
+        case "chemicalAttack", "biologicalAttack":
+            return (nil, "sfx.warning")
         case "launchNukes", "tacticalNuke", "strategicNuke", "preemptive", "retaliate", "firstStrike":
             return (nil, "sfx.nuke_strike")
         case "demandApology", "expelDiplomats", "severRelations", "sanctions", "oilEmbargo", "freezeAssets":

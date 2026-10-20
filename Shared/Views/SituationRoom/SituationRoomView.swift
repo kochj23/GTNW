@@ -596,7 +596,7 @@ struct ActionLadderSheet: View {
     @State private var size: AttackSize?
 
     private var actions: [PresidentialAction] {
-        PresidentialAction.allCases.filter { $0.rung == rung && $0.eraAvailableYear <= gameState.currentYear }
+        PresidentialAction.allCases.filter { $0.rung == rung && $0.isAvailable(on: gameState.currentDate) }
     }
 
     var body: some View {
@@ -637,6 +637,7 @@ struct ActionLadderSheet: View {
                     if let a = action {
                         Text(a.rawValue.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.neonCyan)
                         Text(a.description).font(ThemeFont.mono(11)).foregroundColor(GTNWColors.terminalGreen)
+                        ArsenalLine(action: a, gameState: gameState, problem: gameEngine.wmdProblem(a))
                         if size != nil {
                             AttackSizingPanel(action: a, size: Binding(get: { size ?? AttackSize() }, set: { size = $0 }),
                                               gameState: gameState, target: target)
@@ -652,7 +653,7 @@ struct ActionLadderSheet: View {
                             Spacer()
                             Button("DO IT") { perform(a, advice: advice) }
                                 .buttonStyle(ThemedButtonStyle(color: a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen, prominent: true))
-                                .disabled(gameState.actionsRemaining == 0
+                                .disabled(gameState.actionsRemaining == 0 || gameEngine.wmdProblem(a) != nil
                                           || AttackSizing.kinds(for: a).contains { AttackSizing.available($0, in: gameState) <= 0 })
                         }
                     } else {
