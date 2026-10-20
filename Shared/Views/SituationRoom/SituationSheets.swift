@@ -750,3 +750,147 @@ struct AttackSizingPanel: View {
         return parts.joined(separator: " · ")
     }
 }
+
+// MARK: - Fleet orders (3.5.0)
+
+/// Send a named U.S. fleet of the era to the selected target: pick the fleet, the mission and how much of it to
+/// commit; the sheet shows ships, transit time, expected losses and why an order isn't possible. Fleets already out
+/// are listed with RECALL.
+struct FleetOrderSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let targetID: String
+    /// Offscreen snapshots can't render scroll views; they pass false.
+    var scrolls = true
+    @State private var fleetID: String?
+    @State private var mission: NavalMission = .showOfForce
+    @State private var preset: AttackPreset = .standard
+
+    init(gameState: GameState, targetID: String, scrolls: Bool = true, fleetID: String? = nil, mission: NavalMission = .showOfForce) {
+        self.gameState = gameState
+        self.targetID = targetID
+        self.scrolls = scrolls
+        _fleetID = State(initialValue: fleetID)
+        _mission = State(initialValue: mission)
+    }
+
+    private var targetName: String {
+        gameState.getCountry(id: targetID)?.name ?? WorldCountriesDatabase.template(id: targetID)?.name ?? targetID
+    }
+
+    var body: some View {
+        let fleets = NavalModel.fleets(in: gameState.currentYear)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "ferry.fill")
+                Text(verbatim: "FLEET ORDERS — \(targetName.uppercased())")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if fleets.isEmpty {
+                Text("The United States has no navy in \(gameState.currentYear).").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.terminalRed)
+            } else {
+                Group { if scrolls { ScrollView { content(fleets) } } else { content(fleets) } }
+            }
+            HStack {
+                Spacer()
+                Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle())
+            }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(720), height: FontScale.h(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    @ViewBuilder
+    private func content(_ fleets: [USFleet]) -> some View {
+        let year = gameState.currentYear
+        let chosen = fleetID ?? fleets.first { f in !gameState.shadow.fleetDeployments.contains { $0.fleetID == f.id } }?.id
+        VStack(alignment: .leading, spacing: 8) {
+            Text("FLEET").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            ForEach(fleets) { f in
+                let comp = NavalModel.composition(f, year: year)
+                let out = gameState.shadow.fleetDeployments.first { $0.fleetID == f.id }
+                Button { fleetID = f.id } label: {
+                    HStack {
+                        Text(f.name.uppercased()).font(ThemeFont.mono(11, .bold))
+                        Text("· \(f.period(in: year)?.home ?? "")").font(ThemeFont.mono(10))
+                        Spacer()
+                        Text(out != nil ? (out!.status == .underway ? "UNDER WAY" : "ON STATION") : shipLine(comp)).font(ThemeFont.mono(9))
+                    }
+                    .padding(4)
+                    .foregroundColor(chosen == f.id ? (Theme.isRetro ? EGA.black : .black) : (Theme.isRetro ? EGA.white : .white))
+                    .background(chosen == f.id ? GTNWColors.terminalAmber : Color.clear)
+                }
+                .buttonStyle(.plain)
+            }
+            Text("MISSION").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            HStack(spacing: 6) {
+                ForEach(NavalMission.allCases) { m in
+                    Button(m.title.uppercased()) { mission = m }
+                        .buttonStyle(ThemedButtonStyle(color: m == .showOfForce ? GTNWColors.neonCyan : GTNWColors.terminalRed, prominent: mission == m))
+                }
+            }
+            Text(mission.summary).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            Text("COMMIT").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            HStack(spacing: 6) {
+                ForEach(AttackPreset.allCases) { p in
+                    Button("\(p.title.uppercased()) (\(Int(NavalMission.commitment(p) * 100))%)") { preset = p }
+                        .buttonStyle(ThemedButtonStyle(color: p == .overwhelming ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: preset == p))
+                }
+            }
+            if let id = chosen, let f = NavalModel.fleet(id: id) {
+                readout(f)
+                let problem = gameEngine.fleetOrderProblem(fleetID: id, target: targetID, mission: mission)
+                if let problem { Text(verbatim: problem).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed) }
+                Button("ORDER \(f.name.uppercased()) OUT") {
+                    if gameEngine.orderFleet(id, to: targetID, mission: mission, preset: preset) != nil { dismiss() }
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
+                .disabled(problem != nil)
+            }
+            if !gameState.shadow.fleetDeployments.isEmpty {
+                Text("FLEETS OUT").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
+                ForEach(gameState.shadow.fleetDeployments) { d in
+                    HStack {
+                        let name = NavalModel.fleet(id: d.fleetID)?.name ?? d.fleetID
+                        let where_ = gameState.getCountry(id: d.target)?.name ?? WorldCountriesDatabase.template(id: d.target)?.name ?? d.target
+                        Text(verbatim: "\(name) — \(d.mission.title) — \(where_) — \(d.status == .underway ? "arrives \(GameCalendar.format(d.arrives))" : "on station") — \(d.shipsAfloat) ships")
+                            .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        Spacer()
+                        Button("RECALL") { gameEngine.recallFleet(d.id) }.buttonStyle(ThemedButtonStyle())
+                    }
+                }
+            }
+        }
+    }
+
+    private func shipLine(_ c: FleetComposition) -> String {
+        var parts: [String] = []
+        if c.carriers > 0 { parts.append("\(c.carriers) CV") }
+        parts.append("\(c.surface) SURFACE")
+        if c.submarines > 0 { parts.append("\(c.submarines) SUB") }
+        if c.amphibious > 0 { parts.append("\(c.amphibious) AMPHIB") }
+        return parts.joined(separator: " · ")
+    }
+
+    /// The same numbers the engine will use.
+    private func readout(_ f: USFleet) -> some View {
+        let year = gameState.currentYear
+        let ships = NavalModel.composition(f, year: year).scaled(NavalMission.commitment(preset))
+        let home = f.period(in: year)
+        let to = gameState.getCountry(id: targetID).map { ($0.coordinates.lat, $0.coordinates.lon) }
+            ?? WorldCountriesDatabase.template(id: targetID).map { ($0.lat, $0.lon) } ?? (0, 0)
+        let km = NavalModel.distanceKm(lat1: home?.lat ?? 0, lon1: home?.lon ?? 0, lat2: to.0, lon2: to.1)
+        let days = NavalModel.transitDays(km: km, year: year)
+        let probe = FleetDeployment(fleetID: f.id, target: targetID, mission: mission, commitment: NavalMission.commitment(preset), ships: ships,
+                                    fromLat: 0, fromLon: 0, toLat: 0, toLon: 0, departed: Date(), arrives: Date())
+        let lost = mission == .showOfForce ? 0 : NavalModel.shipsLost(probe, defence: NavalModel.defence(gameState.getCountry(id: targetID), year: year))
+        var line = "\(ships.total) ships (\(shipLine(ships))) · \(Int(km)) km, about \(days) days at sea · expected losses on arrival ~\(lost)"
+        if mission == .strike { line += " · weapons: \(NavalModel.strikeWeapon(year: year))" }
+        if mission == .amphibious { line += " · lands ~\(Int(NavalModel.landingTroops(ships, year: year)))K troops" }
+        return Text(line).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen).fixedSize(horizontal: false, vertical: true)
+    }
+}

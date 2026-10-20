@@ -23,6 +23,7 @@
 		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		1133AF3FACD6B76AFF6F8365 /* GameEngineBrains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */; };
 		128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
+		A35N4V4L0000000000000002 /* NavalModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35N4V4L0000000000000001 /* NavalModel.swift */; };
 		129B37F43319C96B0A3D7094 /* NaturalLanguageIntel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FA7A49314ADF98CD22BB912 /* NaturalLanguageIntel.swift */; };
 		1357BE3A32F95BEC7FA165C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
 		1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */; };
@@ -71,6 +72,7 @@
 		471CAF9CFF65EE7E4D0EB572 /* ShadowPackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */; };
 		4964D75AAE78229C8DE429D7 /* AIBrainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1204760B8883BA6B8FB377CD /* AIBrainTests.swift */; };
 		49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
+		A35N4V4L0000000000000003 /* NavalModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35N4V4L0000000000000001 /* NavalModel.swift */; };
 		4CF3D7350109DEA2300DD6D0 /* ScoringSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */; };
 		4E070956D299BFBFE9D58CC9 /* GTNWRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B18B020054C4C3F928E69B /* GTNWRetryTests.swift */; };
 		4E8047CD4CEA8BC1E4C4BA7C /* ModernDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD24EB3549129511E78E8EB /* ModernDesignSystem.swift */; };
@@ -266,6 +268,7 @@
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1204760B8883BA6B8FB377CD /* AIBrainTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIBrainTests.swift; sourceTree = "<group>"; };
 		15C61B45692E5ECBC414422A /* CombatModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CombatModel.swift; sourceTree = "<group>"; };
+		A35N4V4L0000000000000001 /* NavalModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NavalModel.swift; sourceTree = "<group>"; };
 		1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlienInvasionScenario.swift; sourceTree = "<group>"; };
 		1B789017E194BE2CA8D93A8D /* EconomyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EconomyModels.swift; sourceTree = "<group>"; };
 		1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdaptiveOpponentEngine.swift; sourceTree = "<group>"; };
@@ -535,6 +538,7 @@
 				0D4F29FFBC9C4273E5CAE7FF /* PopularityModel.swift */,
 				A6C1C6823465A248C2FB6EB4 /* AdviceEngine.swift */,
 				15C61B45692E5ECBC414422A /* CombatModel.swift */,
+				A35N4V4L0000000000000001 /* NavalModel.swift */,
 				FC1E648FBDD7B264076FCFDA /* Scenarios.swift */,
 				6DB4D84116FC98A46D9A304E /* WorldEvaluation.swift */,
 				3B3E55C52277C2CE8729F821 /* ShadowSimulation.swift */,
@@ -1022,6 +1026,7 @@
 				76CFBAB28A3F87BD527F4F8F /* PopularityModel.swift in Sources */,
 				90B31D41F89299D7F17E4E12 /* AdviceEngine.swift in Sources */,
 				128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */,
+				A35N4V4L0000000000000002 /* NavalModel.swift in Sources */,
 				B1049F1B49E379C0D930122E /* Scenarios.swift in Sources */,
 				A41EB868B1D1C7F2BDAAB1C9 /* WorldEvaluation.swift in Sources */,
 				0CE9F626FF8F1B7F1D828879 /* ShadowSimulation.swift in Sources */,
@@ -1152,6 +1157,7 @@
 				ACC11E4790145ECDFE5FA822 /* PopularityModel.swift in Sources */,
 				F8E99855968309BF030115A3 /* AdviceEngine.swift in Sources */,
 				49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */,
+				A35N4V4L0000000000000003 /* NavalModel.swift in Sources */,
 				6E50A06DFBD283F0639AEE8A /* Scenarios.swift in Sources */,
 				E2485A964A8961A4CD6EFBE7 /* WorldEvaluation.swift in Sources */,
 				160C08066A20A4CC24846137 /* ShadowSimulation.swift in Sources */,
@@ -1335,7 +1341,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
@@ -1348,7 +1354,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.4.0;
+				MARKETING_VERSION = 3.5.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1417,7 +1423,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1436,7 +1442,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.4.0;
+				MARKETING_VERSION = 3.5.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1455,7 +1461,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1467,7 +1473,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.4.0;
+				MARKETING_VERSION = 3.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1485,7 +1491,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1497,7 +1503,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.4.0;
+				MARKETING_VERSION = 3.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

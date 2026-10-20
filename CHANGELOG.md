@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-10-20 — Naval operations
+
+### Added
+- **Named U.S. fleets by era** (`Shared/Engine/Shadow/NavalModel.swift`): 27 fleets and squadrons with dated home-port
+  periods, taken from the arsenal research now kept in `Documentation/arsenal/` (`data.py` + `build.py` regenerate
+  `gtnw_us_arsenal_by_era.json` / `.md`). No navy 1789–1797 and no named squadron before 1801; real gaps (Fifth Fleet
+  1947–1995, Second Fleet 2011–2018, Fourth Fleet 1950–2008); uncertain dates rounded to the year. Era-typical
+  composition (`FleetComposition`): carriers from 1922, submarines from 1900, amphibious ships from 1942.
+- **Fleet orders** (`FleetOrderSheet`, from the dossier's **Fleet** button and unclaimed coastal land): show of force,
+  blockade, naval strike (weapon by era; Tomahawk from 1983) and amphibious invasion (opens a front with the landing
+  force, or claims unclaimed coastal land), committing 25 / 50 / 100% of the fleet (the 3.4.0 presets). One action.
+- **The fleet as a force**: transit in game days = great-circle km ÷ era speed; `FleetDeployment` saved in
+  `ShadowState.fleetDeployments` with its position derived from the dates and drawn on the map (marker + dashed wake,
+  both skins); engagements on arrival and during blockades (`NavalModel.shipsLost`, by the defender's share of combined
+  strength); a fleet with no ships left is gone; ships on station are tied up until **Recall**. Landlocked targets
+  (Factbook flag plus the 44 landlocked states) are refused with the reason.
+- Play history: `fleet_ordered`, `fleet_action` ("Fifth Fleet blockaded Japan") and `fleet_recalled`.
+- 14 tests across all seven categories (395 total): the era table (no carriers in 1850) checked against the research
+  file, transit maths, the landlocked guard, every mission, losses, double orders and recalls, save/load of fleet
+  positions and old saves, play events, and retro/modern renders (`Screenshots/3.5.0/`).
+
+### Fixed
+- `PlayHistoryIntegrationTests` waited on nothing after `endTurn()`, so asynchronous AI moves could post news between
+  its two syncs and fail it about one run in five; it now waits for the AI turn to finish.
+
 ## [3.4.0] - 2026-10-20 — Size your offensives
 
 ### Added

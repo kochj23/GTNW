@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-381%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.4.0-blue)
+![Tests](https://img.shields.io/badge/tests-395%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.5.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,38 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Naval operations (new in 3.5.0)**: "Send the Fifth Fleet to Japan!" **Fleet** on a country's dossier (and **Fleet
+  orders** on unclaimed coastal land) opens the fleet-order sheet: pick a **named U.S. fleet of the era**, a mission and
+  how much of the fleet to commit (Probe 25% / Standard 50% / Overwhelming 100%, the 3.4.0 sizing step).
+  - **Fleets by era** (`NavalModel.fleets`, from `Documentation/arsenal`): no U.S. navy until 1797 and no named
+    squadron before the Mediterranean Squadron (1801); the distant-station squadrons (Pacific, West India, Brazil, East
+    India, Home, Africa), the Union blockading squadrons, the European, North Atlantic and Asiatic squadrons, the
+    Flying Squadron (1898), the Great White Fleet (1907–09), the Atlantic and first Pacific Fleets, the U.S. Fleet of
+    the treaty years, then the Pacific and Atlantic Fleets (1941–) and the numbered fleets with their real gaps and home
+    ports (Fifth Fleet 1944–47 and from 1995 in Bahrain; Second Fleet 1950–2011 and from 2018; Seventh Fleet at
+    Yokosuka). Ship counts are era-typical: sail and steam surface ships, submarines from 1900, carriers from 1922,
+    amphibious ships from 1942. No carriers in 1850.
+  - **Missions**: *show of force* (pressure and tension, not war), *blockade* (war; the target's output falls every
+    turn on station), *naval strike* (war; damage and casualties with the era's weapon, e.g. Tomahawks only from
+    1983), *amphibious invasion* (opens a front with the landing force, or takes unclaimed coastal land outright).
+  - **Transit** takes great-circle distance ÷ era speed (sail 150, steam 350, modern 900 km a day) in game days; the
+    fleet is drawn on the map with a dashed wake in both skins. On arrival the target's navy and air force engage it:
+    up to a quarter of its ships lost, by the defender's share of combined strength. A fleet on station ties up its
+    ships until recalled. **Landlocked targets can't be reached** and the sheet says why.
+
+  ```mermaid
+  flowchart LR
+      O[Fleet orders: fleet of the era,<br/>mission, commitment] --> G{fleetOrderProblem}
+      G -- landlocked / not in era / already out / no actions --> X[Refused with the reason]
+      G -- ok --> U[Under way: days = km ÷ era speed<br/>map marker + wake]
+      U -- arrives --> E[Engagement: ships lost<br/>by defender's share]
+      E --> M{Mission}
+      M --> S[Show of force: relations, anxiety]
+      M --> B[Blockade: war, output falls each turn]
+      M --> K[Strike: war, damage, casualties]
+      M --> A[Amphibious: front opens,<br/>or unclaimed land claimed]
+      S & B & K & A --> T[On station until recalled<br/>play events fleet_ordered / fleet_action]
   ```
 - **Size your offensives (new in 3.4.0)**: before a ground invasion, air strike, bombardment or nuclear strike, the
   action sheet shows a **Force size** step: Probe / Standard / Overwhelming presets plus a slider per force the attack
@@ -625,6 +657,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Fleet orders (3.5.0) | Events `fleet_ordered` (`fleet`, `target`, `mission`, `preset`, `ships`, `transit_days`), `fleet_action` on arrival (`sentence` such as "Fifth Fleet blockaded Japan", `ships_lost`) and `fleet_recalled` |
 | Ordering a sized offensive (3.4.0) | Event `attack_ordered` (`action`, `target`, `target_name`, `troops` / `aircraft` / `warheads`, `aircraft_lost`, `scale`, `success`, `summary` such as "12 warheads") |
 | Claiming land / renaming a territory (3.3.0) | Event `claimed_land` (`land`, `name`, `game_date`) or `renamed_territory` (`land`, `old_name`, `name`, `game_date`) at once |
 | Game over | Event `game_over`; final upsert with `ended_at`, `outcome` (`victory`/`defeat`), `score` and the full summary. The `gtnw.game_history` row uses the session id, so they join (`history_id`) |
@@ -641,18 +674,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **381 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **395 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 151 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 59 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 54 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 23 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 21 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 43 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 26 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 154 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 64 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 55 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 24 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 22 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 45 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 27 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -676,6 +709,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.5.0 | Oct 2026 | Naval operations: order named fleets of the era (Fifth Fleet, Great White Fleet, Asiatic Squadron…) on shows of force, blockades, strikes and amphibious landings, with transit, engagements and map markers |
 | 3.4.0 | Oct 2026 | Size your offensives: troops, aircraft and warheads with Probe / Standard / Overwhelming presets that change odds, losses, world reaction and escalation |
 | 3.3.0 | Oct 2026 | Unclaimed lands: claim land no country held in your era (e.g. 1800s Africa) and name it; rename any U.S. territory |
 | 3.2.0 | Oct 2026 | Terms of surrender: annex a vanquished country as a U.S. territory (shown on the map) or choose its new government |

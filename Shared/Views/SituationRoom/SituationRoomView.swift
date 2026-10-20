@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet
         var id: String { rawValue }
     }
 
@@ -57,6 +57,8 @@ struct SituationRoomView: View {
             case .city: CityView(gameState: gameState, countryID: selectedCountryID ?? gameState.playerCountryID)
             case .warRoom: WarRoomView(gameState: gameState).environmentObject(gameEngine)
             case .saves: SaveLoadView().environmentObject(gameEngine)
+            case .fleet:
+                FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .nameClaim, .rename:
                 TerritoryNameSheet(gameState: gameState, countryID: selectedCountryID ?? "", newlyClaimed: s == .nameClaim)
                     .environmentObject(gameEngine)
@@ -398,6 +400,9 @@ struct CountryDossier: View {
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
                 .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver)
                 .accessibilityLabel("Send an expedition to claim \(land?.name ?? id)")
+            if !NavalModel.isLandlocked(id) && !NavalModel.fleets(in: gameState.currentYear).isEmpty {
+                Button("FLEET ORDERS") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+            }
         }
         .padding(8)
     }
@@ -460,6 +465,10 @@ struct CountryDossier: View {
                             Button("SEND AID") { onSheet(.aid) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
                         }
                         Button("CITY VIEW") { onSheet(.city) }.buttonStyle(ThemedButtonStyle())
+                        if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID {
+                            Button("FLEET") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                                .help(NavalModel.isLandlocked(c.id) ? "\(c.name) is landlocked" : "Fleet orders")
+                        }
                     }
                     .padding(.top, 4)
                 }

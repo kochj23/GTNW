@@ -221,6 +221,14 @@ struct VectorWorldMap: View {
                             ctx.stroke(path, with: .color(borderColor), lineWidth: zoom == .world ? 0.5 : 1)
                         }
                     }
+                    // Fleets at sea (3.5.0): a dashed wake from home port to where the fleet is now.
+                    for d in gameState.shadow.fleetDeployments {
+                        let now = d.position(at: gameState.currentDate)
+                        var wake = Path()
+                        wake.move(to: CGPoint(x: d.fromLon, y: -d.fromLat).applying(t))
+                        wake.addLine(to: CGPoint(x: now.lon, y: -now.lat).applying(t))
+                        ctx.stroke(wake, with: .color(Self.fleetInk), style: StrokeStyle(lineWidth: 1.2, dash: [4, 3]))
+                    }
                     // Countries with no outline (micro-states, East Germany…) get a dot.
                     for c in gameState.countries where !hasShape(c.id) && !c.isDestroyed {
                         let pt = CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t)
@@ -252,6 +260,9 @@ struct VectorWorldMap: View {
 
     /// Unclaimed land (3.3.0): parchment on the modern map, light gray on the EGA map (unplayable land stays dark gray).
     static var claimableColor: Color { Theme.isRetro ? EGA.lightGray : Color(red: 0.80, green: 0.72, blue: 0.52).opacity(0.6) }
+
+    /// Fleets at sea and their wakes (3.5.0).
+    static var fleetInk: Color { Theme.isRetro ? EGA.lightCyan : Color(red: 0.4, green: 0.9, blue: 1.0) }
 
     /// Ink for territory hatching and borders.
     static var territoryInk: Color { Theme.isRetro ? EGA.white : Color.white.opacity(0.7) }
@@ -285,6 +296,16 @@ struct VectorWorldMap: View {
             (data.shapes.first { $0.id == id }?.bounds.applying(t).width ?? 0) > FontScale.w(70)
         }
         let tagged = pinned.union(roomy)
+        ForEach(gameState.shadow.fleetDeployments) { d in
+            let p = d.position(at: gameState.currentDate)
+            Text(verbatim: "⚓ \((NavalModel.fleet(id: d.fleetID)?.name ?? d.fleetID).uppercased())")
+                .font(ThemeFont.mono(zoom == .world ? 7 : 9, .bold))
+                .foregroundColor(Theme.isRetro ? EGA.black : .black)
+                .padding(.horizontal, 2)
+                .background(Self.fleetInk)
+                .position(CGPoint(x: p.lon, y: -p.lat).applying(t))
+                .allowsHitTesting(false)
+        }
         ForEach(tagged.sorted().compactMap { WorldCountriesDatabase.template(id: $0) }, id: \.id) { land in
             Text("UNCLAIMED")
                 .font(ThemeFont.mono(zoom == .world ? 7 : 9, .bold))

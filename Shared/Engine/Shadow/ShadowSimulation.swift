@@ -71,6 +71,7 @@ extension GameEngine {
         let scale = gs.scale
 
         applyOverdueSettlements()
+        processFleets()
         processScriptedEvents(from: from, to: to)
         updateAnxietiesAndSociety(scale: scale)
         syncFronts()
@@ -411,8 +412,9 @@ extension GameEngine {
     /// `troops` (3.4.0, thousands, at least 1 and no more than are free) stays on as the garrison; the 5K standard
     /// is the pre-3.4 expedition, and the world's reaction scales with size × (0.75 + 0.25 m).
     @discardableResult
-    func claimLand(_ id: String, troops: Double = AttackSizing.expeditionStandard) -> Bool {
-        guard let gs = gameState, gs.actionsRemaining > 0, gs.unclaimedLandIDs.contains(id),
+    /// `spendAction: false` when the landing is part of an order already paid for (a 3.5.0 amphibious fleet).
+    func claimLand(_ id: String, troops: Double = AttackSizing.expeditionStandard, spendAction: Bool = true) -> Bool {
+        guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, gs.unclaimedLandIDs.contains(id),
               troops.isFinite, troops >= 1, troops <= max(AttackSizing.expeditionStandard, AttackSizing.freeTroops(gs)),
               let land = WorldCountriesDatabase.template(id: id), let owner = gs.getPlayerCountry(),
               let oi = gs.countries.firstIndex(where: { $0.id == owner.id }) else { return false }
@@ -434,7 +436,7 @@ extension GameEngine {
         logPlayEvent("claimed_land", detail: ["land": id, "name": PlayHistory.text(claimed.name), "troops_k": Int(troops),
                                               "game_date": PlayHistory.day(gs.currentDate)])
         self.gameState = gs
-        completePlayerAction()
+        if spendAction { completePlayerAction() }
         return true
     }
 
