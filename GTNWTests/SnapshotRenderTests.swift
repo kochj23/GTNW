@@ -252,5 +252,35 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet1850, size: CGSize(width: FontScale.w(720), height: FontScale.h(620)), name: "fleet-orders-1850-\(t)").path)")
         }
     }
+
+    /// 3.6.0: the arsenal line and legal labels under an action in 1918, 1944, 1990, 2000 and 2025.
+    @MainActor
+    func testRenderArsenalLines() throws {
+        let cases: [(Int, PresidentialAction)] = [(1918, .groundInvasion), (1918, .chemicalAttack), (1944, .biologicalAttack),
+                                                   (1990, .deployMissiles), (2000, .chemicalAttack), (2025, .chemicalAttack), (2025, .airStrike)]
+        var rows: [(title: String, action: PresidentialAction, gs: GameState, problem: String?)] = []
+        for (year, action) in cases {
+            let engine = GameEngine()
+            engine.startNewGame(turnLength: .month)
+            let gs = try XCTUnwrap(engine.gameState)
+            gs.eraStartYear = year
+            rows.append(("\(year) — \(action.rawValue.uppercased())", action, gs, engine.wmdProblem(action)))
+        }
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let view = VStack(alignment: .leading, spacing: 8) {
+                ForEach(rows.indices, id: \.self) { i in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: rows[i].title).font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                        ArsenalLine(action: rows[i].action, gameState: rows[i].gs, problem: rows[i].problem)
+                    }
+                    .padding(6).frame(maxWidth: .infinity, alignment: .leading).themedPanel(retroFill: EGA.black)
+                }
+            }
+            .padding(10).background(Theme.isRetro ? EGA.blue : Color.black)
+            print("SNAPSHOT \(try render(view, size: CGSize(width: FontScale.w(560), height: FontScale.h(760)), name: "arsenal-lines-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

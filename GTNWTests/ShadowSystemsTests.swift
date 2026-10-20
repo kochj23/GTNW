@@ -1083,11 +1083,12 @@ final class AttackSizingTests: XCTestCase {
         let (e1, gs1) = try modern()
         let (e2, gs2) = try twin(gs1)
         let std = AttackSizing.standard(.groundInvasion, in: gs1).troops
-        e1.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 0.5))
+        // Both at or above Standard, so both always succeed (an undersized attack can fail: see the odds test).
+        e1.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 1.2))
         e2.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 2))
         let f1 = try XCTUnwrap(gs1.shadow.fronts.first { $0.defender == "MEX" && $0.status == .fighting })
         let f2 = try XCTUnwrap(gs2.shadow.fronts.first { $0.defender == "MEX" && $0.status == .fighting })
-        XCTAssertEqual(f1.attackerTroops, (std * 0.5).rounded()); XCTAssertEqual(f2.attackerTroops, std * 2)
+        XCTAssertEqual(f1.attackerTroops, (std * 1.2).rounded()); XCTAssertEqual(f2.attackerTroops, std * 2)
         let o1 = CombatModel.battle(f1, attackerStrength: 100, defenderStrength: 50, rolls: (0.5, 0.5))
         let o2 = CombatModel.battle(f2, attackerStrength: 100, defenderStrength: 50, rolls: (0.5, 0.5))
         XCTAssertGreaterThan(o2.momentumChange, o1.momentumChange, "more troops win faster")
@@ -1511,5 +1512,211 @@ final class NavalPlayHistoryTests: XCTestCase {
         let action = try XCTUnwrap(events.first { $0.kind == "fleet_action" })
         XCTAssertEqual(PlayFixtures.detail(action)["sentence"] as? String, "Fifth Fleet blockaded Japan")
         XCTAssertTrue(events.contains { $0.kind == "fleet_recalled" })
+    }
+}
+
+// MARK: - Era weapons catalog (3.6.0)
+
+@MainActor
+final class ArsenalCatalogTests: XCTestCase {
+
+    private func day(_ y: Int, _ m: Int, _ d: Int) -> Date { GameCalendar.date(year: y, month: m, day: d) }
+
+    /// A modern game moved to `year` (Jan 20). The board stays modern; only the calendar matters here.
+    private func game(year: Int) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = year
+        return (engine, gs)
+    }
+
+    // Unit: era boundaries
+
+    func testChemicalBoundaries() {
+        XCTAssertFalse(PresidentialAction.chemicalAttack.isAvailable(on: day(1916, 12, 31)), "no chemical before 1917")
+        XCTAssertTrue(PresidentialAction.chemicalAttack.isAvailable(on: day(1917, 6, 1)))
+        XCTAssertEqual(ArsenalCatalog.legalStatus(.chemical, on: day(1918, 6, 1)), .legal, "WWI: before any treaty bound the U.S.")
+        XCTAssertEqual(ArsenalCatalog.legalStatus(.chemical, on: day(1943, 6, 1)), .restricted)
+        XCTAssertEqual(ArsenalCatalog.legalStatus(.chemical, on: day(1975, 6, 1)), .restricted, "Geneva Protocol ratified 1975")
+        XCTAssertEqual(ArsenalCatalog.legalStatus(.chemical, on: day(1997, 6, 1)), .treatyBanned, "CWC 1997")
+        XCTAssertTrue(ArsenalCatalog.stockpileExists(.chemical, on: day(2023, 7, 6)))
+        XCTAssertFalse(ArsenalCatalog.stockpileExists(.chemical, on: day(2023, 7, 7)), "destroyed 7 Jul 2023")
+        XCTAssertFalse(PresidentialAction.restartChemical.isAvailable(on: day(2023, 7, 6)))
+        XCTAssertTrue(PresidentialAction.restartChemical.isAvailable(on: day(2023, 7, 7)), "from then on, restart only")
+        XCTAssertTrue(ArsenalCatalog.treatyLabel(.chemical, year: 2010)?.contains("Chemical Weapons Convention") ?? false)
+        XCTAssertNil(ArsenalCatalog.treatyLabel(.chemical, year: 1918))
+    }
+
+    func testBiologicalBoundaries() {
+        XCTAssertFalse(PresidentialAction.biologicalAttack.isAvailable(on: day(1942, 6, 1)))
+        XCTAssertTrue(ArsenalCatalog.stockpileExists(.biological, on: day(1943, 6, 1)))
+        XCTAssertTrue(ArsenalCatalog.stockpileExists(.biological, on: day(1969, 6, 1)))
+        XCTAssertFalse(ArsenalCatalog.stockpileExists(.biological, on: day(1970, 6, 1)), "program ended 1969")
+        XCTAssertTrue(ArsenalCatalog.restartOnly(.biological, on: day(1970, 6, 1)))
+        XCTAssertFalse(PresidentialAction.restartBiological.isAvailable(on: day(1969, 6, 1)))
+        XCTAssertTrue(PresidentialAction.restartBiological.isAvailable(on: day(1980, 6, 1)))
+        XCTAssertEqual(ArsenalCatalog.legalStatus(.biological, on: day(1976, 6, 1)), .treatyBanned, "BWC 1975")
+        XCTAssertTrue(ArsenalCatalog.treatyLabel(.biological, year: 1990)?.contains("Biological Weapons Convention") ?? false)
+    }
+
+    func testNoNukesBeforeTrinityAndINFLabel() {
+        for a in [PresidentialAction.launchNukes, .tacticalNuke, .strategicNuke, .firstStrike] {
+            XCTAssertFalse(a.isAvailable(on: day(1944, 12, 1)), a.rawValue)
+            XCTAssertFalse(a.isAvailable(on: day(1945, 7, 15)), a.rawValue)
+            XCTAssertTrue(a.isAvailable(on: day(1945, 7, 16)), a.rawValue)
+        }
+        XCTAssertEqual(ArsenalCatalog.status(for: .deployMissiles, year: 1990), .treatyBanned, "INF Treaty 1988–2019")
+        XCTAssertEqual(ArsenalCatalog.status(for: .deployMissiles, year: 2020), .legal)
+        XCTAssertTrue(PresidentialAction.sendAmbassador.isAvailable(on: day(1790, 6, 1)), "uncatalogued actions keep their era year")
+    }
+
+    func testCatalogIsTheResearchTable() {
+        XCTAssertEqual(ArsenalCatalog.options.count, 47)
+        XCTAssertEqual(Set(ArsenalCatalog.options.map(\.id)).count, 47)
+        for o in ArsenalCatalog.options {
+            XCTAssertFalse(o.exists(in: o.from - 1), o.id)
+            XCTAssertFalse(o.periods.isEmpty, o.id)
+            if let to = o.to { XCTAssertGreaterThanOrEqual(to, o.from, o.id) }
+        }
+        XCTAssertTrue(ArsenalCatalog.examples(for: .groundInvasion, year: 1918).contains { $0.contains("Armor") || $0.contains("Tank") || $0.contains("armor") })
+        XCTAssertFalse(ArsenalCatalog.examples(for: .groundInvasion, year: 1850).contains { $0.lowercased().contains("armor") })
+        XCTAssertTrue(ArsenalCatalog.examples(for: .airStrike, year: 1850).isEmpty)
+        // Low-confidence (post-April-2026) items never gate an action on their own.
+        for a in PresidentialAction.allCases {
+            let ids = ArsenalCatalog.optionIDs(for: a).compactMap(ArsenalCatalog.option)
+            if !ids.isEmpty { XCTAssertFalse(ids.allSatisfy(\.lowConfidence), a.rawValue) }
+        }
+    }
+
+    func testCostsRiseWithLegalStatus() {
+        let legal = ArsenalCatalog.cost(.legal), restricted = ArsenalCatalog.cost(.restricted), banned = ArsenalCatalog.cost(.treatyBanned)
+        XCTAssertLessThan(legal.world, restricted.world); XCTAssertLessThan(restricted.world, banned.world)
+        XCTAssertLessThan(legal.ruthlessness, banned.ruthlessness)
+        XCTAssertFalse(legal.opensImpeachment); XCTAssertTrue(banned.opensImpeachment)
+        XCTAssertGreaterThan(banned.sanctions, 0)
+        XCTAssertEqual(ArsenalCatalog.cost(.destroyed), banned)
+    }
+
+    // Functional: use in WWI versus after the CWC
+
+    func testWWIChemicalUseCostsLittleAndPostCWCUseCostsALot() throws {
+        let (e1918, g1918) = try game(year: 1918)
+        let (e2000, g2000) = try game(year: 2000)
+        let rel0 = g1918.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0
+        let rel0b = g2000.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0
+        e1918.performAdvisedAction(.chemicalAttack, targetID: "MEX", advice: nil)
+        e2000.performAdvisedAction(.chemicalAttack, targetID: "MEX", advice: nil)
+        XCTAssertTrue(g1918.getCountry(id: "MEX")!.atWarWith.contains("USA"))
+        let drop1918 = rel0 - (g1918.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0)
+        let drop2000 = rel0b - (g2000.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0)
+        XCTAssertGreaterThan(drop2000, drop1918)
+        XCTAssertEqual(g1918.shadow.impeachmentStage, 0)
+        XCTAssertGreaterThanOrEqual(g2000.shadow.impeachmentStage, 1, "a treaty violation opens hearings")
+        XCTAssertGreaterThan(g2000.shadow.ruthlessness, g1918.shadow.ruthlessness)
+        XCTAssertTrue(g2000.shadow.ticker.contains { $0.text.contains("Chemical Weapons Convention") })
+    }
+
+    func testDestroyedStockpileMeansRestartFirst() throws {
+        let (engine, gs) = try game(year: 2025)
+        XCTAssertNotNil(engine.wmdProblem(.chemicalAttack), "no stockpile in 2025")
+        let rel = gs.getCountry(id: "IRN")!.diplomaticRelations["USA"] ?? 0
+        engine.performAdvisedAction(.chemicalAttack, targetID: "IRN", advice: nil)
+        XCTAssertEqual(gs.getCountry(id: "IRN")!.diplomaticRelations["USA"] ?? 0, rel, "nothing happens")
+        XCTAssertEqual(gs.actionsUsedThisTurn, 0, "and no action is spent")
+        engine.performAdvisedAction(.restartChemical, targetID: "IRN", advice: nil)
+        let p = try XCTUnwrap(gs.shadow.wmdPrograms["chemical"])
+        XCTAssertEqual(GameCalendar.year(of: p.ready), 2027, "a two-year lead time")
+        XCTAssertNotNil(engine.wmdProblem(.chemicalAttack), "not ready yet")
+        XCTAssertNotNil(engine.wmdProblem(.restartChemical), "already under way")
+        gs.turn = 26
+        XCTAssertNil(engine.wmdProblem(.chemicalAttack))
+        XCTAssertTrue(engine.executeWMD(.chemicalAttack, target: "IRN"))
+        XCTAssertTrue(gs.shadow.wmdPrograms["chemical"]!.discovered, "use reveals the program")
+        XCTAssertGreaterThanOrEqual(gs.shadow.impeachmentStage, 1)
+    }
+
+    func testRestartedProgramsCanBeDiscovered() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .year)
+        let gs = try XCTUnwrap(engine.gameState)
+        var found = 0
+        for _ in 0..<200 {
+            gs.shadow.wmdPrograms["biological"] = WMDProgram(kind: .biological, started: gs.currentDate, ready: .distantFuture)
+            engine.processWMDPrograms()
+            if gs.shadow.wmdPrograms["biological"]!.discovered { found += 1 }
+        }
+        XCTAssertGreaterThan(found, 30); XCTAssertLessThan(found, 120)   // ~35% a year
+        gs.shadow.wmdPrograms["biological"] = WMDProgram(kind: .biological, started: gs.currentDate, ready: gs.currentDate)
+        engine.processWMDPrograms()
+        XCTAssertFalse(gs.shadow.wmdPrograms["biological"]!.discovered, "a finished program is no longer at risk")
+    }
+
+    // Security
+
+    func testBadWMDOrdersDoNothing() throws {
+        let (engine, gs) = try game(year: 1918)
+        XCTAssertFalse(engine.executeWMD(.chemicalAttack, target: "USA"))
+        XCTAssertFalse(engine.executeWMD(.chemicalAttack, target: "ZZZ"))
+        XCTAssertFalse(engine.executeWMD(.biologicalAttack, target: "MEX"), "no biological weapons in 1918")
+        XCTAssertFalse(engine.executeWMD(.sendAmbassador, target: "MEX"))
+        let snapshot = gs.countries
+        engine.executeShadowPresidentAction(.chemicalAttack, from: "MEX", to: "USA")
+        XCTAssertEqual(gs.countries, snapshot, "the computer never uses this path")
+        XCTAssertFalse(ArsenalCatalog.options.contains { $0.name.isEmpty })
+    }
+
+    // Retry: programs survive save / load; old saves decode
+
+    func testProgramsSurviveSaveAndOldSavesLoad() throws {
+        let (engine, gs) = try game(year: 2025)
+        XCTAssertTrue(engine.executeWMD(.restartBiological, target: "IRN"))
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.wmdPrograms, gs.shadow.wmdPrograms)
+        let e2 = GameEngine(); e2.gameState = loaded
+        XCTAssertFalse(e2.executeWMD(.restartBiological, target: "IRN"), "a restart can't be resubmitted after reload")
+        loaded.turn = 40
+        XCTAssertTrue(e2.executeWMD(.biologicalAttack, target: "IRN"), "ready after its lead time, across the reload")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "wmdPrograms"); json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.wmdPrograms.isEmpty)
+    }
+
+    // Performance
+
+    func testAvailabilityAcrossAllYearsIsCheap() {
+        let dates = (1789...2030).map { day($0, 6, 1) }
+        measure {
+            for d in dates { for a in PresidentialAction.allCases { _ = a.isAvailable(on: d) } }
+        }
+    }
+}
+
+// MARK: - Play history for the weapons catalog (3.6.0)
+
+final class ArsenalPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testWMDUseAndRestartsAreLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        XCTAssertTrue(e.executeWMD(.restartChemical, target: "IRN"))
+        gs.turn = 30
+        XCTAssertTrue(e.executeWMD(.chemicalAttack, target: "IRN"))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        XCTAssertTrue(events.contains { $0.kind == "wmd_program_started" })
+        let used = try XCTUnwrap(events.first { $0.kind == "wmd_used" })
+        XCTAssertEqual(PlayFixtures.detail(used)["legal_status"] as? String, "treatyBanned")
+        XCTAssertTrue((PlayFixtures.detail(used)["treaty"] as? String)?.contains("Chemical Weapons Convention") ?? false)
     }
 }
