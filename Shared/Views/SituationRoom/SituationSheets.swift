@@ -928,3 +928,81 @@ struct ArsenalLine: View {
         }
     }
 }
+
+// MARK: - Territory wealth and impeachment risk (3.7.0)
+
+/// Top-bar read-out of Congress's mood: the same pressure Congress acts on at each monthly poll, and the approval
+/// floor above which (with the outrage faded) any impeachment is dropped.
+struct ImpeachmentRiskBadge: View {
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let p = ExpansionModel.impeachmentPressure(popularity: gameState.shadow.popularity, ruthlessness: gameState.shadow.ruthlessness,
+                                                   congress: gameState.getPlayerCountry()?.congressionalSupport ?? 50)
+        let risk = ExpansionModel.risk(pressure: p)
+        let color = risk == .high ? GTNWColors.terminalRed : (risk == .rising ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("IMPEACH RISK \(risk.rawValue)").font(ThemeFont.mono(11, .bold)).foregroundColor(color)
+            Text("APPROVAL FLOOR \(Int(ExpansionModel.popularityFloor))%").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+        }
+        .help(String(format: "Congress's pressure %.0f (it acts above %.0f at the monthly poll)", p, ExpansionModel.impeachmentThreshold))
+    }
+}
+
+/// Income from every U.S. territory: what it produces this year, how well it is held, and the total.
+struct ResourcesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    /// Offscreen snapshots can't render scroll views; they pass false.
+    var scrolls = true
+
+    var body: some View {
+        let rows = ExpansionModel.ledger(gameState)
+        let total = rows.reduce(0) { $0 + $1.income }
+        let strategic = ExpansionModel.strategic(gameState)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "shippingbox.fill")
+                Text("TERRITORY RESOURCES")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Text(String(format: "TOTAL $%.1fB A YEAR · EARNED SO FAR $%.1fB · APPROVAL +%.1f FROM PROSPERITY", total,
+                        gameState.shadow.resourceEarnings, ExpansionModel.prosperityBonus(incomePerYear: total)))
+                .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            if !strategic.isEmpty {
+                Text("STRATEGIC: " + strategic.map { k in
+                    switch k {
+                    case .oil: return "oil fuels the fleet and air arm"
+                    case .uranium: return "uranium speeds the bomb"
+                    default: return "rubber keeps the wartime army moving"
+                    }
+                }.sorted().joined(separator: " · ")).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            }
+            Group { if scrolls { ScrollView { table(rows) } } else { table(rows) } }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(640), height: FontScale.h(560))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    private func table(_ rows: [(country: Country, income: Double, resources: [ResourceKind])]) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if rows.isEmpty {
+                Text("No territories yet.").font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan)
+            }
+            ForEach(rows, id: \.country.id) { r in
+                HStack {
+                    Text(verbatim: r.country.name.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Text(verbatim: r.resources.map(\.title).joined(separator: ", ")).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+                    Spacer()
+                    Text(r.income > 0 ? String(format: "$%.2fB/yr", r.income) : "RAMPING UP")
+                        .font(ThemeFont.mono(10, .bold)).foregroundColor(r.income > 0 ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
+                }
+                .padding(4).themedPanel(retroFill: EGA.black)
+            }
+        }
+    }
+}

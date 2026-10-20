@@ -412,7 +412,9 @@ enum AttackSizing {
         let fighting = gs.shadow.fronts.filter { $0.status == .fighting }.reduce(0.0) { sum, f in
             sum + (f.usSide != nil ? f.usTroops : 0) + (f.attacker == p.id ? f.attackerTroops : 0)
         }
-        return max(0, CombatModel.forcePool(p) - fighting - gs.shadow.garrisons.values.reduce(0, +))
+        // 3.7.0: territory rubber keeps a wartime army moving (1914–18, 1939–45).
+        let rubber = ExpansionModel.strategic(gs).contains(.rubber) ? 1.1 : 1
+        return max(0, CombatModel.forcePool(p) * rubber - fighting - gs.shadow.garrisons.values.reduce(0, +))
     }
 
     /// What the U.S. can send of one kind right now.
@@ -420,7 +422,9 @@ enum AttackSizing {
         guard let p = gs.getPlayerCountry() else { return 0 }
         switch k {
         case .troops: return freeTroops(gs)
-        case .aircraft: return Double(aircraftPool(p, year: gs.currentYear, lost: gs.shadow.aircraftLost))
+        case .aircraft:   // 3.7.0: territory oil fuels a larger air arm
+            let oil = ExpansionModel.strategic(gs).contains(.oil) ? 1.15 : 1
+            return (Double(aircraftPool(p, year: gs.currentYear, lost: gs.shadow.aircraftLost)) * oil).rounded(.down)
         case .warheads: return gs.currentYear >= 1945 ? Double(p.nuclearWarheads) : 0
         }
     }

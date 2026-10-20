@@ -289,7 +289,8 @@ extension GameEngine {
         let year = gs.currentYear
         let commit = NavalMission.commitment(preset)
         let km = NavalModel.distanceKm(lat1: home.lat, lon1: home.lon, lat2: point.lat, lon2: point.lon)
-        let days = NavalModel.transitDays(km: km, year: year)
+        // 3.7.0: territory oil fuels the fleet (about 10% faster).
+        let days = NavalModel.transitDays(km: km / (ExpansionModel.strategic(gs).contains(.oil) ? 1.1 : 1), year: year)
         let d = FleetDeployment(fleetID: fleetID, target: target, mission: mission, commitment: commit,
                                 ships: NavalModel.composition(fleet, year: year).scaled(commit),
                                 fromLat: home.lat, fromLon: home.lon, toLat: point.lat, toLon: point.lon,

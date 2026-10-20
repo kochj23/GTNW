@@ -79,6 +79,7 @@ extension GameEngine {
         processCombat(from: from, to: to)
         processEconomy(from: from, to: to, scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
+        processTerritoryEconomy()   // after the poll, so its impeachment warning always precedes the next one
         processAdvisorFates(scale: scale)
 
         // Peace streak (years of peace = peaceTurns × turn length).
@@ -380,6 +381,8 @@ extension GameEngine {
                 modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: hit)
             }
             gs.shadow.ruthlessness += 15
+            gs.shadow.expansionLog.append(gs.currentDate)
+            gs.shadow.claimDates[loser.id] = gs.currentDate
             let title = CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)
             let owned = owner.id == "USA" ? "U.S." : owner.name
             gs.shadow.post("\(name) is annexed as a \(owned) territory. \(seized > 0 ? "\(seized) warheads seized. " : "")Occupation begins.",
@@ -424,13 +427,19 @@ extension GameEngine {
         gs.countries[oi].alliances.insert(id)
         gs.countries[oi].diplomaticRelations[id] = 100
         gs.shadow.garrisons[id] = troops
-        let f = AttackSizing.relationFactor(scale: troops / AttackSizing.expeditionStandard)
+        // 3.7.0: the reaction depends on the era and on how many lands were taken this year (ExpansionModel.politics).
+        let nth = ExpansionModel.takenLastYear(gs, before: gs.currentDate) + 1
+        let politics = ExpansionModel.politics(year: gs.currentYear, nth: nth)
+        gs.shadow.expansionLog.append(gs.currentDate)
+        gs.shadow.claimDates[id] = gs.currentDate
+        let f = AttackSizing.relationFactor(scale: troops / AttackSizing.expeditionStandard) * politics.worldFactor
         for i in gs.countries.indices where !gs.countries[i].isDestroyed && !gs.countries[i].isTerritory
             && gs.countries[i].id != owner.id && !gs.countries[i].alliances.contains(owner.id) {
             let base = gs.countries[i].alignment == .eastern ? -5.0 : -2.0
             modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: Int((base * f).rounded()))
         }
-        gs.shadow.ruthlessness += 5
+        gs.shadow.ruthlessness += politics.ruthlessness
+        gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + politics.popularity)
         let owned = owner.id == "USA" ? "U.S." : owner.name
         gs.shadow.post("An expedition plants the flag in \(claimed.name). It is now a \(owned) territory.", date: gs.currentDate, severity: 2)
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): unclaimed \(claimed.name) claimed as \(CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)).")
@@ -634,9 +643,11 @@ extension GameEngine {
         let proj = BudgetModel.project(gs.shadow.budget, atWar: !player.atWarWith.isEmpty)
         gs.shadow.ruthlessness *= pow(0.7, scale.yearFraction)
         let hits = gs.nuclearStrikes.filter { $0.target == player.id }.count
+        let income = ExpansionModel.ledger(gs).reduce(0) { $0 + $1.income }   // 3.7.0: territory wealth is popular at home
         let target = PopularityModel.equilibrium(usQoL: player.profile.qualityOfLife, growth: proj.growth,
                                                  warsInvolvingPlayer: player.atWarWith.count,
                                                  ruthlessness: gs.shadow.ruthlessness, nuclearHitsOnPlayer: hits)
+            + ExpansionModel.prosperityBonus(incomePerYear: income)
         gs.shadow.popularity = PopularityModel.drift(gs.shadow.popularity, toward: target, scale: scale)
 
         // Polls on the first of each month.

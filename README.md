@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-408%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.6.0-blue)
+![Tests](https://img.shields.io/badge/tests-420%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.7.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -143,6 +143,42 @@ Everything happens on one screen:
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
   ```
+- **Territory wealth and the politics of expansion (new in 3.7.0)**: taking land now pays, and is priced fairly.
+  - **Resources**: every territory, claimed or annexed, yields era-accurate resources from roughly when they were first
+    exploited (`ExpansionModel.deposits`): South African diamonds (1867) and gold (1886), Gold Coast gold and cocoa
+    (1890s), Copperbelt copper (c.1928), Congo ivory and rubber (to c.1914–20), copper, diamonds, cobalt and uranium
+    (1940s), Nigerian (1956) and Libyan (1959) oil, Niger uranium (1971), Egyptian and Sudanese cotton, Moroccan
+    phosphates, and so on; lands without a table entry farm a little. Income starts six months after taking a land,
+    reaches full output at two years, and scales with stability and garrison. It adds to U.S. output and approval
+    (prosperity, up to +5) and is listed per territory in the **Resources** panel. "Gotit is now producing copper"
+    goes on the ticker and into play history.
+  - **Strategic resources**, in their eras: oil (from 1910) fuels a 15% larger air arm and 10% faster fleets, uranium
+    (from 1942) adds about 20 warheads a year, and rubber keeps a 10% larger army moving in the world wars.
+  - **Score**: +100 per territory held, +10 per $1B of resources earned (+1000 per statehood, for when that arrives).
+  - **Politics by era** (`ExpansionModel.politics`): before 1919 a few claims a year are popular (+0.5 approval each
+    up to six), then anti-imperialist backlash grows; the outrage per claim is 0.5 + 0.003 × (n − 4)², so a handful is
+    cheap and dozens a year are dangerous. Interwar claims cost more; after 1945 every annexation costs approval and
+    outrage, and the world reacts three times as hard. World-opinion hits grow with the spree too.
+  - **No surprise impeachment**: the top bar shows **impeachment risk** (the pressure Congress acts on at each monthly
+    poll) and the **approval floor** (38%); the Chief of Staff warns on the dossier before a claim that would tip it;
+    the ticker warns the turn pressure crosses the line; and the "articles drafted" stage says the House votes at the
+    next poll unless approval recovers.
+  - Rebalance check: replaying the 3.3.0 session that ended in removal (1913, 27 claims of 5K troops over 8 weeks)
+    now ends with approval in the low 40s and no impeachment stage at all; 47 claims in a week still brings hearings.
+
+  ```mermaid
+  flowchart TD
+      C[Claim or annex a land] --> P[ExpansionModel.politics<br/>era × claims this year]
+      P -- few, pre-1919 --> U[Approval +0.5, little outrage]
+      P -- spree or post-1945 --> D[Outrage ∝ n², world reaction ×]
+      C --> R[Resources by era<br/>ramp-up 6 months → 2 years]
+      R --> I[Income × stability × garrison]
+      I --> G[U.S. output, prosperity approval,<br/>score, Resources panel]
+      I --> S[Strategic: oil, uranium, rubber]
+      D --> K{Impeachment pressure > 12?}
+      K -- yes --> W[Risk badge HIGH, Chief of Staff warns,<br/>ticker warns before the poll]
+      W --> V[Monthly poll: Congress advances one stage]
+  ```
 - **Era weapons catalog (new in 3.6.0)**: every attack option the United States actually had, by year, from a
   bundled table of 47 options (`ArsenalCatalog`, generated from the research in `Documentation/arsenal/`). Under each
   action the sheet shows the era's arsenal (e.g. *ARSENAL 1918: Infantry · Field artillery · Horse cavalry · Armor*)
@@ -235,8 +271,8 @@ Everything happens on one screen:
   1951, South Africa before 1910) and its land is on the map as **unclaimed**: parchment on the modern map, light gray
   on the EGA map, under every filter, with an `UNCLAIMED` tag and an *Unclaimed* legend swatch. Click it for a short
   dossier ("Unclaimed land — no government, no army") and a **Send expedition** button. With nobody to fight, the land
-  is taken at once as a U.S. territory (drawn exactly like an annexed one) for one action, ruthlessness +5 and a small
-  hit abroad (rivals −5, others −2, allies none). A naming sheet then opens, prefilled with the land's modern name.
+  is taken at once as a U.S. territory (drawn exactly like an annexed one) for one action and a small hit abroad
+  (rivals −5, others −2, allies none; from 3.7.0 the outrage depends on era and pace, see below). A naming sheet then opens, prefilled with the land's modern name.
   - **Name or rename any U.S. territory**: the dossier of every U.S. territory, claimed or annexed, has **Rename**,
     and the annex option on the Terms of Surrender screen takes an optional new name. Names are trimmed, 1–40
     characters on one line (no control characters), and are always shown as plain text.
@@ -684,6 +720,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Territory starts producing (3.7.0) | Event `territory_producing` (`land`, `name`, `resources`, `income_b`) |
 | Chemical / biological (3.6.0) | Events `wmd_used` (`kind`, `target`, `legal_status`, `treaty`), `wmd_program_started`, `wmd_program_discovered` |
 | Fleet orders (3.5.0) | Events `fleet_ordered` (`fleet`, `target`, `mission`, `preset`, `ships`, `transit_days`), `fleet_action` on arrival (`sentence` such as "Fifth Fleet blockaded Japan", `ships_lost`) and `fleet_recalled` |
 | Ordering a sized offensive (3.4.0) | Event `attack_ordered` (`action`, `target`, `target_name`, `troops` / `aircraft` / `warheads`, `aircraft_lost`, `scale`, `success`, `summary` such as "12 warheads") |
@@ -702,18 +739,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **408 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **420 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 159 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 67 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 56 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 25 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 23 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 46 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 28 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 161 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 70 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 57 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 26 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 24 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 49 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 29 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -737,6 +774,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.7.0 | Oct 2026 | "No fair!" fixed: territories yield era-accurate resources and score, expansion politics by era and pace, visible impeachment risk with warnings |
 | 3.6.0 | Oct 2026 | Era weapons catalog: every U.S. attack option by year, with legal status; chemical and biological weapons priced by treaty, restart-only once destroyed |
 | 3.5.0 | Oct 2026 | Naval operations: order named fleets of the era (Fifth Fleet, Great White Fleet, Asiatic Squadron…) on shows of force, blockades, strikes and amphibious landings, with transit, engagements and map markers |
 | 3.4.0 | Oct 2026 | Size your offensives: troops, aircraft and warheads with Probe / Standard / Overwhelming presets that change odds, losses, world reaction and escalation |

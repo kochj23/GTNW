@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-10-20 — Territory wealth, fair expansion, no surprise impeachment
+
+Jordan's 3.3.0 session (1913 start, 27 claims in two months) ended in removal in Sep 1913 with a score of 1290: each
+claim added a flat +5 ruthlessness, so 27 claims pushed Congress's pressure (ruthlessness × 0.4) to ~54 against a
+threshold of 12 and impeachment advanced a stage at every monthly poll, while land brought no reward at all.
+
+### Added
+- **`ExpansionModel`** (`Shared/Engine/Shadow/ExpansionModel.swift`). Resource table: about 40 lands with approximate
+  first-exploitation years, sourced in comments. Lands without an entry, or before their resources, farm a little.
+  Income ramps up from 6 months to full at 2 years and scales with stability and garrison. Annexed countries without
+  an entry pay 2% of GDP a year. Income adds to U.S. output and gives up to +5 approval from prosperity. Territories
+  announce "X is now producing …" on the ticker and in play history (`territory_producing`).
+- **Strategic resources** in their eras: oil (1910+) gives +15% aircraft and +10% fleet speed, uranium (1942+) about
+  +20 warheads a year, and rubber (1914–18, 1939–45) +10% troops.
+- **`ResourcesSheet`** (top bar **Resources**): income per territory and in total, earnings to date and active
+  strategic effects.
+- **Score**: `GameScore.expansionBonus`, +100 per territory, +10 per $1B earned and +1000 per statehood (hook for the
+  coming statehood feature). Optional, so older score records decode.
+- **Politics of expansion** (`ExpansionModel.politics`, design choices). Before 1919, +0.5 approval for each of the
+  first six claims a year, then −0.03 × (n − 6); outrage 0.5 + 0.003 × (n − 4)². Interwar costs more. From 1945,
+  −3 approval and outrage 8 + 0.02 n², with world reaction ×3. Replaces the flat +5; annexations count toward the pace.
+- **No surprise impeachment**:
+  - `ImpeachmentRiskBadge` in the top bar shows the risk (LOW / RISING / HIGH, the same pressure Congress uses) and
+    the 38% approval floor.
+  - The Chief of Staff warns on the dossier before a claim that would tip the pressure.
+  - A ticker warning goes out the turn pressure crosses the threshold, after the poll so it precedes the next one.
+  - The "articles drafted" stage now says the House votes at the next poll unless approval recovers.
+- 12 tests across all seven categories (420 total). Included: a replay of Jordan's pattern, which now ends with
+  approval in the low 40s and no impeachment stage; a 47-claim spree in one week, which still opens hearings after a
+  warning; resource eras (Libyan oil only from 1959, Congo rubber to 1920); ramp-up, hold and politics curves; income,
+  score and strategic oil; tribute and neglect; persistence and old saves; and the "Gotit is now producing copper"
+  play event. Snapshots in `Screenshots/3.7.0/`.
+
 ## [3.6.0] - 2026-10-20 — Era weapons catalog
 
 ### Added

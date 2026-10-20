@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources
         var id: String { rawValue }
     }
 
@@ -57,6 +57,7 @@ struct SituationRoomView: View {
             case .city: CityView(gameState: gameState, countryID: selectedCountryID ?? gameState.playerCountryID)
             case .warRoom: WarRoomView(gameState: gameState).environmentObject(gameEngine)
             case .saves: SaveLoadView().environmentObject(gameEngine)
+            case .resources: ResourcesSheet(gameState: gameState)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .nameClaim, .rename:
@@ -211,6 +212,7 @@ struct SituationTopBar: View {
                 Text("IMPEACHMENT \(gameState.shadow.impeachmentStage)/3").font(ThemeFont.mono(11, .bold))
                     .foregroundColor(GTNWColors.terminalRed)
             }
+            ImpeachmentRiskBadge(gameState: gameState)
     }
 
     @ViewBuilder private var controls: some View {
@@ -219,6 +221,9 @@ struct SituationTopBar: View {
                 Button("BUDGET READY") { onSheet(.budget) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
             } else {
                 Button("BUDGET") { onSheet(.budget) }.buttonStyle(ThemedButtonStyle())
+            }
+            if gameState.countries.contains(where: { $0.territoryOf == gameState.playerCountryID }) {
+                Button("RESOURCES") { onSheet(.resources) }.buttonStyle(ThemedButtonStyle())
             }
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
@@ -385,9 +390,18 @@ struct CountryDossier: View {
                 .font(ThemeFont.mono(11)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                 .fixedSize(horizontal: false, vertical: true)
             Text("An expedition takes it at once as a \(owner.map { $0.id == "USA" ? "U.S." : $0.name } ?? "U.S.") territory. "
-                 + "Costs one action and a little goodwill abroad: rivals by 5, the rest of the world by 2.")
+                 + "Costs one action and some goodwill abroad: rivals about 5, others about 2, more in a spree or after 1945.")
                 .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 .fixedSize(horizontal: false, vertical: true)
+            let nth = ExpansionModel.takenLastYear(gameState, before: gameState.currentDate) + 1
+            let politics = ExpansionModel.politics(year: gameState.currentYear, nth: nth)
+            Text(String(format: "Claim #%d this year: approval %+.1f, outrage +%.1f. Yields: %@.", nth, politics.popularity, politics.ruthlessness,
+                        ExpansionModel.deposits(for: id, year: gameState.currentYear).map(\.kind.title).joined(separator: ", ")))
+                .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            if gameEngine.pressureAfterNextClaim() > ExpansionModel.impeachmentThreshold {
+                Text("CHIEF OF STAFF: \u{201C}One more and Congress moves against you at the next poll. Let the country cool off.\u{201D}")
+                    .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed).fixedSize(horizontal: false, vertical: true)
+            }
             let free = AttackSizing.freeTroops(gameState)
             HStack(spacing: 6) {
                 Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)

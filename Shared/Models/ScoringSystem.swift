@@ -60,6 +60,8 @@ struct GameScore: Codable {
     var allianceBonus: Int = 0
     var treatyBonus: Int = 0
     var economicBonus: Int = 0
+    /// Land and wealth (3.7.0): territories held, resources earned, statehoods. Optional so older records decode.
+    var expansionBonus: Int? = nil
     var difficultyMultiplier: Double = 1.0
     var finalScore: Int = 0
     var playerCountry: String = ""
@@ -92,6 +94,11 @@ struct GameScore: Codable {
             score.economicBonus = Int(player.gdp / 1_000_000)  // Trillions to points
         }
 
+        // Land and resources held (3.7.0)
+        score.expansionBonus = ExpansionModel.scoreBonus(
+            territories: gameState.countries.filter { $0.territoryOf == gameState.playerCountryID && !$0.isDestroyed }.count,
+            earned: gameState.shadow.resourceEarnings, statehoods: 0)
+
         // Difficulty multiplier
         switch gameState.difficultyLevel {
         case .easy: score.difficultyMultiplier = 1.0
@@ -108,6 +115,7 @@ struct GameScore: Codable {
         total += score.allianceBonus
         total += score.treatyBonus
         total += score.economicBonus
+        total += score.expansionBonus ?? 0
         total = Int(Double(total) * score.difficultyMultiplier)
         score.finalScore = max(0, total)
 

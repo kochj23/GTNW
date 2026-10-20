@@ -100,6 +100,13 @@ struct ShadowState: Codable {
     var fleetDeployments: [FleetDeployment] = []
     /// Restarted chemical / biological programs by kind (3.6.0).
     var wmdPrograms: [String: WMDProgram] = [:]
+    /// Expansion (3.7.0): dates lands were taken (claimed or annexed), when each territory was taken, territories
+    /// already announced as producing, resource income earned ($B), and whether the impeachment warning is out.
+    var expansionLog: [Date] = []
+    var claimDates: [String: Date] = [:]
+    var producing: Set<String> = []
+    var resourceEarnings: Double = 0
+    var impeachmentWarned = false
 
     // Scenario
     var scenarioID: String?
@@ -135,6 +142,7 @@ struct ShadowState: Codable {
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
+        case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned
     }
 
     init() {}
@@ -170,6 +178,11 @@ struct ShadowState: Codable {
         garrisons = try c.decodeIfPresent([String: Double].self, forKey: .garrisons) ?? [:]
         fleetDeployments = try c.decodeIfPresent([FleetDeployment].self, forKey: .fleetDeployments) ?? []
         wmdPrograms = try c.decodeIfPresent([String: WMDProgram].self, forKey: .wmdPrograms) ?? [:]
+        expansionLog = try c.decodeIfPresent([Date].self, forKey: .expansionLog) ?? []
+        claimDates = try c.decodeIfPresent([String: Date].self, forKey: .claimDates) ?? [:]
+        producing = try c.decodeIfPresent(Set<String>.self, forKey: .producing) ?? []
+        resourceEarnings = try c.decodeIfPresent(Double.self, forKey: .resourceEarnings) ?? 0
+        impeachmentWarned = try c.decodeIfPresent(Bool.self, forKey: .impeachmentWarned) ?? false
     }
 }
 

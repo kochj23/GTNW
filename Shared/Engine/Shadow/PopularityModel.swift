@@ -91,7 +91,7 @@ enum PopularityModel {
     static func impeachmentText(stage: Int) -> String {
         switch stage {
         case 1: return "House committees open hearings into the conduct of the Presidency."
-        case 2: return "Articles of impeachment are being drafted on Capitol Hill."
+        case 2: return "Articles of impeachment are being drafted on Capitol Hill. The House votes at the next monthly poll unless approval recovers above 38% and the outrage fades."
         case 3: return "The House has voted to impeach. The Senate trial begins."
         default: return "The Senate has voted to remove the President from office."
         }
