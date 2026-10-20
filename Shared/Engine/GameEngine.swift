@@ -1814,8 +1814,12 @@ extension GameEngine {
 
     // MARK: - Shadow President Actions
 
-    func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String) {
+    func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String, size: AttackSize? = nil) {
         guard var gameState = gameState else { return }
+        // 3.4.0: the President's sizing step (see AttackSizing). nil = the pre-3.4 attack; Standard is identical.
+        let kinds = AttackSizing.kinds(for: action)
+        let sized = size.map { AttackSizing.clamp($0, for: action, in: gameState) }
+        let m = sized.map { AttackSizing.scale($0, for: action, in: gameState) } ?? 1
 
         // ── Route menu labels that used to LIE to their real engine verbs ─────
         // Previously these fell through the generic resolver and did nothing
@@ -1823,14 +1827,16 @@ extension GameEngine {
         switch action {
         case .launchNukes, .preemptive, .firstStrike, .strategicNuke, .tacticalNuke, .retaliate:
             if let attacker = getCountry(playerID), attacker.nuclearWarheads > 0 {
-                let warheads: Int
+                var warheads: Int
                 switch action {
                 case .tacticalNuke:                        warheads = min(3, attacker.nuclearWarheads)
                 case .strategicNuke, .firstStrike, .preemptive: warheads = min(10, attacker.nuclearWarheads)
                 default:                                   warheads = min(5, attacker.nuclearWarheads)
                 }
+                if let s = sized, playerID == gameState.playerCountryID { warheads = max(1, min(attacker.nuclearWarheads, s.warheads)) }
                 addLog("☢️ \(action.rawValue.uppercased()) ordered against \(getCountry(targetID)?.name ?? targetID)", type: .critical)
                 launchNuclearStrike(from: playerID, to: targetID, warheads: warheads)
+                if let s = sized { applySizedFallout(action, target: targetID, size: s, scale: m, kinds: kinds, success: true) }
             } else {
                 addLog("❌ \(action.rawValue): no nuclear warheads available.", type: .error)
             }
@@ -1906,12 +1912,15 @@ extension GameEngine {
         }
         // ─────────────────────────────────────────────────────────────────────
 
-        let result = ShadowPresidentActionManager.execute(
+        let isSized = sized != nil && !kinds.isEmpty
+        var result = ShadowPresidentActionManager.execute(
             action: action,
             from: playerID,
             to: targetID,
-            gameState: &gameState
+            gameState: &gameState,
+            successChance: isSized ? min(action.successChance, AttackSizing.successOdds(scale: m)) : nil
         )
+        if isSized { result.relationChange = Int((Double(result.relationChange) * AttackSizing.relationFactor(scale: m)).rounded()) }
 
         if result.relationChange != 0 {
             modifyDiplomaticRelation(from: playerID, to: targetID, by: result.relationChange)
@@ -1923,6 +1932,9 @@ extension GameEngine {
 
         if result.triggeredWar {
             declareWar(aggressor: playerID, defender: targetID)
+        }
+        if isSized, let s = sized {
+            applySizedFallout(action, target: targetID, size: s, scale: m, kinds: kinds, success: result.success)
         }
 
         // Outcome log — clearly labelled as success or failure

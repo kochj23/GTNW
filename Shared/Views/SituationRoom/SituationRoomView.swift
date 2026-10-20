@@ -353,6 +353,8 @@ struct CountryDossier: View {
     var scrolls = true
     /// Set when the selection is unclaimed land rather than a country (3.3.0).
     var unclaimedID: String? = nil
+    /// Expedition size, thousands (3.4.0): troops only; the 5K standard is plenty with no army to face.
+    @State private var expedition = AttackSizing.expeditionStandard
 
     var body: some View {
         Group {
@@ -384,7 +386,15 @@ struct CountryDossier: View {
                  + "Costs one action and a little goodwill abroad: rivals by 5, the rest of the world by 2.")
                 .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("SEND EXPEDITION") { if gameEngine.claimLand(id) { onSheet(.nameClaim) } }
+            let free = AttackSizing.freeTroops(gameState)
+            HStack(spacing: 6) {
+                Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                Button("−") { expedition = max(1, expedition - 1) }.buttonStyle(ThemedButtonStyle())
+                Text("\(Int(expedition))K").font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                Button("+") { expedition = min(max(1, free), expedition + 1) }.buttonStyle(ThemedButtonStyle())
+                Text("\(Int(free))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+            }
+            Button("SEND EXPEDITION") { if gameEngine.claimLand(id, troops: expedition) { onSheet(.nameClaim) } }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
                 .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver)
                 .accessibilityLabel("Send an expedition to claim \(land?.name ?? id)")
@@ -573,6 +583,8 @@ struct ActionLadderSheet: View {
     @ObservedObject var gameState: GameState
     @State private var action: PresidentialAction?
     @State private var playingAnimation: String?
+    /// The sizing step (3.4.0): set to Standard when an offensive is picked; nil for actions that aren't sized.
+    @State private var size: AttackSize?
 
     private var actions: [PresidentialAction] {
         PresidentialAction.allCases.filter { $0.rung == rung && $0.eraAvailableYear <= gameState.currentYear }
@@ -593,7 +605,10 @@ struct ActionLadderSheet: View {
                 ScrollView {
                     VStack(spacing: 4) {
                         ForEach(actions) { a in
-                            Button { action = a } label: {
+                            Button {
+                                action = a
+                                size = AttackSizing.kinds(for: a).isEmpty ? nil : AttackSizing.standard(a, in: gameState)
+                            } label: {
                                 HStack {
                                     Circle().fill(a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen).frame(width: FontScale.w(7), height: FontScale.h(7))
                                     Text(a.rawValue).font(ThemeFont.mono(11, .bold))
@@ -613,6 +628,10 @@ struct ActionLadderSheet: View {
                     if let a = action {
                         Text(a.rawValue.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.neonCyan)
                         Text(a.description).font(ThemeFont.mono(11)).foregroundColor(GTNWColors.terminalGreen)
+                        if size != nil {
+                            AttackSizingPanel(action: a, size: Binding(get: { size ?? AttackSize() }, set: { size = $0 }),
+                                              gameState: gameState, target: target)
+                        }
                         let advice = AdviceEngine.advise(action: a, player: player, target: target, gameState: gameState)
                         AdvicePanel(advice: advice)
                         HStack {
@@ -624,7 +643,8 @@ struct ActionLadderSheet: View {
                             Spacer()
                             Button("DO IT") { perform(a, advice: advice) }
                                 .buttonStyle(ThemedButtonStyle(color: a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen, prominent: true))
-                                .disabled(gameState.actionsRemaining == 0)
+                                .disabled(gameState.actionsRemaining == 0
+                                          || AttackSizing.kinds(for: a).contains { AttackSizing.available($0, in: gameState) <= 0 })
                         }
                     } else {
                         Text("Choose an action. The responsible advisor will tell you what they think before you commit.")
@@ -636,7 +656,7 @@ struct ActionLadderSheet: View {
             }
         }
         .padding(14)
-        .frame(width: FontScale.w(720), height: FontScale.h(480))
+        .frame(width: FontScale.w(720), height: FontScale.h(size == nil ? 480 : 640))
         .background(Theme.isRetro ? EGA.blue : Color.black)
         .overlay {
             if let anim = playingAnimation {
@@ -650,7 +670,7 @@ struct ActionLadderSheet: View {
     }
 
     private func perform(_ a: PresidentialAction, advice: ActionAdvice) {
-        gameEngine.performAdvisedAction(a, targetID: target.id, advice: advice)
+        gameEngine.performAdvisedAction(a, targetID: target.id, advice: advice, size: size)
         let media = ShadowPack.media(forActionCase: String(describing: a))
         if let sound = media.sound { ShadowPack.shared.play(sound) }
         if let anim = media.animation, let clip = ShadowPack.shared.animation(anim) {

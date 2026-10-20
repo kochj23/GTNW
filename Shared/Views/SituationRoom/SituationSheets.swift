@@ -673,3 +673,80 @@ struct TerritoryNameSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Sizing an offensive (3.4.0)
+
+/// The sizing step shown before an offensive: presets plus one slider per force the attack uses, bounded by what
+/// the U.S. has free, and a read-out of what the size changes (odds, losses, world reaction, escalation).
+struct AttackSizingPanel: View {
+    let action: PresidentialAction
+    @Binding var size: AttackSize
+    @ObservedObject var gameState: GameState
+    let target: Country?
+    /// Offscreen snapshots can't render sliders; they pass false.
+    var live = true
+
+    var body: some View {
+        let kinds = AttackSizing.kinds(for: action)
+        let m = AttackSizing.scale(size, for: action, in: gameState)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("FORCE SIZE").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            HStack(spacing: 6) {
+                ForEach(AttackPreset.allCases) { p in
+                    let s = AttackSizing.preset(p, for: action, in: gameState)
+                    Button(p.title.uppercased()) { size = s }
+                        .buttonStyle(ThemedButtonStyle(color: p == .overwhelming ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: s == size))
+                }
+            }
+            ForEach(kinds) { k in
+                let cap = AttackSizing.available(k, in: gameState)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(k.label.uppercased()).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                        Spacer()
+                        Text(cap > 0 ? "\(Int(size.amount(k))) OF \(Int(cap)) FREE" : "NONE AVAILABLE IN \(gameState.currentYear)")
+                            .font(ThemeFont.mono(9, .bold)).foregroundColor(cap > 0 ? (Theme.isRetro ? EGA.white : .white) : GTNWColors.terminalRed)
+                    }
+                    if cap >= 2 {
+                        if live {
+                            Slider(value: Binding(get: { size.amount(k) }, set: { size.set(k, $0) }), in: 1...cap, step: 1)
+                        } else {
+                            GeometryReader { g in
+                                ZStack(alignment: .leading) {
+                                    Rectangle().fill(Theme.isRetro ? EGA.black : Color.white.opacity(0.1))
+                                    Rectangle().fill(GTNWColors.terminalAmber).frame(width: g.size.width * min(1, size.amount(k) / cap))
+                                }
+                            }
+                            .frame(height: FontScale.h(8))
+                        }
+                    }
+                }
+            }
+            Text(readout(kinds: kinds, scale: m))
+                .font(ThemeFont.mono(10)).foregroundColor(AttackSizing.escalates(scale: m) ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(8)
+        .themedPanel(retroFill: EGA.black)
+    }
+
+    /// Honest numbers from the same functions the engine uses.
+    private func readout(kinds: [ForceKind], scale m: Double) -> String {
+        var parts: [String] = []
+        if kinds.contains(.troops), let t = target, let p = gameState.getPlayerCountry() {
+            parts.append("Opening odds \(Int(AttackSizing.invasionOdds(troops: size.troops, attacker: p, defender: t) * 100))%")
+        } else {
+            parts.append("Success \(Int(AttackSizing.successOdds(scale: m) * 100))%")
+        }
+        if kinds.contains(.aircraft), let t = target {
+            parts.append("~\(AttackSizing.aircraftLost(sorties: size.aircraft, against: t)) aircraft lost")
+        }
+        if kinds.contains(.warheads) {
+            parts.append("Up to \((size.warheads * 1_000_000).formatted()) casualties before defences; retaliation up to \(size.warheads * 2) warheads")
+        }
+        let hit = AttackSizing.worldHit(scale: m)
+        parts.append(hit > 0 ? "World opinion −\(hit)" : "No extra world reaction")
+        if AttackSizing.escalates(scale: m) { parts.append("ESCALATION: DEFCON rises") }
+        return parts.joined(separator: " · ")
+    }
+}

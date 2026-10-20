@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-364%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.3.0-blue)
+![Tests](https://img.shields.io/badge/tests-381%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.4.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -143,6 +143,35 @@ Everything happens on one screen:
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
   ```
+- **Size your offensives (new in 3.4.0)**: before a ground invasion, air strike, bombardment or nuclear strike, the
+  action sheet shows a **Force size** step: Probe / Standard / Overwhelming presets plus a slider per force the attack
+  uses (ground troops in thousands, aircraft sorties, warheads), bounded by what the U.S. has free right now and by the
+  era (no aircraft before 1914, no warheads before 1945). A read-out shows the honest consequences from the engine's own
+  formulas. **Standard is exactly the pre-3.4 attack** (3 / 5 / 10 warheads by action, the War Room's opening force of
+  35% of the force pool, a fifth of the air arm). Expeditions to unclaimed land are sized in troops alone (5K standard;
+  1K is enough, and the force stays on as the garrison).
+
+  | Effect | Rule (m = chosen ÷ standard) |
+  |---|---|
+  | Success odds | min(1, √m): only an undersized attack can fail |
+  | Target's relations | the action's usual change × (0.75 + 0.25 m) |
+  | Rest of the world | −round(4 × (m − 1)) relations, ruthlessness +round(5 × (m − 1)), for m > 1 |
+  | Escalation | m ≥ 2 raises DEFCON one more step |
+  | Ground troops | the new front opens with the chosen troops; the War Room then fights it (more troops: better odds, more casualties both ways); they are tied up until it ends |
+  | Air | aircraft lost = sorties × 4% × enemy strength, out of the air arm for the rest of the game; a bigger raid kills 5% × (m − 1) of the enemy's front line |
+  | Nuclear | the chosen warheads go to the existing strike: damage, radiation, casualties, and retaliation up to twice as many |
+
+  ```mermaid
+  flowchart LR
+      A[Pick an offensive] --> K{AttackSizing.kinds}
+      K -- none --> X[Unsized action<br/>as before]
+      K -- troops / aircraft / warheads --> S[Force size step<br/>Probe · Standard · Overwhelming · sliders]
+      S --> B[Bounded by free forces<br/>and the era]
+      B --> E[executeShadowPresidentAction<br/>size → m]
+      E --> O[Odds, relations, world reaction,<br/>DEFCON, fronts, losses]
+      E --> P[play event attack_ordered<br/>e.g. 12 warheads]
+  ```
+  Computer-run countries still attack at their fixed sizes.
 - **Unclaimed lands (new in 3.3.0)**: start in an era before a country existed (Africa before ~1960, Libya before
   1951, South Africa before 1910) and its land is on the map as **unclaimed**: parchment on the modern map, light gray
   on the EGA map, under every filter, with an `UNCLAIMED` tag and an *Unclaimed* legend swatch. Click it for a short
@@ -596,6 +625,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Ordering a sized offensive (3.4.0) | Event `attack_ordered` (`action`, `target`, `target_name`, `troops` / `aircraft` / `warheads`, `aircraft_lost`, `scale`, `success`, `summary` such as "12 warheads") |
 | Claiming land / renaming a territory (3.3.0) | Event `claimed_land` (`land`, `name`, `game_date`) or `renamed_territory` (`land`, `old_name`, `name`, `game_date`) at once |
 | Game over | Event `game_over`; final upsert with `ended_at`, `outcome` (`victory`/`defeat`), `score` and the full summary. The `gtnw.game_history` row uses the session id, so they join (`history_id`) |
 | Starting another game mid-game / quitting the app | The open session is closed as `abandoned` / `quit` (best effort; otherwise the reader's 30-minute idle rule ends it) |
@@ -611,18 +641,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **364 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **381 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 147 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 54 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 51 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 22 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 20 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 41 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 25 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 151 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 59 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 54 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 23 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 21 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 43 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 26 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -646,6 +676,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.4.0 | Oct 2026 | Size your offensives: troops, aircraft and warheads with Probe / Standard / Overwhelming presets that change odds, losses, world reaction and escalation |
 | 3.3.0 | Oct 2026 | Unclaimed lands: claim land no country held in your era (e.g. 1800s Africa) and name it; rename any U.S. territory |
 | 3.2.0 | Oct 2026 | Terms of surrender: annex a vanquished country as a U.S. territory (shown on the map) or choose its new government |
 | 3.1.3 | Oct 2026 | Fix: no more End Turn crash when a random crisis has no eligible country left late in a game |

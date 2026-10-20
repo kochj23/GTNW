@@ -92,6 +92,10 @@ struct ShadowState: Codable {
     /// Surrenders to the U.S. waiting for the President's choice: annex, or pick the new government (3.2.0).
     /// Unanswered ones fall back to the victor's-model government at the next turn.
     var pendingSettlements: [PostWarSettlement] = []
+    /// Aircraft shot down in the President's air strikes (3.4.0); they come out of the air arm for the rest of the game.
+    var aircraftLost: Int = 0
+    /// U.S. troops (thousands) holding each territory, by country id (3.4.0); not free for other offensives.
+    var garrisons: [String: Double] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -126,7 +130,7 @@ struct ShadowState: Codable {
         case popularity, polls, electionsEnabled, lastElection, termsWon, impeachmentStage, ruthlessness
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
-        case playSessionID, playSessionStartedAt, pendingSettlements
+        case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons
     }
 
     init() {}
@@ -158,6 +162,8 @@ struct ShadowState: Codable {
         playSessionID = try c.decodeIfPresent(UUID.self, forKey: .playSessionID)
         playSessionStartedAt = try c.decodeIfPresent(Date.self, forKey: .playSessionStartedAt)
         pendingSettlements = try c.decodeIfPresent([PostWarSettlement].self, forKey: .pendingSettlements) ?? []
+        aircraftLost = try c.decodeIfPresent(Int.self, forKey: .aircraftLost) ?? 0
+        garrisons = try c.decodeIfPresent([String: Double].self, forKey: .garrisons) ?? [:]
     }
 }
 

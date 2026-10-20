@@ -303,14 +303,203 @@ extension CombatModel {
 
     /// An unclaimed land taken by `owner`: a new country on the land's modern outline, annexed on the spot like a
     /// 3.2.0 territory. Nobody lived under a government there to resist, so it starts quieter than an occupation.
-    static func claim(_ land: CountryTemplate, for owner: Country) -> Country {
+    /// `troops` (thousands, 3.4.0) sizes the expedition: the standard 5K gives the pre-3.4 garrison (strength 5,
+    /// stability 50); a bigger one holds the land more firmly (strength = troops, stability +10 per doubling, 30…70).
+    static func claim(_ land: CountryTemplate, for owner: Country, troops: Double = AttackSizing.expeditionStandard) -> Country {
         var c = land.toCountry()
         annex(&c, to: owner)
-        c.militaryStrength = 5   // a small garrison; there was no army to defeat
-        c.stability = 50
+        let m = max(0.01, troops / AttackSizing.expeditionStandard)
+        c.militaryStrength = max(1, min(100, Int((5 * m).rounded())))   // the garrison; there was no army to defeat
+        c.stability = max(30, min(70, 50 + Int((10 * log2(m)).rounded())))
         var p = c.profile
         p.outcry = min(p.outcry, 20)
         c.profile = p
         return c
+    }
+}
+
+// MARK: - Sizing an offensive (3.4.0)
+
+/// What an offensive can be sized by. Each attack shows only the ones that fit it.
+enum ForceKind: String, Codable, CaseIterable, Identifiable {
+    case troops, aircraft, warheads
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .troops: return "Ground troops (thousands)"
+        case .aircraft: return "Aircraft (sorties)"
+        case .warheads: return "Nuclear warheads"
+        }
+    }
+}
+
+/// The size of an offensive the President orders. Only the fields for the attack's `ForceKind`s are used.
+struct AttackSize: Codable, Hashable {
+    var troops: Double = 0
+    var aircraft: Int = 0
+    var warheads: Int = 0
+
+    func amount(_ k: ForceKind) -> Double {
+        switch k {
+        case .troops: return troops
+        case .aircraft: return Double(aircraft)
+        case .warheads: return Double(warheads)
+        }
+    }
+
+    mutating func set(_ k: ForceKind, _ v: Double) {
+        switch k {
+        case .troops: troops = v.rounded()
+        case .aircraft: aircraft = Int(v.rounded())
+        case .warheads: warheads = Int(v.rounded())
+        }
+    }
+}
+
+/// Probe / Standard / Overwhelming. Standard is exactly what the game did before 3.4.0.
+enum AttackPreset: String, CaseIterable, Identifiable {
+    case probe, standard, overwhelming
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var multiplier: Double {
+        switch self {
+        case .probe: return 0.5
+        case .standard: return 1
+        case .overwhelming: return 2.5
+        }
+    }
+}
+
+/// The sizing rules. Every effect is a function of the scale m = chosen ÷ standard for the attack's main force
+/// (warheads, else troops, else aircraft), so Standard (m = 1) reproduces the pre-3.4 numbers exactly:
+///   success odds        min(1, √m)                    — only an undersized attack can fail
+///   target's relations  legacy change × (0.75 + 0.25 m)
+///   rest of the world   −round(4 × max(0, m − 1))     relations with the U.S.; ruthlessness +round(5 × max(0, m − 1))
+///   escalation          m ≥ 2 raises DEFCON one more step
+///   ground troops       the new front starts with the chosen troops (casualties then follow the War Room model)
+///   air strikes         enemy troops −5% × max(0, m − 1) of their front; aircraft lost = round(sorties × 4% × enemy strength)
+///   nuclear             the chosen warheads go to the existing strike (damage, radiation, casualties, retaliation)
+/// Bounds: 1 … what the U.S. has free right now (`available`), and nothing in an era that doesn't have it.
+enum AttackSizing {
+    static let nuclearActions: Set<PresidentialAction> = [.launchNukes, .preemptive, .firstStrike, .strategicNuke, .tacticalNuke, .retaliate]
+
+    /// The forces an action is sized by (empty = not an offensive the President sizes).
+    static func kinds(for action: PresidentialAction) -> [ForceKind] {
+        if nuclearActions.contains(action) { return [.warheads] }
+        switch action {
+        case .groundInvasion: return [.troops]
+        case .airStrike, .bombardment: return [.aircraft]
+        default: return []
+        }
+    }
+
+    /// The kind whose scale drives the effects.
+    static func primary(_ kinds: [ForceKind]) -> ForceKind? {
+        kinds.contains(.warheads) ? .warheads : (kinds.contains(.troops) ? .troops : kinds.first)
+    }
+
+    /// Aircraft the U.S. can put up in a year: none before military aviation (1914), a small air arm to 1938,
+    /// a WWII-sized one 1939–45, a smaller modern one after; scaled by military strength, less aircraft lost.
+    static func aircraftPool(_ c: Country, year: Int, lost: Int = 0) -> Int {
+        guard year >= 1914 else { return 0 }
+        let perPoint = year < 1939 ? 2 : (year < 1946 ? 30 : 10)
+        return max(0, max(1, c.militaryStrength) * perPoint - lost)
+    }
+
+    /// Troops (thousands) not already in a fight or garrisoning a territory.
+    static func freeTroops(_ gs: GameState) -> Double {
+        guard let p = gs.getPlayerCountry() else { return 0 }
+        let fighting = gs.shadow.fronts.filter { $0.status == .fighting }.reduce(0.0) { sum, f in
+            sum + (f.usSide != nil ? f.usTroops : 0) + (f.attacker == p.id ? f.attackerTroops : 0)
+        }
+        return max(0, CombatModel.forcePool(p) - fighting - gs.shadow.garrisons.values.reduce(0, +))
+    }
+
+    /// What the U.S. can send of one kind right now.
+    static func available(_ k: ForceKind, in gs: GameState) -> Double {
+        guard let p = gs.getPlayerCountry() else { return 0 }
+        switch k {
+        case .troops: return freeTroops(gs)
+        case .aircraft: return Double(aircraftPool(p, year: gs.currentYear, lost: gs.shadow.aircraftLost))
+        case .warheads: return gs.currentYear >= 1945 ? Double(p.nuclearWarheads) : 0
+        }
+    }
+
+    /// The pre-3.4 size of each attack: 3 / 5 / 10 warheads by action, the War Room's opening force (35% of the
+    /// force pool), and a fifth of the air arm.
+    static func standard(_ action: PresidentialAction, in gs: GameState) -> AttackSize {
+        guard let p = gs.getPlayerCountry() else { return AttackSize() }
+        let warheads: Int
+        switch action {
+        case .tacticalNuke: warheads = 3
+        case .strategicNuke, .firstStrike, .preemptive: warheads = 10
+        default: warheads = 5
+        }
+        return AttackSize(troops: (CombatModel.forcePool(p) * 0.35).rounded(),
+                          aircraft: max(1, aircraftPool(p, year: gs.currentYear) / 5),
+                          warheads: min(warheads, p.nuclearWarheads))
+    }
+
+    /// A preset, bounded by what is available (and at least 1 of anything available).
+    static func preset(_ preset: AttackPreset, for action: PresidentialAction, in gs: GameState) -> AttackSize {
+        let std = standard(action, in: gs)
+        if preset == .standard { return std }
+        var s = std
+        for k in kinds(for: action) {
+            let cap = available(k, in: gs)
+            s.set(k, min(cap, max(cap > 0 ? 1 : 0, std.amount(k) * preset.multiplier)))
+        }
+        return s
+    }
+
+    /// Clamp a requested size to 1 … available for each kind the action uses.
+    static func clamp(_ size: AttackSize, for action: PresidentialAction, in gs: GameState) -> AttackSize {
+        var s = size
+        for k in kinds(for: action) {
+            let v = size.amount(k)
+            s.set(k, max(min(1, available(k, in: gs)), min(available(k, in: gs), v.isFinite ? v : 0)))
+        }
+        return s
+    }
+
+    /// m = chosen ÷ standard for the main force (1 when nothing is sized).
+    static func scale(_ size: AttackSize, for action: PresidentialAction, in gs: GameState) -> Double {
+        guard let k = primary(kinds(for: action)) else { return 1 }
+        let std = standard(action, in: gs).amount(k)
+        guard std > 0 else { return 1 }
+        return max(0, size.amount(k) / std)
+    }
+
+    static func successOdds(scale m: Double) -> Double { min(1, m.squareRoot()) }
+    static func relationFactor(scale m: Double) -> Double { 0.75 + 0.25 * m }
+    static func worldHit(scale m: Double) -> Int { Int((4 * max(0, m - 1)).rounded()) }
+    static func ruthlessness(scale m: Double) -> Int { Int((5 * max(0, m - 1)).rounded()) }
+    static func escalates(scale m: Double) -> Bool { m >= 2 }
+    static func aircraftLost(sorties: Int, against target: Country) -> Int {
+        Int((Double(sorties) * 0.04 * Double(max(1, target.militaryStrength)) / 100).rounded())
+    }
+    static func airBlow(scale m: Double) -> Double { 0.05 * max(0, m - 1) }
+
+    /// The opening odds of a ground offensive with `troops` (thousands): the War Room's first-week power ratio r,
+    /// as r² ÷ (1 + r²). Shown on the sizing panel; the war itself is still fought week by week.
+    static func invasionOdds(troops: Double, attacker: Country, defender: Country) -> Double {
+        let pa = CombatModel.power(troops: troops, will: 0.8, strength: attacker.militaryStrength, defending: false)
+        let pd = CombatModel.power(troops: CombatModel.forcePool(defender) * 0.55, will: 0.85, strength: defender.militaryStrength, defending: true)
+        let r = pa / max(0.001, pd)
+        return r * r / (1 + r * r)
+    }
+
+    /// "12 warheads", "40K troops, 200 aircraft": for the log, the ticker and play history.
+    /// An expedition to unclaimed land (3.3.0) needs troops only; 5K is the standard (pre-3.4) garrison.
+    static let expeditionStandard: Double = 5
+
+    static func describe(_ size: AttackSize, kinds: [ForceKind]) -> String {
+        kinds.map { k -> String in
+            switch k {
+            case .troops: return "\(Int(size.troops))K troops"
+            case .aircraft: return "\(size.aircraft) aircraft"
+            case .warheads: return "\(size.warheads) warhead\(size.warheads == 1 ? "" : "s")"
+            }
+        }.joined(separator: ", ")
     }
 }

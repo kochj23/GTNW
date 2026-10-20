@@ -439,9 +439,11 @@ class ShadowPresidentActionManager {
         action: PresidentialAction,
         from playerID: String,
         to targetID: String,
-        gameState: inout GameState
+        gameState: inout GameState,
+        successChance: Double? = nil
     ) -> ActionResult {
-        let success = Double.random(in: 0...1) < action.successChance
+        // `successChance` (3.4.0): an undersized offensive can fail; nil = the action's own odds.
+        let success = Double.random(in: 0...1) < (successChance ?? action.successChance)
 
         guard success else {
             return ActionResult(

@@ -408,27 +408,82 @@ extension GameEngine {
     /// Send an expedition to an unclaimed land (3.3.0). There's no government or army to fight, so it is taken at
     /// once as a U.S. territory, at the cost of one action and a little goodwill abroad (rivals by 5, others by 2).
     /// The caller then asks the President to name it. False if the land isn't unclaimed or no action is left.
+    /// `troops` (3.4.0, thousands, at least 1 and no more than are free) stays on as the garrison; the 5K standard
+    /// is the pre-3.4 expedition, and the world's reaction scales with size × (0.75 + 0.25 m).
     @discardableResult
-    func claimLand(_ id: String) -> Bool {
+    func claimLand(_ id: String, troops: Double = AttackSizing.expeditionStandard) -> Bool {
         guard let gs = gameState, gs.actionsRemaining > 0, gs.unclaimedLandIDs.contains(id),
+              troops.isFinite, troops >= 1, troops <= max(AttackSizing.expeditionStandard, AttackSizing.freeTroops(gs)),
               let land = WorldCountriesDatabase.template(id: id), let owner = gs.getPlayerCountry(),
               let oi = gs.countries.firstIndex(where: { $0.id == owner.id }) else { return false }
-        let claimed = CombatModel.claim(land, for: owner)
+        let claimed = CombatModel.claim(land, for: owner, troops: troops)
         gs.countries.append(claimed)
         gs.countries[oi].alliances.insert(id)
         gs.countries[oi].diplomaticRelations[id] = 100
+        gs.shadow.garrisons[id] = troops
+        let f = AttackSizing.relationFactor(scale: troops / AttackSizing.expeditionStandard)
         for i in gs.countries.indices where !gs.countries[i].isDestroyed && !gs.countries[i].isTerritory
             && gs.countries[i].id != owner.id && !gs.countries[i].alliances.contains(owner.id) {
-            modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: gs.countries[i].alignment == .eastern ? -5 : -2)
+            let base = gs.countries[i].alignment == .eastern ? -5.0 : -2.0
+            modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: Int((base * f).rounded()))
         }
         gs.shadow.ruthlessness += 5
         let owned = owner.id == "USA" ? "U.S." : owner.name
         gs.shadow.post("An expedition plants the flag in \(claimed.name). It is now a \(owned) territory.", date: gs.currentDate, severity: 2)
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): unclaimed \(claimed.name) claimed as \(CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)).")
-        logPlayEvent("claimed_land", detail: ["land": id, "name": PlayHistory.text(claimed.name), "game_date": PlayHistory.day(gs.currentDate)])
+        logPlayEvent("claimed_land", detail: ["land": id, "name": PlayHistory.text(claimed.name), "troops_k": Int(troops),
+                                              "game_date": PlayHistory.day(gs.currentDate)])
         self.gameState = gs
         completePlayerAction()
         return true
+    }
+
+    /// 3.4.0: what the size of an offensive adds on top of the pre-3.4 attack (see `AttackSizing` for the maths).
+    /// At Standard (m = 1) it changes nothing in the world; it only records the order and any aircraft shot down.
+    func applySizedFallout(_ action: PresidentialAction, target: String, size: AttackSize, scale m: Double,
+                           kinds: [ForceKind], success: Bool) {
+        guard let gs = gameState, let t = gs.getCountry(id: target) else { return }
+        let player = gs.playerCountryID
+        func front() -> Int? {
+            syncFronts()
+            return gs.shadow.fronts.firstIndex { $0.status == .fighting && $0.attacker == player && $0.defender == target }
+        }
+        // Ground troops: the new front opens with the force the President sent.
+        if success, kinds.contains(.troops), m != 1, let i = front(), gs.shadow.fronts[i].battles == 0 {
+            gs.shadow.fronts[i].attackerTroops = size.troops
+            gs.shadow.fronts[i].attackerInitial = size.troops
+        }
+        // Air: the target's air defences down some aircraft; a bigger raid also thins the enemy's front line.
+        var lost = 0
+        if kinds.contains(.aircraft) {
+            lost = AttackSizing.aircraftLost(sorties: size.aircraft, against: t)
+            gs.shadow.aircraftLost += lost
+            let blow = AttackSizing.airBlow(scale: m)
+            if success, blow > 0, let i = front() {
+                let killed = gs.shadow.fronts[i].defenderTroops * blow
+                gs.shadow.fronts[i].defenderTroops -= killed
+                gs.shadow.fronts[i].defenderDead += killed * 0.3
+                gs.totalCasualties += Int(killed * 300)
+            }
+        }
+        // The world reacts to the size of it, and a very large attack climbs the escalation ladder.
+        let hit = AttackSizing.worldHit(scale: m)
+        if hit > 0 {
+            for c in gs.countries where c.id != player && c.id != target && !c.isDestroyed && !c.isTerritory {
+                modifyDiplomaticRelation(from: c.id, to: player, by: -hit)
+            }
+        }
+        gs.shadow.ruthlessness += Double(AttackSizing.ruthlessness(scale: m))
+        if AttackSizing.escalates(scale: m) { raiseDEFCON() }
+        let what = AttackSizing.describe(size, kinds: kinds)
+        addLog("🎯 \(action.rawValue.uppercased()) on \(t.name): \(what)\(lost > 0 ? " — \(lost) aircraft lost" : "")", type: .warning)
+        var detail: [String: Any] = ["action": action.rawValue, "target": target, "target_name": PlayHistory.text(t.name),
+                                     "scale": PlayHistory.num(m, places: 100), "success": success, "summary": PlayHistory.text(what),
+                                     "game_date": PlayHistory.day(gs.currentDate)]
+        for k in kinds { detail[k.rawValue] = k == .troops ? Int(size.troops) : Int(size.amount(k)) }
+        if kinds.contains(.aircraft) { detail["aircraft_lost"] = lost }
+        logPlayEvent("attack_ordered", detail: detail)
+        self.gameState = gs
     }
 
     /// Give one of the President's territories a new name (3.3.0). False for an invalid name (see
@@ -715,9 +770,10 @@ extension GameEngine {
 
     /// Carry out an action the player confirmed, after hearing the advice. Handles popularity, ruthlessness,
     /// the advisor's reaction to being followed or overruled, and the per-turn action allowance.
-    func performAdvisedAction(_ action: PresidentialAction, targetID: String, advice: ActionAdvice?) {
+    /// `size` (3.4.0) is the offensive's size from the sizing step; nil (or the Standard preset) is the pre-3.4 attack.
+    func performAdvisedAction(_ action: PresidentialAction, targetID: String, advice: ActionAdvice?, size: AttackSize? = nil) {
         guard let gs = gameState else { return }
-        executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID)
+        executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size)
         // Nuclear launches record their own fallout in launchNuclearStrike.
         if action.rung != .nuclear { recordPlayerAction(rung: action.rung, hostile: action.isHostile, detected: false) }
         if let a = advice, let id = a.advisorID, let i = gs.advisors.firstIndex(where: { $0.id == id }) {

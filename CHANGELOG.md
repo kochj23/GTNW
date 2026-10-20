@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-10-20 — Size your offensives
+
+### Added
+- **A sizing step before every offensive the President launches.** `AttackSizing` (CombatModel.swift) maps each attack
+  to the forces it uses (`ForceKind`: ground invasion → troops; air strike, bombardment → aircraft; launch / tactical /
+  strategic / preemptive / first-strike / retaliation nukes → warheads). `AttackSizingPanel` in the action sheet shows
+  Probe / Standard / Overwhelming (`AttackPreset`, ×0.5 / ×1 / ×2.5) and a slider per force, bounded by what is free
+  (`AttackSizing.available`: troops not on a front or garrisoning a territory; an era air arm, none before 1914, less
+  aircraft lost; warheads in the stockpile, none before 1945), plus a read-out of odds, losses, world reaction and
+  escalation from the engine's own functions.
+- Size changes outcomes (all monotonic in m = chosen ÷ standard, documented on `AttackSizing`): success odds √m capped
+  at 1; the target's relation change × (0.75 + 0.25 m); the rest of the world −4 (m − 1) and ruthlessness +5 (m − 1);
+  DEFCON one step more at m ≥ 2; a new front opens with the troops sent; aircraft lost to air defences
+  (`ShadowState.aircraftLost`) and a bigger raid thins the enemy line; the chosen warheads go to the existing strike.
+- Expeditions to unclaimed land (3.3.0) take a troop count (1K is enough; 5K standard); the troops stay as the
+  garrison (`ShadowState.garrisons`) and a larger garrison means a steadier territory.
+- Play history: event `attack_ordered` with the sizes and a summary ("12 warheads"); `claimed_land` gains `troops_k`.
+- 17 tests across all seven categories (381 total), including monotonicity, bounds and Standard = legacy; snapshots in
+  `Screenshots/3.4.0/`.
+
+### Unchanged
+- **Standard reproduces the pre-3.4 attack exactly** (tested side by side for invasion, air strike and nukes), and
+  callers that pass no size (the AI, Nova's API, the older command views) behave as before. Computer-run countries still
+  attack at fixed sizes. Saves gain two optional fields; older saves load.
+
 ## [3.3.0] - 2026-10-20 — Unclaimed lands
 
 ### Added
