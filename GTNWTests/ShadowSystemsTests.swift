@@ -1001,3 +1001,267 @@ final class UnclaimedLandPlayHistoryTests: XCTestCase {
         XCTAssertTrue(e.renameTerritory("KEN", to: "Kilimanjaro"))
     }
 }
+
+// MARK: - Sizing an offensive (3.4.0)
+
+@MainActor
+final class AttackSizingTests: XCTestCase {
+
+    private func modern() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    /// A second engine holding an exact copy of the game, for side-by-side comparisons.
+    private func twin(_ gs: GameState) throws -> (GameEngine, GameState) {
+        let copy = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let engine = GameEngine(); engine.gameState = copy
+        return (engine, copy)
+    }
+
+    // Unit: which forces each attack uses, and the pre-3.4 standard sizes
+
+    func testKindsFitTheAttack() {
+        XCTAssertEqual(AttackSizing.kinds(for: .tacticalNuke), [.warheads])
+        XCTAssertEqual(AttackSizing.kinds(for: .launchNukes), [.warheads])
+        XCTAssertEqual(AttackSizing.kinds(for: .groundInvasion), [.troops])
+        XCTAssertEqual(AttackSizing.kinds(for: .airStrike), [.aircraft])
+        XCTAssertEqual(AttackSizing.kinds(for: .bombardment), [.aircraft])
+        XCTAssertTrue(AttackSizing.kinds(for: .sendAmbassador).isEmpty)
+        XCTAssertTrue(AttackSizing.kinds(for: .sanctions).isEmpty)
+    }
+
+    func testStandardIsThePre34Size() throws {
+        let (_, gs) = try modern()
+        let usa = try XCTUnwrap(gs.getPlayerCountry())
+        XCTAssertEqual(AttackSizing.standard(.tacticalNuke, in: gs).warheads, 3)
+        XCTAssertEqual(AttackSizing.standard(.launchNukes, in: gs).warheads, 5)
+        XCTAssertEqual(AttackSizing.standard(.strategicNuke, in: gs).warheads, 10)
+        XCTAssertEqual(AttackSizing.standard(.groundInvasion, in: gs).troops, (CombatModel.forcePool(usa) * 0.35).rounded())
+        XCTAssertEqual(AttackSizing.preset(.standard, for: .groundInvasion, in: gs), AttackSizing.standard(.groundInvasion, in: gs))
+        XCTAssertEqual(AttackSizing.scale(AttackSizing.standard(.airStrike, in: gs), for: .airStrike, in: gs), 1)
+    }
+
+    func testEraRulesBoundWhatIsAvailable() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs1850 = try XCTUnwrap(engine.gameState)
+        XCTAssertEqual(AttackSizing.available(.aircraft, in: gs1850), 0, "no planes before military aviation")
+        XCTAssertEqual(AttackSizing.available(.warheads, in: gs1850), 0, "no nukes before 1945")
+        XCTAssertGreaterThan(AttackSizing.available(.troops, in: gs1850), 0)
+        let usa = try XCTUnwrap(gs1850.getPlayerCountry())
+        XCTAssertEqual(AttackSizing.aircraftPool(usa, year: 1913), 0)
+        XCTAssertGreaterThan(AttackSizing.aircraftPool(usa, year: 1918), 0)
+        XCTAssertGreaterThan(AttackSizing.aircraftPool(usa, year: 1944), AttackSizing.aircraftPool(usa, year: 1930), "WWII air arm")
+        let (_, gs) = try modern()
+        XCTAssertEqual(AttackSizing.available(.warheads, in: gs), Double(gs.getPlayerCountry()!.nuclearWarheads))
+    }
+
+    // Unit: monotonicity — more force, higher odds and higher costs
+
+    func testMoreForceMeansHigherOddsAndHigherCosts() throws {
+        let (_, gs) = try modern()
+        let usa = try XCTUnwrap(gs.getPlayerCountry()), mex = try XCTUnwrap(gs.getCountry(id: "MEX"))
+        var last = (odds: -1.0, inv: -1.0, rel: -1.0, hit: -1, ruth: -1, lost: -1)
+        for m in stride(from: 0.1, through: 4.0, by: 0.1) {
+            let odds = AttackSizing.successOdds(scale: m)
+            let inv = AttackSizing.invasionOdds(troops: 100 * m, attacker: usa, defender: mex)
+            let rel = AttackSizing.relationFactor(scale: m)
+            let hit = AttackSizing.worldHit(scale: m), ruth = AttackSizing.ruthlessness(scale: m)
+            let lost = AttackSizing.aircraftLost(sorties: Int(200 * m), against: mex)
+            XCTAssertGreaterThanOrEqual(odds, last.odds); XCTAssertGreaterThan(inv, last.inv); XCTAssertGreaterThan(rel, last.rel)
+            XCTAssertGreaterThanOrEqual(hit, last.hit); XCTAssertGreaterThanOrEqual(ruth, last.ruth); XCTAssertGreaterThanOrEqual(lost, last.lost)
+            last = (odds, inv, rel, hit, ruth, lost)
+        }
+        XCTAssertLessThan(AttackSizing.successOdds(scale: 0.5), 1, "an undersized attack can fail")
+        XCTAssertEqual(AttackSizing.successOdds(scale: 1), 1)
+        XCTAssertFalse(AttackSizing.escalates(scale: 1.9)); XCTAssertTrue(AttackSizing.escalates(scale: 2))
+    }
+
+    func testBiggerInvasionOpensWithMoreTroopsAndFightsHarder() throws {
+        let (e1, gs1) = try modern()
+        let (e2, gs2) = try twin(gs1)
+        let std = AttackSizing.standard(.groundInvasion, in: gs1).troops
+        e1.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 0.5))
+        e2.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 2))
+        let f1 = try XCTUnwrap(gs1.shadow.fronts.first { $0.defender == "MEX" && $0.status == .fighting })
+        let f2 = try XCTUnwrap(gs2.shadow.fronts.first { $0.defender == "MEX" && $0.status == .fighting })
+        XCTAssertEqual(f1.attackerTroops, (std * 0.5).rounded()); XCTAssertEqual(f2.attackerTroops, std * 2)
+        let o1 = CombatModel.battle(f1, attackerStrength: 100, defenderStrength: 50, rolls: (0.5, 0.5))
+        let o2 = CombatModel.battle(f2, attackerStrength: 100, defenderStrength: 50, rolls: (0.5, 0.5))
+        XCTAssertGreaterThan(o2.momentumChange, o1.momentumChange, "more troops win faster")
+        XCTAssertGreaterThan(o2.defenderLosses, o1.defenderLosses, "and inflict more casualties")
+        XCTAssertGreaterThan(o2.attackerLosses, o1.attackerLosses, "and take more in absolute terms")
+        XCTAssertLessThan(AttackSizing.freeTroops(gs2), AttackSizing.freeTroops(gs1), "troops sent are tied up")
+    }
+
+    func testMoreWarheadsMoreDamageAndAllAreSpent() throws {
+        let (e1, gs1) = try modern()
+        let (e2, gs2) = try twin(gs1)
+        let w0 = try XCTUnwrap(gs1.getPlayerCountry()).nuclearWarheads
+        e1.performAdvisedAction(.tacticalNuke, targetID: "IRN", advice: nil, size: AttackSize(warheads: 2))
+        e2.performAdvisedAction(.tacticalNuke, targetID: "IRN", advice: nil, size: AttackSize(warheads: 12))
+        XCTAssertEqual(gs1.nuclearStrikes.last?.warheadsUsed, 2)
+        XCTAssertEqual(gs2.nuclearStrikes.last?.warheadsUsed, 12)
+        XCTAssertEqual(gs2.getPlayerCountry()?.nuclearWarheads, w0 - 12, "warheads fired are spent")
+        XCTAssertGreaterThan(gs2.totalCasualties, gs1.totalCasualties)
+        XCTAssertGreaterThan(gs2.getCountry(id: "IRN")!.radiationLevel, gs1.getCountry(id: "IRN")!.radiationLevel)
+    }
+
+    func testBiggerAirStrikeLosesMoreAircraftAndCostsMoreAbroad() throws {
+        let (e1, gs1) = try modern()
+        let (e2, gs2) = try twin(gs1)
+        let std = AttackSizing.standard(.airStrike, in: gs1).aircraft
+        e1.performAdvisedAction(.airStrike, targetID: "VEN", advice: nil, size: AttackSize(aircraft: std))
+        e2.performAdvisedAction(.airStrike, targetID: "VEN", advice: nil, size: AttackSize(aircraft: std * 3))
+        XCTAssertGreaterThan(gs2.shadow.aircraftLost, gs1.shadow.aircraftLost)
+        XCTAssertLessThan(gs2.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0, gs1.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0)
+        XCTAssertGreaterThan(gs2.shadow.ruthlessness, gs1.shadow.ruthlessness)
+        XCTAssertLessThan(gs2.defconLevel.rawValue, gs1.defconLevel.rawValue, "an overwhelming strike escalates")
+        let f2 = try XCTUnwrap(gs2.shadow.fronts.first { $0.defender == "VEN" && $0.status == .fighting })
+        XCTAssertLessThan(f2.defenderTroops, f2.defenderInitial, "the raid thins the enemy line")
+    }
+
+    // Functional: the default selection reproduces the pre-3.4 behaviour exactly
+
+    func testStandardSizeEqualsLegacyBehaviour() throws {
+        for (action, target) in [(PresidentialAction.groundInvasion, "MEX"), (.airStrike, "CUB"), (.tacticalNuke, "PRK"), (.strategicNuke, "IRN")] {
+            let (legacy, gsL) = try modern()
+            let (sized, gsS) = try twin(gsL)
+            legacy.performAdvisedAction(action, targetID: target, advice: nil)
+            sized.performAdvisedAction(action, targetID: target, advice: nil, size: AttackSizing.preset(.standard, for: action, in: gsS))
+            XCTAssertEqual(gsS.countries, gsL.countries, action.rawValue)
+            XCTAssertEqual(gsS.defconLevel, gsL.defconLevel, action.rawValue)
+            XCTAssertEqual(gsS.shadow.popularity, gsL.shadow.popularity, action.rawValue)
+            XCTAssertEqual(gsS.shadow.ruthlessness, gsL.shadow.ruthlessness, action.rawValue)
+            XCTAssertEqual(gsS.shadow.fronts.count, gsL.shadow.fronts.count, action.rawValue)
+            XCTAssertEqual(gsS.activeWars.count, gsL.activeWars.count, action.rawValue)
+            XCTAssertEqual(gsS.nuclearStrikes.map(\.warheadsUsed), gsL.nuclearStrikes.map(\.warheadsUsed), action.rawValue)
+            XCTAssertEqual(gsS.totalCasualties, gsL.totalCasualties, action.rawValue)
+            XCTAssertEqual(gsS.actionsUsedThisTurn, gsL.actionsUsedThisTurn)
+        }
+    }
+
+    func testExpeditionToUnclaimedLandNeedsOnlyASmallForce() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        let (e2, gs2) = try twin(gs)
+        XCTAssertTrue(engine.claimLand("NGA", troops: 1), "a token force suffices: there's no army")
+        XCTAssertTrue(e2.claimLand("NGA", troops: 20))
+        let small = try XCTUnwrap(gs.getCountry(id: "NGA")), big = try XCTUnwrap(gs2.getCountry(id: "NGA"))
+        XCTAssertLessThan(small.militaryStrength, big.militaryStrength)
+        XCTAssertLessThan(small.stability, big.stability, "a bigger garrison holds the land more firmly")
+        XCTAssertEqual(gs2.shadow.garrisons["NGA"], 20)
+        XCTAssertLessThan(AttackSizing.freeTroops(gs2), AttackSizing.freeTroops(gs), "the garrison is tied up")
+        let (e3, gs3) = try twin(gs)
+        _ = e3
+        let std = CombatModel.claim(WorldCountriesDatabase.template(id: "KEN")!, for: gs3.getPlayerCountry()!)
+        XCTAssertEqual(std.militaryStrength, 5); XCTAssertEqual(std.stability, 50, "the standard 5K expedition is the 3.3.0 one")
+    }
+
+    // Security: bounds and validation
+
+    func testSizesAreClampedToWhatIsAvailable() throws {
+        let (_, gs) = try modern()
+        let free = AttackSizing.available(.troops, in: gs)
+        for bad in [-50.0, 0, .nan, .infinity, 1e12] {
+            let c = AttackSizing.clamp(AttackSize(troops: bad, aircraft: Int(min(1e9, max(-1e9, bad.isFinite ? bad : 0))), warheads: -3), for: .groundInvasion, in: gs)
+            XCTAssertGreaterThanOrEqual(c.troops, 1); XCTAssertLessThanOrEqual(c.troops, free)
+        }
+        let w = AttackSizing.clamp(AttackSize(warheads: 1_000_000), for: .launchNukes, in: gs).warheads
+        XCTAssertEqual(w, gs.getPlayerCountry()!.nuclearWarheads)
+        for p in AttackPreset.allCases {
+            for a in [PresidentialAction.groundInvasion, .airStrike, .launchNukes] {
+                let s = AttackSizing.preset(p, for: a, in: gs)
+                for k in AttackSizing.kinds(for: a) { XCTAssertLessThanOrEqual(s.amount(k), AttackSizing.available(k, in: gs)) }
+            }
+        }
+    }
+
+    func testBadExpeditionSizesAreRefused() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        for bad in [0.0, -5, .nan, .infinity, 1e9] { XCTAssertFalse(engine.claimLand("NGA", troops: bad), "\(bad)") }
+        XCTAssertTrue(gs.unclaimedLandIDs.contains("NGA"))
+        XCTAssertEqual(gs.actionsUsedThisTurn, 0)
+    }
+
+    func testOversizedNukeOrderFiresOnlyWhatExists() throws {
+        let (engine, gs) = try modern()
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+        gs.countries[i].nuclearWarheads = 4
+        engine.performAdvisedAction(.strategicNuke, targetID: "IRN", advice: nil, size: AttackSize(warheads: 500))
+        XCTAssertEqual(gs.nuclearStrikes.last?.warheadsUsed, 4)
+        XCTAssertEqual(gs.getPlayerCountry()?.nuclearWarheads, 0)
+    }
+
+    // Retry: sizes and tied-up forces survive a reload; old saves decode
+
+    func testLossesAndGarrisonsSurviveSaveAndOldSavesDecode() throws {
+        let (engine, gs) = try modern()
+        engine.performAdvisedAction(.airStrike, targetID: "VEN", advice: nil, size: AttackSize(aircraft: 400))
+        gs.shadow.garrisons["CUB"] = 12
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.aircraftLost, gs.shadow.aircraftLost)
+        XCTAssertGreaterThan(loaded.shadow.aircraftLost, 0)
+        XCTAssertEqual(loaded.shadow.garrisons["CUB"], 12)
+        XCTAssertEqual(AttackSizing.preset(.overwhelming, for: .airStrike, in: loaded), AttackSizing.preset(.overwhelming, for: .airStrike, in: gs))
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "aircraftLost"); shadow.removeValue(forKey: "garrisons"); json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(old.shadow.aircraftLost, 0)
+        XCTAssertTrue(old.shadow.garrisons.isEmpty)
+    }
+
+    func testRepeatedOrdersEachSpendTheirOwnForces() throws {
+        let (engine, gs) = try modern()
+        let w0 = gs.getPlayerCountry()!.nuclearWarheads
+        engine.performAdvisedAction(.tacticalNuke, targetID: "IRN", advice: nil, size: AttackSize(warheads: 2))
+        engine.performAdvisedAction(.tacticalNuke, targetID: "IRN", advice: nil, size: AttackSize(warheads: 2))
+        XCTAssertEqual(gs.getPlayerCountry()?.nuclearWarheads, w0 - 4, "a resubmitted order is a second strike, charged again")
+    }
+
+    // Performance
+
+    func testSizingMathIsCheap() throws {
+        let (_, gs) = try modern()
+        measure {
+            for _ in 0..<300 {
+                for a in [PresidentialAction.groundInvasion, .airStrike, .launchNukes] {
+                    for p in AttackPreset.allCases { _ = AttackSizing.scale(AttackSizing.preset(p, for: a, in: gs), for: a, in: gs) }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Play history for sized attacks (3.4.0)
+
+final class AttackSizingPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testAttackOrdersRecordTheirSize() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        let id = try XCTUnwrap(e.gameState?.shadow.playSessionID)
+        e.performAdvisedAction(.strategicNuke, targetID: "IRN", advice: nil, size: AttackSize(warheads: 12))
+        e.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: 40))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let orders = await remote.events(id).filter { $0.kind == "attack_ordered" }
+        XCTAssertEqual(orders.count, 2)
+        let nuke = PlayFixtures.detail(orders[0])
+        XCTAssertEqual(nuke["warheads"] as? Int, 12)
+        XCTAssertEqual(nuke["summary"] as? String, "12 warheads")
+        XCTAssertEqual(nuke["target"] as? String, "IRN")
+        XCTAssertEqual(PlayFixtures.detail(orders[1])["troops"] as? Int, 40)
+    }
+}

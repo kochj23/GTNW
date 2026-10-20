@@ -191,5 +191,34 @@ final class SnapshotRenderTests: XCTestCase {
                              size: CGSize(width: 1100, height: 600), name: "integration-claimed-after-load")
         XCTAssertGreaterThan((try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0, 10_000)
     }
+
+    /// 3.4.0: the sizing step for a ground invasion, an air strike and a nuclear strike, and the expedition control.
+    @MainActor
+    func testRenderAttackSizing() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        let mex = gs.getCountry(id: "MEX"), irn = gs.getCountry(id: "IRN")
+        let old = GameEngine()
+        old.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs1850 = try XCTUnwrap(old.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            let panels = VStack(alignment: .leading, spacing: 10) {
+                AttackSizingPanel(action: .groundInvasion, size: .constant(AttackSizing.preset(.standard, for: .groundInvasion, in: gs)),
+                                  gameState: gs, target: mex, live: false)
+                AttackSizingPanel(action: .airStrike, size: .constant(AttackSizing.preset(.overwhelming, for: .airStrike, in: gs)),
+                                  gameState: gs, target: mex, live: false)
+                AttackSizingPanel(action: .strategicNuke, size: .constant(AttackSize(warheads: 12)), gameState: gs, target: irn, live: false)
+            }
+            .padding(10).background(Theme.isRetro ? EGA.blue : Color.black)
+            print("SNAPSHOT \(try render(panels, size: CGSize(width: FontScale.w(460), height: FontScale.h(560)), name: "attack-sizing-\(t)").path)")
+            let dossier = CountryDossier(gameState: gs1850, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NGA")
+                .environmentObject(old).frame(width: FontScale.w(300))
+            print("SNAPSHOT \(try render(dossier, size: CGSize(width: FontScale.w(320), height: FontScale.h(320)), name: "expedition-\(t)").path)")
+        }
+    }
 }
 #endif
