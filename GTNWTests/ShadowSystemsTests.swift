@@ -714,4 +714,31 @@ final class PostWarSettlementTests: XCTestCase {
             for _ in 0..<500 { for g in PostWarGovernment.allCases { var c = base; CombatModel.installChosenGovernment(g, on: &c, by: usa) } }
         }
     }
+
+    // Retry: a double-click / resubmitted order never applies twice
+
+    func testAnnexOrderResubmittedTwiceSeizesTheArsenalOnce() throws {
+        let (engine, gs, s) = try usVictory(over: "PRK")
+        let usBefore = try XCTUnwrap(gs.getCountry(id: "USA")).nuclearWarheads
+        let seized = try XCTUnwrap(gs.getCountry(id: "PRK")).nuclearWarheads
+        XCTAssertTrue(engine.settle(s.id, choice: .annex))
+        let ruthAfterFirst = gs.shadow.ruthlessness
+        XCTAssertFalse(engine.settle(s.id, choice: .annex), "the retry is refused")
+        XCTAssertFalse(engine.settle(s.id, choice: .government(.clientState)), "and can't be swapped for another order")
+        XCTAssertEqual(gs.getCountry(id: "USA")?.nuclearWarheads, usBefore + seized)
+        XCTAssertEqual(gs.shadow.ruthlessness, ruthAfterFirst)
+    }
+
+    // Retry: the President saves (or the app quits) mid-decision, reloads, and answers then
+
+    func testPendingChoiceCanBeAnsweredAfterSaveAndReload() throws {
+        let (_, gs, s) = try usVictory(over: "VEN")
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let engine2 = GameEngine()
+        engine2.gameState = loaded
+        XCTAssertTrue(engine2.settle(s.id, choice: .government(.provisional)))
+        XCTAssertTrue(loaded.shadow.pendingSettlements.isEmpty)
+        XCTAssertEqual(loaded.getCountry(id: "VEN")?.electionCycle, 2)
+        XCTAssertFalse(loaded.getCountry(id: "VEN")!.isTerritory)
+    }
 }

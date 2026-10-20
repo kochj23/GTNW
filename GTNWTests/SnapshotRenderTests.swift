@@ -110,5 +110,38 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(rails, size: sz(500, 900), name: "2x-rails-\(t)").path)")
         }
     }
+
+    /// Integration (3.2.0): war → surrender → annex → save → load in a fresh engine → the loaded map still shows the
+    /// territory, and the second pending surrender can still be answered after the reload.
+    @MainActor
+    func testWarToTerritorySurvivesSaveLoadAndRendersOnTheMap() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        for target in ["CUB", "VEN"] {
+            engine.declareWar(aggressor: "USA", defender: target)
+            engine.syncFronts()
+            let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.defender == target && $0.status == .fighting })
+            engine.resolveFront(index: i, verdict: .attackerWon)
+        }
+        let cub = try XCTUnwrap(gs.shadow.pendingSettlements.first { $0.loser == "CUB" })
+        XCTAssertTrue(engine.settle(cub.id, choice: .annex))
+
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let engine2 = GameEngine()
+        engine2.gameState = loaded
+        let c = try XCTUnwrap(loaded.getCountry(id: "CUB"))
+        XCTAssertTrue(c.isTerritory)
+        XCTAssertEqual(c.alignment, loaded.getCountry(id: "USA")?.alignment)
+        XCTAssertEqual(CombatModel.territoryTitle(ownerID: c.territoryOf ?? "", ownerName: "United States"), "U.S. TERRITORY")
+        let ven = try XCTUnwrap(loaded.shadow.pendingSettlements.first { $0.loser == "VEN" })
+        XCTAssertTrue(engine2.settle(ven.id, choice: .government(.democraticRepublic)))
+        XCTAssertEqual(loaded.getCountry(id: "VEN")?.alignment, .western)
+
+        let map = VectorWorldMap(gameState: loaded, selectedCountryID: .constant(nil), zoom: .constant(.world), filter: .constant(.alignment))
+        let url = try render(VStack { map; MapLegend(filter: .alignment) }.background(Color.black),
+                             size: CGSize(width: 1100, height: 600), name: "integration-territory-after-load")
+        XCTAssertGreaterThan((try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0, 10_000)
+    }
 }
 #endif
