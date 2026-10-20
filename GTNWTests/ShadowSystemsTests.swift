@@ -1265,3 +1265,251 @@ final class AttackSizingPlayHistoryTests: XCTestCase {
         XCTAssertEqual(PlayFixtures.detail(orders[1])["troops"] as? Int, 40)
     }
 }
+
+// MARK: - Naval operations (3.5.0)
+
+@MainActor
+final class NavalOperationsTests: XCTestCase {
+
+    private func modern() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    private func game1850() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    /// Advance the calendar a turn at a time and run the fleet step (not the whole simulation).
+    private func sail(_ engine: GameEngine, _ gs: GameState, turns: Int) {
+        for _ in 0..<turns { gs.turn += 1; gs.actionsUsedThisTurn = 0; engine.processFleets() }
+    }
+
+    // Unit: the era table
+
+    func testEraTable() {
+        for year in 1789...1800 { XCTAssertTrue(NavalModel.fleets(in: year).isEmpty, "no named U.S. squadron in \(year)") }
+        let f1850 = NavalModel.fleets(in: 1850)
+        XCTAssertFalse(f1850.isEmpty)
+        XCTAssertTrue(f1850.allSatisfy { NavalModel.composition($0, year: 1850).carriers == 0 }, "no carriers in 1850")
+        XCTAssertTrue(f1850.allSatisfy { NavalModel.composition($0, year: 1850).submarines == 0 })
+        XCTAssertGreaterThan(NavalModel.composition(NavalModel.fleet(id: "pacfleet")!, year: 1944).carriers, 0)
+        let ids = { (y: Int) in Set(NavalModel.fleets(in: y).map(\.id)) }
+        XCTAssertTrue(ids(1944).contains("fifth")); XCTAssertFalse(ids(1970).contains("fifth")); XCTAssertTrue(ids(2025).contains("fifth"))
+        XCTAssertEqual(NavalModel.fleet(id: "fifth")?.period(in: 2025)?.home, "Bahrain")
+        XCTAssertTrue(ids(1908).contains("gwf")); XCTAssertFalse(ids(1910).contains("gwf"))
+        XCTAssertFalse(ids(2015).contains("second"), "Second Fleet was disestablished 2011–2018")
+        XCTAssertTrue(ids(2025).isSuperset(of: ["second", "third", "fifth", "sixth", "seventh"]))
+        XCTAssertEqual(Set(NavalModel.fleets.map(\.id)).count, NavalModel.fleets.count)
+        XCTAssertEqual(NavalModel.strikeWeapon(year: 1980).contains("Tomahawk"), false)
+        XCTAssertTrue(NavalModel.strikeWeapon(year: 1991).contains("Tomahawk"))
+    }
+
+    func testFleetTableMatchesTheResearchFile() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Documentation/arsenal/gtnw_us_arsenal_by_era.json")
+        guard let data = try? Data(contentsOf: url) else { throw XCTSkip("research file not reachable from the test host") }
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let fleets = try XCTUnwrap(json["fleets"] as? [[String: Any]])
+        let firstYear = fleets.compactMap { $0["from"] as? Int }.min() ?? 0
+        XCTAssertGreaterThanOrEqual(NavalModel.fleets.flatMap(\.periods).map(\.from).min() ?? 0, firstYear)
+        for (name, from) in [("Fifth Fleet", 1944), ("Sixth Fleet", 1950), ("Seventh Fleet", 1943), ("Great White Fleet", 1907)] {
+            XCTAssertEqual(fleets.first { $0["name"] as? String == name }?["from"] as? Int, from, name)
+            XCTAssertEqual(NavalModel.fleets.first { $0.name == name }?.periods.first?.from, from, name)
+        }
+    }
+
+    // Unit: transit-time maths
+
+    func testTransitTime() {
+        let km = NavalModel.distanceKm(lat1: 26.2, lon1: 50.6, lat2: 35.68, lon2: 139.69)   // Bahrain → Tokyo
+        XCTAssertEqual(km, 7_900, accuracy: 400)
+        XCTAssertEqual(NavalModel.transitDays(km: 900, year: 2025), 1)
+        XCTAssertEqual(NavalModel.transitDays(km: 901, year: 2025), 2)
+        XCTAssertEqual(NavalModel.transitDays(km: 0, year: 2025), 1, "at least a day")
+        XCTAssertEqual(NavalModel.transitDays(km: km, year: 2025), Int((km / 900).rounded(.up)))
+        XCTAssertGreaterThan(NavalModel.transitDays(km: km, year: 1830), NavalModel.transitDays(km: km, year: 1900), "sail is slower than steam")
+        XCTAssertGreaterThan(NavalModel.transitDays(km: km, year: 1900), NavalModel.transitDays(km: km, year: 2025))
+        XCTAssertEqual(NavalModel.distanceKm(lat1: 10, lon1: 10, lat2: 10, lon2: 10), 0, accuracy: 0.001)
+    }
+
+    // Functional: "Send the Fifth Fleet to Japan!"
+
+    func testSendTheFifthFleetToJapanAndBlockade() throws {
+        let (engine, gs) = try modern()
+        let used = gs.actionsUsedThisTurn
+        let d = try XCTUnwrap(engine.orderFleet("fifth", to: "JPN", mission: .blockade))
+        XCTAssertEqual(gs.actionsUsedThisTurn, used + 1)
+        XCTAssertEqual(d.status, .underway)
+        XCTAssertGreaterThan(d.ships.carriers, 0)
+        XCTAssertFalse(gs.getCountry(id: "JPN")!.atWarWith.contains("USA"), "nothing happens until the fleet arrives")
+        sail(engine, gs, turns: 1)
+        let onStation = try XCTUnwrap(gs.shadow.fleetDeployments.first)
+        XCTAssertEqual(onStation.status, .onStation)
+        XCTAssertTrue(gs.getCountry(id: "JPN")!.atWarWith.contains("USA"), "a blockade is an act of war")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Fifth Fleet blockaded Japan") })
+        let gdp = gs.getCountry(id: "JPN")!.gdp
+        sail(engine, gs, turns: 2)
+        XCTAssertLessThan(gs.getCountry(id: "JPN")!.gdp, gdp, "output falls every turn on station")
+        XCTAssertTrue(engine.recallFleet(onStation.id))
+        let after = gs.getCountry(id: "JPN")!.gdp
+        sail(engine, gs, turns: 1)
+        XCTAssertEqual(gs.getCountry(id: "JPN")!.gdp, after, "a recalled fleet blockades nothing")
+    }
+
+    func testShowOfForceStrikeAndPositionsOnTheWay() throws {
+        let (engine, gs) = try modern()
+        let rel0 = gs.getCountry(id: "CUB")!.diplomaticRelations["USA"] ?? 0
+        let d = try XCTUnwrap(engine.orderFleet("second", to: "CUB", mission: .showOfForce))
+        let mid = Date(timeIntervalSince1970: (d.departed.timeIntervalSince1970 + d.arrives.timeIntervalSince1970) / 2)
+        let p = d.position(at: mid)
+        XCTAssertEqual(p.lat, (d.fromLat + d.toLat) / 2, accuracy: 0.01)
+        XCTAssertEqual(d.position(at: d.departed).lat, d.fromLat, accuracy: 0.001)
+        XCTAssertEqual(d.position(at: .distantFuture).lon, d.toLon, accuracy: 0.001)
+        sail(engine, gs, turns: 1)
+        XCTAssertFalse(gs.getCountry(id: "CUB")!.atWarWith.contains("USA"), "a show of force is not war")
+        XCTAssertLessThan(gs.getCountry(id: "CUB")!.diplomaticRelations["USA"] ?? 0, rel0)
+        XCTAssertEqual(gs.shadow.fleetDeployments.first?.shipsLost, 0, "nobody fires on a show of force in peacetime")
+
+        let dmg = gs.getCountry(id: "VEN")!.damageLevel
+        XCTAssertNotNil(engine.orderFleet("fourth", to: "VEN", mission: .strike))
+        sail(engine, gs, turns: 1)
+        XCTAssertGreaterThan(gs.getCountry(id: "VEN")!.damageLevel, dmg)
+        XCTAssertTrue(gs.getCountry(id: "VEN")!.atWarWith.contains("USA"))
+    }
+
+    func testAmphibiousLandingTakesUnclaimedCoastalLandIn1850() throws {
+        let (engine, gs) = try game1850()
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "africa", target: "NGA", mission: .blockade), "unclaimed land has no ports to blockade")
+        XCTAssertNil(engine.fleetOrderProblem(fleetID: "africa", target: "NGA", mission: .amphibious))
+        XCTAssertNotNil(engine.orderFleet("africa", to: "NGA", mission: .amphibious))
+        sail(engine, gs, turns: 2)
+        XCTAssertEqual(gs.getCountry(id: "NGA")?.territoryOf, "USA")
+        XCTAssertGreaterThan(gs.shadow.garrisons["NGA"] ?? 0, 0, "the landing force stays as the garrison")
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "home", target: "MLI", mission: .amphibious), "Mali is landlocked")
+    }
+
+    func testAmphibiousInvasionOpensAFrontWithTheLandingForce() throws {
+        let (engine, gs) = try modern()
+        XCTAssertNotNil(engine.orderFleet("third", to: "CUB", mission: .amphibious, preset: .overwhelming))
+        sail(engine, gs, turns: 1)
+        let f = try XCTUnwrap(gs.shadow.fronts.first { $0.defender == "CUB" && $0.status == .fighting })
+        let d = try XCTUnwrap(gs.shadow.fleetDeployments.first)
+        XCTAssertEqual(f.attackerTroops, NavalModel.landingTroops(d.ships, year: gs.currentYear) * Double(d.shipsAfloat) / Double(d.ships.total), accuracy: 0.001)
+    }
+
+    // Functional: the fleet is a real force
+
+    func testLossesScaleWithWhatEachSideHas() throws {
+        let (_, gs) = try modern()
+        let fleet = NavalModel.fleet(id: "seventh")!
+        func deployment(_ commit: Double) -> FleetDeployment {
+            FleetDeployment(fleetID: "seventh", target: "X", mission: .strike, commitment: commit,
+                            ships: NavalModel.composition(fleet, year: 2025).scaled(commit), fromLat: 0, fromLon: 0, toLat: 0, toLon: 0,
+                            departed: Date(), arrives: Date())
+        }
+        let strong = NavalModel.defence(gs.getCountry(id: "CHN"), year: 2025), weak = NavalModel.defence(gs.getCountry(id: "CUB"), year: 2025)
+        XCTAssertGreaterThan(strong, weak)
+        let d = deployment(1)
+        XCTAssertGreaterThan(NavalModel.shipsLost(d, defence: strong * 10), NavalModel.shipsLost(d, defence: weak))
+        XCTAssertEqual(NavalModel.shipsLost(d, defence: 0), 0)
+        XCTAssertGreaterThan(NavalModel.power(deployment(1)), NavalModel.power(deployment(0.25)), "more ships committed, more power")
+        XCTAssertEqual(NavalModel.defence(nil, year: 2025), 0, "unclaimed land fires no shots")
+    }
+
+    // Security: guards
+
+    func testLandlockedAndOtherBadOrdersAreRefused() throws {
+        let (engine, gs) = try modern()
+        for id in ["CHE", "BOL", "AFG", "MLI", "HUN"] {
+            let problem = try XCTUnwrap(engine.fleetOrderProblem(fleetID: "sixth", target: id, mission: .strike), id)
+            XCTAssertTrue(problem.contains("landlocked"), id)
+            XCTAssertNil(engine.orderFleet("sixth", to: id, mission: .strike))
+        }
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "nope", target: "JPN", mission: .strike))
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "gwf", target: "JPN", mission: .strike), "the Great White Fleet is history")
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "sixth", target: "ZZZ", mission: .strike))
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "sixth", target: "USA", mission: .strike))
+        XCTAssertTrue(gs.shadow.fleetDeployments.isEmpty)
+        gs.actionsUsedThisTurn = gs.actionsPerTurn
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "sixth", target: "LBY", mission: .showOfForce), "no actions left")
+    }
+
+    // Retry: double orders, recalls, save / load
+
+    func testAFleetCanOnlyBeInOnePlaceAndRecallFreesIt() throws {
+        let (engine, gs) = try modern()
+        let d = try XCTUnwrap(engine.orderFleet("seventh", to: "PRK", mission: .showOfForce))
+        XCTAssertNil(engine.orderFleet("seventh", to: "PRK", mission: .showOfForce), "a resubmitted order is refused")
+        XCTAssertNil(engine.orderFleet("seventh", to: "CHN", mission: .blockade), "ships on station are tied up")
+        XCTAssertEqual(gs.shadow.fleetDeployments.count, 1)
+        XCTAssertTrue(engine.recallFleet(d.id))
+        XCTAssertFalse(engine.recallFleet(d.id), "a second recall does nothing")
+        XCTAssertNotNil(engine.orderFleet("seventh", to: "CHN", mission: .blockade))
+    }
+
+    func testFleetPositionsSurviveSaveAndOldSavesLoad() throws {
+        let (engine, gs) = try modern()
+        let d = try XCTUnwrap(engine.orderFleet("fifth", to: "JPN", mission: .strike))
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.fleetDeployments, gs.shadow.fleetDeployments)
+        let at = Date(timeIntervalSince1970: (d.departed.timeIntervalSince1970 + d.arrives.timeIntervalSince1970) / 2)
+        XCTAssertEqual(loaded.shadow.fleetDeployments.first?.position(at: at).lon ?? 0, d.position(at: at).lon, accuracy: 0.0001)
+        let engine2 = GameEngine(); engine2.gameState = loaded
+        sail(engine2, loaded, turns: 1)
+        XCTAssertEqual(loaded.shadow.fleetDeployments.first?.status, .onStation, "it completes its voyage after the reload")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "fleetDeployments"); json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.fleetDeployments.isEmpty)
+    }
+
+    // Performance
+
+    func testFleetMathsIsCheap() throws {
+        let (_, gs) = try modern()
+        let countries = gs.countries
+        measure {
+            for f in NavalModel.fleets(in: 2025) {
+                guard let home = f.period(in: 2025) else { continue }
+                for c in countries {
+                    _ = NavalModel.transitDays(km: NavalModel.distanceKm(lat1: home.lat, lon1: home.lon, lat2: c.coordinates.lat, lon2: c.coordinates.lon), year: 2025)
+                    _ = NavalModel.isLandlocked(c.id)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Play history for fleets (3.5.0)
+
+final class NavalPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testFleetOrdersAndOutcomesAreLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        let d = try XCTUnwrap(e.orderFleet("fifth", to: "JPN", mission: .blockade))
+        gs.turn += 1; e.processFleets()
+        XCTAssertTrue(e.recallFleet(d.id))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        let ordered = try XCTUnwrap(events.first { $0.kind == "fleet_ordered" })
+        XCTAssertEqual(PlayFixtures.detail(ordered)["fleet"] as? String, "Fifth Fleet")
+        XCTAssertEqual(PlayFixtures.detail(ordered)["mission"] as? String, "blockade")
+        let action = try XCTUnwrap(events.first { $0.kind == "fleet_action" })
+        XCTAssertEqual(PlayFixtures.detail(action)["sentence"] as? String, "Fifth Fleet blockaded Japan")
+        XCTAssertTrue(events.contains { $0.kind == "fleet_recalled" })
+    }
+}

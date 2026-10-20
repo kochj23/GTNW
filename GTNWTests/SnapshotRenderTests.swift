@@ -220,5 +220,37 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(dossier, size: CGSize(width: FontScale.w(320), height: FontScale.h(320)), name: "expedition-\(t)").path)")
         }
     }
+
+    /// 3.5.0: fleets at sea and on station on the map, and the fleet-order sheet, in 2025 and 1850.
+    @MainActor
+    func testRenderFleets() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertNotNil(engine.orderFleet("seventh", to: "PRK", mission: .showOfForce))
+        gs.turn += 1; engine.processFleets()
+        gs.actionsUsedThisTurn = 0
+        XCTAssertNotNil(engine.orderFleet("fifth", to: "JPN", mission: .blockade))
+        XCTAssertNotNil(engine.orderFleet("sixth", to: "LBY", mission: .strike))
+        // Freeze the Fifth Fleet halfway to Japan for the picture.
+        if let i = gs.shadow.fleetDeployments.firstIndex(where: { $0.fleetID == "fifth" }) {
+            gs.shadow.fleetDeployments[i].departed = gs.currentDate.addingTimeInterval(-5 * 86_400)
+            gs.shadow.fleetDeployments[i].arrives = gs.currentDate.addingTimeInterval(5 * 86_400)
+        }
+        let old = GameEngine()
+        old.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
+        let gs1850 = try XCTUnwrap(old.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("JPN"), zoom: .constant(.world), filter: .constant(.alignment))
+            print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "fleets-map-\(t)").path)")
+            let sheet = FleetOrderSheet(gameState: gs, targetID: "JPN", scrolls: false, fleetID: "third", mission: .strike).environmentObject(engine)
+            print("SNAPSHOT \(try render(sheet, size: CGSize(width: FontScale.w(720), height: FontScale.h(620)), name: "fleet-orders-\(t)").path)")
+            let sheet1850 = FleetOrderSheet(gameState: gs1850, targetID: "NGA", scrolls: false, fleetID: "africa", mission: .amphibious).environmentObject(old)
+            print("SNAPSHOT \(try render(sheet1850, size: CGSize(width: FontScale.w(720), height: FontScale.h(620)), name: "fleet-orders-1850-\(t)").path)")
+        }
+    }
 }
 #endif

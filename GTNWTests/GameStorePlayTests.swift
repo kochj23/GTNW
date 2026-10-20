@@ -229,6 +229,8 @@ final class PlayHistoryIntegrationTests: XCTestCase {
         e.startScenario(.world1990, turnLength: .month)
         let id = try XCTUnwrap(e.gameState?.shadow.playSessionID)
         e.endTurn()
+        // The computer's moves resolve asynchronously; let them finish so they can't post news between the two syncs.
+        for _ in 0..<500 where e.isProcessingAITurn { try await Task.sleep(nanoseconds: 10_000_000) }
         PlayFixtures.drama(try XCTUnwrap(e.gameState))
         e.gameState?.turn += 1
         e.playSessionTurnEnded()
