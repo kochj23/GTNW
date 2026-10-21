@@ -2045,7 +2045,7 @@ final class CongressTests: XCTestCase {
             if removed {
                 XCTAssertEqual(gs.shadow.domesticEnding, .impeached)
             } else {
-                XCTAssertNil(gs.shadow.domesticEnding)
+                XCTAssertNotEqual(gs.shadow.domesticEnding, .impeached, "acquitted (a random assassination can still follow)")
                 XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Senate acquits") })
             }
         }
@@ -2576,5 +2576,178 @@ final class GroupActionPlayHistoryTests: XCTestCase {
         let d = PlayFixtures.detail(groups[0])
         XCTAssertEqual(d["members"] as? [String], ["IRN", "PRK"])
         XCTAssertEqual(d["group"] as? String, "Rogues")
+    }
+}
+
+// MARK: - Play as other nations (3.11.0)
+
+@MainActor
+final class NationPlayTests: XCTestCase {
+
+    private func day(_ y: Int, _ m: Int, _ d: Int) -> Date { GameCalendar.date(year: y, month: m, day: d) }
+
+    private func play(_ id: String, year: Int) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(playerCountryID: id, turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        if year != 2025 {
+            gs.eraStartYear = year
+            gs.advisors = NationModel.cabinet(for: gs.getPlayerCountry()!, on: gs.currentDate)
+        }
+        return (engine, gs)
+    }
+
+    // Unit: the data and the lookups
+
+    func testDataLoadsAndDatesParse() throws {
+        let data = try XCTUnwrap(NationCabinets.shared, "bundled nation_cabinets.json")
+        XCTAssertEqual(data.nations.count, 33)
+        XCTAssertEqual(NationModel.parse("1913"), day(1913, 1, 1))
+        XCTAssertEqual(NationModel.parse("1913-07"), day(1913, 7, 1))
+        XCTAssertEqual(NationModel.parse("1909-04-27"), day(1909, 4, 27))
+        XCTAssertNil(NationModel.parse(""))
+        XCTAssertEqual(NationModel.cabinetID(forGameID: "SVN_VN"), "VNM_S")
+    }
+
+    func testRealHoldersOnTheDate() {
+        let gov = "constitutional_monarchy_parliamentary"
+        XCTAssertEqual(NationModel.holder("GBR", role: "head_of_government", on: day(1950, 1, 20), government: gov).name, "Clement Attlee")
+        XCTAssertEqual(NationModel.holder("GBR", role: "head_of_state", on: day(2025, 2, 1), government: gov).name, "Charles III")
+        XCTAssertEqual(NationModel.holder("TUR", role: "head_of_state", on: day(1913, 2, 1), government: "absolute_monarchy").name, "Mehmed V Reşad")
+        XCTAssertEqual(NationModel.holder("RUS", role: "paramount_leader", on: day(1960, 1, 20), government: "one_party_communist_state").name, "Nikita Khrushchev")
+    }
+
+    func testAfterApril2026KeepTheLastVerifiedHolder() {
+        let late = NationModel.holder("GBR", role: "head_of_government", on: day(2026, 10, 20), government: "constitutional_monarchy_parliamentary")
+        XCTAssertEqual(late.name, "Sir Keir Starmer", "a July 2026 change is low-confidence and not used")
+        XCTAssertTrue(late.unverified)
+        XCTAssertTrue(late.display.contains("(acting/unverified)"))
+        XCTAssertFalse(NationModel.holder("GBR", role: "head_of_government", on: day(2025, 1, 20), government: "constitutional_monarchy_parliamentary").unverified)
+    }
+
+    func testUncertainRecordsAreMarkedAndGapsAreGenericNeverInvented() {
+        let u = NationModel.holder("AUT", role: "foreign", on: day(1848, 4, 1), government: "absolute_monarchy")
+        XCTAssertTrue(u.uncertain); XCTAssertTrue(u.display.hasSuffix("?"))
+        let gap = NationModel.holder("NGA", role: "foreign", on: day(1970, 1, 20), government: "presidential_republic")
+        XCTAssertTrue(gap.generic); XCTAssertEqual(gap.display, "(no record)")
+        XCTAssertFalse(gap.title.isEmpty, "a generic title for the government type")
+    }
+
+    func testLeaderRolesAndRemovalMechanisms() throws {
+        XCTAssertEqual(NationModel.leaderRole(government: "parliamentary_republic"), "head_of_government")
+        XCTAssertEqual(NationModel.leaderRole(government: "one_party_communist_state"), "paramount_leader")
+        XCTAssertEqual(NationModel.leaderRole(government: "absolute_monarchy"), "head_of_state")
+        let gs = GameState(playerCountryID: "USA")
+        let gbr = try XCTUnwrap(gs.getCountry(id: "GBR")), usa = try XCTUnwrap(gs.getCountry(id: "USA"))
+        XCTAssertEqual(NationModel.removal(gbr, on: day(2025, 1, 20)), .noConfidence)
+        XCTAssertEqual(NationModel.removal(usa, on: day(2025, 1, 20)), .impeachment)
+        XCTAssertEqual(NationModel.removal(gs.getCountry(id: "RUS")!, on: day(1960, 1, 20)), .partyCongress)
+        XCTAssertEqual(NationModel.removal(gs.getCountry(id: "ARG")!, on: day(1977, 1, 20)), .juntaDecision)
+        for m in RemovalMechanism.allCases where m != .impeachment {
+            XCTAssertFalse(m.stageText(3).contains("Senate"), m.rawValue)
+            XCTAssertNotEqual(m.ending, .impeached)
+        }
+    }
+
+    // Functional
+
+    func testPlayAsBritainTheComputerRunsTheUS() throws {
+        let (engine, gs) = try play("GBR", year: 2025)
+        XCTAssertEqual(gs.playerCountryID, "GBR")
+        XCTAssertTrue(gs.getPlayerCountry()!.isPlayerControlled)
+        XCTAssertFalse(gs.getCountry(id: "USA")!.isPlayerControlled, "the AI runs the U.S.")
+        XCTAssertFalse(gs.shadow.electionsEnabled, "no U.S. presidential elections")
+        XCTAssertTrue(gs.advisors.contains { $0.name == "Charles III" && $0.roleKey == "whc" }, "the King as chief adviser to the PM")
+        XCTAssertEqual(Set(gs.advisors.compactMap(\.roleKey)), Set(AdviceEngine.roleOrder))
+        XCTAssertNil(engine.requestAuthorization(target: "IRN", kind: .declaration, roll: 0), "no U.S. Congress")
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "fifth", target: "IRN", mission: .blockade))
+        XCTAssertNotNil(engine.callUpProblem(.draft))
+        engine.declareWar(aggressor: "GBR", defender: "IRN")
+        engine.processWarPowers()
+        XCTAssertTrue(gs.shadow.warPowersClocks.isEmpty, "the War Powers Resolution is American")
+    }
+
+    func testAPrimeMinisterFallsToNoConfidenceNotASenateTrial() throws {
+        let (engine, gs) = try play("GBR", year: 2025)
+        let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "GBR" })
+        gs.shadow.impeachmentStage = 3; gs.shadow.popularity = 10; gs.shadow.ruthlessness = 80
+        gs.countries[pi].congressionalSupport = 90
+        gs.turn += 1
+        engine.processShadowTurn()
+        XCTAssertEqual(gs.shadow.domesticEnding, .noConfidence)
+        XCTAssertFalse(gs.shadow.ticker.contains { $0.text.contains("Senate") })
+    }
+
+    func testOttomanEmpireIn1913HasItsRealCourt() throws {
+        let engine = GameEngine()
+        engine.startNewGame(playerCountryID: "TUR", administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertEqual(gs.getPlayerCountry()?.name, "Ottoman Empire")
+        XCTAssertTrue(gs.advisors.contains { $0.name.hasPrefix("Mehmed V") }, "the Sultan advises his Grand Vizier")
+    }
+
+    // Security: nations without data are playable with generic titles; names are never made up
+
+    func testNationsWithoutDataUseGenericTitles() throws {
+        let gs = GameState(playerCountryID: "NGA")
+        let cab = NationModel.cabinet(for: gs.getPlayerCountry()!, on: day(2025, 1, 20))
+        XCTAssertFalse(cab.isEmpty)
+        XCTAssertTrue(cab.allSatisfy { $0.name == "(no record)" })
+        let data = try XCTUnwrap(NationCabinets.shared)
+        let known = Set(data.nations.flatMap { $0.roles.values.flatMap { $0.map { $0[0] } } })
+        for id in ["GBR", "FRA", "RUS", "JPN", "IRN"] {
+            for a in NationModel.cabinet(for: GameState(playerCountryID: "USA").getCountry(id: id)!, on: day(1985, 6, 1)) {
+                let bare = a.name.replacingOccurrences(of: " (acting/unverified)", with: "").replacingOccurrences(of: " ?", with: "")
+                XCTAssertTrue(a.name == "(no record)" || known.contains(bare), "\(id): \(a.name)")
+            }
+        }
+    }
+
+    // Retry: saves keep the nation and its cabinet; old advisor records decode
+
+    func testANationGameSurvivesSaveAndOldAdvisorsDecode() throws {
+        let (_, gs) = try play("FRA", year: 2025)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.playerCountryID, "FRA")
+        XCTAssertEqual(loaded.advisors.map(\.roleKey), gs.advisors.map(\.roleKey))
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        json["advisors"] = (json["advisors"] as? [[String: Any]])?.map { var a = $0; a.removeValue(forKey: "role"); return a }
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(old.advisors.count, gs.advisors.count)
+    }
+
+    // Performance
+
+    func testCabinetLookupsAreCheap() throws {
+        let gs = GameState(playerCountryID: "USA")
+        let nations = ["GBR", "FRA", "RUS", "DEU", "JPN", "CHN", "TUR", "ESP", "ITA", "MEX"].compactMap { gs.getCountry(id: $0) }
+        measure {
+            for y in stride(from: 1800, through: 2030, by: 10) {
+                for c in nations { _ = NationModel.cabinet(for: c, on: day(y, 6, 1)) }
+            }
+        }
+    }
+}
+
+final class NationPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testTheNationPlayedIsRecorded() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "TUR", turnLength: .month)
+        let id = try XCTUnwrap(e.gameState?.shadow.playSessionID)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        let start = try XCTUnwrap(events.first { $0.kind == "game_start" })
+        XCTAssertEqual(PlayFixtures.detail(start)["country"] as? String, "TUR")
+        XCTAssertNotNil(PlayFixtures.detail(start)["country_name"] as? String)
+        let s = await remote.playSessions[id]
+        XCTAssertEqual(PlayFixtures.summary(s)["country"] as? String, "TUR")
+        XCTAssertNotNil(PlayFixtures.summary(s)["leader"])
     }
 }

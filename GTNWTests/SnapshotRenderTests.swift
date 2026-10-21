@@ -387,5 +387,32 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet, size: CGSize(width: FontScale.w(820), height: FontScale.h(560)), name: "group-action-\(t)").path)")
         }
     }
+
+    /// 3.11.0: playing Britain in 2025 and the Ottoman Empire in 1913: the cabinet rail, the removal-risk badge,
+    /// and the new removal endings.
+    @MainActor
+    func testRenderPlayAsOtherNations() throws {
+        let engine = GameEngine()
+        engine.startNewGame(playerCountryID: "GBR", turnLength: .month)
+        let gbr = try XCTUnwrap(engine.gameState)
+        let ott = GameEngine()
+        ott.startNewGame(playerCountryID: "TUR", administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let tur = try XCTUnwrap(ott.gameState)
+        gbr.shadow.ruthlessness = 25; gbr.shadow.popularity = 30
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            let rails = HStack(alignment: .top) {
+                AdvisorRail(gameState: gbr, selected: nil, briefingRole: .constant(nil), scrolls: false).frame(width: FontScale.w(220))
+                AdvisorRail(gameState: tur, selected: nil, briefingRole: .constant(nil), scrolls: false).frame(width: FontScale.w(220))
+            }
+            print("SNAPSHOT \(try render(rails, size: CGSize(width: FontScale.w(460), height: FontScale.h(560)), name: "nation-cabinets-\(t)").path)")
+            let bar = SituationTopBar(gameState: gbr, onSheet: { _ in }, part: .statsOnly).environmentObject(engine)
+            print("SNAPSHOT \(try render(bar, size: CGSize(width: FontScale.w(900), height: FontScale.h(70)), name: "nation-topbar-\(t)").path)")
+            let endings = HStack { ForEach([DomesticEnding.noConfidence, .coup, .partyCongress], id: \.self) { DomesticEndingBanner(ending: $0) } }
+            print("SNAPSHOT \(try render(endings, size: CGSize(width: FontScale.w(900), height: FontScale.h(240)), name: "nation-endings-\(t)").path)")
+        }
+    }
 }
 #endif
