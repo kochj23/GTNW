@@ -3388,8 +3388,9 @@ final class TerritoryMoneyTests: XCTestCase {
         for _ in 0..<12 { gs.turn += 1; g2.turn += 1; engine.processOccupation(); calm.processOccupation(); engine.processTerritoryEconomy() }
         if let p = gs.getCountry(id: "ZAF"), p.territoryOf == "USA" {
             XCTAssertGreaterThan(p.profile.outcry, g2.getCountry(id: "ZAF")!.profile.outcry)
+            // The yearly goodwill cost is a stochastic integer, so it only lands while the territory is still held.
+            XCTAssertLessThan(gs.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0, fra0)
         }   // else it already revolted, which plunder allows
-        XCTAssertLessThan(gs.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0, fra0)
     }
 
     // Retry: persistence and old saves
@@ -4901,5 +4902,163 @@ final class DirtyTacticsStarvationTests: XCTestCase {
                                                           status: .onStation))
         e.setStance("starve_blockade", target: "DEU", on: true)
         measure { for _ in 0..<300 { e.processTacticStances() } }
+    }
+}
+
+// MARK: - 3.17.3: dirty tactics — civilians and land
+
+@MainActor
+final class DirtyTacticsCiviliansTests: XCTestCase {
+
+    /// A game in `year` where the player holds `id` as a restless territory.
+    private func territory(_ year: Int, _ id: String, outcry: Double = 70) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == id })
+        gs.countries[i].territoryOf = gs.playerCountryID
+        gs.countries[i].profile.outcry = outcry
+        gs.countries[i].stability = 30
+        gs.shadow.claimDates[id] = GameCalendar.date(year: year - 3, month: 1, day: 1)
+        gs.shadow.garrisons[id] = AttackSizing.expeditionStandard
+        return (e, gs)
+    }
+
+    // Unit: the eras and the treaties that closed them
+    func testCivilianErasAndTreaties() {
+        let camps = DirtyTactics.tactic("reconcentration")!
+        XCTAssertFalse(camps.exists(in: 1895), "Weyler's order is February 1896")
+        XCTAssertEqual(camps.status(in: 1900), .legal, "no treaty covered it; the newspapers did")
+        XCTAssertEqual(camps.status(in: 1950), .treatyBanned, "Geneva IV Art. 49")
+        let removal = DirtyTactics.tactic("forced_removal")!
+        XCTAssertFalse(removal.exists(in: 1829), "the Indian Removal Act is 28 May 1830")
+        XCTAssertEqual(removal.status(in: 1838), .legal, "lawful under the Act; the Supreme Court said otherwise and was ignored")
+        XCTAssertEqual(removal.status(in: 1960), .treatyBanned)
+        let camp = DirtyTactics.tactic("internment")!
+        XCTAssertFalse(camp.exists(in: 1941))
+        XCTAssertEqual(camp.status(in: 1943), .legal, "Executive Order 9066, upheld in Korematsu")
+        XCTAssertEqual(camp.status(in: 1980), .restricted, "the Non-Detention Act of 1971")
+        let torture = DirtyTactics.tactic("torture")!
+        XCTAssertEqual(torture.status(in: 1800), .legal)
+        XCTAssertEqual(torture.status(in: 1902), .restricted, "the Lieber Code of 1863")
+        XCTAssertEqual(torture.status(in: 1960), .treatyBanned, "the Geneva Conventions of 1949")
+        XCTAssertEqual(DirtyTactics.tactic("max_extraction")!.status(in: 1900), .legal)
+        XCTAssertEqual(DirtyTactics.tactic("max_extraction")!.status(in: 1910), .restricted, "Hague IV Art. 52, 1907")
+    }
+
+    // Unit: the maximum rate is the richest and the worst to hold
+    func testMaximumExtractionRate() {
+        XCTAssertGreaterThan(ExtractionRate.maximum.incomeMultiplier, ExtractionRate.plunder.incomeMultiplier)
+        XCTAssertGreaterThan(ExtractionRate.maximum.insurgencyShift, ExtractionRate.plunder.insurgencyShift)
+        XCTAssertGreaterThan(ExtractionRate.maximum.stabilityPerMonth, ExtractionRate.plunder.stabilityPerMonth)
+        XCTAssertGreaterThan(ExtractionRate.maximum.worldHitPerYear, ExtractionRate.plunder.worldHitPerYear)
+        XCTAssertEqual(ExtractionRate.allCases.count, 5)
+    }
+
+    // Functional: the camps end an insurgency, and the death rates are published two years later
+    func testReconcentrationEndsTheInsurgency() throws {
+        let (e, gs) = try territory(1901, "PHL")
+        let outcry = try XCTUnwrap(gs.getCountry(id: "PHL")).profile.outcry
+        XCTAssertNotNil(e.useTactic("reconcentration", target: "PHL"))
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "PHL")).profile.outcry, outcry)
+        XCTAssertGreaterThan(try XCTUnwrap(gs.getCountry(id: "PHL")).stability, 30)
+        XCTAssertEqual(gs.shadow.aftermath.count, 1)
+        for _ in 0..<3 { gs.turn += 12; e.processDirtyTactics() }
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("death rates") })
+    }
+
+    // Functional: removal leaves quiet land and a smaller people
+    func testForcedRemovalQuietsTheLand() throws {
+        let (e, gs) = try territory(1838, "MEX")
+        let people = try XCTUnwrap(gs.getCountry(id: "MEX")).population
+        XCTAssertNotNil(e.useTactic("forced_removal", target: "MEX"))
+        let after = try XCTUnwrap(gs.getCountry(id: "MEX"))
+        XCTAssertEqual(after.profile.outcry, 0)
+        XCTAssertGreaterThanOrEqual(after.stability, 80)
+        XCTAssertLessThan(after.population, people)
+        XCTAssertGreaterThan(gs.shadow.ruthlessness, 0)
+    }
+
+    // Functional: internment buys war support now and a redress bill in forty-six years
+    func testInternmentAndItsRedress() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1942)
+        let gs = try XCTUnwrap(e.gameState)
+        let support = try XCTUnwrap(gs.getPlayerCountry()).warSupport
+        XCTAssertNotNil(e.useTactic("internment"))
+        XCTAssertGreaterThan(try XCTUnwrap(gs.getPlayerCountry()).warSupport, support)
+        gs.shadow.aidRemaining = 20
+        let funds = gs.shadow.aidRemaining
+        for _ in 0..<47 { gs.turn += 12; e.processDirtyTactics() }
+        XCTAssertLessThan(gs.shadow.aidRemaining, funds, "the Civil Liberties Act is paid for")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("redress") })
+    }
+
+    // Functional: maximum extraction pays more and boils over
+    func testMaximumExtractionPaysAndBoils() throws {
+        let (e, gs) = try territory(1900, "CUB", outcry: 20)
+        let normal = ExpansionModel.annualIncome(try XCTUnwrap(gs.getCountry(id: "CUB")), in: gs)
+        XCTAssertNotNil(e.useTactic("max_extraction", target: "CUB"))
+        XCTAssertEqual(gs.shadow.extraction["CUB"], ExtractionRate.maximum.rawValue)
+        XCTAssertGreaterThan(ExpansionModel.annualIncome(try XCTUnwrap(gs.getCountry(id: "CUB")), in: gs), normal)
+        XCTAssertGreaterThan(try XCTUnwrap(gs.getCountry(id: "CUB")).profile.outcry, 20)
+        XCTAssertFalse(e.setExtraction("CUB", .maximum), "the quota is a tactic, not a rate button")
+    }
+
+    // Security: torture needs a nation, and is never aimed at your own people
+    func testCivilianTargetsAreChecked() throws {
+        let (e, gs) = try territory(1902, "PHL")
+        XCTAssertNotNil(e.tacticProblem("torture", target: gs.playerCountryID))
+        XCTAssertNotNil(e.tacticProblem("reconcentration", target: "FRA"), "camps go in your own territory")
+        XCTAssertNotNil(e.tacticProblem("max_extraction", target: "FRA"))
+        XCTAssertNil(e.tacticProblem("reconcentration", target: "PHL"))
+        XCTAssertNil(e.useTactic("torture", target: gs.playerCountryID))
+        XCTAssertTrue(gs.shadow.tacticUses.isEmpty)
+    }
+
+    // Integration: torture gives intelligence, some of it true, and a scandal when it comes out
+    func testTortureYieldsIntelligenceAndScandal() throws {
+        var sound = 0
+        for seed in 0..<40 {
+            let e = GameEngine()
+            e.startNewGame(turnLength: .month, year: 1902)
+            let gs = try XCTUnwrap(e.gameState)
+            e.declareWar(aggressor: gs.playerCountryID, defender: "ESP")
+            e.syncFronts()
+            e.useTactic("torture", target: "ESP", covert: true, discoveryRoll: 0.99)
+            if gs.shadow.ticker.contains(where: { $0.text.contains("Both check out") }) { sound += 1 }
+            _ = seed
+        }
+        XCTAssertGreaterThan(sound, 5, "some of it is true")
+        XCTAssertLessThan(sound, 35, "and some of it is not")
+
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 2003)
+        let gs = try XCTUnwrap(e.gameState)
+        e.declareWar(aggressor: gs.playerCountryID, defender: "IRQ")
+        e.useTactic("torture", target: "IRQ", covert: true, discoveryRoll: 0.0)
+        XCTAssertTrue(try XCTUnwrap(gs.shadow.tacticUses.first).discovered)
+        XCTAssertGreaterThan(gs.shadow.impeachmentStage, 0, "a treaty-banned order in 2003 costs at home")
+    }
+
+    // Retry: the new extraction rate decodes from an older save, and unknown rates fall back
+    func testExtractionRateDecoding() throws {
+        let (e, gs) = try territory(1900, "CUB", outcry: 20)
+        e.useTactic("max_extraction", target: "CUB")
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(ExpansionModel.rate("CUB", in: loaded), .maximum)
+        loaded.shadow.extraction["CUB"] = "pillage"
+        XCTAssertEqual(ExpansionModel.rate("CUB", in: loaded), .normal, "an unknown rate falls back")
+    }
+
+    // Performance: four groups in the catalog stay cheap to list
+    func testFourGroupsStayCheap() {
+        measure {
+            for _ in 0..<500 {
+                for y in [1830, 1896, 1942, 2003] {
+                    for g in TacticGroup.allCases { _ = DirtyTactics.available(in: y, group: g) }
+                }
+            }
+        }
     }
 }

@@ -689,5 +689,23 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(700)), name: "tactics-starvation-1917-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.3: civilians and land in 1902, with the Philippines held as a restless territory.
+    @MainActor
+    func testRenderDirtyTacticsCivilians() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1902)
+        let gs = try XCTUnwrap(engine.gameState)
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "PHL" })
+        gs.countries[i].territoryOf = gs.playerCountryID
+        gs.countries[i].profile.outcry = 72
+        gs.shadow.claimDates["PHL"] = GameCalendar.date(year: 1899, month: 2, day: 4)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let sheet = DirtyTacticsSheet(gameState: gs, targetID: "PHL", scrolls: false, startGroup: .civilians)
+            print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(760)), name: "tactics-civilians-1902-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif
