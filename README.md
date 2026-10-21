@@ -1,18 +1,20 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-582%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.16.1-blue)
+![Tests](https://img.shields.io/badge/tests-590%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.16.2-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Presidents](https://img.shields.io/badge/presidents-47-red)
 ![Countries](https://img.shields.io/badge/countries-195-blue)
 
-GTNW is a grand-strategy presidential simulator covering 236 years of American history (1789 to 2025). You play one
-of 47 U.S. presidents. You run the country from a Situation Room built around a live world map, handle historical
-and generated crises, manage the budget, foreign aid and a nuclear arsenal, and deal with 195 countries whose
-leaders have personalities and fears of their own. The question is whether the only winning move really is not to
+GTNW is a grand-strategy presidential simulator covering 236 years of history (1789 to 2025). You play one of 47
+U.S. presidents, or the leader of any nation on the board in its year. You run the country from a Situation Room
+built around a live world map, handle historical and generated crises, manage the budget, foreign aid and a nuclear
+arsenal, and deal with a world that moves on its own: the era's wars break out on their dates, the powers race you
+for land, and nations rise, rename and fall when they really did, while Nova, your advisor, comments on all of it.
+You can win by conquest, by endurance, or by peace. The question is whether the only winning move really is not to
 play.
 
 The game is inspired by the WOPR computer in *WarGames* (1983), and the Situation Room by *Shadow President* (1993).
@@ -25,6 +27,7 @@ Written by Jordan Koch.
 
 ## Contents
 
+- [The 3.x series at a glance](#the-3x-series-at-a-glance)
 - [What's in the game](#whats-in-the-game)
 - [Text size and skins](#text-size-and-skins)
 - [Architecture](#architecture)
@@ -42,6 +45,19 @@ Written by Jordan Koch.
 - [License and credits](#license-and-credits)
 
 ---
+
+## The 3.x series at a glance
+
+| Theme | What it adds | Versions |
+|-------|--------------|----------|
+| **Fighting a war** | Terms of surrender, sized offensives, fleets and amphibious landings, the era's real weapons, a finite army with drafts and militia calls, Congress and the War Powers Resolution, advisor warnings, allied coalitions | 3.2–3.12 |
+| **Land and empire** | Unclaimed land, colonies and peoples' land on every continent, resources and income by era, occupation and statehood, Antarctica, group actions, territory money (extraction rates, levies) | 3.3–3.13 |
+| **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy | 3.11–3.16 |
+| **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard | 3.12 |
+| **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
+| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 590 tests in seven categories | 3.1–3.16 |
+
+The sections below are grouped by theme; each feature notes the version that introduced it.
 
 ## What's in the game
 
@@ -103,10 +119,18 @@ Everything happens on one screen:
   military strength and the foreign-aid pool.
 - **Foreign aid** comes in five categories. Recipients may thank you, join in, or refuse the aid.
 
-### War and peace
+### Fighting a war
 
 - **War Room**: fronts with weekly fighting, morale, and U.S. troop commitments. A country that surrenders to
   another computer-run country gets a government shaped like the victor's.
+- **Military alliances** with era-accurate membership:
+  - NATO's Article 5 brings in every member, with members from 1949 up to Sweden in 2024.
+  - The Warsaw Pact exists from 1955 to 1991.
+  - AUKUS, CSTO, SCO, the Arab League, ASEAN and the African Union give partial collective defense.
+- **Nuclear arms race**: a power that falls 40% or more behind builds up at era-appropriate rates. SALT I, START I and
+  New START caps bring arsenals down. All nine nuclear states use SIPRI/FAS warhead, ICBM, SLBM and bomber counts.
+- **DEFCON** runs from 5 down to 1. Nuclear strikes play cinematic sequences.
+- **Other theaters**: cyber warfare, economic warfare, and covert operations.
 - **Terms of surrender (new in 3.2.0)**: when a country surrenders to the United States (or to a side the U.S.
   fought for), you decide its future on a WOPR-style *Terms of Surrender* screen, with a one-line take from the
   relevant advisor on every option:
@@ -143,64 +167,348 @@ Everything happens on one screen:
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
   ```
-- **Peace victories (new in 3.16.0)**: four peaceful ways to win, each on the **PEACE** panel with a progress bar and
-  what's missing. Every one needs you at peace, no nuclear weapon ever used, and five years in office:
-  - **Treaty network → Master Diplomat**: treaties with 35% of the world's nations. Proposing or signing a treaty and
-    non-aggression pacts now put treaties on record, and nations offer them too.
-  - **Alliance leadership → Leader of the Free World**: the largest alliance on Earth, at least max(8, 20% of nations).
-  - **Economic dominance → Economic Tycoon**: 30% of world output (or five points above your starting share, for the
-    early republic) and the largest economy.
-  - **Nobel moments → Nobel Laureate**: broker peace between warring nations three times (one action each; the odds
-    rise the more both sides like you).
-  - Peace Maker and WOPR's Choice now depend on your own record (no war you started), not on the whole world being at
-    peace. Short of victory, peace still scores: treaty partners, Nobel moments, years at peace and output share.
+- **Size your offensives (new in 3.4.0)**: before a ground invasion, air strike, bombardment or nuclear strike, the
+  action sheet shows a **Force size** step: Probe / Standard / Overwhelming presets plus a slider per force the attack
+  uses (ground troops in thousands, aircraft sorties, warheads), bounded by what the U.S. has free right now and by the
+  era (no aircraft before 1914, no warheads before 1945). A read-out shows the honest consequences from the engine's own
+  formulas. **Standard is exactly the pre-3.4 attack** (3 / 5 / 10 warheads by action, the War Room's opening force of
+  35% of the force pool, a fifth of the air arm). Expeditions to unclaimed land are sized in troops alone (5K standard;
+  1K is enough, and the force stays on as the garrison).
 
-  ```mermaid
-  flowchart TD
-      C{At peace, no nukes,<br/>5 years in office?} -- no --> S[Peace still scores]
-      C -- yes --> T[Treaty partners ≥ 35%] --> V1[Master Diplomat]
-      C -- yes --> A[Largest alliance ≥ max 8, 20%] --> V2[Leader of the Free World]
-      C -- yes --> E[30% of output + largest economy] --> V3[Economic Tycoon]
-      C -- yes --> N[3 peaces brokered] --> V4[Nobel Laureate]
-  ```
-- **Nova's commentary, the Hall of Infamy and era transitions (new in 3.15.0)**:
-  - **Nova comments** on the turn's biggest news (at most one line a turn, plus one per flash event, up to two, and
-    one when you break a record). A deterministic line goes on the ticker at once; when the setting is on and a local
-    AI backend (Ollama, MLX, TinyLLM, OpenWebUI) answers, her own line replaces it (two attempts, then the template
-    stands). The prompt carries only the date, your country and the headline; replies are cut to one plain line, and
-    anything with a link, an address or markup is dropped. Settings → "Nova's live commentary" turns it off.
-  - **The Hall of Infamy** keeps your personal records across sittings on this Mac: most territories held, most
-    territory cash, most nuclear strikes, most ruthless, most wars at once, longest in office, lowest approval
-    survived. Beating a record from an earlier sitting is announced on the ticker (and Nova notices). The
-    **RECORDS** button shows the hall and what Nova has said this game. Records also go to play history.
-  - **Mid-game foundings (3.16.1)**: nations founded after your start year appear on their real dates (the Latin
-    American republics from the 1810s–20s, Serbia 1817, Greece 1829, Belgium 1830, the post-WWI states, decolonisation
-    in the 1950s–70s) when their land is still held by its historical owner, with their historical government.
-    Successor states absorb constituent lands still on their historical path (Yugoslavia takes Serbia and Montenegro).
-    If you or a rival power took the land, history has diverged: no state appears, but an independence movement
-    presses (unrest +20, stability −10).
-  - **Commentary on the whole turn (3.16.1)**: Nova now speaks after the AI phase as well, so nuclear strikes and wars
-    declared by computer-run nations that turn are in scope, under the same limits.
-  - **Era transitions**: once a game year, nations whose story still follows history take their era's name,
-    government and flag on the real date (Serbia's Principality becomes a Kingdom in 1882, the Qing the Republic of
-    China in 1912, the Russian Empire the Soviet Union). As with evolving cabinets, a nation stops following history
-    once its story diverges: conquered, made a territory, or its government changed by anything but history.
+  | Effect | Rule (m = chosen ÷ standard) |
+  |---|---|
+  | Success odds | min(1, √m): only an undersized attack can fail |
+  | Target's relations | the action's usual change × (0.75 + 0.25 m) |
+  | Rest of the world | −round(4 × (m − 1)) relations, ruthlessness +round(5 × (m − 1)), for m > 1 |
+  | Escalation | m ≥ 2 raises DEFCON one more step |
+  | Ground troops | the new front opens with the chosen troops; the War Room then fights it (more troops: better odds, more casualties both ways); they are tied up until it ends |
+  | Air | aircraft lost = sorties × 4% × enemy strength, out of the air arm for the rest of the game; a bigger raid kills 5% × (m − 1) of the enemy's front line |
+  | Nuclear | the chosen warheads go to the existing strike: damage, radiation, casualties, and retaliation up to twice as many |
 
   ```mermaid
   flowchart LR
-      T[End of turn] --> P{New notable headlines?}
-      P -- yes --> L[Template line now<br/>ticker + Records]
-      L --> G{Live commentary on<br/>and a local AI answers?}
-      G -- yes, clean --> R[Nova's own line replaces it]
-      G -- no / failed / hostile --> K[Template stands]
-      T --> H[Hall of Infamy: records beaten?]
-      H -- earlier sitting's record --> A[Ticker + Nova remark]
-      T --> E{New game year?}
-      E -- yes --> N[Nations still following history<br/>take the era's name, government, flag]
-      E -- yes --> F{New nation this year?}
-      F -- land still historical --> FN[Founded, absorbs its parts]
-      F -- land taken --> IM[Independence movement]
+      A[Pick an offensive] --> K{AttackSizing.kinds}
+      K -- none --> X[Unsized action<br/>as before]
+      K -- troops / aircraft / warheads --> S[Force size step<br/>Probe · Standard · Overwhelming · sliders]
+      S --> B[Bounded by free forces<br/>and the era]
+      B --> E[executeShadowPresidentAction<br/>size → m]
+      E --> O[Odds, relations, world reaction,<br/>DEFCON, fronts, losses]
+      E --> P[play event attack_ordered<br/>e.g. 12 warheads]
   ```
+  Computer-run countries still attack at their fixed sizes.
+- **Naval operations (new in 3.5.0)**: "Send the Fifth Fleet to Japan!" **Fleet** on a country's dossier (and **Fleet
+  orders** on unclaimed coastal land) opens the fleet-order sheet: pick a **named U.S. fleet of the era**, a mission and
+  how much of the fleet to commit (Probe 25% / Standard 50% / Overwhelming 100%, the 3.4.0 sizing step).
+  - **Fleets by era** (`NavalModel.fleets`, from `Documentation/arsenal`): no U.S. navy until 1797 and no named
+    squadron before the Mediterranean Squadron (1801); the distant-station squadrons (Pacific, West India, Brazil, East
+    India, Home, Africa), the Union blockading squadrons, the European, North Atlantic and Asiatic squadrons, the
+    Flying Squadron (1898), the Great White Fleet (1907–09), the Atlantic and first Pacific Fleets, the U.S. Fleet of
+    the treaty years, then the Pacific and Atlantic Fleets (1941–) and the numbered fleets with their real gaps and home
+    ports (Fifth Fleet 1944–47 and from 1995 in Bahrain; Second Fleet 1950–2011 and from 2018; Seventh Fleet at
+    Yokosuka). Ship counts are era-typical: sail and steam surface ships, submarines from 1900, carriers from 1922,
+    amphibious ships from 1942. No carriers in 1850.
+  - **Missions**: *show of force* (pressure and tension, not war), *blockade* (war; the target's output falls every
+    turn on station), *naval strike* (war; damage and casualties with the era's weapon, e.g. Tomahawks only from
+    1983), *amphibious invasion* (opens a front with the landing force, or takes unclaimed coastal land outright).
+  - **Transit** takes great-circle distance ÷ era speed (sail 150, steam 350, modern 900 km a day) in game days; the
+    fleet is drawn on the map with a dashed wake in both skins. On arrival the target's navy and air force engage it:
+    up to a quarter of its ships lost, by the defender's share of combined strength. A fleet on station ties up its
+    ships until recalled. **Landlocked targets can't be reached** and the sheet says why.
+
+  ```mermaid
+  flowchart LR
+      O[Fleet orders: fleet of the era,<br/>mission, commitment] --> G{fleetOrderProblem}
+      G -- landlocked / not in era / already out / no actions --> X[Refused with the reason]
+      G -- ok --> U[Under way: days = km ÷ era speed<br/>map marker + wake]
+      U -- arrives --> E[Engagement: ships lost<br/>by defender's share]
+      E --> M{Mission}
+      M --> S[Show of force: relations, anxiety]
+      M --> B[Blockade: war, output falls each turn]
+      M --> K[Strike: war, damage, casualties]
+      M --> A[Amphibious: front opens,<br/>or unclaimed land claimed]
+      S & B & K & A --> T[On station until recalled<br/>play events fleet_ordered / fleet_action]
+  ```
+- **Era weapons catalog (new in 3.6.0)**: every attack option the United States actually had, by year, from a
+  bundled table of 47 options (`ArsenalCatalog`, generated from the research in `Documentation/arsenal/`). Under each
+  action the sheet shows the era's arsenal (e.g. *ARSENAL 1918: Infantry · Field artillery · Horse cavalry · Armor*)
+  and, for anything restricted or banned, its status and treaty. Nothing nuclear appears before Trinity (16 Jul 1945).
+  - **Chemical and biological weapons** are new attack options on the Military rung. They're labelled, never hidden,
+    and priced by legal status (design choices): a pre-treaty era such as 1917–18 costs little abroad; the restricted
+    years (Geneva Protocol, signed 1925, ratified 1975) cost more; **treaty-banned** use (Chemical Weapons Convention
+    1997, Biological Weapons Convention 1975) costs every relationship, allies doubly, brings sanctions on U.S. output
+    and opens impeachment hearings.
+  - **Destroyed stockpiles can't be used off the shelf**: chemical after 7 Jul 2023, biological after 1969 (the
+    program ran 1943–1969). The President must first **restart the program** (Covert rung): 2 years for chemical,
+    3 for biological, with a 35% a year chance of discovery before it is ready, which carries the same treaty-banned
+    penalties. INF-range ground missiles (1988–2019) are labelled treaty-banned too.
+  - Encyclopedia level only: names, dates, game effects and diplomatic consequences.
+
+  ```mermaid
+  flowchart TD
+      D[Date] --> C{ArsenalCatalog}
+      C -- before the option existed --> H[Hidden: e.g. no nukes before 16 Jul 1945,<br/>no chemical before 1917]
+      C -- stockpile exists --> L{Legal status}
+      C -- stockpile destroyed --> R[Restart the program<br/>2–3 years, 35%/yr discovery risk]
+      R -- ready --> L
+      R -- discovered --> P
+      L -- legal, e.g. 1918 --> S[Small opinion cost]
+      L -- restricted --> M[Moderate cost]
+      L -- treaty-banned --> P[World and allies furious, sanctions,<br/>impeachment hearings open]
+  ```
+- **Congress and the war powers (new in 3.8.0)**: the top bar shows Congress's support **by chamber** (the House
+  follows the public more, the Senate less) and any **War Powers clock**. **Congress** on a dossier asks for a
+  *Declaration of War* or an *Authorization for Use of Military Force* (one action). Both chambers vote, with odds from
+  their support, the public's war support and the casus belli (the target attacked us, struck us with nuclear weapons,
+  is at war with an ally, or is plainly hostile); an authorization is easier than a declaration. A pass rallies the
+  country; a rebuff costs approval and support. From the **War Powers Resolution (7 Nov 1973)**, hostilities the U.S.
+  starts or joins without authorization start a 60-day clock, with warnings at 45 and 60 days, then 30 days to
+  withdraw; defying it costs Congress's support and adds outrage. Congress's support drifts monthly with approval and
+  outrage. **Impeachment** is a visible process (inquiry → articles → House vote → Senate trial) and ends in a
+  **Senate trial that needs two-thirds to convict**; an acquittal ends it. Party control isn't modelled.
+- **Advisor warnings (new in 3.8.0)**: before any major action (invasion, air strike, bombardment, blockade, nuclear
+  strike, chemical or biological weapon, annexation, land claim, fleet order) the **Joint Chiefs**, the **Secretary of
+  State** and the **Vice President** each give one line, from the same numbers the engine uses: odds and losses,
+  the world's reaction and treaties, approval, the War Powers clock and impeachment pressure. Overrule (proceed) or
+  cancel. *Settings → Advisor warnings* turns them off.
+
+  ```mermaid
+  flowchart TD
+      A[Major action] --> W{Advisor warnings on?}
+      W -- yes --> L[Joint Chiefs · Secretary of State · Vice President<br/>odds, losses, world, approval, Congress]
+      L --> O{Overrule or cancel}
+      W -- no --> X[Act]
+      O -- overrule --> X
+      X --> H{Hostilities after Nov 1973<br/>without authorization?}
+      H -- yes --> C[War Powers clock: 60 days + 30 to withdraw<br/>warnings at 45 and 60]
+      C -- defied --> P[Congress support −15, outrage +15]
+      Q[Ask Congress: declaration / AUMF] --> V{House and Senate vote}
+      V -- pass --> K[Authorized: clock cleared, rally]
+      V -- fail --> F[Approval −3, support −5]
+      P --> I[Impeachment: inquiry → articles → House vote → Senate trial, ⅔ to convict]
+  ```
+- **Draft and mobilization (new in 3.9.0)**: U.S. troops are finite and era-based: the standing army and Guard of
+  the day (20K in 1850, 200K in 1913, about 1.1M today) plus draftees while a historical draft is in force (Civil War
+  1863–65, 1917–18, 1940–47, 1948–73; trained over six months). After 1973 the force is all-volunteer; **Troops** in
+  the top bar opens Manpower, where the President can **call a draft** (+500K or more over six months; approval −8,
+  Congress −5, less in wartime) or **mobilize the reserves** (+30% in a month). Invasions, expeditions, garrisons and
+  troops sent to the War Room all draw on this pool, so you can't send troops you don't have.
+- **Also in 3.9.0**: computer-run countries size their own attacks with the 3.4.0 model (aggressive ones go in
+  overwhelming, cautious ones probe, already-dominant ones hold back); the World Map card grid shows unclaimed land
+  (claim and name it there too) and a Rename button on U.S. territory cards.
+
+  ```mermaid
+  flowchart TD
+      M[Manpower: standing force of the era<br/>+ historical or called draft] --> F[Free troops]
+      F --> S[Sizing, expeditions, War Room]
+      F --> G[Garrisons]
+      G --> O[Occupation each turn:<br/>insurgency and stability drift]
+      V[Government: governor / elections / self-rule] --> O
+      O -- boiling a year, too few troops --> L[Breaks away]
+      O -- 5 years, stable, quiet, elected --> P[Petition Congress]
+      P -- pass --> ST[Statehood: the Nth state, a new star, +1000 score]
+  ```
+- **Allied coalitions (new in 3.12.0)**: **Coalition** on a dossier asks the era's treaty allies (NATO from 1949, the
+  Warsaw Pact…), alliances made in play and friendly nations (a coalition of the willing) to join an operation
+  against that country, one action for all. Each decides by its relations with you, its ties to the target and the
+  legitimacy of the action: a legislative authorization or a real casus belli helps, chemical or biological weapons
+  drive allies away. Members send a tenth of their forces to the front and **share the world's reaction**; those who
+  refuse cool a little. The sheet shows each nation's odds from the same formula.
+
+### Land and empire
+
+- **Unclaimed lands (new in 3.3.0)**: start in an era before a country existed (Africa before ~1960, Libya before
+  1951, South Africa before 1910) and its land is on the map as **unclaimed**: parchment on the modern map, light gray
+  on the EGA map, under every filter, with an `UNCLAIMED` tag and an *Unclaimed* legend swatch. Click it for a short
+  dossier ("Unclaimed land — no government, no army") and a **Send expedition** button. With nobody to fight, the land
+  is taken at once as a U.S. territory (drawn exactly like an annexed one) for one action and a small hit abroad
+  (rivals −5, others −2, allies none; from 3.7.0 the outrage depends on era and pace, see below). A naming sheet then opens, prefilled with the land's modern name.
+  - **Name or rename any U.S. territory**: the dossier of every U.S. territory, claimed or annexed, has **Rename**,
+    and the annex option on the Terms of Surrender screen takes an optional new name. Names are trimmed, 1–40
+    characters on one line (no control characters), and are always shown as plain text.
+  - Only lands that **no era country covers** count: Soviet republics under the Russian Empire or USSR, the Yugoslav
+    and Czechoslovak states, Germany, Korea and so on are never unclaimed. Computer-run countries never claim land,
+    and unclaimed land never takes a turn. The rule is a small table, `WorldCountriesDatabase.unclaimedLands`.
+  - Nothing new is saved: unclaimed land is derived from the start year minus what has been claimed, and a claimed
+    land is an ordinary territory, so older saves load unchanged.
+
+  ```mermaid
+  flowchart TD
+      Y[Game starts in year Y] --> U{Land in unclaimedLands<br/>for Y, not yet a country?}
+      U -- no --> C[Ordinary country<br/>or era predecessor]
+      U -- yes --> M[Map: parchment / light gray<br/>UNCLAIMED tag, selectable]
+      M --> D[Dossier: no government, no army]
+      D --> E[Send expedition<br/>1 action, small world-opinion hit]
+      E --> T[New U.S. territory<br/>territoryOf = USA]
+      S[Terms of Surrender: annex<br/>optional new name] --> T
+      T --> N[Naming sheet: 1–40 chars, one line]
+      T --> R[Dossier: Rename]
+      R --> N
+      N --> L[Map, dossier and ticker show the name<br/>play events claimed_land / renamed_territory]
+  ```
+- **Territory wealth and the politics of expansion (new in 3.7.0)**: taking land now pays, and is priced fairly.
+  - **Resources**: every territory, claimed or annexed, yields era-accurate resources from roughly when they were first
+    exploited (`ExpansionModel.deposits`): South African diamonds (1867) and gold (1886), Gold Coast gold and cocoa
+    (1890s), Copperbelt copper (c.1928), Congo ivory and rubber (to c.1914–20), copper, diamonds, cobalt and uranium
+    (1940s), Nigerian (1956) and Libyan (1959) oil, Niger uranium (1971), Egyptian and Sudanese cotton, Moroccan
+    phosphates, and so on; lands without a table entry farm a little. Income starts six months after taking a land,
+    reaches full output at two years, and scales with stability and garrison. It adds to U.S. output and approval
+    (prosperity, up to +5) and is listed per territory in the **Resources** panel. "Gotit is now producing copper"
+    goes on the ticker and into play history.
+  - **Strategic resources**, in their eras: oil (from 1910) fuels a 15% larger air arm and 10% faster fleets, uranium
+    (from 1942) adds about 20 warheads a year, and rubber keeps a 10% larger army moving in the world wars.
+  - **Score**: +100 per territory held, +10 per $1B of resources earned (+1000 per statehood, for when that arrives).
+  - **Politics by era** (`ExpansionModel.politics`): before 1919 a few claims a year are popular (+0.5 approval each
+    up to six), then anti-imperialist backlash grows; the outrage per claim is 0.5 + 0.003 × (n − 4)², so a handful is
+    cheap and dozens a year are dangerous. Interwar claims cost more; after 1945 every annexation costs approval and
+    outrage, and the world reacts three times as hard. World-opinion hits grow with the spree too.
+  - **No surprise impeachment**: the top bar shows **impeachment risk** (the pressure Congress acts on at each monthly
+    poll) and the **approval floor** (38%); the Chief of Staff warns on the dossier before a claim that would tip it;
+    the ticker warns the turn pressure crosses the line; and the "articles drafted" stage says the House votes at the
+    next poll unless approval recovers.
+  - Rebalance check: replaying the 3.3.0 session that ended in removal (1913, 27 claims of 5K troops over 8 weeks)
+    now ends with approval in the low 40s and no impeachment stage at all; 47 claims in a week still brings hearings.
+
+  ```mermaid
+  flowchart TD
+      C[Claim or annex a land] --> P[ExpansionModel.politics<br/>era × claims this year]
+      P -- few, pre-1919 --> U[Approval +0.5, little outrage]
+      P -- spree or post-1945 --> D[Outrage ∝ n², world reaction ×]
+      C --> R[Resources by era<br/>ramp-up 6 months → 2 years]
+      R --> I[Income × stability × garrison]
+      I --> G[U.S. output, prosperity approval,<br/>score, Resources panel]
+      I --> S[Strategic: oil, uranium, rubber]
+      D --> K{Impeachment pressure > 12?}
+      K -- yes --> W[Risk badge HIGH, Chief of Staff warns,<br/>ticker warns before the poll]
+      W --> V[Monthly poll: Congress advances one stage]
+  ```
+- **Occupation and statehood (new in 3.9.0)**: **Govern** on a U.S. territory's dossier sets its **garrison**
+  (drawn from the troop pool; it needs about 2K per √million people), its **government** (military governor, local
+  elections or self-rule; self-rule calms it most but keeps 40% of the wealth at home) and shows its **insurgency**
+  and stability, which drift each turn toward targets set by those choices. A territory left boiling over for a year
+  with too few troops **breaks away**. One held five years, stable (60+), quiet (insurgency 30 or less) and with two
+  years of elected government can **petition for statehood**; Congress votes, and it joins as the 49th, 50th or 51st
+  state (counted from the real admissions of its era), keeping its player-given name and adding a star ("U.S. STATE
+  ★51" on the map). Statehood scores +1000. Annexations now come with an occupation garrison.
+- **Antarctica (new in 3.10.0)**: the continent is on both map styles (and the card grid) and can be claimed in any
+  era. Before the Antarctic Treaty it is open land with seven overlapping national claims shown on its dossier
+  (United Kingdom 1908, New Zealand 1923, France 1924, Australia 1933, Norway 1939, Chile 1940, Argentina 1943),
+  none sovereign. Between signing (1 Dec 1959) and entry into force (23 Jun 1961) a claim is restricted; after that
+  it **violates the treaty** and costs like any treaty-banned option (world and allies furious, sanctions,
+  impeachment hearings). It needs only a 0.5K garrison, but the cold takes 5% of it a month and upkeep is heavy. It
+  yields sealing (to 1900), whaling (to 1964), science prestige (from 1957), and minerals and oil only from 2048, when
+  the Madrid Protocol's mining ban can be reviewed.
+- **Group actions (new in 3.10.0)**: **Group** in the top bar acts on many nations at once: all U.S. territories,
+  all allies (the era's treaty allies plus alliances made in play), all of a region, a hand-picked set, or a saved
+  custom group. Give money or send aid (split evenly or by need), set garrisons, impose sanctions, send a diplomatic
+  message or recall ambassadors. One confirmation shows the total and the per-nation breakdown. Each nation goes
+  through the same single-nation code as before (identical effects and logging), the group costs one action
+  (garrison changes are free), and play history gets one `group_action` event listing the members.
+
+  ```mermaid
+  flowchart LR
+      S[Pick: territories · allies · region · hand-picked · saved] --> A[Action + amount + split]
+      A --> P[Plan: per-nation breakdown and total]
+      P --> C{Confirm}
+      C --> E[Each member through the single-nation code<br/>sendAid · setGarrison · presidential action]
+      E --> L[One action · one group_action event]
+  ```
+- **Takeable land on every continent (new in 3.13.0)**: before a modern country existed, its land is no longer
+  blank. About a hundred dated records (`Documentation/territories/`, generator `build.py` →
+  `TerritoryData.swift`) say who held it:
+  - **Colonies** of an era power in the game (New Spain and the Captaincy General of Guatemala under Spain, British
+    North America, Russian America, Portuguese Brazil, the viceroyalties of New Granada, Peru and the Río de la
+    Plata, the Caribbean colonies, the Australian colonies, French Indochina, British Malaya, Chosen under Japan, the
+    Ottoman provinces of the Middle East and the Balkans, Ireland, Congress Poland, the Grand Duchy of Finland and
+    more) are drawn in the owner's colour under a hatch with a "New Spain (Spain)" label. **Seize** one by force
+    (sized troops against the colonial garrison, or an amphibious fleet; it means war with the owner, and coalitions
+    work against the owner), **buy** it (price from its value and relations; never in wartime), or **back its
+    independence** (likelier near the real date): it becomes an allied state.
+  - **Land held by peoples the game doesn't model as states** (Aotearoa before 1840, New Guinea, the Konbaung
+    kingdom, the Malay and Gulf sheikhdoms, the Arabian emirates, the Polish–Lithuanian Commonwealth after 1789) is
+    shown as such. Its people resist: taking it needs enough troops, leaves an unstable territory with an
+    insurgency, and after 1945 draws condemnation.
+  - **Historical U.S. purchases** appear as offers in their real windows: Louisiana (1803, $15 million), Florida
+    (Adams–Onís, 1819), the Gadsden Purchase (1853), Alaska (1867, $7.2 million; Alaska is now its own outline) and
+    the Danish West Indies (1917). Louisiana, Florida and Gadsden lie inside today's U.S. outline, so they add
+    resources and score rather than a shape.
+  - Anything taken is an ordinary territory: name it, govern it, earn from it, and petition for statehood. Africa
+    keeps its 3.3.0 rules.
+
+  ```mermaid
+  flowchart TD
+      L[Land whose country doesn't exist yet] --> K{Who holds it? TerritoryData}
+      K -- era power --> C[Colony: owner's colour, hatched]
+      K -- peoples not modelled as a state --> I[Indigenous land]
+      C --> S[Seize: troops vs garrison · war with owner]
+      C --> B[Buy: price from value and relations]
+      C --> F[Back independence: allied state]
+      O[Historical offers in their windows<br/>Louisiana 1803 · Florida 1819 · Gadsden 1853 · Alaska 1867 · Danish West Indies 1917] --> T
+      I --> R[Take by force: resistance, unrest,<br/>condemnation after 1945]
+      S --> T[U.S. territory: name, govern, statehood]
+      B --> T
+      R --> T
+  ```
+- **Territory money (new in 3.13.1)**: what your territories earn now lands in your **spendable funds** (the same
+  pot as aid, group actions and colony purchases) every turn, with a "Territories paid $X B this month." ticker line;
+  a quarter of it also shows in national output. From the **Resources** panel (or a **group action** on all
+  territories):
+  - **Extraction rate** per territory: Light (×0.6 income), Normal, Heavy (×1.5; insurgency +12, stability −1/month,
+    world opinion −1/year) or Plunder (×2.5; insurgency +30, stability −3/month, world −4/year, and a 25%/year
+    revolt once unrest passes 60).
+  - **Collect**: a one-off levy of half a year's income (at least $0.2B) for −10 stability and +10 unrest, then six
+    months' cooldown.
+  - The panel shows this turn's cash and your funds, each land's $/yr or "producing in N months", and what limits it
+    (low garrison or low stability) with the fix.
+  - **First-year recovery (3.13.2)**: new land starts at 40–50 stability, short of the 60 full output needs. Held with
+    an adequate garrison under Light or Normal extraction, it climbs to 60 by its first anniversary, and the panel
+    says so: "Stability 45 → 60 in ~8 months at this garrison." Countdowns use calendar months.
+
+  ```mermaid
+  flowchart LR
+      T[Territory] --> R{Extraction rate}
+      R -- Light/Normal --> I[Income]
+      R -- Heavy/Plunder --> I
+      R -- Heavy/Plunder --> U[Insurgency up, stability down,<br/>world opinion down]
+      U -- plunder, unrest > 60 --> X[Revolt: the land breaks away]
+      T -- Collect --> L[Levy: ½ year's income now<br/>−10 stability, 6-month cooldown]
+      T -- first year, garrison OK,<br/>Light/Normal --> Y[Stability climbs to 60<br/>by the anniversary]
+      Y --> I
+      I --> F[Spendable funds + ticker line]
+      L --> F
+      I --> O[¼ to national output]
+      F --> S[Aid, group actions, purchases]
+  ```
+
+### The world around you
+
+- **Play as other nations (new in 3.11.0)**: **Nation** on the start screen picks any nation that exists in the
+  start year (★ = real cabinet data). The cabinet is the nation's real officeholders on the start date, from bundled
+  research covering 33 nations and about 13,000 officeholders (`Documentation/cabinets/`; `gen_compact.py` builds
+  `Shared/Resources/nation_cabinets.json`), with each office's own title. Where the record has a gap the slot shows the
+  generic title for that form of government and "(no record)": names are never invented. Uncertain records carry a
+  "?", and dates after April 2026 keep the last earlier holder marked "(acting/unverified)". You play the prime minister
+  in parliamentary systems, the party leader in communist states, otherwise the head of state. How you fall follows
+  the government of the day: a **no-confidence vote**, a **coup**, a **revolution**, a **party congress**, a **junta
+  decision** or **royal dismissal**, each with its own warnings; U.S. impeachment applies only to the U.S. The
+  U.S.-only systems (Congress and the War Powers clock, U.S. elections, the draft, statehood, named U.S. fleets) are
+  hidden or refused for other nations, and the computer runs the United States. Play history records the nation and
+  its leader ("country_name", "leader").
+
+  ```mermaid
+  flowchart TD
+      N[Start screen: nation + start year] --> C{Cabinet data for the nation?}
+      C -- yes --> R[Real holders on the date<br/>? uncertain · acting/unverified after Apr 2026]
+      C -- gap or none --> G[Generic titles for the government type<br/>no invented names]
+      R & G --> P[Play: U.S.-only systems hidden; the AI runs the U.S.]
+      P --> M{Pressure at the monthly poll}
+      M -- U.S. --> I[Impeachment → Senate trial]
+      M -- others --> X[No-confidence · coup · revolution ·<br/>party congress · junta · royal dismissal]
+  ```
+- **Evolving cabinets (new in 3.12.2)**: officeholders change on their real dates while the game still matches
+  history (Bevin hands the Foreign Office to Morrison in March 1951). The player's own government follows history
+  only until the player's choices diverge: making an appointment, winning an election, or history recording someone
+  else in the player's office (the game keeps you in it). Computer-run nations show their historical leader of the day
+  on the dossier until their own story diverges (a change of government, annexation or destruction).
 - **A living world (new in 3.14.0)**: the other nations no longer sit still, in any era. Scaled by difficulty
   (Easy calm, Nightmare relentless: about ten moves a year per nation and wars at the slightest excuse):
   - **The era's wars break out** between the powers on their real dates (`WorldPolitics.rivalries`): the French
@@ -250,86 +558,54 @@ Everything happens on one screen:
       E --> M[Map: their colour, no longer claimable]
       M --> I[Their territories pay the owner;<br/>unrest over 70 → revolt]
   ```
-- **Territory money (new in 3.13.1)**: what your territories earn now lands in your **spendable funds** (the same
-  pot as aid, group actions and colony purchases) every turn, with a "Territories paid $X B this month." ticker line;
-  a quarter of it also shows in national output. From the **Resources** panel (or a **group action** on all
-  territories):
-  - **Extraction rate** per territory: Light (×0.6 income), Normal, Heavy (×1.5; insurgency +12, stability −1/month,
-    world opinion −1/year) or Plunder (×2.5; insurgency +30, stability −3/month, world −4/year, and a 25%/year
-    revolt once unrest passes 60).
-  - **Collect**: a one-off levy of half a year's income (at least $0.2B) for −10 stability and +10 unrest, then six
-    months' cooldown.
-  - The panel shows this turn's cash and your funds, each land's $/yr or "producing in N months", and what limits it
-    (low garrison or low stability) with the fix.
-  - **First-year recovery (3.13.2)**: new land starts at 40–50 stability, short of the 60 full output needs. Held with
-    an adequate garrison under Light or Normal extraction, it climbs to 60 by its first anniversary, and the panel
-    says so: "Stability 45 → 60 in ~8 months at this garrison." Countdowns use calendar months.
+- **Nova's commentary, the Hall of Infamy and era transitions (new in 3.15.0)**:
+  - **Nova comments** on the turn's biggest news (at most one line a turn, plus one per flash event, up to two, and
+    one when you break a record). A deterministic line goes on the ticker at once; when the setting is on and a local
+    AI backend (Ollama, MLX, TinyLLM, OpenWebUI) answers, her own line replaces it (two attempts, then the template
+    stands). The prompt carries only the date, your country and the headline; replies are cut to one plain line, and
+    anything with a link, an address or markup is dropped. Settings → "Nova's live commentary" turns it off.
+  - **The Hall of Infamy** keeps your personal records across sittings on this Mac: most territories held, most
+    territory cash, most nuclear strikes, most ruthless, most wars at once, longest in office, lowest approval
+    survived. Beating a record from an earlier sitting is announced on the ticker (and Nova notices). The
+    **RECORDS** button shows the hall and what Nova has said this game. Records also go to play history.
+  - **Mid-game foundings (3.16.1)**: nations founded after your start year appear on their real dates (the Latin
+    American republics from the 1810s–20s, Serbia 1817, Greece 1829, Belgium 1830, the post-WWI states, decolonisation
+    in the 1950s–70s) when their land is still held by its historical owner, with their historical government.
+    Successor states absorb constituent lands still on their historical path (Yugoslavia takes Serbia and Montenegro).
+    If you or a rival power took the land, history has diverged: no state appears, but an independence movement
+    presses (unrest +20, stability −10).
+  - **Historical absorptions (3.16.2)**: a nation still following history is absorbed on the real date into the
+    nation that took it, when that nation follows history too: Korea into Japan (1910), the Baltic states into the
+    Soviet Union (1940), the Anschluss (1938), the partitions of Poland (1795, 1939) and Czechoslovakia (1939). They
+    are restored on their historical dates (Austria, Poland and Czechoslovakia in 1945; Korea when the era brings it
+    back). If the target is your ally or has a defence treaty with you, it becomes a crisis instead: the absorber
+    moves by force and the target appeals to Washington. Hawaii and Texas aren't separate lands on the map, so they
+    don't apply.
+  - **Commentary on the whole turn (3.16.1)**: Nova now speaks after the AI phase as well, so nuclear strikes and wars
+    declared by computer-run nations that turn are in scope, under the same limits.
+  - **Era transitions**: once a game year, nations whose story still follows history take their era's name,
+    government and flag on the real date (Serbia's Principality becomes a Kingdom in 1882, the Qing the Republic of
+    China in 1912, the Russian Empire the Soviet Union). As with evolving cabinets, a nation stops following history
+    once its story diverges: conquered, made a territory, or its government changed by anything but history.
 
   ```mermaid
   flowchart LR
-      T[Territory] --> R{Extraction rate}
-      R -- Light/Normal --> I[Income]
-      R -- Heavy/Plunder --> I
-      R -- Heavy/Plunder --> U[Insurgency up, stability down,<br/>world opinion down]
-      U -- plunder, unrest > 60 --> X[Revolt: the land breaks away]
-      T -- Collect --> L[Levy: ½ year's income now<br/>−10 stability, 6-month cooldown]
-      T -- first year, garrison OK,<br/>Light/Normal --> Y[Stability climbs to 60<br/>by the anniversary]
-      Y --> I
-      I --> F[Spendable funds + ticker line]
-      L --> F
-      I --> O[¼ to national output]
-      F --> S[Aid, group actions, purchases]
+      T[End of turn] --> P{New notable headlines?}
+      P -- yes --> L[Template line now<br/>ticker + Records]
+      L --> G{Live commentary on<br/>and a local AI answers?}
+      G -- yes, clean --> R[Nova's own line replaces it]
+      G -- no / failed / hostile --> K[Template stands]
+      T --> H[Hall of Infamy: records beaten?]
+      H -- earlier sitting's record --> A[Ticker + Nova remark]
+      T --> E{New game year?}
+      E -- yes --> N[Nations still following history<br/>take the era's name, government, flag]
+      E -- yes --> F{New nation this year?}
+      F -- land still historical --> FN[Founded, absorbs its parts]
+      F -- land taken --> IM[Independence movement]
   ```
-- **Takeable land on every continent (new in 3.13.0)**: before a modern country existed, its land is no longer
-  blank. About a hundred dated records (`Documentation/territories/`, generator `build.py` →
-  `TerritoryData.swift`) say who held it:
-  - **Colonies** of an era power in the game (New Spain and the Captaincy General of Guatemala under Spain, British
-    North America, Russian America, Portuguese Brazil, the viceroyalties of New Granada, Peru and the Río de la
-    Plata, the Caribbean colonies, the Australian colonies, French Indochina, British Malaya, Chosen under Japan, the
-    Ottoman provinces of the Middle East and the Balkans, Ireland, Congress Poland, the Grand Duchy of Finland and
-    more) are drawn in the owner's colour under a hatch with a "New Spain (Spain)" label. **Seize** one by force
-    (sized troops against the colonial garrison, or an amphibious fleet; it means war with the owner, and coalitions
-    work against the owner), **buy** it (price from its value and relations; never in wartime), or **back its
-    independence** (likelier near the real date): it becomes an allied state.
-  - **Land held by peoples the game doesn't model as states** (Aotearoa before 1840, New Guinea, the Konbaung
-    kingdom, the Malay and Gulf sheikhdoms, the Arabian emirates, the Polish–Lithuanian Commonwealth after 1789) is
-    shown as such. Its people resist: taking it needs enough troops, leaves an unstable territory with an
-    insurgency, and after 1945 draws condemnation.
-  - **Historical U.S. purchases** appear as offers in their real windows: Louisiana (1803, $15 million), Florida
-    (Adams–Onís, 1819), the Gadsden Purchase (1853), Alaska (1867, $7.2 million; Alaska is now its own outline) and
-    the Danish West Indies (1917). Louisiana, Florida and Gadsden lie inside today's U.S. outline, so they add
-    resources and score rather than a shape.
-  - Anything taken is an ordinary territory: name it, govern it, earn from it, and petition for statehood. Africa
-    keeps its 3.3.0 rules.
 
-  ```mermaid
-  flowchart TD
-      L[Land whose country doesn't exist yet] --> K{Who holds it? TerritoryData}
-      K -- era power --> C[Colony: owner's colour, hatched]
-      K -- peoples not modelled as a state --> I[Indigenous land]
-      C --> S[Seize: troops vs garrison · war with owner]
-      C --> B[Buy: price from value and relations]
-      C --> F[Back independence: allied state]
-      O[Historical offers in their windows<br/>Louisiana 1803 · Florida 1819 · Gadsden 1853 · Alaska 1867 · Danish West Indies 1917] --> T
-      I --> R[Take by force: resistance, unrest,<br/>condemnation after 1945]
-      S --> T[U.S. territory: name, govern, statehood]
-      B --> T
-      R --> T
-  ```
-- **Evolving cabinets (new in 3.12.2)**: officeholders change on their real dates while the game still matches
-  history (Bevin hands the Foreign Office to Morrison in March 1951). The player's own government follows history
-  only until the player's choices diverge: making an appointment, winning an election, or history recording someone
-  else in the player's office (the game keeps you in it). Computer-run nations show their historical leader of the day
-  on the dossier until their own story diverges (a change of government, annexation or destruction).
-- **The Gulf War, 1990 (new in 3.12.2)**: a scenario starting on invasion day, 2 Aug 1990, scored against
-  history: Congress's authorization (12 Jan 1991), the 35-nation coalition, Desert Storm, Kuwait liberated
-  (28 Feb 1991), no nuclear use. Thirteen Days (1962) now also scores the naval quarantine (24 Oct 1962) and DEFCON 2.
-- **Allied coalitions (new in 3.12.0)**: **Coalition** on a dossier asks the era's treaty allies (NATO from 1949, the
-  Warsaw Pact…), alliances made in play and friendly nations (a coalition of the willing) to join an operation
-  against that country, one action for all. Each decides by its relations with you, its ties to the target and the
-  legitimacy of the action: a legislative authorization or a real casus belli helps, chemical or biological weapons
-  drive allies away. Members send a tenth of their forces to the front and **share the world's reaction**; those who
-  refuse cool a little. The sheet shows each nation's odds from the same formula.
+### Scenarios
+
 - **Historical scenarios (new in 3.12.0)**: Day of Infamy (7 Dec 1941), the Berlin Blockade (24 Jun 1948), Korea
   (25 Jun 1950) and September 11, 2001 join Thirteen Days (1962), Able Archer (1983), the World in 1990 and the World
   Today, each with a historically set board and dated events. Each has a **scorecard** (top-bar **Scorecard**) that
@@ -344,273 +620,32 @@ Everything happens on one screen:
       O -- refuse --> R[Relations −5]
       S[Historical scenario] --> B[Board + dated events] --> SC[Scorecard: history vs this game]
   ```
-- **Play as other nations (new in 3.11.0)**: **Nation** on the start screen picks any nation that exists in the
-  start year (★ = real cabinet data). The cabinet is the nation's real officeholders on the start date, from bundled
-  research covering 33 nations and about 13,000 officeholders (`Documentation/cabinets/`; `gen_compact.py` builds
-  `Shared/Resources/nation_cabinets.json`), with each office's own title. Where the record has a gap the slot shows the
-  generic title for that form of government and "(no record)": names are never invented. Uncertain records carry a
-  "?", and dates after April 2026 keep the last earlier holder marked "(acting/unverified)". You play the prime minister
-  in parliamentary systems, the party leader in communist states, otherwise the head of state. How you fall follows
-  the government of the day: a **no-confidence vote**, a **coup**, a **revolution**, a **party congress**, a **junta
-  decision** or **royal dismissal**, each with its own warnings; U.S. impeachment applies only to the U.S. The
-  U.S.-only systems (Congress and the War Powers clock, U.S. elections, the draft, statehood, named U.S. fleets) are
-  hidden or refused for other nations, and the computer runs the United States. Play history records the nation and
-  its leader ("country_name", "leader").
+- **The Gulf War, 1990 (new in 3.12.2)**: a scenario starting on invasion day, 2 Aug 1990, scored against
+  history: Congress's authorization (12 Jan 1991), the 35-nation coalition, Desert Storm, Kuwait liberated
+  (28 Feb 1991), no nuclear use. Thirteen Days (1962) now also scores the naval quarantine (24 Oct 1962) and DEFCON 2.
+
+### Peace
+
+- **Peace victories (new in 3.16.0)**: four peaceful ways to win, each on the **PEACE** panel with a progress bar and
+  what's missing. Every one needs you at peace, no nuclear weapon ever used, and five years in office:
+  - **Treaty network → Master Diplomat**: treaties with 35% of the world's nations. Proposing or signing a treaty and
+    non-aggression pacts now put treaties on record, and nations offer them too.
+  - **Alliance leadership → Leader of the Free World**: the largest alliance on Earth, at least max(8, 20% of nations).
+  - **Economic dominance → Economic Tycoon**: 30% of world output (or five points above your starting share, for the
+    early republic) and the largest economy.
+  - **Nobel moments → Nobel Laureate**: broker peace between warring nations three times (one action each; the odds
+    rise the more both sides like you).
+  - Peace Maker and WOPR's Choice now depend on your own record (no war you started), not on the whole world being at
+    peace. Short of victory, peace still scores: treaty partners, Nobel moments, years at peace and output share.
 
   ```mermaid
   flowchart TD
-      N[Start screen: nation + start year] --> C{Cabinet data for the nation?}
-      C -- yes --> R[Real holders on the date<br/>? uncertain · acting/unverified after Apr 2026]
-      C -- gap or none --> G[Generic titles for the government type<br/>no invented names]
-      R & G --> P[Play: U.S.-only systems hidden; the AI runs the U.S.]
-      P --> M{Pressure at the monthly poll}
-      M -- U.S. --> I[Impeachment → Senate trial]
-      M -- others --> X[No-confidence · coup · revolution ·<br/>party congress · junta · royal dismissal]
+      C{At peace, no nukes,<br/>5 years in office?} -- no --> S[Peace still scores]
+      C -- yes --> T[Treaty partners ≥ 35%] --> V1[Master Diplomat]
+      C -- yes --> A[Largest alliance ≥ max 8, 20%] --> V2[Leader of the Free World]
+      C -- yes --> E[30% of output + largest economy] --> V3[Economic Tycoon]
+      C -- yes --> N[3 peaces brokered] --> V4[Nobel Laureate]
   ```
-- **Antarctica (new in 3.10.0)**: the continent is on both map styles (and the card grid) and can be claimed in any
-  era. Before the Antarctic Treaty it is open land with seven overlapping national claims shown on its dossier
-  (United Kingdom 1908, New Zealand 1923, France 1924, Australia 1933, Norway 1939, Chile 1940, Argentina 1943),
-  none sovereign. Between signing (1 Dec 1959) and entry into force (23 Jun 1961) a claim is restricted; after that
-  it **violates the treaty** and costs like any treaty-banned option (world and allies furious, sanctions,
-  impeachment hearings). It needs only a 0.5K garrison, but the cold takes 5% of it a month and upkeep is heavy. It
-  yields sealing (to 1900), whaling (to 1964), science prestige (from 1957), and minerals and oil only from 2048, when
-  the Madrid Protocol's mining ban can be reviewed.
-- **Group actions (new in 3.10.0)**: **Group** in the top bar acts on many nations at once: all U.S. territories,
-  all allies (the era's treaty allies plus alliances made in play), all of a region, a hand-picked set, or a saved
-  custom group. Give money or send aid (split evenly or by need), set garrisons, impose sanctions, send a diplomatic
-  message or recall ambassadors. One confirmation shows the total and the per-nation breakdown. Each nation goes
-  through the same single-nation code as before (identical effects and logging), the group costs one action
-  (garrison changes are free), and play history gets one `group_action` event listing the members.
-
-  ```mermaid
-  flowchart LR
-      S[Pick: territories · allies · region · hand-picked · saved] --> A[Action + amount + split]
-      A --> P[Plan: per-nation breakdown and total]
-      P --> C{Confirm}
-      C --> E[Each member through the single-nation code<br/>sendAid · setGarrison · presidential action]
-      E --> L[One action · one group_action event]
-  ```
-- **Occupation and statehood (new in 3.9.0)**: **Govern** on a U.S. territory's dossier sets its **garrison**
-  (drawn from the troop pool; it needs about 2K per √million people), its **government** (military governor, local
-  elections or self-rule; self-rule calms it most but keeps 40% of the wealth at home) and shows its **insurgency**
-  and stability, which drift each turn toward targets set by those choices. A territory left boiling over for a year
-  with too few troops **breaks away**. One held five years, stable (60+), quiet (insurgency 30 or less) and with two
-  years of elected government can **petition for statehood**; Congress votes, and it joins as the 49th, 50th or 51st
-  state (counted from the real admissions of its era), keeping its player-given name and adding a star ("U.S. STATE
-  ★51" on the map). Statehood scores +1000. Annexations now come with an occupation garrison.
-- **Draft and mobilization (new in 3.9.0)**: U.S. troops are finite and era-based: the standing army and Guard of
-  the day (20K in 1850, 200K in 1913, about 1.1M today) plus draftees while a historical draft is in force (Civil War
-  1863–65, 1917–18, 1940–47, 1948–73; trained over six months). After 1973 the force is all-volunteer; **Troops** in
-  the top bar opens Manpower, where the President can **call a draft** (+500K or more over six months; approval −8,
-  Congress −5, less in wartime) or **mobilize the reserves** (+30% in a month). Invasions, expeditions, garrisons and
-  troops sent to the War Room all draw on this pool, so you can't send troops you don't have.
-- **Also in 3.9.0**: computer-run countries size their own attacks with the 3.4.0 model (aggressive ones go in
-  overwhelming, cautious ones probe, already-dominant ones hold back); the World Map card grid shows unclaimed land
-  (claim and name it there too) and a Rename button on U.S. territory cards.
-
-  ```mermaid
-  flowchart TD
-      M[Manpower: standing force of the era<br/>+ historical or called draft] --> F[Free troops]
-      F --> S[Sizing, expeditions, War Room]
-      F --> G[Garrisons]
-      G --> O[Occupation each turn:<br/>insurgency and stability drift]
-      V[Government: governor / elections / self-rule] --> O
-      O -- boiling a year, too few troops --> L[Breaks away]
-      O -- 5 years, stable, quiet, elected --> P[Petition Congress]
-      P -- pass --> ST[Statehood: the Nth state, a new star, +1000 score]
-  ```
-- **Congress and the war powers (new in 3.8.0)**: the top bar shows Congress's support **by chamber** (the House
-  follows the public more, the Senate less) and any **War Powers clock**. **Congress** on a dossier asks for a
-  *Declaration of War* or an *Authorization for Use of Military Force* (one action). Both chambers vote, with odds from
-  their support, the public's war support and the casus belli (the target attacked us, struck us with nuclear weapons,
-  is at war with an ally, or is plainly hostile); an authorization is easier than a declaration. A pass rallies the
-  country; a rebuff costs approval and support. From the **War Powers Resolution (7 Nov 1973)**, hostilities the U.S.
-  starts or joins without authorization start a 60-day clock, with warnings at 45 and 60 days, then 30 days to
-  withdraw; defying it costs Congress's support and adds outrage. Congress's support drifts monthly with approval and
-  outrage. **Impeachment** is a visible process (inquiry → articles → House vote → Senate trial) and ends in a
-  **Senate trial that needs two-thirds to convict**; an acquittal ends it. Party control isn't modelled.
-- **Advisor warnings (new in 3.8.0)**: before any major action (invasion, air strike, bombardment, blockade, nuclear
-  strike, chemical or biological weapon, annexation, land claim, fleet order) the **Joint Chiefs**, the **Secretary of
-  State** and the **Vice President** each give one line, from the same numbers the engine uses: odds and losses,
-  the world's reaction and treaties, approval, the War Powers clock and impeachment pressure. Overrule (proceed) or
-  cancel. *Settings → Advisor warnings* turns them off.
-
-  ```mermaid
-  flowchart TD
-      A[Major action] --> W{Advisor warnings on?}
-      W -- yes --> L[Joint Chiefs · Secretary of State · Vice President<br/>odds, losses, world, approval, Congress]
-      L --> O{Overrule or cancel}
-      W -- no --> X[Act]
-      O -- overrule --> X
-      X --> H{Hostilities after Nov 1973<br/>without authorization?}
-      H -- yes --> C[War Powers clock: 60 days + 30 to withdraw<br/>warnings at 45 and 60]
-      C -- defied --> P[Congress support −15, outrage +15]
-      Q[Ask Congress: declaration / AUMF] --> V{House and Senate vote}
-      V -- pass --> K[Authorized: clock cleared, rally]
-      V -- fail --> F[Approval −3, support −5]
-      P --> I[Impeachment: inquiry → articles → House vote → Senate trial, ⅔ to convict]
-  ```
-- **Territory wealth and the politics of expansion (new in 3.7.0)**: taking land now pays, and is priced fairly.
-  - **Resources**: every territory, claimed or annexed, yields era-accurate resources from roughly when they were first
-    exploited (`ExpansionModel.deposits`): South African diamonds (1867) and gold (1886), Gold Coast gold and cocoa
-    (1890s), Copperbelt copper (c.1928), Congo ivory and rubber (to c.1914–20), copper, diamonds, cobalt and uranium
-    (1940s), Nigerian (1956) and Libyan (1959) oil, Niger uranium (1971), Egyptian and Sudanese cotton, Moroccan
-    phosphates, and so on; lands without a table entry farm a little. Income starts six months after taking a land,
-    reaches full output at two years, and scales with stability and garrison. It adds to U.S. output and approval
-    (prosperity, up to +5) and is listed per territory in the **Resources** panel. "Gotit is now producing copper"
-    goes on the ticker and into play history.
-  - **Strategic resources**, in their eras: oil (from 1910) fuels a 15% larger air arm and 10% faster fleets, uranium
-    (from 1942) adds about 20 warheads a year, and rubber keeps a 10% larger army moving in the world wars.
-  - **Score**: +100 per territory held, +10 per $1B of resources earned (+1000 per statehood, for when that arrives).
-  - **Politics by era** (`ExpansionModel.politics`): before 1919 a few claims a year are popular (+0.5 approval each
-    up to six), then anti-imperialist backlash grows; the outrage per claim is 0.5 + 0.003 × (n − 4)², so a handful is
-    cheap and dozens a year are dangerous. Interwar claims cost more; after 1945 every annexation costs approval and
-    outrage, and the world reacts three times as hard. World-opinion hits grow with the spree too.
-  - **No surprise impeachment**: the top bar shows **impeachment risk** (the pressure Congress acts on at each monthly
-    poll) and the **approval floor** (38%); the Chief of Staff warns on the dossier before a claim that would tip it;
-    the ticker warns the turn pressure crosses the line; and the "articles drafted" stage says the House votes at the
-    next poll unless approval recovers.
-  - Rebalance check: replaying the 3.3.0 session that ended in removal (1913, 27 claims of 5K troops over 8 weeks)
-    now ends with approval in the low 40s and no impeachment stage at all; 47 claims in a week still brings hearings.
-
-  ```mermaid
-  flowchart TD
-      C[Claim or annex a land] --> P[ExpansionModel.politics<br/>era × claims this year]
-      P -- few, pre-1919 --> U[Approval +0.5, little outrage]
-      P -- spree or post-1945 --> D[Outrage ∝ n², world reaction ×]
-      C --> R[Resources by era<br/>ramp-up 6 months → 2 years]
-      R --> I[Income × stability × garrison]
-      I --> G[U.S. output, prosperity approval,<br/>score, Resources panel]
-      I --> S[Strategic: oil, uranium, rubber]
-      D --> K{Impeachment pressure > 12?}
-      K -- yes --> W[Risk badge HIGH, Chief of Staff warns,<br/>ticker warns before the poll]
-      W --> V[Monthly poll: Congress advances one stage]
-  ```
-- **Era weapons catalog (new in 3.6.0)**: every attack option the United States actually had, by year, from a
-  bundled table of 47 options (`ArsenalCatalog`, generated from the research in `Documentation/arsenal/`). Under each
-  action the sheet shows the era's arsenal (e.g. *ARSENAL 1918: Infantry · Field artillery · Horse cavalry · Armor*)
-  and, for anything restricted or banned, its status and treaty. Nothing nuclear appears before Trinity (16 Jul 1945).
-  - **Chemical and biological weapons** are new attack options on the Military rung. They're labelled, never hidden,
-    and priced by legal status (design choices): a pre-treaty era such as 1917–18 costs little abroad; the restricted
-    years (Geneva Protocol, signed 1925, ratified 1975) cost more; **treaty-banned** use (Chemical Weapons Convention
-    1997, Biological Weapons Convention 1975) costs every relationship, allies doubly, brings sanctions on U.S. output
-    and opens impeachment hearings.
-  - **Destroyed stockpiles can't be used off the shelf**: chemical after 7 Jul 2023, biological after 1969 (the
-    program ran 1943–1969). The President must first **restart the program** (Covert rung): 2 years for chemical,
-    3 for biological, with a 35% a year chance of discovery before it is ready, which carries the same treaty-banned
-    penalties. INF-range ground missiles (1988–2019) are labelled treaty-banned too.
-  - Encyclopedia level only: names, dates, game effects and diplomatic consequences.
-
-  ```mermaid
-  flowchart TD
-      D[Date] --> C{ArsenalCatalog}
-      C -- before the option existed --> H[Hidden: e.g. no nukes before 16 Jul 1945,<br/>no chemical before 1917]
-      C -- stockpile exists --> L{Legal status}
-      C -- stockpile destroyed --> R[Restart the program<br/>2–3 years, 35%/yr discovery risk]
-      R -- ready --> L
-      R -- discovered --> P
-      L -- legal, e.g. 1918 --> S[Small opinion cost]
-      L -- restricted --> M[Moderate cost]
-      L -- treaty-banned --> P[World and allies furious, sanctions,<br/>impeachment hearings open]
-  ```
-- **Naval operations (new in 3.5.0)**: "Send the Fifth Fleet to Japan!" **Fleet** on a country's dossier (and **Fleet
-  orders** on unclaimed coastal land) opens the fleet-order sheet: pick a **named U.S. fleet of the era**, a mission and
-  how much of the fleet to commit (Probe 25% / Standard 50% / Overwhelming 100%, the 3.4.0 sizing step).
-  - **Fleets by era** (`NavalModel.fleets`, from `Documentation/arsenal`): no U.S. navy until 1797 and no named
-    squadron before the Mediterranean Squadron (1801); the distant-station squadrons (Pacific, West India, Brazil, East
-    India, Home, Africa), the Union blockading squadrons, the European, North Atlantic and Asiatic squadrons, the
-    Flying Squadron (1898), the Great White Fleet (1907–09), the Atlantic and first Pacific Fleets, the U.S. Fleet of
-    the treaty years, then the Pacific and Atlantic Fleets (1941–) and the numbered fleets with their real gaps and home
-    ports (Fifth Fleet 1944–47 and from 1995 in Bahrain; Second Fleet 1950–2011 and from 2018; Seventh Fleet at
-    Yokosuka). Ship counts are era-typical: sail and steam surface ships, submarines from 1900, carriers from 1922,
-    amphibious ships from 1942. No carriers in 1850.
-  - **Missions**: *show of force* (pressure and tension, not war), *blockade* (war; the target's output falls every
-    turn on station), *naval strike* (war; damage and casualties with the era's weapon, e.g. Tomahawks only from
-    1983), *amphibious invasion* (opens a front with the landing force, or takes unclaimed coastal land outright).
-  - **Transit** takes great-circle distance ÷ era speed (sail 150, steam 350, modern 900 km a day) in game days; the
-    fleet is drawn on the map with a dashed wake in both skins. On arrival the target's navy and air force engage it:
-    up to a quarter of its ships lost, by the defender's share of combined strength. A fleet on station ties up its
-    ships until recalled. **Landlocked targets can't be reached** and the sheet says why.
-
-  ```mermaid
-  flowchart LR
-      O[Fleet orders: fleet of the era,<br/>mission, commitment] --> G{fleetOrderProblem}
-      G -- landlocked / not in era / already out / no actions --> X[Refused with the reason]
-      G -- ok --> U[Under way: days = km ÷ era speed<br/>map marker + wake]
-      U -- arrives --> E[Engagement: ships lost<br/>by defender's share]
-      E --> M{Mission}
-      M --> S[Show of force: relations, anxiety]
-      M --> B[Blockade: war, output falls each turn]
-      M --> K[Strike: war, damage, casualties]
-      M --> A[Amphibious: front opens,<br/>or unclaimed land claimed]
-      S & B & K & A --> T[On station until recalled<br/>play events fleet_ordered / fleet_action]
-  ```
-- **Size your offensives (new in 3.4.0)**: before a ground invasion, air strike, bombardment or nuclear strike, the
-  action sheet shows a **Force size** step: Probe / Standard / Overwhelming presets plus a slider per force the attack
-  uses (ground troops in thousands, aircraft sorties, warheads), bounded by what the U.S. has free right now and by the
-  era (no aircraft before 1914, no warheads before 1945). A read-out shows the honest consequences from the engine's own
-  formulas. **Standard is exactly the pre-3.4 attack** (3 / 5 / 10 warheads by action, the War Room's opening force of
-  35% of the force pool, a fifth of the air arm). Expeditions to unclaimed land are sized in troops alone (5K standard;
-  1K is enough, and the force stays on as the garrison).
-
-  | Effect | Rule (m = chosen ÷ standard) |
-  |---|---|
-  | Success odds | min(1, √m): only an undersized attack can fail |
-  | Target's relations | the action's usual change × (0.75 + 0.25 m) |
-  | Rest of the world | −round(4 × (m − 1)) relations, ruthlessness +round(5 × (m − 1)), for m > 1 |
-  | Escalation | m ≥ 2 raises DEFCON one more step |
-  | Ground troops | the new front opens with the chosen troops; the War Room then fights it (more troops: better odds, more casualties both ways); they are tied up until it ends |
-  | Air | aircraft lost = sorties × 4% × enemy strength, out of the air arm for the rest of the game; a bigger raid kills 5% × (m − 1) of the enemy's front line |
-  | Nuclear | the chosen warheads go to the existing strike: damage, radiation, casualties, and retaliation up to twice as many |
-
-  ```mermaid
-  flowchart LR
-      A[Pick an offensive] --> K{AttackSizing.kinds}
-      K -- none --> X[Unsized action<br/>as before]
-      K -- troops / aircraft / warheads --> S[Force size step<br/>Probe · Standard · Overwhelming · sliders]
-      S --> B[Bounded by free forces<br/>and the era]
-      B --> E[executeShadowPresidentAction<br/>size → m]
-      E --> O[Odds, relations, world reaction,<br/>DEFCON, fronts, losses]
-      E --> P[play event attack_ordered<br/>e.g. 12 warheads]
-  ```
-  Computer-run countries still attack at their fixed sizes.
-- **Unclaimed lands (new in 3.3.0)**: start in an era before a country existed (Africa before ~1960, Libya before
-  1951, South Africa before 1910) and its land is on the map as **unclaimed**: parchment on the modern map, light gray
-  on the EGA map, under every filter, with an `UNCLAIMED` tag and an *Unclaimed* legend swatch. Click it for a short
-  dossier ("Unclaimed land — no government, no army") and a **Send expedition** button. With nobody to fight, the land
-  is taken at once as a U.S. territory (drawn exactly like an annexed one) for one action and a small hit abroad
-  (rivals −5, others −2, allies none; from 3.7.0 the outrage depends on era and pace, see below). A naming sheet then opens, prefilled with the land's modern name.
-  - **Name or rename any U.S. territory**: the dossier of every U.S. territory, claimed or annexed, has **Rename**,
-    and the annex option on the Terms of Surrender screen takes an optional new name. Names are trimmed, 1–40
-    characters on one line (no control characters), and are always shown as plain text.
-  - Only lands that **no era country covers** count: Soviet republics under the Russian Empire or USSR, the Yugoslav
-    and Czechoslovak states, Germany, Korea and so on are never unclaimed. Computer-run countries never claim land,
-    and unclaimed land never takes a turn. The rule is a small table, `WorldCountriesDatabase.unclaimedLands`.
-  - Nothing new is saved: unclaimed land is derived from the start year minus what has been claimed, and a claimed
-    land is an ordinary territory, so older saves load unchanged.
-
-  ```mermaid
-  flowchart TD
-      Y[Game starts in year Y] --> U{Land in unclaimedLands<br/>for Y, not yet a country?}
-      U -- no --> C[Ordinary country<br/>or era predecessor]
-      U -- yes --> M[Map: parchment / light gray<br/>UNCLAIMED tag, selectable]
-      M --> D[Dossier: no government, no army]
-      D --> E[Send expedition<br/>1 action, small world-opinion hit]
-      E --> T[New U.S. territory<br/>territoryOf = USA]
-      S[Terms of Surrender: annex<br/>optional new name] --> T
-      T --> N[Naming sheet: 1–40 chars, one line]
-      T --> R[Dossier: Rename]
-      R --> N
-      N --> L[Map, dossier and ticker show the name<br/>play events claimed_land / renamed_territory]
-  ```
-- **Military alliances** with era-accurate membership:
-  - NATO's Article 5 brings in every member, with members from 1949 up to Sweden in 2024.
-  - The Warsaw Pact exists from 1955 to 1991.
-  - AUKUS, CSTO, SCO, the Arab League, ASEAN and the African Union give partial collective defense.
-- **Nuclear arms race**: a power that falls 40% or more behind builds up at era-appropriate rates. SALT I, START I and
-  New START caps bring arsenals down. All nine nuclear states use SIPRI/FAS warhead, ICBM, SLBM and bomber counts.
-- **DEFCON** runs from 5 down to 1. Nuclear strikes play cinematic sequences.
-- **Other theaters**: cyber warfare, economic warfare, and covert operations.
 
 ### History and content
 
@@ -1027,6 +1062,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Absorptions (3.16.2) | Events `nation_absorbed` (`land`, `by`), `annexation_crisis` (`land`, `by`) |
 | Foundings (3.16.1) | Events `nation_founded` (`country`, `name`), `independence_movement` (`land`, `owner`) |
 | Peace (3.16.0) | Event `peace_brokered` (`a`, `b`, `success`) |
 | Nova and records (3.15.0) | Events `nova_commentary` (`text`, `source`: `nova` or `template`), `record_set` (`record`, `value`, `previous`), `era_transition` (`country`, `from`, `to`) |
@@ -1057,18 +1093,19 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **582 tests and 0 failures**, covering all seven required categories. No test touches the network, the
-real `UserDefaults`, or real saves.
+The suite has **590 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
+the tally.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 192 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 120 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 72 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 43 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 39 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 65 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 46 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 193 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules |
+| **Functional** | 122 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen |
+| **Security** | 73 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows |
+| **Integration** | 44 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend |
+| **Performance** | 40 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 under one second (profiled at about 0.25 s, 0.5 s at worst, in Debug) |
+| **Retry** | 66 | `RetryPolicy` and `Retry.run`; LLM clients, Ollama, MLX and Games DB sync all retry; every new save field decodes from older saves; a failed commentary backend leaves the template line |
+| **Frame** | 47 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/` |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -1096,6 +1133,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.16.2 | Oct 2026 | Historical absorptions (Korea 1910, the Baltics 1940, the Anschluss, the partitions of Poland) with restorations, or a crisis when the target is your ally; a README for the whole 3.x series |
 | 3.16.1 | Oct 2026 | Nations founded mid-game on their real dates (or an independence movement where the land was taken); Nova comments on the AI phase too |
 | 3.16.0 | Oct 2026 | Peace victories: treaty network, alliance leadership, economic dominance, Nobel moments, with a Paths to Peace panel and peace scoring |
 | 3.15.0 | Oct 2026 | Nova's live commentary, the Hall of Infamy (Records screen), nations that rename and change government on their real dates |

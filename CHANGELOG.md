@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.2] - 2026-10-20 — Historical absorptions; polish
+
+### Added
+- **Historical absorptions** (`processAbsorptions`, in the yearly era sync): a nation still following history is
+  absorbed on the real date into the nation that took it, when that nation follows history too. Nations the era
+  board drops (Korea 1910, the Baltic states 1940) go to the owner history gave their land; `WorldPolitics.absorptions`
+  covers the rest (the third partition of Poland 1795, the Anschluss 1938, Czechoslovakia and Poland 1939). They are
+  restored on their historical dates or when the era board brings them back (`shadow.historicalAbsorptions`). A target
+  allied with the player or under a defence treaty becomes a crisis instead: the absorber declares war and the target
+  appeals to Washington. Play events `nation_absorbed`, `annexation_crisis`. Hawaii and Texas aren't separate lands
+  on the map, so they don't apply.
+
+### Changed
+- **Profiling**: a full 2025 Nightmare end-turn takes about 0.25 s (0.5 s at worst, on the year's era sync) and a
+  1789 Nightmare end-turn about 0.02 s in a Debug build on the Studio, under the 1 s budget, so no optimisation was
+  needed; a performance test now holds the line.
+- **README**: an overview of the 3.x series, features grouped by theme (fighting a war, land and empire, the world
+  around you, scenarios, peace) instead of one release-ordered list, a refreshed introduction and testing section.
+- 8 tests across all seven categories (590 total, single muted run); snapshots in `Screenshots/3.16.2/`.
+
 ## [3.16.1] - 2026-10-20 — Mid-game foundings; commentary on the AI phase
 
 ### Added

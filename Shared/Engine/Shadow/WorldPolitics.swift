@@ -380,7 +380,9 @@ extension GameEngine {
             self.gameState = gs
             return
         }
+        let lastBoard = gs.shadow.eraBoardIDs
         processFoundings(board)
+        processAbsorptions(board, lastBoard: lastBoard)
         for i in gs.countries.indices {
             let c = gs.countries[i]
             guard c.id != gs.playerCountryID, !c.isDestroyed, !c.isTerritory, !gs.shadow.eraDiverged.contains(c.id),
@@ -423,6 +425,7 @@ extension GameEngine {
             guard var h = board[id] else { continue }
             if let held = gs.countries.firstIndex(where: { $0.id == id }) {
                 guard let owner = gs.countries[held].territoryOf else { continue }   // already independent
+                if gs.shadow.historicalAbsorptions[id] == owner { continue }   // history restores it (processAbsorptions)
                 gs.countries[held].profile.outcry = min(100, gs.countries[held].profile.outcry + 20)
                 gs.countries[held].stability = max(0, gs.countries[held].stability - 10)
                 let ownerName = owner == gs.playerCountryID ? "the United States" : (gs.getCountry(id: owner)?.name ?? owner)
@@ -451,6 +454,85 @@ extension GameEngine {
             }
             gs.shadow.post("\(h.name) is founded.", date: gs.currentDate, severity: 2)
             logPlayEvent("nation_founded", detail: ["country": id, "name": PlayHistory.text(h.name), "game_date": PlayHistory.day(gs.currentDate)])
+        }
+        self.gameState = gs
+    }
+}
+
+// MARK: - Historical absorptions (3.16.2)
+
+extension WorldPolitics {
+    /// Absorptions the era boards don't encode (the board drops Korea in 1910 and the Baltic states in 1940 by
+    /// itself): (land, absorber, year, year it is restored).
+    static let absorptions: [(land: String, by: String, from: Int, until: Int)] = [
+        ("POL", "RUS", 1795, 1918),   // the third partition (Prussia and Austria took the rest)
+        ("AUT", "DEU", 1938, 1945),   // the Anschluss
+        ("CSK", "DEU", 1939, 1945),
+        ("POL", "DEU", 1939, 1945),
+    ]
+}
+
+extension GameEngine {
+    /// A nation still following history is absorbed on the real date into the nation that took it, if that nation is
+    /// following history too. If the target is the player's ally or treaty partner, it becomes a crisis instead: the
+    /// absorber moves by force. Absorbed nations are restored on their historical dates (or when the era board brings
+    /// them back) while their absorber still follows history.
+    func processAbsorptions(_ board: [String: Country], lastBoard: Set<String>) {
+        guard let gs = gameState else { return }
+        let y = gs.currentYear, ids = Set(board.keys)
+        var due: [(String, String)] = []
+        // Nations the era board dropped this year, with the owner history gave their land.
+        for id in lastBoard.subtracting(ids).sorted() {
+            let era = PreStateModel.era(for: id, year: y)
+            let by = era.flatMap { $0.kind == .colony && ids.contains($0.owner) ? $0.owner : nil }
+                ?? WorldMapData.owner(of: id, in: ids, year: y)
+            if let by, by != id { due.append((id, by)) }
+        }
+        for a in WorldPolitics.absorptions where a.from <= y && y < a.until && !gs.shadow.firedRivalries.contains("absorb-\(a.land)-\(a.from)") {
+            gs.shadow.firedRivalries.insert("absorb-\(a.land)-\(a.from)")
+            due.append((a.land, a.by))
+        }
+        let me = gs.playerCountryID
+        for (land, by) in due {
+            guard land != me, by != me, !gs.shadow.eraDiverged.contains(land), !gs.shadow.eraDiverged.contains(by),
+                  let absorber = gs.getCountry(id: by), !absorber.isDestroyed, !absorber.isTerritory else { continue }
+            guard let t = gs.countries.firstIndex(where: { $0.id == land }) else {
+                if gs.preState(land)?.era.kind == .indigenous, aiTakeLand(land, by: by) { gs.shadow.historicalAbsorptions[land] = by }
+                continue
+            }
+            let target = gs.countries[t]
+            guard !target.isDestroyed, !target.isTerritory else { continue }
+            let guaranteed = target.alliances.contains(me)
+                || gs.treaties.contains { $0.signatories.contains(me) && $0.signatories.contains(land) && [.alliance, .mutualDefense].contains($0.type) }
+            if guaranteed {
+                gs.shadow.post("\(absorber.name) moves to annex \(target.name). \(target.name), under American protection, appeals to Washington.", date: gs.currentDate, severity: 3)
+                if !absorber.atWarWith.contains(land) { declareWar(aggressor: by, defender: land) }
+                logPlayEvent("annexation_crisis", detail: ["land": land, "by": by, "game_date": PlayHistory.day(gs.currentDate)])
+                continue
+            }
+            gs.activeWars.removeAll { $0.aggressor == land || $0.defender == land }
+            for i in gs.countries.indices {
+                gs.countries[i].atWarWith.remove(land)
+                gs.countries[i].alliances.remove(land)
+            }
+            gs.countries[t].atWarWith = []
+            gs.countries[t].alliances = []
+            gs.countries[t].territoryOf = by
+            gs.shadow.historicalAbsorptions[land] = by
+            gs.shadow.worldStats["absorptions", default: 0] += 1
+            gs.shadow.post("\(target.name) is annexed by \(absorber.name).", date: gs.currentDate, severity: 2)
+            logPlayEvent("nation_absorbed", detail: ["land": land, "by": by, "game_date": PlayHistory.day(gs.currentDate)])
+        }
+        // Restorations: on the table's date, or when the era board has the nation again.
+        for (land, by) in gs.shadow.historicalAbsorptions {
+            let restoreYear = WorldPolitics.absorptions.first { $0.land == land && $0.by == by && $0.from <= y }?.until
+            guard (restoreYear.map { y >= $0 } ?? false) || (ids.contains(land) && !lastBoard.contains(land)),
+                  let t = gs.countries.firstIndex(where: { $0.id == land }), gs.countries[t].territoryOf == by,
+                  !gs.shadow.eraDiverged.contains(by) else { continue }
+            gs.countries[t].territoryOf = nil
+            if let h = board[land] { gs.countries[t].name = h.name; gs.countries[t].government = h.government; gs.countries[t].flag = h.flag }
+            gs.shadow.historicalAbsorptions.removeValue(forKey: land)
+            gs.shadow.post("\(gs.countries[t].name) regains its independence.", date: gs.currentDate, severity: 2)
         }
         self.gameState = gs
     }
