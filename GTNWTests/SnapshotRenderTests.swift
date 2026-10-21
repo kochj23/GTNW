@@ -433,5 +433,26 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(ScorecardSheet(gameState: g2), size: CGSize(width: FontScale.w(700), height: FontScale.h(320)), name: "scorecard-pearl-\(t)").path)")
         }
     }
+
+    /// 3.12.2: a computer-run nation's dossier with its historical leader (France 1960), and the Gulf War scorecard.
+    @MainActor
+    func testRenderLeadersAndGulfScorecard() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = 1960
+        engine.processCabinets()
+        let gulf = GameEngine()
+        gulf.startScenario(try XCTUnwrap(ScenarioDefinition.find("gulf1990")), turnLength: .week)
+        let g2 = try XCTUnwrap(gulf.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            let dossier = CountryDossier(gameState: gs, country: gs.getCountry(id: "FRA"), onSheet: { _ in }, scrolls: false).environmentObject(engine).frame(width: FontScale.w(300))
+            print("SNAPSHOT \(try render(dossier, size: CGSize(width: FontScale.w(320), height: FontScale.h(760)), name: "leader-dossier-\(t)").path)")
+            print("SNAPSHOT \(try render(ScorecardSheet(gameState: g2), size: CGSize(width: FontScale.w(700), height: FontScale.h(340)), name: "scorecard-gulf-\(t)").path)")
+        }
+    }
 }
 #endif

@@ -2791,7 +2791,7 @@ final class CoalitionAndScenarioTests: XCTestCase {
     }
 
     func testEveryScenarioLoadsItsBoard() throws {
-        XCTAssertEqual(ScenarioDefinition.all.count, 8)
+        XCTAssertEqual(ScenarioDefinition.all.count, 9)
         for s in ScenarioDefinition.all {
             let (_, gs) = try scenario(s.id)
             XCTAssertEqual(gs.currentDate, s.startDate, s.id)
@@ -2965,5 +2965,137 @@ final class AudioGateTests: XCTestCase {
         AudioGate.environmentOverride = [:]
         empty.set(true, forKey: "GTNWMute")   // what `-GTNWMute YES` puts in the argument domain
         XCTAssertTrue(AudioGate.muted)
+    }
+}
+
+// MARK: - Evolving cabinets, the Gulf War and Cuba scorecards (3.12.2)
+
+@MainActor
+final class EvolvingCabinetTests: XCTestCase {
+
+    /// Britain in January 1951: Attlee's government, Bevin at the Foreign Office.
+    private func britain1951() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(playerCountryID: "GBR", turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = 1951
+        let me = try XCTUnwrap(gs.getPlayerCountry())
+        gs.advisors = NationModel.cabinet(for: me, on: gs.currentDate)
+        gs.shadow.playerLeader = NationModel.leader(for: me, on: gs.currentDate).name
+        gs.shadow.cabinetFollowsHistory = true
+        return (engine, gs)
+    }
+
+    private func months(_ e: GameEngine, _ gs: GameState, _ n: Int) { for _ in 0..<n { gs.turn += 1; e.processCabinets() } }
+
+    private func foreign(_ gs: GameState) -> String? { gs.advisors.last { $0.isActive && $0.role == "state" }?.name }
+
+    func testOfficeholdersChangeOnTheirRealDates() throws {
+        let (engine, gs) = try britain1951()
+        XCTAssertEqual(gs.shadow.playerLeader, "Clement Attlee")
+        XCTAssertEqual(foreign(gs), "Ernest Bevin")
+        months(engine, gs, 3)   // April 1951
+        XCTAssertEqual(foreign(gs), "Herbert Morrison", "Morrison took over the Foreign Office in March 1951")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Herbert Morrison replaces Ernest Bevin") })
+        XCTAssertTrue(gs.shadow.cabinetFollowsHistory)
+    }
+
+    func testHistoryStopsWhenHistoryRemovesThePlayer() throws {
+        let (engine, gs) = try britain1951()
+        months(engine, gs, 10)   // November 1951: Churchill returns to No. 10 in history
+        XCTAssertFalse(gs.shadow.cabinetFollowsHistory)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("History records Sir Winston Churchill") })
+        XCTAssertEqual(foreign(gs), "Herbert Morrison", "Eden does not arrive: the government is the player's now")
+        XCTAssertNil(gs.shadow.domesticEnding, "and the player is not removed by history")
+    }
+
+    func testThePlayersOwnAppointmentEndsTheScript() throws {
+        let (engine, gs) = try britain1951()
+        let i = try XCTUnwrap(gs.advisors.firstIndex { $0.isActive && $0.role == "state" })
+        engine.departAdvisor(index: i, status: .fired, reason: "Bevin is dismissed.")
+        XCTAssertFalse(gs.shadow.cabinetFollowsHistory)
+        let acting = foreign(gs)
+        months(engine, gs, 4)
+        XCTAssertEqual(foreign(gs), acting, "history no longer appoints anyone")
+    }
+
+    func testComputerNationsKeepTheirHistoricalLeadersUntilTheyDiverge() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = 1960
+        engine.processCabinets()
+        XCTAssertTrue(gs.shadow.leaderNames["FRA"]?.hasPrefix("Charles de Gaulle") ?? false, gs.shadow.leaderNames["FRA"] ?? "nil")
+        let fi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "FRA" })
+        gs.countries[fi].government = .military   // a coup in this game
+        engine.processCabinets()
+        XCTAssertTrue(gs.shadow.divergedNations.contains("FRA"))
+        XCTAssertNil(gs.shadow.leaderNames["FRA"], "no longer de Gaulle's France")
+        gs.turn += 120   // 1970
+        engine.processCabinets()
+        XCTAssertNil(gs.shadow.leaderNames["FRA"], "and history does not come back")
+    }
+
+    func testUSGamesAreUnaffected() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        let before = gs.advisors.map(\.name)
+        gs.turn += 24; engine.processCabinets()
+        XCTAssertEqual(gs.advisors.map(\.name), before)
+    }
+
+    func testCabinetStateSurvivesSaveAndOldSavesDecode() throws {
+        let (engine, gs) = try britain1951()
+        months(engine, gs, 2)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.playerLeader, "Clement Attlee")
+        XCTAssertEqual(loaded.shadow.leaderNames, gs.shadow.leaderNames)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["cabinetFollowsHistory", "playerLeader", "trackedGovernments", "divergedNations", "leaderNames"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.cabinetFollowsHistory); XCTAssertTrue(old.shadow.leaderNames.isEmpty)
+    }
+
+    func testEvolvingCabinetsAreCheap() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        measure { for _ in 0..<12 { gs.turn += 1; engine.processCabinets() } }
+    }
+
+    // The Gulf War and Cuba 1962 scorecards
+
+    func testGulfWarPlayedAsHistoryScoresFullMarks() throws {
+        let engine = GameEngine()
+        engine.startScenario(try XCTUnwrap(ScenarioDefinition.find("gulf1990")), turnLength: .week)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(Scorecard.fought("IRQ", "KWT", in: gs), "the invasion has happened on day one")
+        let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+        gs.countries[pi].congressionalSupport = 70; gs.countries[pi].warSupport = 70
+        XCTAssertEqual(engine.requestAuthorization(target: "IRQ", kind: .useOfForce, roll: 0)?.passed, true)
+        gs.actionsUsedThisTurn = 0
+        engine.requestCoalition(against: "IRQ", rolls: Dictionary(uniqueKeysWithValues: engine.coalitionCandidates(against: "IRQ").map { ($0, 0.0) }))
+        engine.declareWar(aggressor: "USA", defender: "IRQ"); engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.attacker == "USA" && $0.defender == "IRQ" && $0.status == .fighting })
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        let lines = Scorecard.lines(for: "gulf1990", in: gs)
+        XCTAssertEqual(lines.count, 5)
+        XCTAssertEqual(Scorecard.score(lines).matched, 5, lines.map { "\($0.label)=\($0.player)" }.joined(separator: ", "))
+    }
+
+    func testCubaScorecardCountsTheQuarantineAndDefcon() throws {
+        let engine = GameEngine()
+        engine.startScenario(try XCTUnwrap(ScenarioDefinition.find("cuba1962")), turnLength: .day)
+        let gs = try XCTUnwrap(engine.gameState)
+        let quarantine = { Scorecard.lines(for: "cuba1962", in: gs).first { $0.label.contains("quarantine") } }
+        XCTAssertEqual(quarantine()?.matchesHistory, false)
+        XCTAssertNotNil(engine.orderFleet("atlfleet", to: "CUB", mission: .blockade))
+        XCTAssertEqual(quarantine()?.matchesHistory, true)
+        gs.defconLevel = .defcon2
+        XCTAssertEqual(Scorecard.lines(for: "cuba1962", in: gs).first { $0.label.contains("DEFCON") }?.matchesHistory, true)
+        XCTAssertEqual(Scorecard.lines(for: "cuba1962", in: gs).count, 5)
     }
 }
