@@ -526,5 +526,29 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(ResourcesSheet(gameState: gs, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(360)), name: "stability-recovery-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.14.0: 1789 — Canada, Mexico and Mongolia coloured and selectable; a treaty offer; the 1792 militia call.
+    @MainActor
+    func testRenderLivingWorld1789() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1789)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.shadow.treatyOffers = [TreatyOffer(from: "FRA", type: .tradeAgreement, date: gs.currentDate),
+                                  TreatyOffer(from: "ESP", type: .nonAggression, date: gs.currentDate)]
+        let later = GameEngine()
+        later.startNewGame(turnLength: .month, year: 1792)
+        let g2 = try XCTUnwrap(later.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            for (sel, zoom) in [("MNG", MapZoom.world), ("CAN", MapZoom.region)] {
+                let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant(sel), zoom: .constant(zoom), filter: .constant(.alignment))
+                print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "world-1789-\(sel.lowercased())-\(t)").path)")
+            }
+            print("SNAPSHOT \(try render(TreatyOffersSheet(gameState: gs).environmentObject(engine), size: CGSize(width: FontScale.w(560), height: FontScale.h(200)), name: "treaty-offers-\(t)").path)")
+            print("SNAPSHOT \(try render(ManpowerSheet(gameState: g2).environmentObject(later), size: CGSize(width: FontScale.w(620), height: FontScale.h(320)), name: "militia-1792-\(t)").path)")
+        }
+    }
 }
 #endif

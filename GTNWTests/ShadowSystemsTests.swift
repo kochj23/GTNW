@@ -201,8 +201,9 @@ final class ProfileAndAnxietyTests: XCTestCase {
                 return false
             }.count
         }
-        XCTAssertEqual(attacks(ambition: 1), 0)
+        XCTAssertLessThanOrEqual(attacks(ambition: 1), 6, "3.14.0: restrained leaders rarely, but sometimes, go to war")
         XCTAssertGreaterThan(attacks(ambition: 6), attacks(ambition: 3))
+        XCTAssertGreaterThan(attacks(ambition: 3), attacks(ambition: 1))
     }
 }
 
@@ -1746,6 +1747,7 @@ final class ExpansionTests: XCTestCase {
             for _ in 0..<perTurn where !queue.isEmpty {
                 gs.actionsUsedThisTurn = 0
                 let id = queue.removeFirst()
+                if gs.getCountry(id: id) != nil { continue }   // 3.14.0: a rival power got there first
                 XCTAssertTrue(engine.claimLand(id, troops: 5), id)
                 engine.renameTerritory(id, to: "Gimme \(id)")
             }
@@ -3533,5 +3535,241 @@ final class TerritoryRecoveryTests: XCTestCase {
         let (_, gs) = try fresh()
         let c = zaf(gs)
         measure { for _ in 0..<2000 { _ = ExpansionModel.stabilityRecoveryMonths(c, in: gs) } }
+    }
+}
+
+// MARK: - 3.14.0: a living world, era-true nations, every land selectable
+
+final class MapSweepTests: XCTestCase {
+    static let eras = [1789, 1850, 1913, 1950, 2025]
+
+    private func board(_ year: Int) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: year)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    /// A point inside the outline (map units), found on a grid over its bounds.
+    private func interior(_ s: MapCountryShape) -> CGPoint? {
+        for n in [8, 24, 80] {
+            for i in 0..<n { for j in 0..<n {
+                let p = CGPoint(x: s.bounds.minX + s.bounds.width * (Double(i) + 0.5) / Double(n),
+                                y: s.bounds.minY + s.bounds.height * (Double(j) + 0.5) / Double(n))
+                if s.path.contains(p) { return p }
+            } }
+        }
+        return nil
+    }
+
+    // Frame / Functional: every land outline resolves, has a colour designation, and can be clicked on the map and
+    // found in the card grid, in every era.
+    func testEveryLandIsSelectableInEveryEra() throws {
+        let shapes = WorldMapData.shared.shapes
+        XCTAssertGreaterThan(shapes.count, 200)
+        for year in Self.eras {
+            let (_, gs) = try board(year)
+            let present = Set(gs.countries.filter { !$0.isDestroyed }.map(\.id))
+            let unclaimed = gs.unclaimedLandIDs
+            let cards = present.union(SimpleModernWorldMap.landCardIDs(gs))
+            var missing: [String] = []
+            for s in shapes {
+                guard let sel = WorldMapData.selection(for: s.id, in: gs, present: present, unclaimed: unclaimed) else {
+                    missing.append("\(s.id) \(s.name)"); continue
+                }
+                // A status with an owner that is really on this board (colour designation).
+                if let pre = gs.preState(s.id) {
+                    if pre.era.kind == .colony { XCTAssertTrue(present.contains(pre.era.owner), "\(year) \(s.id): colony owner \(pre.era.owner) not on the board") }
+                } else if !unclaimed.contains(sel) {
+                    XCTAssertTrue(present.contains(sel), "\(year) \(s.id): owner \(sel) not on the board")
+                }
+                XCTAssertTrue(cards.contains(sel), "\(year) \(s.id): no card for \(sel)")
+                // Offscreen click: the outline under an interior point selects something.
+                if let p = interior(s), let top = shapes.first(where: { $0.bounds.contains(p) && $0.path.contains(p) }) {
+                    XCTAssertNotNil(WorldMapData.selection(for: top.id, in: gs, present: present, unclaimed: unclaimed), "\(year) \(s.id): click finds nothing")
+                }
+            }
+            XCTAssertTrue(missing.isEmpty, "\(year): unselectable \(missing.joined(separator: ", "))")
+        }
+    }
+
+    func testCanadaMexicoMongoliaIn1789() throws {
+        let (_, gs) = try board(1789)
+        let present = Set(gs.countries.map(\.id))
+        for id in ["CAN", "MEX", "MNG", "AUS", "NZL", "BRA", "ARG"] {
+            XCTAssertNotNil(WorldMapData.selection(for: id, in: gs, present: present, unclaimed: gs.unclaimedLandIDs), id)
+        }
+        XCTAssertEqual(gs.preState("MNG")?.era.owner, "CHN")
+        XCTAssertEqual(gs.getCountry(id: "CHN")?.name, "Qing Empire")
+    }
+}
+
+final class EraNationTests: XCTestCase {
+    /// Nations that must not be on the 1789 board.
+    func testNoModernStatesIn1789() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1789)
+        let gs = try XCTUnwrap(engine.gameState)
+        let ids = Set(gs.countries.map(\.id))
+        for id in ["CSK", "YUG", "SUR", "LKA", "MDV", "DZA", "VUT", "SLB", "TWN", "FJI"] { XCTAssertFalse(ids.contains(id), id) }
+        let names = gs.countries.map(\.name)
+        XCTAssertFalse(names.contains("Republic of China"))
+    }
+}
+
+
+final class LivingWorldTests: XCTestCase {
+
+    /// Run `turns` monthly turns of the real Shadow turn plus the rule-based AI, as `endTurn` does (minus the async).
+    static func simulate(year: Int, difficulty: DifficultyLevel, turns: Int = 200) -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(difficulty: difficulty, turnLength: .month, year: year)
+        let gs = e.gameState!
+        for _ in 0..<turns {
+            gs.turn += 1
+            e.processShadowTurn()
+            let p = e.aiActionProbability(gs)
+            for c in gs.liveCountries where c.id != gs.playerCountryID && Double.random(in: 0..<1) < p { e.applyRuleBasedAction(for: c.id) }
+        }
+        return (e, gs)
+    }
+
+    // Integration: 200 turns from 1789, 1850, 1913, 1950 and 2025 on every difficulty; the world is busy, and
+    // Nightmare is clearly the busiest.
+    func testTheWorldIsAliveInEveryEraAndDifficulty() {
+        for year in MapSweepTests.eras {
+            var wars: [DifficultyLevel: Int] = [:]
+            for d in DifficultyLevel.allCases {
+                let (_, gs) = Self.simulate(year: year, difficulty: d)
+                let s = gs.shadow.worldStats
+                wars[d] = s["wars"] ?? 0
+                let minWars = d == .easy ? 2 : 5
+                XCTAssertGreaterThanOrEqual(s["wars"] ?? 0, minWars, "\(year) \(d.rawValue): AI-vs-AI wars")
+                XCTAssertGreaterThanOrEqual(s["diplomacy"] ?? 0, 100, "\(year) \(d.rawValue): diplomacy")
+                if year < 1946 { XCTAssertGreaterThanOrEqual(s["claims"] ?? 0, d == .easy ? 4 : 10, "\(year) \(d.rawValue): land claims") }
+            }
+            XCTAssertGreaterThan(Double(wars[.nightmare]!), Double(wars[.normal]!) * 1.5, "\(year): Nightmare is relentless")
+            XCTAssertGreaterThanOrEqual(wars[.nightmare]!, wars[.hard]!, "\(year): Nightmare is the most active")
+            XCTAssertGreaterThan(wars[.normal]!, wars[.easy]!, "\(year): Easy is the calmest")
+        }
+    }
+
+    // Functional: the era's wars break out between the right powers.
+    func testFrenchRevolutionaryWarsBreakOut() {
+        let (_, gs) = Self.simulate(year: 1789, difficulty: .normal, turns: 50)
+        XCTAssertTrue(gs.shadow.firedRivalries.contains("FRA-AUT-1792"))
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("declares war") } || (gs.shadow.worldStats["wars"] ?? 0) > 0)
+        XCTAssertLessThanOrEqual(gs.getCountry(id: "FRA")?.diplomaticRelations["GBR"] ?? 0, -60, "the 1793 enmity")
+    }
+
+    func testPowersClaimLandAndSeizeEnemyColonies() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1885)
+        let gs = try XCTUnwrap(e.gameState)
+        let land = try XCTUnwrap(gs.unclaimedLandIDs.sorted().first { $0 != Antarctica.id })
+        XCTAssertTrue(WorldPolitics.reachesOverseas("FRA", year: 1885))
+        XCTAssertFalse(WorldPolitics.reachesOverseas("VNM", year: 1885), "only the colonial powers reach overseas")
+        XCTAssertTrue(e.aiTakeLand(land, by: "FRA"))
+        XCTAssertEqual(gs.getCountry(id: land)?.territoryOf, "FRA")
+        XCTAssertFalse(gs.unclaimedLandIDs.contains(land), "taken land is no longer open to the player")
+        XCTAssertFalse(e.aiTakeLand(land, by: "GBR"), "not twice")
+    }
+
+    func testPowersAnswerUSExpansion() throws {
+        let e = GameEngine()
+        e.startNewGame(difficulty: .nightmare, turnLength: .month, year: 1890)
+        let gs = try XCTUnwrap(e.gameState)
+        var taken: [String] = []
+        for id in gs.unclaimedLandIDs.sorted().prefix(6) where id != Antarctica.id {
+            gs.actionsUsedThisTurn = 0
+            if e.claimLand(id, troops: 1) { taken.append(id) }
+        }
+        XCTAssertGreaterThanOrEqual(taken.count, 4)
+        for _ in 0..<6 { gs.turn += 1; e.processWorldPolitics() }
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("protests against American expansion") })
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("arms rebels in") || $0.text.contains("seizes lightly garrisoned") })
+    }
+
+    func testTreatyOffersCanBeAnswered() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1913)
+        let gs = try XCTUnwrap(e.gameState)
+        gs.shadow.treatyOffers = [TreatyOffer(from: "FRA", type: .nonAggression, date: gs.currentDate),
+                                  TreatyOffer(from: "GBR", type: .alliance, date: gs.currentDate)]
+        let n = gs.treaties.count
+        XCTAssertTrue(e.answerTreaty(gs.shadow.treatyOffers[0].id, accept: true))
+        XCTAssertEqual(gs.treaties.count, n + 1)
+        XCTAssertTrue(e.answerTreaty(gs.shadow.treatyOffers[0].id, accept: false))
+        XCTAssertTrue(gs.shadow.treatyOffers.isEmpty)
+        XCTAssertFalse(gs.getPlayerCountry()!.alliances.contains("GBR"), "declined")
+    }
+
+    // Unit: difficulty scaling and era-true militia call-ups.
+    func testDifficultyScalesActivity() {
+        let a = DifficultyLevel.allCases.map(WorldPolitics.activity)
+        XCTAssertEqual(a, a.sorted())
+        XCTAssertGreaterThan(WorldPolitics.claimRate(year: 1885), WorldPolitics.claimRate(year: 1850), "the Scramble for Africa")
+        XCTAssertLessThan(WorldPolitics.claimRate(year: 1960), WorldPolitics.claimRate(year: 1850))
+        XCTAssertLessThan(WorldPolitics.reactionThreshold(.nightmare), WorldPolitics.reactionThreshold(.easy))
+    }
+
+    func testMilitiaInThe1790sNeverZero() throws {
+        XCTAssertEqual(ManpowerModel.callUpSize(.mobilization, year: 1792), 13)
+        XCTAssertEqual(ManpowerModel.title(.mobilization, year: 1792), "Call out the militia")
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1792)
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertNotNil(e.callUpProblem(.draft), "no federal draft before 1863")
+        XCTAssertTrue(e.callUp(.mobilization))
+        let line = try XCTUnwrap(gs.shadow.ticker.last?.text)
+        XCTAssertTrue(line.contains("calls out the militia: 13K"), line)
+        for y in stride(from: 1789, through: 2025, by: 4) { XCTAssertGreaterThanOrEqual(ManpowerModel.callUpSize(.mobilization, year: y), 1, "\(y)") }
+    }
+
+    // Security: generators never name a nation that isn't on the board that year.
+    func testEventGeneratorsUseOnlyNationsOfTheEra() throws {
+        let allNames = Set(WorldCountriesDatabase.allCountries().map(\.name) + ["Republic of China", "Czechoslovakia", "Yugoslavia"])
+        for year in MapSweepTests.eras {
+            let e = GameEngine()
+            e.startNewGame(difficulty: .nightmare, turnLength: .month, year: year)
+            let gs = try XCTUnwrap(e.gameState)
+            let present = gs.countries.map(\.name)
+            let absent = allNames.filter { n in !present.contains { $0.contains(n) } }
+            var text: [String] = []
+            for type in CrisisEventType.allCases {
+                for _ in 0..<4 { if let c = e.crisisManager.createCrisis(type: type, gameState: gs) { text.append(c.title + " " + c.description) } }
+            }
+            let news = NewsManager()
+            for _ in 0..<30 { news.generateNews(from: gs) }
+            text += news.headlines.map(\.headline)
+            for _ in 0..<24 {
+                gs.turn += 1; e.processShadowTurn()
+                for c in gs.liveCountries where c.id != gs.playerCountryID { e.applyRuleBasedAction(for: c.id) }
+            }
+            // Land is named for its geography ("France claims Gambia"); every other line must name only nations of the era.
+            text += gs.shadow.ticker.map(\.text).filter { !$0.contains(" claims ") && !$0.contains(" seizes ") }
+            for t in text { for n in absent where t.contains(n) { XCTFail("\(year): \(n) named in \(t.prefix(120))") } }
+            for c in gs.countries { for k in c.diplomaticRelations.keys { XCTAssertNotNil(gs.getCountry(id: k), "\(year): relation with \(k)") } }
+        }
+    }
+
+    // Retry: the living world survives save and load, and old saves load.
+    func testWorldStateSurvivesSave() throws {
+        let (_, gs) = Self.simulate(year: 1789, difficulty: .hard, turns: 40)
+        gs.shadow.treatyOffers.append(TreatyOffer(from: "ESP", type: .tradeAgreement, date: gs.currentDate))
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.worldStats, gs.shadow.worldStats)
+        XCTAssertEqual(loaded.shadow.firedRivalries, gs.shadow.firedRivalries)
+        XCTAssertEqual(loaded.shadow.treatyOffers, gs.shadow.treatyOffers)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["worldStats", "firedRivalries", "treatyOffers", "lastReaction"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        XCTAssertTrue(try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json)).shadow.treatyOffers.isEmpty)
+    }
+
+    // Performance: a busy Nightmare month stays quick.
+    func testABusyWorldTurnIsQuick() {
+        let (e, gs) = Self.simulate(year: 1913, difficulty: .nightmare, turns: 1)
+        measure { gs.turn += 1; e.processWorldPolitics(); _ = gs.unclaimedLandIDs }
     }
 }
