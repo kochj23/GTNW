@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.1] - 2026-10-20 — Territory money
+
+### Added
+- **Territory cash in your funds**: `processTerritoryEconomy` credits each turn's earnings to `shadow.aidRemaining`
+  (spendable on aid, group actions and purchases), records `shadow.lastTurnCash`, and posts "Territories paid $X B
+  this <turn>." A quarter also adds to GDP (it used to be all of it).
+- **Extraction rates** (`ExtractionRate`, `GameEngine.setExtraction`): Light ×0.6, Normal, Heavy ×1.5, Plunder ×2.5
+  income; heavier rates add insurgency (+12/+30), drain stability (1/3 a month) and cost world opinion (1/4 a year).
+  Plunder with unrest above 60 risks a revolt (25% a year).
+- **Levies** (`GameEngine.collectLevy`): half a year's income at once (min $0.2B), −10 stability, +10 unrest,
+  six-month cooldown; play event `territory_levy`.
+- **Resources panel**: this turn's cash and funds, per-territory rate buttons, COLLECT / cooldown, "producing in N
+  months", and the limiting factor with a one-line fix (`ExpansionModel.limit`).
+- **Group actions**: Extraction and Collect Levy for all territories (free, like garrisons).
+
+### Changed
+- Colony purchases and backing independence draw on funds first (`spendFunds`), then GDP.
+- `annualIncome` includes the extraction rate and self-rule share; the Govern sheet no longer applies the share twice.
+- 11 tests across all seven categories (518 total, single muted run); snapshots in `Screenshots/3.13.1/`.
+
 ## [3.13.0] - 2026-10-20 — Takeable land on every continent
 
 ### Added

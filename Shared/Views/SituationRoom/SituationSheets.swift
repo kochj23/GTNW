@@ -964,7 +964,9 @@ struct ImpeachmentRiskBadge: View {
 }
 
 /// Income from every U.S. territory: what it produces this year, how well it is held, and the total.
+/// 3.13.1: the cash lands in your spendable funds; set each territory's extraction rate or levy it here.
 struct ResourcesSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var gameState: GameState
     /// Offscreen snapshots can't render scroll views; they pass false.
@@ -982,6 +984,9 @@ struct ResourcesSheet: View {
                 Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
             }
             .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Text(String(format: "THIS TURN +$%.2fB · FUNDS $%.1fB · TERRITORY CASH GOES STRAIGHT INTO YOUR FUNDS",
+                        gameState.shadow.lastTurnCash, gameState.shadow.aidRemaining))
+                .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
             Text(String(format: "TOTAL $%.1fB A YEAR · EARNED SO FAR $%.1fB · APPROVAL +%.1f FROM PROSPERITY", total,
                         gameState.shadow.resourceEarnings, ExpansionModel.prosperityBonus(incomePerYear: total)))
                 .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
@@ -1008,12 +1013,32 @@ struct ResourcesSheet: View {
                 Text("No territories yet.").font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan)
             }
             ForEach(rows, id: \.country.id) { r in
-                HStack {
-                    Text(verbatim: r.country.name.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
-                    Text(verbatim: r.resources.map(\.title).joined(separator: ", ")).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
-                    Spacer()
-                    Text(r.income > 0 ? String(format: "$%.2fB/yr", r.income) : "RAMPING UP")
-                        .font(ThemeFont.mono(10, .bold)).foregroundColor(r.income > 0 ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
+                let id = r.country.id
+                let wait = ExpansionModel.monthsUntilProducing(id, in: gameState)
+                let cooldown = ExpansionModel.levyCooldown(id, in: gameState)
+                let current = ExpansionModel.rate(id, in: gameState)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack {
+                        Text(verbatim: r.country.name.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        Text(verbatim: r.resources.map(\.title).joined(separator: ", ")).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+                        Spacer()
+                        Text(wait > 0 ? "PRODUCING IN \(wait) MONTH\(wait == 1 ? "" : "S")" : String(format: "$%.2fB/yr", r.income))
+                            .font(ThemeFont.mono(10, .bold)).foregroundColor(wait > 0 ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
+                    }
+                    HStack(spacing: 4) {
+                        ForEach(ExtractionRate.allCases) { rate in
+                            Button(rate.title.uppercased()) { gameEngine.setExtraction(id, rate) }
+                                .buttonStyle(ThemedButtonStyle(color: rate.insurgencyShift > 0 ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: current == rate))
+                        }
+                        Spacer()
+                        Button(cooldown > 0 ? "LEVY IN \(cooldown)MO" : String(format: "COLLECT $%.1fB", ExpansionModel.levyAmount(r.country, in: gameState))) {
+                            gameEngine.collectLevy(id)
+                        }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber)).disabled(cooldown > 0)
+                    }
+                    if let limit = ExpansionModel.limit(r.country, in: gameState) {
+                        Text(verbatim: limit).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+                    }
                 }
                 .padding(4).themedPanel(retroFill: EGA.black)
             }
@@ -1163,7 +1188,7 @@ struct GovernSheet: View {
                         .font(ThemeFont.mono(12)).foregroundColor(GTNWColors.terminalGreen)
                 } else {
                     Text(String(format: "INSURGENCY %.0f · STABILITY %d · INCOME $%.2fB/yr", c.profile.outcry, c.stability,
-                                ExpansionModel.annualIncome(c, in: gameState) * (policy?.governance.incomeShare ?? 1)))
+                                ExpansionModel.annualIncome(c, in: gameState)))
                         .font(ThemeFont.mono(11, .bold)).foregroundColor(c.profile.outcry > 60 ? GTNWColors.terminalRed : GTNWColors.neonCyan)
                     HStack(spacing: 6) {
                         Text("GARRISON").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
@@ -1286,6 +1311,7 @@ struct GroupActionSheet: View {
     @State var amount: Double = 10
     @State var garrison: Double = 5
     @State var split: AidSplit = .byNeed
+    @State var rate: ExtractionRate = .normal
     @State var saveName = ""
 
     private var selector: GroupSelector {
@@ -1300,7 +1326,7 @@ struct GroupActionSheet: View {
 
     var body: some View {
         let members = gameEngine.groupMembers(selector)
-        let plan = gameEngine.planGroupAction(kind, members: members, amount: kind == .garrison ? garrison : amount, split: split)
+        let plan = gameEngine.planGroupAction(kind, members: members, amount: kind == .garrison ? garrison : amount, split: split, rate: rate)
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "square.stack.3d.up.fill")
@@ -1366,6 +1392,13 @@ struct GroupActionSheet: View {
                     Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 }
             }
+            if kind == .extraction {
+                HStack(spacing: 6) {
+                    ForEach(ExtractionRate.allCases, id: \.self) { r in
+                        Button(r.title.uppercased()) { rate = r }.buttonStyle(ThemedButtonStyle(color: r.insurgencyShift > 0 ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: rate == r))
+                    }
+                }
+            }
             // The confirmation: per-nation breakdown and total.
             Text(String(format: "%d NATION%@ · TOTAL %@", plan.lines.count, plan.lines.count == 1 ? "" : "S",
                         kind == .garrison ? "\(Int(plan.total))K MORE TROOPS" : String(format: "$%.2fB", plan.total)))
@@ -1382,7 +1415,7 @@ struct GroupActionSheet: View {
                 Spacer()
                 Button("CONFIRM \(kind.title.uppercased()) FOR \(plan.lines.count)") {
                     if gameEngine.executeGroupAction(kind, members: members, amount: kind == .garrison ? garrison : amount, split: split,
-                                                     groupName: selector.title) != nil { dismiss() }
+                                                     groupName: selector.title, rate: rate) != nil { dismiss() }
                 }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
                 .disabled(plan.problem != nil)

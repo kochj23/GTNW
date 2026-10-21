@@ -138,6 +138,10 @@ struct ShadowState: Codable {
     var acquired: Set<String> = []
     var acquisitionIncome: Double = 0
     var announcedOffers: Set<String> = []
+    /// Territory money (3.13.1): extraction rate by territory, last levy dates, and the cash paid last turn ($B).
+    var extraction: [String: String] = [:]
+    var lastLevy: [String: Date] = [:]
+    var lastTurnCash: Double = 0
 
     // Scenario
     var scenarioID: String?
@@ -176,7 +180,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash
     }
 
     init() {}
@@ -232,6 +236,9 @@ struct ShadowState: Codable {
         acquired = try c.decodeIfPresent(Set<String>.self, forKey: .acquired) ?? []
         acquisitionIncome = try c.decodeIfPresent(Double.self, forKey: .acquisitionIncome) ?? 0
         announcedOffers = try c.decodeIfPresent(Set<String>.self, forKey: .announcedOffers) ?? []
+        extraction = try c.decodeIfPresent([String: String].self, forKey: .extraction) ?? [:]
+        lastLevy = try c.decodeIfPresent([String: Date].self, forKey: .lastLevy) ?? [:]
+        lastTurnCash = try c.decodeIfPresent(Double.self, forKey: .lastTurnCash) ?? 0
     }
 }
 

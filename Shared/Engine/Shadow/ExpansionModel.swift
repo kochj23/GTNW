@@ -116,7 +116,10 @@ enum ExpansionModel {
         let tabled = deposits[c.id] != nil || WorldCountriesDatabase.postColonialAfrica.contains(c.id)
         let base = tabled ? deposits(for: c.id, year: year).reduce(0) { $0 + $1.value } : c.gdp * 1000 * 0.02
         let held = gs.shadow.claimDates[c.id].map { GameCalendar.years(from: $0, to: gs.currentDate) } ?? 10
+        // 3.13.1: the extraction rate and self-rule's share apply here, so every view shows the same figure.
+        let share = gs.shadow.territoryPolicies[c.id]?.governance.incomeShare ?? 1
         return base * rampUp(yearsHeld: held) * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
+            * rate(c.id, in: gs).incomeMultiplier * share
     }
 
     /// The player's territories with their yearly income, highest first.
@@ -237,7 +240,17 @@ extension GameEngine {
         total += gs.shadow.acquisitionIncome   // 3.13.0: purchases like Louisiana pay too
         let earned = total * yf
         gs.shadow.resourceEarnings += earned
-        gs.countries[pi].gdp += earned / 1000
+        // 3.13.1: the money lands in the spendable funds (aid, group actions, purchases); a smaller share shows up
+        // in national output, so it isn't counted twice.
+        gs.shadow.aidRemaining += earned
+        gs.shadow.lastTurnCash = earned
+        gs.countries[pi].gdp += earned * 0.25 / 1000
+        if earned >= 0.01 { gs.shadow.post(String(format: "Territories paid $%.2fB this %@.", earned, gs.turnLength.displayName.lowercased()), date: gs.currentDate) }
+        // Heavy extraction and plunder cost goodwill abroad.
+        for (c, _, _) in ExpansionModel.ledger(gs) {
+            let hit = gs.scale.integer(annual: ExpansionModel.rate(c.id, in: gs).worldHitPerYear)
+            if hit > 0 { for o in gs.countries where o.id != gs.playerCountryID && !o.isTerritory && !o.isDestroyed { modifyDiplomaticRelation(from: o.id, to: gs.playerCountryID, by: -hit) } }
+        }
         // Strategic resources: uranium speeds the bomb; oil and rubber feed the forces (see AttackSizing / NavalModel).
         if ExpansionModel.strategic(gs).contains(.uranium) && gs.currentDate >= ArsenalCatalog.trinity {
             gs.countries[pi].nuclearWarheads += gs.scale.integer(annual: 20)
@@ -254,6 +267,99 @@ extension GameEngine {
         } else {
             gs.shadow.impeachmentWarned = false
         }
+        self.gameState = gs
+    }
+}
+
+// MARK: - Territory money (3.13.1)
+
+/// How hard a territory is squeezed. Game balance only (design choices):
+/// income ×0.6 / ×1 / ×1.5 / ×2.5; insurgency target +0 / +0 / +12 / +30; stability −0 / −0 / −1 / −3 a month;
+/// world relations −0 / −0 / −1 / −4 a year per territory; Plunder also risks revolt (25% a year while unrest is
+/// over 60).
+enum ExtractionRate: String, Codable, CaseIterable, Identifiable {
+    case light, normal, heavy, plunder
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var incomeMultiplier: Double { [0.6, 1, 1.5, 2.5][index] }
+    var insurgencyShift: Double { [0, 0, 12, 30][index] }
+    var stabilityPerMonth: Double { [0, 0, 1, 3][index] }
+    var worldHitPerYear: Double { [0, 0, 1, 4][index] }
+    private var index: Int { ExtractionRate.allCases.firstIndex(of: self)! }
+}
+
+extension ExpansionModel {
+    /// Levy: half a year's income at once (at least $0.2B), −10 stability, +10 unrest, then six months' cooldown.
+    static let levyCooldownMonths = 6.0
+
+    static func rate(_ id: String, in gs: GameState) -> ExtractionRate {
+        gs.shadow.extraction[id].flatMap(ExtractionRate.init(rawValue:)) ?? .normal
+    }
+
+    /// Months until a new territory starts producing (0 once it does).
+    static func monthsUntilProducing(_ id: String, in gs: GameState) -> Int {
+        let held = gs.shadow.claimDates[id].map { GameCalendar.years(from: $0, to: gs.currentDate) } ?? 10
+        return max(0, Int(((0.5 - held) * 12).rounded(.up)))
+    }
+
+    /// What holds a territory's income back, with a one-line fix (nil when nothing does).
+    static func limit(_ c: Country, in gs: GameState) -> String? {
+        let g = gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard
+        if g < AttackSizing.expeditionStandard { return "Low garrison (\(Int(g))K): raise it to \(Int(AttackSizing.expeditionStandard))K in Govern." }
+        if c.stability < 60 { return "Low stability (\(c.stability)): try local elections or a lighter extraction rate." }
+        return nil
+    }
+
+    /// A levy takes half a year's base income, at least $0.2B.
+    static func levyAmount(_ c: Country, in gs: GameState) -> Double {
+        let tabled = deposits[c.id] != nil || WorldCountriesDatabase.postColonialAfrica.contains(c.id)
+        let base = tabled ? deposits(for: c.id, year: gs.currentYear).reduce(0) { $0 + $1.value } : c.gdp * 1000 * 0.02
+        return max(0.2, base * 0.5)
+    }
+
+    /// Months left before a territory can be levied again (0 = now).
+    static func levyCooldown(_ id: String, in gs: GameState) -> Int {
+        guard let last = gs.shadow.lastLevy[id] else { return 0 }
+        let months = Double(GameCalendar.days(from: last, to: gs.currentDate)) / 30.4
+        return max(0, Int((levyCooldownMonths - months).rounded(.up)))
+    }
+}
+
+extension GameEngine {
+    /// Set a territory's extraction rate (free).
+    @discardableResult
+    func setExtraction(_ id: String, _ rate: ExtractionRate) -> Bool {
+        guard let gs = gameState, gs.getCountry(id: id)?.territoryOf == gs.playerCountryID else { return false }
+        gs.shadow.extraction[id] = rate.rawValue
+        self.gameState = gs
+        return true
+    }
+
+    /// Collect a one-off levy from a territory: cash now, stability later. Returns $B collected, or nil.
+    @discardableResult
+    func collectLevy(_ id: String) -> Double? {
+        guard let gs = gameState, let i = gs.countries.firstIndex(where: { $0.id == id && $0.territoryOf == gs.playerCountryID }),
+              ExpansionModel.levyCooldown(id, in: gs) == 0 else { return nil }
+        let c = gs.countries[i]
+        let amount = ExpansionModel.levyAmount(c, in: gs)
+        gs.shadow.aidRemaining += amount
+        gs.shadow.resourceEarnings += amount
+        gs.shadow.lastLevy[id] = gs.currentDate
+        gs.countries[i].stability = max(0, c.stability - 10)
+        gs.countries[i].profile.outcry = min(100, c.profile.outcry + 10)
+        gs.shadow.post(String(format: "A levy on %@ raises $%.1fB. Resentment grows.", c.name, amount), date: gs.currentDate, severity: 1)
+        logPlayEvent("territory_levy", detail: ["land": id, "name": PlayHistory.text(c.name), "amount_b": PlayHistory.num(amount),
+                                                "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        return amount
+    }
+
+    /// Pay for something from the spendable funds first, then from national output ($B).
+    func spendFunds(_ amount: Double) {
+        guard let gs = gameState, amount > 0, let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
+        let fromFunds = min(amount, gs.shadow.aidRemaining)
+        gs.shadow.aidRemaining -= fromFunds
+        gs.countries[pi].gdp -= (amount - fromFunds) / 1000
         self.gameState = gs
     }
 }

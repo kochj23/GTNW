@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-507%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.13.0-blue)
+![Tests](https://img.shields.io/badge/tests-518%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.13.1-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,31 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Territory money (new in 3.13.1)**: what your territories earn now lands in your **spendable funds** (the same
+  pot as aid, group actions and colony purchases) every turn, with a "Territories paid $X B this month." ticker line;
+  a quarter of it also shows in national output. From the **Resources** panel (or a **group action** on all
+  territories):
+  - **Extraction rate** per territory: Light (×0.6 income), Normal, Heavy (×1.5; insurgency +12, stability −1/month,
+    world opinion −1/year) or Plunder (×2.5; insurgency +30, stability −3/month, world −4/year, and a 25%/year
+    revolt once unrest passes 60).
+  - **Collect**: a one-off levy of half a year's income (at least $0.2B) for −10 stability and +10 unrest, then six
+    months' cooldown.
+  - The panel shows this turn's cash and your funds, each land's $/yr or "producing in N months", and what limits it
+    (low garrison or low stability) with the fix.
+
+  ```mermaid
+  flowchart LR
+      T[Territory] --> R{Extraction rate}
+      R -- Light/Normal --> I[Income]
+      R -- Heavy/Plunder --> I
+      R -- Heavy/Plunder --> U[Insurgency up, stability down,<br/>world opinion down]
+      U -- plunder, unrest > 60 --> X[Revolt: the land breaks away]
+      T -- Collect --> L[Levy: ½ year's income now<br/>−10 stability, 6-month cooldown]
+      I --> F[Spendable funds + ticker line]
+      L --> F
+      I --> O[¼ to national output]
+      F --> S[Aid, group actions, purchases]
   ```
 - **Takeable land on every continent (new in 3.13.0)**: before a modern country existed, its land is no longer
   blank. About a hundred dated records (`Documentation/territories/`, generator `build.py` →
@@ -890,6 +915,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Levies (3.13.1) | Event `territory_levy` (`land`, `name`, `amount_b`) |
 | Land (3.13.0) | Events `colony_seized`, `land_purchased`, `independence_backed`, and `claimed_land` with `indigenous` |
 | Coalitions (3.12.0) | Event `coalition_request` (`target`, `joined`, `refused`) |
 | Any game (3.11.0) | `game_start` and the session summary add `country_name`; the summary adds `leader` for non-U.S. nations |
@@ -915,18 +941,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **507 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **518 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 180 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 101 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 64 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 33 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 31 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 56 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 37 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 182 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 104 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 65 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 35 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 32 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 57 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 38 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -954,6 +980,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.13.1 | Oct 2026 | Territory money: cash into your funds every turn, extraction rates, levies, a Resources panel that says what's holding each land back |
 | 3.13.0 | Oct 2026 | Takeable land on every continent: colonies to seize, buy or free, peoples' land to take at a cost, historical U.S. purchases |
 | 3.12.2 | Oct 2026 | Evolving cabinets that follow history until you diverge; the Gulf War 1990 scenario; Cuba scorecard adds the quarantine and DEFCON 2 |
 | 3.12.1 | Oct 2026 | Mute switch: silent, hidden test runs (GTNW_MUTE, -GTNWMute YES, XCTest host) |

@@ -29,7 +29,7 @@ enum GroupSelector: Hashable {
 }
 
 enum GroupActionKind: String, CaseIterable, Identifiable {
-    case money, aid, garrison, sanctions, message, recall
+    case money, aid, garrison, sanctions, message, recall, extraction, levy
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -39,6 +39,8 @@ enum GroupActionKind: String, CaseIterable, Identifiable {
         case .sanctions: return "Sanctions"
         case .message: return "Diplomatic Message"
         case .recall: return "Recall Ambassadors"
+        case .extraction: return "Extraction"
+        case .levy: return "Collect Levy"
         }
     }
     /// The single-nation action each member gets, for the ones that map onto one.
@@ -95,11 +97,11 @@ extension GameEngine {
 
     /// The per-nation breakdown and total, or why it can't be done. `amount` is $B for money/aid (the total to
     /// share) and thousands per territory for garrisons.
-    func planGroupAction(_ kind: GroupActionKind, members: [String], amount: Double = 0, split: AidSplit = .even) -> GroupPlan {
+    func planGroupAction(_ kind: GroupActionKind, members: [String], amount: Double = 0, split: AidSplit = .even, rate: ExtractionRate = .normal) -> GroupPlan {
         guard let gs = gameState else { return GroupPlan(lines: [], total: 0, problem: "No game.") }
         let countries = members.compactMap { gs.getCountry(id: $0) }
         if countries.isEmpty { return GroupPlan(lines: [], total: 0, problem: "The group is empty.") }
-        if kind != .garrison && gs.actionsRemaining == 0 {
+        if kind != .garrison && kind != .extraction && kind != .levy && gs.actionsRemaining == 0 {
             return GroupPlan(lines: [], total: 0, problem: "No actions left this \(gs.turnLength.displayName.lowercased()).")
         }
         switch kind {
@@ -129,14 +131,30 @@ extension GameEngine {
             let a = kind.presidential!
             let lines = countries.map { c in GroupPlan.Line(id: c.id, name: c.name, amount: Double(a.cost) / 1e9, detail: a.description) }
             return GroupPlan(lines: lines, total: lines.reduce(0) { $0 + $1.amount }, problem: nil)
+        case .extraction, .levy:
+            // 3.13.1: territory money, for U.S. territories only. Levies skip territories still in their cooldown.
+            if countries.contains(where: { $0.territoryOf != gs.playerCountryID }) {
+                return GroupPlan(lines: [], total: 0, problem: "Extraction and levies are for your territories only.")
+            }
+            if kind == .extraction {
+                let lines = countries.map { c in GroupPlan.Line(id: c.id, name: c.name, amount: 0,
+                                                                 detail: "\(ExpansionModel.rate(c.id, in: gs).title) → \(rate.title)") }
+                return GroupPlan(lines: lines, total: 0, problem: nil)
+            }
+            let ready = countries.filter { ExpansionModel.levyCooldown($0.id, in: gs) == 0 }
+            let lines = ready.map { c -> GroupPlan.Line in
+                let amount = ExpansionModel.levyAmount(c, in: gs)
+                return GroupPlan.Line(id: c.id, name: c.name, amount: amount, detail: String(format: "$%.2fB, stability −10", amount))
+            }
+            return GroupPlan(lines: lines, total: lines.reduce(0) { $0 + $1.amount }, problem: lines.isEmpty ? "Every territory is in its levy cooldown." : nil)
         }
     }
 
     /// Carry out a group action through the single-nation code. Returns the plan carried out, or nil if refused.
     @discardableResult
     func executeGroupAction(_ kind: GroupActionKind, members: [String], amount: Double = 0, split: AidSplit = .even,
-                            groupName: String = "Group") -> GroupPlan? {
-        let plan = planGroupAction(kind, members: members, amount: amount, split: split)
+                            groupName: String = "Group", rate: ExtractionRate = .normal) -> GroupPlan? {
+        let plan = planGroupAction(kind, members: members, amount: amount, split: split, rate: rate)
         guard plan.problem == nil, let gs = gameState else { return nil }
         switch kind {
         case .money, .aid:
@@ -152,13 +170,17 @@ extension GameEngine {
             let a = kind.presidential!
             for l in plan.lines { executeShadowPresidentAction(a, from: gs.playerCountryID, to: l.id) }
             recordPlayerAction(rung: a.rung, hostile: a.isHostile, detected: false)
+        case .extraction:
+            for l in plan.lines { setExtraction(l.id, rate) }
+        case .levy:
+            for l in plan.lines { collectLevy(l.id) }
         }
         gs.shadow.post("\(kind.title): \(groupName) (\(plan.lines.count) nation\(plan.lines.count == 1 ? "" : "s")).", date: gs.currentDate, severity: 1)
         logPlayEvent("group_action", detail: ["action": kind.rawValue, "group": PlayHistory.text(groupName),
                                               "members": plan.lines.map(\.id), "member_names": plan.lines.map { PlayHistory.text($0.name) },
                                               "total": PlayHistory.num(plan.total), "game_date": PlayHistory.day(gs.currentDate)])
         self.gameState = gs
-        if kind != .garrison { completePlayerAction() }
+        if kind != .garrison && kind != .extraction && kind != .levy { completePlayerAction() }   // territory money is free, like garrisons
         return plan
     }
 

@@ -174,17 +174,20 @@ extension GameEngine {
             let policy = gs.shadow.territoryPolicies[c.id] ?? TerritoryPolicy(since: gs.shadow.claimDates[c.id] ?? gs.currentDate)
             // No record (saves before 3.9.0): treat the territory as properly garrisoned.
             let garrison = gs.shadow.garrisons[c.id] ?? OccupationModel.neededGarrison(c)
-            let target = OccupationModel.insurgencyTarget(garrison: garrison, needed: OccupationModel.neededGarrison(c), governance: policy.governance)
+            let rate = ExpansionModel.rate(c.id, in: gs)   // 3.13.1: squeezing a territory stokes its insurgency
+            let target = min(100, OccupationModel.insurgencyTarget(garrison: garrison, needed: OccupationModel.neededGarrison(c), governance: policy.governance)
+                + rate.insurgencyShift)
             var p = c.profile
             p.outcry = p.outcry * keep + target * (1 - keep)
             gs.countries[i].profile = p
             let st = OccupationModel.stabilityTarget(insurgency: p.outcry, governance: policy.governance)
-            gs.countries[i].stability = Int((Double(c.stability) * keep + Double(st) * (1 - keep)).rounded())
+            gs.countries[i].stability = max(0, Int((Double(c.stability) * keep + Double(st) * (1 - keep) - rate.stabilityPerMonth * gs.turnLength.yearFraction * 12).rounded()))
             var pol = policy
             if p.outcry > 85 { pol.crisisSince = pol.crisisSince ?? gs.currentDate } else { pol.crisisSince = nil }
             gs.shadow.territoryPolicies[c.id] = pol
-            let boiling = (pol.crisisSince.map { GameCalendar.years(from: $0, to: gs.currentDate) >= 1 } ?? false)
-                && garrison < OccupationModel.neededGarrison(c) / 2
+            let boiling = ((pol.crisisSince.map { GameCalendar.years(from: $0, to: gs.currentDate) >= 1 } ?? false)
+                && garrison < OccupationModel.neededGarrison(c) / 2)
+                || (rate == .plunder && p.outcry > 60 && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.25))   // plunder breeds revolt
             if boiling || (garrison < 0.5 && gs.countries[i].stability < 10) {
                 var lost = gs.countries[i]
                 lost.territoryOf = nil

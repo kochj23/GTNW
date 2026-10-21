@@ -255,13 +255,12 @@ extension GameEngine {
     @discardableResult
     func purchaseColony(_ land: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
         guard let gs = gameState, gs.actionsRemaining > 0, let st = gs.preState(land), st.era.kind == .colony,
-              let owner = gs.getCountry(id: st.era.owner), let me = gs.getPlayerCountry(),
-              let pi = gs.countries.firstIndex(where: { $0.id == me.id }) else { return nil }
+              let owner = gs.getCountry(id: st.era.owner), let me = gs.getPlayerCountry() else { return nil }
         let rel = owner.diplomaticRelations[me.id] ?? 0
         let price = PreStateModel.price(land, year: gs.currentYear, relation: rel)
         let sold = roll < PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: false)
         if sold {
-            gs.countries[pi].gdp -= price / 1000
+            spendFunds(price)   // 3.13.1: paid from the spendable funds first
             annexLand(land, troops: 1, stability: 60, outcry: 15)
             gs.shadow.post(String(format: "%@ sells %@ for $%.1fB.", owner.name, st.label, price), date: gs.currentDate, severity: 2)
         } else {
@@ -284,7 +283,7 @@ extension GameEngine {
         let odds = PreStateModel.revoltOdds(year: gs.currentYear, independence: st.era.extra,
                                             ownerAtWarWithPlayer: owner.atWarWith.contains(me.id), ownerStability: owner.stability)
         let won = roll < odds
-        gs.countries[pi].gdp -= 2.0 / 1000
+        spendFunds(2)
         modifyDiplomaticRelation(from: owner.id, to: me.id, by: -30)
         if won {
             var c = t.toCountry()
