@@ -155,6 +155,12 @@ struct ShadowState: Codable {
     var eraSyncYear = 0
     var eraGovernment: [String: String] = [:]
     var eraDiverged: Set<String> = []
+    /// Peace brokered between other nations (3.16.0).
+    var nobelMoments = 0
+    /// Wars the player declared (3.16.0; the peaceful endings need none).
+    var playerWarsStarted = 0
+    /// The player's share of world output when the game began (economic dominance is measured from it).
+    var startOutputShare = 0.0
 
     // Scenario
     var scenarioID: String?
@@ -193,7 +199,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, nobelMoments, playerWarsStarted, startOutputShare
     }
 
     init() {}
@@ -260,6 +266,9 @@ struct ShadowState: Codable {
         eraSyncYear = try c.decodeIfPresent(Int.self, forKey: .eraSyncYear) ?? 0
         eraGovernment = try c.decodeIfPresent([String: String].self, forKey: .eraGovernment) ?? [:]
         eraDiverged = try c.decodeIfPresent(Set<String>.self, forKey: .eraDiverged) ?? []
+        nobelMoments = try c.decodeIfPresent(Int.self, forKey: .nobelMoments) ?? 0
+        playerWarsStarted = try c.decodeIfPresent(Int.self, forKey: .playerWarsStarted) ?? 0
+        startOutputShare = try c.decodeIfPresent(Double.self, forKey: .startOutputShare) ?? 0
     }
 }
 

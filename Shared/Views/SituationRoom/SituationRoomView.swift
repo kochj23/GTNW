@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace
         var id: String { rawValue }
     }
 
@@ -66,6 +66,7 @@ struct SituationRoomView: View {
             case .offers: AcquisitionSheet(gameState: gameState).environmentObject(gameEngine)
             case .treaties: TreatyOffersSheet(gameState: gameState).environmentObject(gameEngine)
             case .records: RecordsSheet(gameState: gameState)
+            case .peace: PeaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -250,6 +251,7 @@ struct SituationTopBar: View {
             if gameState.shadow.scenarioID != nil {
                 Button("SCORECARD") { onSheet(.scorecard) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
             }
+            Button("PEACE") { onSheet(.peace) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))   // 3.16.0
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {

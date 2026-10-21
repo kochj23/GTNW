@@ -1654,3 +1654,63 @@ struct RecordsSheet: View {
     }
 }
 
+// MARK: - Peace victories (3.16.0)
+
+/// The four peaceful paths to victory with progress, what's missing, and wars the President could broker an end to.
+struct PeaceSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let problem = PeaceModel.conditionsProblem(gameState)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("PATHS TO PEACE").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                Spacer()
+                Text("SCORE +\(PeaceModel.scoreBonus(gameState))").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            }
+            Text(verbatim: problem.map { "Every peace victory also needs: \($0)" } ?? "At peace, no nuclear weapons used: any path completed wins.")
+                .font(ThemeFont.mono(10)).foregroundColor(problem == nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
+            ForEach(PeacePath.allCases) { path in
+                let p = PeaceModel.progress(path, gameState)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack {
+                        Text(path.title.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        Text(verbatim: "→ \(path.victory.rawValue)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                        Spacer()
+                        Text(path == .economicDominance ? String(format: "%.1f%% / %.1f%%", p.value * 100, p.target * 100)
+                             : "\(Int(p.value)) / \(Int(p.target))").font(ThemeFont.mono(10, .bold))
+                            .foregroundColor(p.missing == nil ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
+                    }
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Rectangle().fill(Color.gray.opacity(0.3))
+                            Rectangle().fill(p.missing == nil ? GTNWColors.terminalGreen : GTNWColors.neonCyan).frame(width: g.size.width * p.fraction)
+                        }
+                    }
+                    .frame(height: FontScale.h(6))
+                    if let m = p.missing { Text(verbatim: m).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan) }
+                }
+                .padding(4).themedPanel(retroFill: EGA.black)
+            }
+            let wars = PeaceModel.brokerable(gameState)
+            Text("BROKER PEACE (\(wars.count) WAR\(wars.count == 1 ? "" : "S") ELSEWHERE)").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            ForEach(Array(wars.prefix(5).enumerated()), id: \.offset) { _, w in
+                HStack {
+                    Text(verbatim: "\(w.0.name) vs \(w.1.name)").font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(1)
+                    Spacer()
+                    Text(String(format: "%.0f%%", PeaceModel.brokerOdds(w.0, w.1, player: gameState.playerCountryID) * 100))
+                        .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.neonCyan)
+                    Button("BROKER") { gameEngine.brokerPeace(w.0.id, w.1.id) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen)).disabled(gameState.actionsRemaining == 0)
+                }
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(640))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+

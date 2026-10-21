@@ -17,6 +17,8 @@ enum VictoryType: String, Codable, CaseIterable {
     case supremacy = "Nuclear Supremacy"             // 800 pts
     case survival = "Sole Survivor"                  // 600 pts
     case pyrrhicVictory = "Pyrrhic Victory"          // 200 pts
+    case allianceLeader = "Leader of the Free World" // 1100 pts (3.16.0)
+    case nobelPeace = "Nobel Laureate"               // 1300 pts (3.16.0)
 
     var baseScore: Int {
         switch self {
@@ -27,19 +29,25 @@ enum VictoryType: String, Codable, CaseIterable {
         case .supremacy: return 800
         case .survival: return 600
         case .pyrrhicVictory: return 200
+        case .allianceLeader: return 1100
+        case .nobelPeace: return 1300
         }
     }
 
     var description: String {
         switch self {
         case .peaceMaker:
-            return "Ended all wars without launching nuclear weapons"
+            return "Twenty years without a war of your own or a nuclear weapon"
         case .secretEnding:
             return "Discovered WOPR's backdoor - the only winning move is not to play"
         case .diplomaticVictory:
-            return "Formed alliances with 80%+ of world nations"
+            return "Built a treaty network with 35% of the world's nations, at peace"
         case .economicVictory:
-            return "Achieved economic dominance without warfare"
+            return "Produced 30% of world output without warfare"
+        case .allianceLeader:
+            return "Led the largest alliance on Earth, at peace"
+        case .nobelPeace:
+            return "Brokered peace between warring nations three times"
         case .supremacy:
             return "Last remaining nuclear power standing"
         case .survival:
@@ -62,6 +70,8 @@ struct GameScore: Codable {
     var economicBonus: Int = 0
     /// Land and wealth (3.7.0): territories held, resources earned, statehoods. Optional so older records decode.
     var expansionBonus: Int? = nil
+    /// Peace (3.16.0): treaty partners, Nobel moments, years of peace, share of world output.
+    var peaceBonus: Int? = nil
     var difficultyMultiplier: Double = 1.0
     var finalScore: Int = 0
     var playerCountry: String = ""
@@ -99,6 +109,8 @@ struct GameScore: Codable {
             territories: gameState.countries.filter { $0.territoryOf == gameState.playerCountryID && !$0.isDestroyed }.count,
             earned: gameState.shadow.resourceEarnings, statehoods: gameState.shadow.statesAdmitted.count)
 
+        score.peaceBonus = PeaceModel.scoreBonus(gameState)
+
         // Difficulty multiplier
         switch gameState.difficultyLevel {
         case .easy: score.difficultyMultiplier = 1.0
@@ -116,6 +128,7 @@ struct GameScore: Codable {
         total += score.treatyBonus
         total += score.economicBonus
         total += score.expansionBonus ?? 0
+        total += score.peaceBonus ?? 0
         total = Int(Double(total) * score.difficultyMultiplier)
         score.finalScore = max(0, total)
 
@@ -215,40 +228,24 @@ class VictoryChecker {
             return nil
         }
 
-        // Secret ending: 50+ game years without war or nukes
-        if gameState.elapsedYears >= 50 - 1e-6 &&
-           gameState.activeWars.isEmpty &&
+        // 3.16.0: the world's own wars (the living world never sleeps) no longer block the peaceful endings; what
+        // counts is the player's own record.
+        let playerLaunchedNukes = gameState.nuclearStrikes.contains { $0.attacker == gameState.playerCountryID }
+
+        // Secret ending: 50+ game years without starting a war, being at war, or any nuclear weapon used
+        if gameState.elapsedYears >= 50 - 1e-6 && gameState.shadow.playerWarsStarted == 0 && player.atWarWith.isEmpty &&
            gameState.nuclearStrikes.isEmpty {
             return .secretEnding
         }
 
-        // Peace Maker: ended all wars, no nukes
-        let playerLaunchedNukes = gameState.nuclearStrikes.contains {
-            $0.attacker == gameState.playerCountryID
-        }
-        if !playerLaunchedNukes &&
-           gameState.activeWars.isEmpty &&
+        // Peace Maker: twenty years, at peace now, no war started, no nukes
+        if !playerLaunchedNukes && player.atWarWith.isEmpty && gameState.shadow.playerWarsStarted == 0 &&
            gameState.elapsedYears >= 20 - 1e-6 {
             return .peaceMaker
         }
 
-        // Diplomatic Victory: 80%+ alliances
-        let totalCountries = gameState.countries.filter { !$0.isDestroyed }.count
-        let allianceCount = gameState.treaties.filter {
-            $0.type == .alliance && $0.signatories.contains(gameState.playerCountryID)
-        }.count
-        if Double(allianceCount) / Double(totalCountries) >= 0.8 {
-            return .diplomaticVictory
-        }
-
-        // Economic Victory: GDP > all others combined
-        let playerGDP = player.gdp
-        let othersGDP = gameState.countries.filter {
-            !$0.isPlayerControlled && !$0.isDestroyed
-        }.reduce(0) { $0 + $1.gdp }
-        if playerGDP > othersGDP {
-            return .economicVictory
-        }
+        // Treaty network, alliance leadership, economic dominance, Nobel moments (PeaceModel)
+        if let peace = PeaceModel.victory(gameState) { return peace }
 
         // Nuclear Supremacy: last nuclear power
         let nuclearPowers = gameState.countries.filter {

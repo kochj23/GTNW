@@ -119,6 +119,7 @@ extension GameEngine {
     /// Each turn: the era's wars, the race for land, reactions to the U.S., alliances and treaty offers.
     func processWorldPolitics() {
         guard let gs = gameState, !gs.isMultiplayer else { return }
+        if gs.shadow.startOutputShare == 0 { gs.shadow.startOutputShare = PeaceModel.outputShare(gs) }   // 3.16.0 baseline
         processRivalries()
         processWorldExpansion()
         processReactionsToPlayer()

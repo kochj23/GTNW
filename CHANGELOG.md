@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.0] - 2026-10-20 — Peace victories
+
+### Added
+- **`PeaceModel`** (`PeaceModel.swift`): four peace paths with progress (`progress`, `PeacePath`): treaty network
+  (35% of nations) → Master Diplomat, alliance leadership (largest bloc, at least max(8, 20%)) → **Leader of the Free
+  World** (new, 1100), economic dominance (30% of world output, era-relative from `shadow.startOutputShare`, and the
+  largest economy) → Economic Tycoon, Nobel moments (three peaces brokered) → **Nobel Laureate** (new, 1300). All need
+  the player at peace, no nuclear weapon used and five years in office.
+- **Broker peace** (`brokerPeace`): one action, odds from both sides' relations with the player; success ends the war,
+  counts a Nobel moment and adds approval. Play event `peace_brokered`.
+- **PEACE** panel (`PeaceSheet`): progress bars, what's missing, and up to five wars elsewhere to broker.
+- **Peace scoring** (`GameScore.peaceBonus`): treaty partners ×25, Nobel moments ×200, years at peace ×10, output
+  share ×1000.
+
+### Changed
+- Proposing or signing a treaty and non-aggression pacts now record a treaty (once per pair and type).
+- Peace Maker and WOPR's Choice depend on the player's own record (`shadow.playerWarsStarted`, at peace now) instead
+  of every war on Earth having ended, which the living world made impossible.
+- The old Master Diplomat (alliances with 80% of nations) and Economic Tycoon (GDP above all others combined) checks
+  are replaced by the paths above.
+- 9 tests across all seven categories (573 total, single muted run); snapshots in `Screenshots/3.16.0/`.
+
 ## [3.15.0] - 2026-10-20 — Nova's commentary, the Hall of Infamy, era transitions
 
 ### Added

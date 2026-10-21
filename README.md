@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-564%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.15.0-blue)
+![Tests](https://img.shields.io/badge/tests-573%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.16.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,26 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Peace victories (new in 3.16.0)**: four peaceful ways to win, each on the **PEACE** panel with a progress bar and
+  what's missing. Every one needs you at peace, no nuclear weapon ever used, and five years in office:
+  - **Treaty network → Master Diplomat**: treaties with 35% of the world's nations. Proposing or signing a treaty and
+    non-aggression pacts now put treaties on record, and nations offer them too.
+  - **Alliance leadership → Leader of the Free World**: the largest alliance on Earth, at least max(8, 20% of nations).
+  - **Economic dominance → Economic Tycoon**: 30% of world output (or five points above your starting share, for the
+    early republic) and the largest economy.
+  - **Nobel moments → Nobel Laureate**: broker peace between warring nations three times (one action each; the odds
+    rise the more both sides like you).
+  - Peace Maker and WOPR's Choice now depend on your own record (no war you started), not on the whole world being at
+    peace. Short of victory, peace still scores: treaty partners, Nobel moments, years at peace and output share.
+
+  ```mermaid
+  flowchart TD
+      C{At peace, no nukes,<br/>5 years in office?} -- no --> S[Peace still scores]
+      C -- yes --> T[Treaty partners ≥ 35%] --> V1[Master Diplomat]
+      C -- yes --> A[Largest alliance ≥ max 8, 20%] --> V2[Leader of the Free World]
+      C -- yes --> E[30% of output + largest economy] --> V3[Economic Tycoon]
+      C -- yes --> N[3 peaces brokered] --> V4[Nobel Laureate]
   ```
 - **Nova's commentary, the Hall of Infamy and era transitions (new in 3.15.0)**:
   - **Nova comments** on the turn's biggest news (at most one line a turn, plus one per flash event, up to two, and
@@ -996,6 +1016,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Peace (3.16.0) | Event `peace_brokered` (`a`, `b`, `success`) |
 | Nova and records (3.15.0) | Events `nova_commentary` (`text`, `source`: `nova` or `template`), `record_set` (`record`, `value`, `previous`), `era_transition` (`country`, `from`, `to`) |
 | Living world (3.14.0) | Events `world_war`, `world_claim`, `territory_seized`, `treaty_answered` |
 | Levies (3.13.1) | Event `territory_levy` (`land`, `name`, `amount_b`) |
@@ -1024,18 +1045,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **564 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **573 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 190 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 115 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 70 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 40 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 37 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 63 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 44 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 191 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 118 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 71 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 41 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 38 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 64 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 45 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -1063,6 +1084,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.16.0 | Oct 2026 | Peace victories: treaty network, alliance leadership, economic dominance, Nobel moments, with a Paths to Peace panel and peace scoring |
 | 3.15.0 | Oct 2026 | Nova's live commentary, the Hall of Infamy (Records screen), nations that rename and change government on their real dates |
 | 3.14.1 | Oct 2026 | Independent Africa (Ethiopia, Liberia, Madagascar; Ashanti, Sokoto, Zanzibar), the Balkan states from their real dates, AI territories that pay and revolt |
 | 3.14.0 | Oct 2026 | A living world in every era (scaled by difficulty), era-true nations in every event, every land selectable on the map and card grid, militia calls in the 1790s |

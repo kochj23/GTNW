@@ -778,6 +778,8 @@ class GameEngine: ObservableObject {
             gameState.countries[defenderIndex].atWarWith.insert(aggressor)
         }
 
+        if aggressor == gameState.playerCountryID { gameState.shadow.playerWarsStarted += 1 }   // 3.16.0
+
         // Create war
         let war = War(aggressor: aggressor, defender: defender, startTurn: gameState.turn)
         gameState.activeWars.append(war)
@@ -1872,6 +1874,12 @@ extension GameEngine {
         case .chemicalAttack, .biologicalAttack, .restartChemical, .restartBiological:
             if playerID == gameState.playerCountryID { executeWMD(action, target: targetID) }
             return
+        case .proposeTreaty, .signTreaty, .nonAggression:
+            // 3.16.0: these now put a treaty on record (the relations change still follows below).
+            let type: TreatyType = action == .nonAggression ? .nonAggression : .tradeAgreement
+            if !gameState.treaties.contains(where: { $0.type == type && Set($0.signatories) == [playerID, targetID] }) {
+                gameState.treaties.append(Treaty(type: type, signatories: [playerID, targetID], turn: gameState.turn))
+            }
         default:
             break
         }
