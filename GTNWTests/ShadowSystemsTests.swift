@@ -4217,3 +4217,102 @@ final class PeaceVictoryTests: XCTestCase {
         measure { for _ in 0..<20 { for p in PeacePath.allCases { _ = PeaceModel.progress(p, gs) }; _ = PeaceModel.scoreBonus(gs) } }
     }
 }
+
+// MARK: - 3.16.1: mid-game foundings, commentary on the AI phase
+
+final class FoundingTests: XCTestCase {
+    private func play(from year: Int, years: Int, before: ((GameEngine, GameState) -> Void)? = nil) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.processEraTransitions()
+        before?(e, gs)
+        for _ in 0..<years { gs.turn += 12; e.processEraTransitions() }
+        return (e, gs)
+    }
+
+    // Functional: nations appear on their real dates
+    func testNationsAreFoundedOnTheirDates() throws {
+        let (_, gs) = try play(from: 1789, years: 42)
+        for id in ["SRB", "GRC"] {
+            let c = try XCTUnwrap(gs.getCountry(id: id), id)
+            XCTAssertNil(c.territoryOf, id)
+        }
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasSuffix("is founded.") })
+        XCTAssertNil(gs.preState("SRB"), "no longer an Ottoman colony")
+        XCTAssertGreaterThanOrEqual(gs.shadow.worldStats["foundings"] ?? 0, 2)
+        XCTAssertNotNil(gs.getCountry(id: "SRB")?.diplomaticRelations["TUR"], "the new state has relations")
+        XCTAssertNotNil(gs.getCountry(id: "TUR")?.diplomaticRelations["SRB"], "and the world has relations with it")
+    }
+
+    // Integration: land the player took doesn't spawn a state; its people press for independence
+    func testTakenLandGetsAMovementNotAState() throws {
+        let (_, gs) = try play(from: 1950, years: 11) { e, gs in
+            XCTAssertTrue(e.claimLand("CMR", troops: 5))
+        }
+        XCTAssertEqual(gs.getCountry(id: "CMR")?.territoryOf, "USA")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("independence movement in") && $0.text.contains("United States") })
+        XCTAssertNotNil(gs.getCountry(id: "SEN"), "untaken Africa is decolonised")
+        XCTAssertNil(gs.getCountry(id: "SEN")?.territoryOf)
+    }
+
+    // Integration: Yugoslavia absorbs Serbia and Montenegro in 1918
+    func testSuccessorStatesAbsorbTheirParts() throws {
+        let (_, gs) = try play(from: 1913, years: 6)
+        XCTAssertNotNil(gs.getCountry(id: "YUG"))
+        XCTAssertEqual(gs.getCountry(id: "SRB")?.territoryOf, "YUG")
+    }
+
+    // Retry: the board memory survives save; a save without it re-syncs without a flood
+    func testBoardMemorySurvivesSave() throws {
+        let (_, gs) = try play(from: 1789, years: 1)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.eraBoardIDs, gs.shadow.eraBoardIDs)
+        XCTAssertFalse(loaded.shadow.eraBoardIDs.isEmpty)
+    }
+
+    // Security: the player's own nation and diverged nations are never absorbed
+    func testDivergedPartsStayIndependent() throws {
+        let (_, gs) = try play(from: 1913, years: 6) { _, gs in gs.shadow.eraDiverged.insert("SRB") }
+        XCTAssertNil(gs.getCountry(id: "SRB")?.territoryOf)
+    }
+}
+
+final class AIPhaseCommentaryTests: XCTestCase {
+    override func tearDown() { NovaCommentary.generator = nil; super.tearDown() }
+
+    // Functional: the Shadow turn alone no longer comments; the full turn comments after the AI phase
+    @MainActor
+    func testCommentsAfterTheAIPhase() async throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1913)
+        let gs = try XCTUnwrap(e.gameState)
+        gs.shadow.post("Britain declares war on Germany.", date: gs.currentDate, severity: 2)
+        gs.turn += 1
+        e.processShadowTurn()
+        XCTAssertTrue(gs.shadow.novaLines.isEmpty, "not mid-turn")
+        e.endTurn()
+        // Something the AI phase would post: a strike in the same turn.
+        gs.shadow.post("Nuclear detonation: Germany strikes France.", date: gs.currentDate, severity: 3)
+        for _ in 0..<300 where e.turnPhase != .playerInput { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(e.turnPhase, .playerInput)
+        XCTAssertFalse(gs.shadow.novaLines.isEmpty)
+        XCTAssertLessThanOrEqual(gs.shadow.novaLines.count, 2, "same limits: one line, or up to two flash")
+    }
+
+    // Performance: the yearly sync with foundings
+    func testYearlySyncIsQuickEnough() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1950)
+        let gs = try XCTUnwrap(e.gameState)
+        e.processEraTransitions()
+        measure { gs.turn += 12; e.processEraTransitions() }
+    }
+
+    // Unit: a fresh board is the difference from last year's
+    func testFreshNationsAreTheDifference() {
+        let a = Set(GameState.eraBoard(year: 1816).map(\.id)), b = Set(GameState.eraBoard(year: 1818).map(\.id))
+        XCTAssertTrue(b.subtracting(a).contains("SRB"))
+        XCTAssertFalse(b.subtracting(a).contains("USA"))
+    }
+}

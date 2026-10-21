@@ -609,5 +609,21 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(PeaceSheet(gameState: gs).environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(520)), name: "peace-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.16.1: an 1789 game played to 1831: Serbia and Greece founded mid-game.
+    @MainActor
+    func testRenderFoundings() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1789)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.processEraTransitions()
+        for _ in 0..<42 { gs.turn += 12; engine.processEraTransitions() }
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("GRC"), zoom: .constant(.region), filter: .constant(.alignment))
+            print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "founded-1831-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif
