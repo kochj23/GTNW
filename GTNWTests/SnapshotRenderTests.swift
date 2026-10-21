@@ -590,5 +590,24 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(RecordsSheet(gameState: gs, hall: hall), size: CGSize(width: FontScale.w(620), height: FontScale.h(460)), name: "records-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.16.0: the Paths to Peace panel mid-game, with wars elsewhere to broker.
+    @MainActor
+    func testRenderPeacePanel() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1913)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.processWorldPolitics()
+        for c in PeaceModel.others(gs).prefix(11) { gs.treaties.append(Treaty(type: .tradeAgreement, signatories: [gs.playerCountryID, c.id], turn: 0)) }
+        for c in PeaceModel.others(gs).prefix(4) { engine.formAlliance(country1: gs.playerCountryID, country2: c.id) }
+        gs.shadow.nobelMoments = 1
+        engine.declareWar(aggressor: "DEU", defender: "FRA")
+        engine.declareWar(aggressor: "AUT", defender: "SRB")
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            print("SNAPSHOT \(try render(PeaceSheet(gameState: gs).environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(520)), name: "peace-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

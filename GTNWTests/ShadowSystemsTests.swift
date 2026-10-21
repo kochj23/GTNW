@@ -3863,7 +3863,7 @@ final class EraStatesTests: XCTestCase {
         XCTAssertGreaterThan(gs.shadow.worldStats["aiIncomeCents"] ?? 0, 0)
         let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "ZAF" })
         var rose = false
-        for _ in 0..<120 where !rose {
+        for _ in 0..<480 where !rose {   // 30% a year: ~3% a month; 40 years leave no realistic chance of a miss
             gs.countries[i].profile.outcry = 95
             gs.turn += 1
             e.processAITerritories()
@@ -4101,5 +4101,119 @@ final class EraTransitionTests: XCTestCase {
     // Performance: building an era board once a game year
     func testEraBoardIsQuickEnough() {
         measure { _ = GameState.eraBoard(year: 1913) }
+    }
+}
+
+
+// MARK: - 3.16.0: peace victories
+
+final class PeaceVictoryTests: XCTestCase {
+    private func game(_ year: Int = 1913) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.processWorldPolitics()   // sets the output baseline
+        return (e, gs)
+    }
+
+    private func sign(_ gs: GameState, _ n: Int, type: TreatyType = .tradeAgreement) {
+        for c in PeaceModel.others(gs).prefix(n) { gs.treaties.append(Treaty(type: type, signatories: [gs.playerCountryID, c.id], turn: gs.turn)) }
+    }
+
+    private func makePeaceful(_ gs: GameState) {
+        gs.turn += 61
+        for i in gs.countries.indices { gs.countries[i].atWarWith.remove(gs.playerCountryID) }
+        if let p = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) { gs.countries[p].atWarWith = [] }
+    }
+
+    // Unit: targets and odds
+    func testTargetsAndOdds() throws {
+        let (_, gs) = try game(1789)
+        let n = Double(PeaceModel.others(gs).count)
+        XCTAssertEqual(PeaceModel.progress(.treatyNetwork, gs).target, (n * 0.35).rounded(.up))
+        XCTAssertEqual(PeaceModel.economicTarget(gs), gs.shadow.startOutputShare + 0.05, accuracy: 1e-9, "era-relative in 1789")
+        let (_, g2) = try game(2025)
+        XCTAssertEqual(PeaceModel.economicTarget(g2), 0.30, accuracy: 1e-9)
+        let a = gs.countries[0], b = gs.countries[1]
+        let odds = PeaceModel.brokerOdds(a, b, player: "USA")
+        XCTAssertTrue((0.1...0.9).contains(odds))
+    }
+
+    // Functional: each path wins, at peace, after five years
+    func testTreatyNetworkWins() throws {
+        let (_, gs) = try game()
+        sign(gs, Int(PeaceModel.progress(.treatyNetwork, gs).target))
+        XCTAssertNil(VictoryChecker.checkVictory(gameState: gs), "five years in office first")
+        makePeaceful(gs)
+        XCTAssertEqual(VictoryChecker.checkVictory(gameState: gs), .diplomaticVictory)
+    }
+
+    func testAllianceLeadershipWins() throws {
+        let (e, gs) = try game()
+        let need = Int(PeaceModel.progress(.allianceLeader, gs).target)
+        for c in PeaceModel.others(gs).sorted(by: { $0.alliances.count < $1.alliances.count }).prefix(need) { e.formAlliance(country1: gs.playerCountryID, country2: c.id) }
+        makePeaceful(gs)
+        for i in gs.countries.indices where gs.countries[i].id != gs.playerCountryID { gs.countries[i].alliances = gs.countries[i].alliances.filter { $0 == gs.playerCountryID } }
+        XCTAssertNil(PeaceModel.progress(.allianceLeader, gs).missing)
+        XCTAssertNotNil(VictoryChecker.checkVictory(gameState: gs))
+    }
+
+    func testNobelMomentsWin() throws {
+        let (e, gs) = try game()
+        let pairs = Array(zip(PeaceModel.others(gs).prefix(3), PeaceModel.others(gs).dropFirst(3).prefix(3)))
+        for (a, b) in pairs { e.makePeace(a.id, b.id); e.declareWar(aggressor: a.id, defender: b.id) }
+        for (a, b) in pairs { gs.actionsUsedThisTurn = 0; XCTAssertEqual(e.brokerPeace(a.id, b.id, roll: 0), true) }
+        XCTAssertEqual(gs.shadow.nobelMoments, 3)
+        XCTAssertFalse(gs.getCountry(id: pairs[0].0.id)!.atWarWith.contains(pairs[0].1.id))
+        makePeaceful(gs)
+        XCTAssertEqual(PeaceModel.progress(.nobel, gs).missing, nil)
+        XCTAssertNotNil(VictoryChecker.checkVictory(gameState: gs))
+    }
+
+    // Integration: the President's treaty actions put treaties on record and count toward the network
+    func testTreatyActionsCount() throws {
+        let (e, gs) = try game()
+        let t = try XCTUnwrap(PeaceModel.others(gs).first)
+        e.executeShadowPresidentAction(.nonAggression, from: gs.playerCountryID, to: t.id)
+        e.executeShadowPresidentAction(.nonAggression, from: gs.playerCountryID, to: t.id)
+        XCTAssertEqual(gs.treaties.filter { $0.type == .nonAggression && $0.signatories.contains(t.id) }.count, 1, "once")
+        XCTAssertTrue(PeaceModel.treatyPartners(gs).contains(t.id))
+        XCTAssertGreaterThan(GameScore.calculate(from: gs, victoryType: nil).peaceBonus ?? 0, 0, "peace scores short of victory")
+    }
+
+    // Security: war, nukes and bad broker targets
+    func testPeaceRequiresPeace() throws {
+        let (e, gs) = try game()
+        sign(gs, Int(PeaceModel.progress(.treatyNetwork, gs).target))
+        makePeaceful(gs)
+        let foe = try XCTUnwrap(PeaceModel.others(gs).last)
+        e.declareWar(aggressor: gs.playerCountryID, defender: foe.id)
+        XCTAssertEqual(PeaceModel.conditionsProblem(gs), "You are at war.")
+        XCTAssertNil(VictoryChecker.checkVictory(gameState: gs).flatMap { [.diplomaticVictory, .peaceMaker].contains($0) ? $0 : nil })
+        XCTAssertNil(e.brokerPeace(gs.playerCountryID, foe.id), "not your own war")
+        XCTAssertNil(e.brokerPeace("FRA", "ZZZ"))
+        gs.nuclearStrikes.append(NuclearStrike(attacker: gs.playerCountryID, target: foe.id, warheadsUsed: 1, turn: gs.turn, casualties: 0, radiationSpread: 0))
+        e.makePeace(gs.playerCountryID, foe.id)
+        XCTAssertEqual(PeaceModel.conditionsProblem(gs), "You have used nuclear weapons.")
+    }
+
+    // Retry: peace state survives save and load; old saves start at zero
+    func testPeaceStateSurvivesSave() throws {
+        let (_, gs) = try game()
+        gs.shadow.nobelMoments = 2
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.nobelMoments, 2)
+        XCTAssertEqual(loaded.shadow.startOutputShare, gs.shadow.startOutputShare)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["nobelMoments", "playerWarsStarted", "startOutputShare"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        XCTAssertEqual(try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json)).shadow.nobelMoments, 0)
+    }
+
+    // Performance: the panel's maths on the biggest board
+    func testProgressIsCheap() throws {
+        let (_, gs) = try game(2025)
+        measure { for _ in 0..<20 { for p in PeacePath.allCases { _ = PeaceModel.progress(p, gs) }; _ = PeaceModel.scoreBonus(gs) } }
     }
 }

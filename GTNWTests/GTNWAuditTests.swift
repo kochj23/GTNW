@@ -226,7 +226,7 @@ final class VictoryBoundaryTests: XCTestCase {
 
     func testEconomicVictory() {
         let gs = GameState(playerCountryID: "USA")
-        gs.turn = 5
+        gs.turn = 61   // 3.16.0: peace victories need five years in office
         // Force an active war so the earlier peaceMaker branch cannot short-circuit.
         gs.activeWars.append(War(aggressor: "RUS", defender: "CHN", startTurn: 1))
         // Zero every non-player economy so the player's GDP exceeds all others combined.
