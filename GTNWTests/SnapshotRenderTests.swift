@@ -454,5 +454,33 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(ScorecardSheet(gameState: g2), size: CGSize(width: FontScale.w(700), height: FontScale.h(340)), name: "scorecard-gulf-\(t)").path)")
         }
     }
+
+    /// 3.13.0: the world in 1801 with colonies and indigenous land, a colony's and a people's dossier, and the
+    /// Louisiana offer.
+    @MainActor
+    func testRenderPreStateWorld() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.jeffersonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        let later = GameEngine()
+        later.startNewGame(administration: Advisor.jeffersonAdministration(), turnLength: .month)
+        let g2 = try XCTUnwrap(later.gameState)
+        g2.turn = 25
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            for zoom in [MapZoom.world, .region] {
+                let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("MEX"), zoom: .constant(zoom), filter: .constant(.alignment))
+                print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "colonies-\(zoom.rawValue.lowercased())-\(t)").path)")
+            }
+            let dossiers = HStack(alignment: .top) {
+                CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "MEX").environmentObject(engine).frame(width: FontScale.w(300))
+                CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NZL").environmentObject(engine).frame(width: FontScale.w(300))
+            }
+            print("SNAPSHOT \(try render(dossiers, size: CGSize(width: FontScale.w(620), height: FontScale.h(560)), name: "colony-dossiers-\(t)").path)")
+            print("SNAPSHOT \(try render(AcquisitionSheet(gameState: g2).environmentObject(later), size: CGSize(width: FontScale.w(620), height: FontScale.h(240)), name: "louisiana-offer-\(t)").path)")
+        }
+    }
 }
 #endif

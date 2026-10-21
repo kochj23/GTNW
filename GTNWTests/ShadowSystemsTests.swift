@@ -3099,3 +3099,183 @@ final class EvolvingCabinetTests: XCTestCase {
         XCTAssertEqual(Scorecard.lines(for: "cuba1962", in: gs).count, 5)
     }
 }
+
+// MARK: - Takeable land on every continent (3.13.0)
+
+@MainActor
+final class PreStateLandTests: XCTestCase {
+
+    private func game(_ admin: Administration) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: admin, turnLength: .month)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    // Unit: the data
+
+    func testDataIsConsistentWithTheEraBoard() {
+        XCTAssertGreaterThan(PreStateModel.eras.count, 90)
+        for land in PreStateModel.lands {
+            XCTAssertNotNil(PreStateModel.template(land), land)
+            let spans = PreStateModel.eras.filter { $0.land == land }.sorted { $0.from < $1.from }
+            for (a, b) in zip(spans, spans.dropFirst()) { XCTAssertLessThanOrEqual(a.to, b.from, "\(land) eras overlap") }
+        }
+        for e in PreStateModel.eras {
+            if e.kind == .colony { XCTAssertNotNil(PreStateModel.ownerNames[e.owner], e.owner) } else { XCTAssertTrue((0...100).contains(e.extra)) }
+            // During its era the modern country is not on the board (the land would otherwise be shown twice).
+            let mid = (e.from + e.to - 1) / 2
+            XCTAssertFalse(WorldCountriesDatabase.countriesForYear(mid).contains { $0.id == e.land }, "\(e.land) in \(mid)")
+        }
+        XCTAssertTrue(WorldMapData.shared.shapes.contains { $0.id == PreStateModel.alaska }, "Alaska has its own outline")
+        XCTAssertTrue(WorldMapData.shared.shapes.contains { $0.id == "USA" })
+    }
+
+    func testCanadaAndMexicoInThe1790s() throws {
+        let (_, gs) = try game(Advisor.washingtonAdministration())
+        XCTAssertEqual(gs.preState("CAN")?.label, "British North America (UK)")
+        XCTAssertEqual(gs.preState("MEX")?.label, "New Spain (Spain)")
+        XCTAssertTrue(gs.preState("MEX")?.ownerPresent ?? false)
+        XCTAssertEqual(gs.preState(PreStateModel.alaska)?.label, "Russian America (Russia)")
+        XCTAssertEqual(gs.preState("BRA")?.era.owner, "PRT")
+        XCTAssertEqual(gs.preState("NZL")?.era.kind, .indigenous)
+        XCTAssertTrue(gs.colonyLandIDs.isSuperset(of: ["CAN", "MEX", "ARG", "AUS", "IRL"]))
+        XCTAssertTrue(gs.indigenousLandIDs.isSuperset(of: ["NZL", "SAU", "MMR"]))
+        XCTAssertNil(gs.preState("FRA"), "a country in the game is not pre-state land")
+    }
+
+    func testEveryContinentHasTakeableLand() {
+        let regions = Set(PreStateModel.lands.compactMap { PreStateModel.template($0)?.region })
+        XCTAssertTrue(regions.isSuperset(of: [.northAmerica, .southAmerica, .europe, .asia, .middleEast, .oceania]))
+    }
+
+    func testPricesAndOddsAreSensible() {
+        XCTAssertGreaterThan(PreStateModel.price("MEX", year: 1800, relation: -100), PreStateModel.price("MEX", year: 1800, relation: 100))
+        XCTAssertEqual(PreStateModel.saleOdds(relation: 90, atWar: true, historical: false), 0, "no sale in wartime")
+        XCTAssertEqual(PreStateModel.saleOdds(relation: 0, atWar: false, historical: true), 1, "a historical offer is good")
+        XCTAssertGreaterThan(PreStateModel.revoltOdds(year: 1815, independence: 1816, ownerAtWarWithPlayer: false, ownerStability: 50),
+                             PreStateModel.revoltOdds(year: 1790, independence: 1816, ownerAtWarWithPlayer: false, ownerStability: 50), "riper near the real date")
+        XCTAssertGreaterThan(PreStateModel.seizeOdds(troops: 50, attackerStrength: 60, defenders: 5, defenderStrength: 40),
+                             PreStateModel.seizeOdds(troops: 5, attackerStrength: 60, defenders: 5, defenderStrength: 40))
+    }
+
+    // Functional: war, purchase, liberation, indigenous land, historical offers
+
+    func testSeizeNewSpainFromSpain() throws {
+        let (engine, gs) = try game(Advisor.jeffersonAdministration())
+        XCTAssertEqual(engine.seizeColony("MEX", troops: 5, roll: 0), true, "the 1801 army is small: 5K of it")
+        XCTAssertEqual(gs.getCountry(id: "MEX")?.territoryOf, "USA")
+        XCTAssertTrue(gs.getCountry(id: "ESP")!.atWarWith.contains("USA"), "seizing a colony means war with its owner")
+        XCTAssertNil(gs.preState("MEX"))
+        XCTAssertTrue(engine.renameTerritory("MEX", to: "New Columbia"))
+        XCTAssertGreaterThan(OccupationModel.neededGarrison(gs.getCountry(id: "MEX")!), 0, "3.9.0 rules apply")
+    }
+
+    func testBuyAndFreeColonies() throws {
+        let (engine, gs) = try game(Advisor.monroeAdministration())
+        let gbr = try XCTUnwrap(gs.countries.firstIndex { $0.id == "GBR" })
+        gs.countries[gbr].diplomaticRelations["USA"] = 80
+        let gdp = gs.getPlayerCountry()!.gdp
+        XCTAssertEqual(engine.purchaseColony("CAN", roll: 0), true)
+        XCTAssertEqual(gs.getCountry(id: "CAN")?.territoryOf, "USA")
+        XCTAssertLessThan(gs.getPlayerCountry()!.gdp, gdp, "the price is paid")
+        gs.actionsUsedThisTurn = 0
+        let esp0 = gs.getCountry(id: "ESP")!.diplomaticRelations["USA"] ?? 0
+        XCTAssertEqual(engine.supportIndependence("ARG", roll: 0), true)
+        let arg = try XCTUnwrap(gs.getCountry(id: "ARG"))
+        XCTAssertNil(arg.territoryOf, "a free state, not a territory")
+        XCTAssertTrue(arg.alliances.contains("USA"))
+        XCTAssertLessThan(gs.getCountry(id: "ESP")!.diplomaticRelations["USA"] ?? 0, esp0, "Spain resents it")
+    }
+
+    func testIndigenousLandResistsAndCostsStability() throws {
+        let (engine, gs) = try game(Advisor.jeffersonAdministration())
+        XCTAssertEqual(engine.claimIndigenousLand("NZL", troops: 2, roll: 0.999), false, "its people drive the expedition off")
+        XCTAssertNil(gs.getCountry(id: "NZL"))
+        gs.actionsUsedThisTurn = 0
+        XCTAssertEqual(engine.claimIndigenousLand("NZL", troops: 6, roll: 0), true)
+        let nz = try XCTUnwrap(gs.getCountry(id: "NZL"))
+        XCTAssertEqual(nz.territoryOf, "USA")
+        XCTAssertLessThan(nz.stability, 50); XCTAssertGreaterThan(nz.profile.outcry, 50, "resistance continues")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Its people do not accept it") })
+    }
+
+    func testLouisianaAndAlaskaOffersInTheirWindows() throws {
+        let (engine, gs) = try game(Advisor.jeffersonAdministration())
+        gs.turn = 25   // early 1803
+        XCTAssertEqual(engine.openAcquisitions().map(\.id), ["louisiana"])
+        engine.processPreState()
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Louisiana Purchase") })
+        XCTAssertTrue(engine.acceptAcquisition("louisiana"))
+        XCTAssertTrue(gs.shadow.acquired.contains("louisiana"))
+        XCTAssertGreaterThan(gs.shadow.acquisitionIncome, 0)
+        XCTAssertFalse(engine.acceptAcquisition("louisiana"), "once only")
+        let (e2, g2) = try game(Advisor.ajohnsonAdministration())
+        g2.turn = 24   // 1867
+        XCTAssertEqual(g2.currentYear, 1867)
+        XCTAssertTrue(e2.openAcquisitions().contains { $0.id == "alaska" }, "\(e2.openAcquisitions().map(\.id)) RUS=\(g2.getCountry(id: "RUS")?.name ?? "nil")")
+        XCTAssertTrue(e2.acceptAcquisition("alaska"))
+        XCTAssertNil(g2.preState(PreStateModel.alaska), "Alaska is American")
+    }
+
+    // Security
+
+    func testBadOrdersAreRefused() throws {
+        let (engine, gs) = try game(Advisor.jeffersonAdministration())
+        XCTAssertNil(engine.seizeColony("FRA", troops: 5, roll: 0), "not a colony")
+        XCTAssertNil(engine.seizeColony("MEX", troops: 1e9, roll: 0), "more troops than exist")
+        XCTAssertNil(engine.seizeColony("MEX", troops: .nan, roll: 0))
+        XCTAssertNil(engine.claimIndigenousLand("MEX", troops: 5, roll: 0), "a colony is not indigenous land")
+        XCTAssertNil(engine.purchaseColony("ZZZ", roll: 0))
+        XCTAssertFalse(engine.acceptAcquisition("alaska"), "not its window")
+        let other = GameEngine(); other.startNewGame(playerCountryID: "GBR", turnLength: .month)
+        XCTAssertTrue(other.openAcquisitions().isEmpty, "the U.S. offers are for a U.S. President")
+        XCTAssertNil(gs.getCountry(id: "MEX"))
+    }
+
+    // Retry: persistence and old saves
+
+    func testAcquisitionsSurviveSaveAndOldSavesLoad() throws {
+        let (engine, gs) = try game(Advisor.jeffersonAdministration())
+        gs.turn = 25
+        engine.acceptAcquisition("louisiana")
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.acquired, ["louisiana"])
+        XCTAssertEqual(loaded.shadow.acquisitionIncome, gs.shadow.acquisitionIncome)
+        let e2 = GameEngine(); e2.gameState = loaded
+        XCTAssertFalse(e2.acceptAcquisition("louisiana"))
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["acquired", "acquisitionIncome", "announcedOffers"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        XCTAssertTrue(try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json)).shadow.acquired.isEmpty)
+    }
+
+    // Performance
+
+    func testPreStateLookupsAreCheap() throws {
+        let (_, gs) = try game(Advisor.washingtonAdministration())
+        measure { for _ in 0..<50 { _ = gs.colonyLandIDs; _ = gs.indigenousLandIDs } }
+    }
+}
+
+final class PreStatePlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testTakingLandIsLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", administration: Advisor.jeffersonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        XCTAssertEqual(e.seizeColony("CUB", troops: 5, roll: 0), true)
+        gs.actionsUsedThisTurn = 0
+        XCTAssertNotNil(e.supportIndependence("ARG", roll: 0.999))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let kinds = await remote.events(id).map(\.kind)
+        XCTAssertTrue(kinds.contains("colony_seized")); XCTAssertTrue(kinds.contains("independence_backed"))
+    }
+}
