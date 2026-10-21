@@ -414,5 +414,24 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(endings, size: CGSize(width: FontScale.w(900), height: FontScale.h(240)), name: "nation-endings-\(t)").path)")
         }
     }
+
+    /// 3.12.0: the coalition sheet (Gulf 1990) and the Pearl Harbor scorecard a week in.
+    @MainActor
+    func testRenderCoalitionAndScorecard() throws {
+        let gulf = GameEngine()
+        gulf.startScenario(try XCTUnwrap(ScenarioDefinition.find("world1990")), turnLength: .week)
+        let g1 = try XCTUnwrap(gulf.gameState)
+        let pearl = GameEngine()
+        pearl.startScenario(try XCTUnwrap(ScenarioDefinition.find("pearl1941")), turnLength: .week)
+        let g2 = try XCTUnwrap(pearl.gameState)
+        g2.turn += 1; pearl.processShadowTurn()
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            print("SNAPSHOT \(try render(CoalitionSheet(gameState: g1, targetID: "IRQ").environmentObject(gulf), size: CGSize(width: FontScale.w(640), height: FontScale.h(520)), name: "coalition-\(t)").path)")
+            print("SNAPSHOT \(try render(ScorecardSheet(gameState: g2), size: CGSize(width: FontScale.w(700), height: FontScale.h(320)), name: "scorecard-pearl-\(t)").path)")
+        }
+    }
 }
 #endif

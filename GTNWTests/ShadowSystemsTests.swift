@@ -2751,3 +2751,176 @@ final class NationPlayHistoryTests: XCTestCase {
         XCTAssertNotNil(PlayFixtures.summary(s)["leader"])
     }
 }
+
+// MARK: - Coalitions and historical scenarios (3.12.0)
+
+@MainActor
+final class CoalitionAndScenarioTests: XCTestCase {
+
+    private func scenario(_ id: String, turn: TurnLength? = nil) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startScenario(try XCTUnwrap(ScenarioDefinition.find(id)), turnLength: turn)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    private func twin(_ gs: GameState) throws -> (GameEngine, GameState) {
+        let copy = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let e = GameEngine(); e.gameState = copy
+        return (e, copy)
+    }
+
+    // Unit
+
+    func testJoinOddsAndSharedOpinion() {
+        var last = -1.0
+        for r in stride(from: -100, through: 100, by: 10) {
+            let o = CoalitionModel.joinOdds(relationWithPlayer: r, relationWithTarget: 0, authorized: false, casusBelli: 0, wmdUsed: false)
+            XCTAssertGreaterThanOrEqual(o, last); last = o
+            XCTAssertTrue((0.02...0.95).contains(o))
+        }
+        let base = CoalitionModel.joinOdds(relationWithPlayer: 70, relationWithTarget: 0, authorized: false, casusBelli: 0, wmdUsed: false)
+        XCTAssertGreaterThan(CoalitionModel.joinOdds(relationWithPlayer: 70, relationWithTarget: 0, authorized: true, casusBelli: 0, wmdUsed: false), base, "legitimacy helps")
+        XCTAssertGreaterThan(CoalitionModel.joinOdds(relationWithPlayer: 70, relationWithTarget: 0, authorized: false, casusBelli: 1, wmdUsed: false), base)
+        XCTAssertLessThan(CoalitionModel.joinOdds(relationWithPlayer: 70, relationWithTarget: 80, authorized: false, casusBelli: 0, wmdUsed: false), base, "friends of the target hang back")
+        XCTAssertLessThan(CoalitionModel.joinOdds(relationWithPlayer: 70, relationWithTarget: 0, authorized: false, casusBelli: 0, wmdUsed: true), base, "banned weapons drive allies away")
+        XCTAssertEqual(CoalitionModel.opinionShare(members: 0), 1)
+        XCTAssertEqual(CoalitionModel.opinionShare(members: 3), 0.25)
+    }
+
+    func testEveryScenarioLoadsItsBoard() throws {
+        XCTAssertEqual(ScenarioDefinition.all.count, 8)
+        for s in ScenarioDefinition.all {
+            let (_, gs) = try scenario(s.id)
+            XCTAssertEqual(gs.currentDate, s.startDate, s.id)
+            XCTAssertEqual(gs.shadow.scenarioID, s.id)
+            for (a, b) in s.wars { XCTAssertTrue(gs.activeWars.contains { $0.aggressor == a && $0.defender == b }, "\(s.id): \(a)-\(b)") }
+            XCTAssertFalse(Scorecard.lines(for: s.id, in: gs).isEmpty, s.id)
+        }
+    }
+
+    // Functional: scenarios and their scorecards
+
+    func testPearlHarborPlaysOutAndScoresAgainstHistory() throws {
+        let (engine, gs) = try scenario("pearl1941", turn: .week)
+        XCTAssertTrue(Scorecard.fought("USA", "JPN", in: gs), "the war with Japan starts on day one")
+        XCTAssertFalse(Scorecard.fought("USA", "DEU", in: gs))
+        gs.turn += 1
+        engine.processShadowTurn()
+        XCTAssertTrue(Scorecard.fought("USA", "DEU", in: gs), "Germany declares war on 11 Dec")
+        let lines = Scorecard.lines(for: "pearl1941", in: gs)
+        XCTAssertEqual(lines.first { $0.label.contains("Nuclear") }?.matchesHistory, false, "no bomb yet: diverges from 1945")
+        XCTAssertTrue(lines.first { $0.label.contains("Germany") }?.historical.contains("11 Dec 1941") ?? false)
+    }
+
+    func testSeptember11WithCongressAndACoalitionMatchesHistory() throws {
+        let (engine, gs) = try scenario("sept11_2001", turn: .week)
+        let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+        gs.countries[pi].congressionalSupport = 70; gs.countries[pi].warSupport = 70
+        XCTAssertEqual(engine.requestAuthorization(target: "AFG", kind: .useOfForce, roll: 0)?.passed, true)
+        gs.actionsUsedThisTurn = 0
+        let rolls = Dictionary(uniqueKeysWithValues: engine.coalitionCandidates(against: "AFG").map { ($0, 0.0) })
+        let co = try XCTUnwrap(engine.requestCoalition(against: "AFG", rolls: rolls))
+        XCTAssertTrue(co.members.contains("GBR"))
+        engine.declareWar(aggressor: "USA", defender: "AFG")
+        let score = Scorecard.score(Scorecard.lines(for: "sept11_2001", in: gs))
+        XCTAssertEqual(score.matched, score.total, "authorized, coalition, war, no nukes: as in 2001")
+    }
+
+    func testCoalitionMembersFightAndShareTheBlame() throws {
+        let (e1, g1) = try scenario("world1990")
+        engine(e1, g1, invade: "IRQ")
+        let f0 = try XCTUnwrap(g1.shadow.fronts.first { $0.defender == "IRQ" && $0.status == .fighting }).attackerTroops
+        let (e2, g2) = try twin(g1)
+        g1.actionsUsedThisTurn = 0
+        let rolls = Dictionary(uniqueKeysWithValues: e1.coalitionCandidates(against: "IRQ").map { ($0, 0.0) })
+        let co = try XCTUnwrap(e1.requestCoalition(against: "IRQ", rolls: rolls))
+        XCTAssertFalse(co.members.isEmpty)
+        XCTAssertGreaterThan(g1.shadow.fronts.first { $0.defender == "IRQ" && $0.status == .fighting }!.attackerTroops, f0, "allies send troops")
+        // The same overwhelming air strike costs less abroad with a coalition.
+        g1.actionsUsedThisTurn = 0; g2.actionsUsedThisTurn = 0
+        let big = AttackSize(aircraft: AttackSizing.standard(.airStrike, in: g1).aircraft * 3)
+        let jpn1 = g1.getCountry(id: "JPN")!.diplomaticRelations["USA"] ?? 0, jpn2 = g2.getCountry(id: "JPN")!.diplomaticRelations["USA"] ?? 0
+        e1.applySizedFallout(.airStrike, target: "IRQ", size: big, scale: 3, kinds: [.aircraft], success: true)
+        e2.applySizedFallout(.airStrike, target: "IRQ", size: big, scale: 3, kinds: [.aircraft], success: true)
+        let drop1 = jpn1 - (g1.getCountry(id: "JPN")!.diplomaticRelations["USA"] ?? 0), drop2 = jpn2 - (g2.getCountry(id: "JPN")!.diplomaticRelations["USA"] ?? 0)
+        XCTAssertLessThan(drop1, drop2)
+    }
+
+    private func engine(_ e: GameEngine, _ gs: GameState, invade target: String) {
+        e.declareWar(aggressor: "USA", defender: target)
+        e.syncFronts()
+    }
+
+    func testRefusersDriftAway() throws {
+        let (engine, gs) = try scenario("world1990")
+        let cands = engine.coalitionCandidates(against: "IRQ")
+        let who = try XCTUnwrap(cands.first)
+        let r0 = gs.getCountry(id: who)!.diplomaticRelations["USA"] ?? 0
+        let rolls = Dictionary(uniqueKeysWithValues: cands.map { ($0, 0.999) })
+        let co = try XCTUnwrap(engine.requestCoalition(against: "IRQ", rolls: rolls))
+        XCTAssertTrue(co.members.isEmpty)
+        XCTAssertLessThan(gs.getCountry(id: who)!.diplomaticRelations["USA"] ?? 0, r0)
+    }
+
+    // Security
+
+    func testBadCoalitionRequestsAreRefused() throws {
+        let (engine, gs) = try scenario("modern2025")
+        XCTAssertNil(engine.requestCoalition(against: "USA"))
+        XCTAssertNil(engine.requestCoalition(against: "ZZZ"))
+        let cands = engine.coalitionCandidates(against: "RUS")
+        XCTAssertFalse(cands.contains("RUS")); XCTAssertFalse(cands.contains("USA"))
+        XCTAssertFalse(cands.contains { gs.getCountry(id: "RUS")!.alliances.contains($0) }, "the target's allies are never asked")
+        gs.actionsUsedThisTurn = gs.actionsPerTurn
+        XCTAssertNil(engine.requestCoalition(against: "IRN"), "no actions left")
+        XCTAssertTrue(Scorecard.lines(for: "nope", in: gs).isEmpty)
+    }
+
+    // Retry
+
+    func testCoalitionsMergeAndSurviveAReload() throws {
+        let (engine, gs) = try scenario("world1990")
+        let cands = engine.coalitionCandidates(against: "IRQ")
+        engine.requestCoalition(against: "IRQ", rolls: Dictionary(uniqueKeysWithValues: cands.map { ($0, 0.0) }))
+        gs.actionsUsedThisTurn = 0
+        engine.requestCoalition(against: "IRQ", rolls: Dictionary(uniqueKeysWithValues: cands.map { ($0, 0.0) }))
+        let co = try XCTUnwrap(gs.shadow.coalitions["IRQ"])
+        XCTAssertEqual(co.members.count, Set(co.members).count, "asking twice adds no duplicates")
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.coalitions, gs.shadow.coalitions)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "coalitions"); json["shadow"] = shadow
+        XCTAssertTrue(try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json)).shadow.coalitions.isEmpty)
+    }
+
+    // Performance
+
+    func testCoalitionOddsAreCheap() throws {
+        let (engine, _) = try scenario("modern2025")
+        measure { for t in ["RUS", "IRN", "PRK", "CHN", "VEN", "CUB"] { _ = engine.coalitionOdds(against: t) } }
+    }
+}
+
+final class CoalitionPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testCoalitionRequestsAreLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startScenario(try XCTUnwrap(ScenarioDefinition.find("korea1950")), turnLength: .week)
+        let id = try XCTUnwrap(e.gameState?.shadow.playSessionID)
+        let cands = e.coalitionCandidates(against: "PRK")
+        XCTAssertNotNil(e.requestCoalition(against: "PRK", rolls: Dictionary(uniqueKeysWithValues: cands.map { ($0, 0.0) })))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        let ev = try XCTUnwrap(events.first { $0.kind == "coalition_request" })
+        XCTAssertEqual(PlayFixtures.detail(ev)["target"] as? String, "PRK")
+        XCTAssertEqual((PlayFixtures.detail(ev)["joined"] as? [String])?.count, cands.count)
+        XCTAssertEqual(PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "game_start" }))["scenario"] as? String, "korea1950")
+    }
+}
