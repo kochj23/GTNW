@@ -158,13 +158,13 @@ final class SnapshotRenderTests: XCTestCase {
             Theme.forced = theme
             let t = theme.rawValue
             for zoom in [MapZoom.world, .region] {
-                let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("NGA"), zoom: .constant(zoom), filter: .constant(.alignment))
+                let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("CMR"), zoom: .constant(zoom), filter: .constant(.alignment))
                 print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "unclaimed-map-\(zoom.rawValue.lowercased())-\(t)").path)")
             }
             let other = VectorWorldMap(gameState: gs, selectedCountryID: .constant(nil), zoom: .constant(.world), filter: .constant(.unrest))
             print("SNAPSHOT \(try render(VStack { other; MapLegend(filter: .unrest, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "unclaimed-map-unrest-\(t)").path)")
             let dossiers = HStack(alignment: .top) {
-                CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NGA").frame(width: FontScale.w(300))
+                CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "CMR").frame(width: FontScale.w(300))
                 CountryDossier(gameState: gs, country: gs.getCountry(id: "KEN"), onSheet: { _ in }, scrolls: false).frame(width: FontScale.w(300))
             }.environmentObject(engine)
             print("SNAPSHOT \(try render(dossiers, size: CGSize(width: FontScale.w(620), height: FontScale.h(760)), name: "unclaimed-dossier-\(t)").path)")
@@ -181,12 +181,12 @@ final class SnapshotRenderTests: XCTestCase {
         let engine = GameEngine()
         engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
         let gs = try XCTUnwrap(engine.gameState)
-        XCTAssertTrue(engine.claimLand("NGA"))
-        XCTAssertTrue(engine.renameTerritory("NGA", to: "New Albion"))
+        XCTAssertTrue(engine.claimLand("CMR"))
+        XCTAssertTrue(engine.renameTerritory("CMR", to: "New Albion"))
         let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
-        XCTAssertEqual(loaded.getCountry(id: "NGA")?.name, "New Albion")
-        XCTAssertTrue(loaded.getCountry(id: "NGA")?.isTerritory ?? false)
-        let map = VectorWorldMap(gameState: loaded, selectedCountryID: .constant("NGA"), zoom: .constant(.region), filter: .constant(.alignment))
+        XCTAssertEqual(loaded.getCountry(id: "CMR")?.name, "New Albion")
+        XCTAssertTrue(loaded.getCountry(id: "CMR")?.isTerritory ?? false)
+        let map = VectorWorldMap(gameState: loaded, selectedCountryID: .constant("CMR"), zoom: .constant(.region), filter: .constant(.alignment))
         let url = try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black),
                              size: CGSize(width: 1100, height: 600), name: "integration-claimed-after-load")
         XCTAssertGreaterThan((try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0, 10_000)
@@ -215,7 +215,7 @@ final class SnapshotRenderTests: XCTestCase {
             }
             .padding(10).background(Theme.isRetro ? EGA.blue : Color.black)
             print("SNAPSHOT \(try render(panels, size: CGSize(width: FontScale.w(460), height: FontScale.h(560)), name: "attack-sizing-\(t)").path)")
-            let dossier = CountryDossier(gameState: gs1850, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NGA")
+            let dossier = CountryDossier(gameState: gs1850, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "CMR")
                 .environmentObject(old).frame(width: FontScale.w(300))
             print("SNAPSHOT \(try render(dossier, size: CGSize(width: FontScale.w(320), height: FontScale.h(320)), name: "expedition-\(t)").path)")
         }
@@ -248,7 +248,7 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment) }.background(Color.black), size: CGSize(width: 1100, height: 600), name: "fleets-map-\(t)").path)")
             let sheet = FleetOrderSheet(gameState: gs, targetID: "JPN", scrolls: false, fleetID: "third", mission: .strike).environmentObject(engine)
             print("SNAPSHOT \(try render(sheet, size: CGSize(width: FontScale.w(720), height: FontScale.h(620)), name: "fleet-orders-\(t)").path)")
-            let sheet1850 = FleetOrderSheet(gameState: gs1850, targetID: "NGA", scrolls: false, fleetID: "africa", mission: .amphibious).environmentObject(old)
+            let sheet1850 = FleetOrderSheet(gameState: gs1850, targetID: "CMR", scrolls: false, fleetID: "africa", mission: .amphibious).environmentObject(old)
             print("SNAPSHOT \(try render(sheet1850, size: CGSize(width: FontScale.w(720), height: FontScale.h(620)), name: "fleet-orders-1850-\(t)").path)")
         }
     }
@@ -289,7 +289,7 @@ final class SnapshotRenderTests: XCTestCase {
         let engine = GameEngine()
         engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
         let gs = try XCTUnwrap(engine.gameState)
-        for (id, name) in [("ZMB", "Gotit"), ("ERI", "Gimme"), ("GHA", "Gold Coast"), ("COD", "Rubberland"), ("ZAF", "")] {
+        for (id, name) in [("ZMB", "Gotit"), ("ERI", "Gimme"), ("GAB", "Gold Coast"), ("COD", "Rubberland"), ("ZAF", "")] {
             gs.actionsUsedThisTurn = 0
             if gs.unclaimedLandIDs.contains(id) { XCTAssertTrue(engine.claimLand(id)); if !name.isEmpty { engine.renameTerritory(id, to: name) } }
         }
@@ -304,7 +304,7 @@ final class SnapshotRenderTests: XCTestCase {
             gs.shadow.expansionLog = Array(repeating: gs.currentDate, count: 20)   // mid-spree: the next claim tips it
             let bar = SituationTopBar(gameState: gs, onSheet: { _ in }, part: .statsOnly).environmentObject(engine)
             print("SNAPSHOT \(try render(bar, size: CGSize(width: FontScale.w(900), height: FontScale.h(70)), name: "impeachment-risk-\(t)").path)")
-            let dossier = CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "NGA")
+            let dossier = CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: "CMR")
                 .environmentObject(engine).frame(width: FontScale.w(300))
             print("SNAPSHOT \(try render(dossier, size: CGSize(width: FontScale.w(320), height: FontScale.h(420)), name: "claim-warning-\(t)").path)")
             gs.shadow.ruthlessness = 0; gs.shadow.popularity = 50; gs.shadow.expansionLog = log
@@ -357,7 +357,7 @@ final class SnapshotRenderTests: XCTestCase {
             let t = theme.rawValue
             print("SNAPSHOT \(try render(GovernSheet(gameState: gs, countryID: "GMB").environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(420)), name: "govern-\(t)").path)")
             print("SNAPSHOT \(try render(ManpowerSheet(gameState: gs).environmentObject(engine), size: CGSize(width: FontScale.w(620), height: FontScale.h(420)), name: "manpower-\(t)").path)")
-            print("SNAPSHOT \(try render(UnclaimedLandSheet(gameState: gs, landID: "NGA").environmentObject(engine), size: CGSize(width: FontScale.w(560), height: FontScale.h(320)), name: "grid-unclaimed-\(t)").path)")
+            print("SNAPSHOT \(try render(UnclaimedLandSheet(gameState: gs, landID: "CMR").environmentObject(engine), size: CGSize(width: FontScale.w(560), height: FontScale.h(320)), name: "grid-unclaimed-\(t)").path)")
             let detail = CountryDetailSheet(country: gs.getCountry(id: "GMB")!, gameState: gs).environmentObject(engine)
             print("SNAPSHOT \(try render(detail, size: CGSize(width: FontScale.w(800), height: FontScale.h(700)), name: "grid-territory-\(t)").path)")
         }
@@ -548,6 +548,23 @@ final class SnapshotRenderTests: XCTestCase {
             }
             print("SNAPSHOT \(try render(TreatyOffersSheet(gameState: gs).environmentObject(engine), size: CGSize(width: FontScale.w(560), height: FontScale.h(200)), name: "treaty-offers-\(t)").path)")
             print("SNAPSHOT \(try render(ManpowerSheet(gameState: g2).environmentObject(later), size: CGSize(width: FontScale.w(620), height: FontScale.h(320)), name: "militia-1792-\(t)").path)")
+        }
+    }
+
+    /// 3.14.1: the Balkans in 1881 and Africa in 1850 (Ethiopia, Liberia, the Merina Kingdom, Ashanti, Sokoto).
+    @MainActor
+    func testRenderEraStates() throws {
+        let e1 = GameEngine(); e1.startNewGame(turnLength: .month, year: 1881)
+        let e2 = GameEngine(); e2.startNewGame(turnLength: .month, year: 1850)
+        let g1 = try XCTUnwrap(e1.gameState), g2 = try XCTUnwrap(e2.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            for (gs, sel, name) in [(g1, "SRB", "balkans-1881"), (g2, "ETH", "africa-1850")] {
+                let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant(sel), zoom: .constant(.region), filter: .constant(.alignment))
+                print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "\(name)-\(t)").path)")
+            }
         }
     }
 }

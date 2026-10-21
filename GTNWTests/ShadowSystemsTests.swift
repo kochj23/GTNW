@@ -762,8 +762,8 @@ final class UnclaimedLandTests: XCTestCase {
     // Unit: which lands are unclaimed, per year
 
     func testNigeriaIsUnclaimedIn1850AndACountryIn1970() {
-        XCTAssertTrue(WorldCountriesDatabase.unclaimedLandIDs(year: 1850).contains("NGA"))
-        XCTAssertFalse(WorldCountriesDatabase.countriesForYear(1850).contains { $0.id == "NGA" })
+        XCTAssertTrue(WorldCountriesDatabase.unclaimedLandIDs(year: 1850).contains("CMR"))
+        XCTAssertFalse(WorldCountriesDatabase.countriesForYear(1850).contains { $0.id == "CMR" })
         XCTAssertFalse(WorldCountriesDatabase.unclaimedLandIDs(year: 1970).contains("NGA"))
         XCTAssertTrue(WorldCountriesDatabase.countriesForYear(1970).contains { $0.id == "NGA" })
         XCTAssertTrue(WorldCountriesDatabase.unclaimedLandIDs(year: 1900).contains("ZAF"))
@@ -791,8 +791,8 @@ final class UnclaimedLandTests: XCTestCase {
     func testGameStateDerivesUnclaimedFromItsStartYear() throws {
         let (_, gs) = try game1850()
         XCTAssertEqual(gs.eraStartYear, 1850)
-        XCTAssertTrue(gs.unclaimedLandIDs.contains("NGA"))
-        XCTAssertNil(gs.getCountry(id: "NGA"), "unclaimed land is not a country, so it never takes a computer turn")
+        XCTAssertTrue(gs.unclaimedLandIDs.contains("CMR"))
+        XCTAssertNil(gs.getCountry(id: "CMR"), "unclaimed land is not a country, so it never takes a computer turn")
         XCTAssertEqual(GameState(playerCountryID: "USA").unclaimedLandIDs, [Antarctica.id], "only Antarctica (3.10.0) in a modern game")
     }
 
@@ -801,21 +801,21 @@ final class UnclaimedLandTests: XCTestCase {
     func testClaimNigeriaIn1850NameItAndItShowsAsAUSTerritory() throws {
         let (engine, gs) = try game1850()
         let used0 = gs.actionsUsedThisTurn, ruth0 = gs.shadow.ruthlessness
-        XCTAssertTrue(engine.claimLand("NGA"))
-        let land = try XCTUnwrap(gs.getCountry(id: "NGA"))
+        XCTAssertTrue(engine.claimLand("CMR"))
+        let land = try XCTUnwrap(gs.getCountry(id: "CMR"))
         XCTAssertEqual(land.territoryOf, "USA")
         XCTAssertEqual(land.alignment, gs.getCountry(id: "USA")?.alignment)
-        XCTAssertEqual(land.name, "Nigeria", "starts with the land's modern name until the President names it")
+        XCTAssertEqual(land.name, "Cameroon", "starts with the land's modern name until the President names it")
         XCTAssertEqual(land.nuclearWarheads, 0)
         XCTAssertLessThanOrEqual(land.profile.outcry, 20, "no occupation insurgency: nobody governed it")
-        XCTAssertFalse(gs.unclaimedLandIDs.contains("NGA"))
+        XCTAssertFalse(gs.unclaimedLandIDs.contains("CMR"))
         XCTAssertEqual(gs.actionsUsedThisTurn, used0 + 1)
         XCTAssertEqual(gs.shadow.ruthlessness, ruth0 + ExpansionModel.politics(year: 1850, nth: 1).ruthlessness, accuracy: 1e-9)   // 3.7.0 era politics
-        XCTAssertTrue(gs.getCountry(id: "USA")!.alliances.contains("NGA"))
+        XCTAssertTrue(gs.getCountry(id: "USA")!.alliances.contains("CMR"))
         XCTAssertTrue(gs.shadow.ticker.last?.text.contains("U.S. territory") ?? false)
 
-        XCTAssertTrue(engine.renameTerritory("NGA", to: "  New Albion  "))
-        XCTAssertEqual(gs.getCountry(id: "NGA")?.name, "New Albion")
+        XCTAssertTrue(engine.renameTerritory("CMR", to: "  New Albion  "))
+        XCTAssertEqual(gs.getCountry(id: "CMR")?.name, "New Albion")
         XCTAssertEqual(CombatModel.territoryTitle(ownerID: "USA", ownerName: "United States"), "U.S. TERRITORY")
         XCTAssertTrue(gs.shadow.warLog.last?.contains("New Albion") ?? false)
     }
@@ -823,8 +823,8 @@ final class UnclaimedLandTests: XCTestCase {
     func testClaimingCostsLittleGoodwill() throws {
         let (engine, gs) = try game1850()
         let before = Dictionary(gs.countries.map { ($0.id, $0.diplomaticRelations["USA"] ?? 0) }, uniquingKeysWith: { a, _ in a })
-        engine.claimLand("NGA")
-        for c in gs.countries where c.id != "USA" && c.id != "NGA" {
+        engine.claimLand("CMR")
+        for c in gs.countries where c.id != "USA" && c.id != "CMR" {
             let drop = (before[c.id] ?? 0) - (c.diplomaticRelations["USA"] ?? 0)
             XCTAssertLessThanOrEqual(drop, 5, c.id)
         }
@@ -866,13 +866,13 @@ final class UnclaimedLandTests: XCTestCase {
         XCTAssertFalse(engine.claimLand("FRA"), "a country is not unclaimed land")
         XCTAssertFalse(engine.claimLand("XXX"))
         XCTAssertFalse(engine.claimLand(""))
-        XCTAssertTrue(engine.claimLand("NGA"))
+        XCTAssertTrue(engine.claimLand("CMR"))
         let odd = "<b>Robert'); --</b> %@"
-        XCTAssertTrue(engine.renameTerritory("NGA", to: odd))
-        XCTAssertEqual(gs.getCountry(id: "NGA")?.name, odd)
-        XCTAssertFalse(engine.renameTerritory("NGA", to: "Two\nLines"))
-        XCTAssertFalse(engine.renameTerritory("NGA", to: ""))
-        XCTAssertEqual(gs.getCountry(id: "NGA")?.name, odd, "a rejected name changes nothing")
+        XCTAssertTrue(engine.renameTerritory("CMR", to: odd))
+        XCTAssertEqual(gs.getCountry(id: "CMR")?.name, odd)
+        XCTAssertFalse(engine.renameTerritory("CMR", to: "Two\nLines"))
+        XCTAssertFalse(engine.renameTerritory("CMR", to: ""))
+        XCTAssertEqual(gs.getCountry(id: "CMR")?.name, odd, "a rejected name changes nothing")
         let fra = gs.getCountry(id: "FRA")?.name
         XCTAssertFalse(engine.renameTerritory("FRA", to: "Gaul"), "only the President's territories can be renamed")
         XCTAssertFalse(engine.renameTerritory("KEN", to: "Somewhere"), "nor unclaimed land")
@@ -884,11 +884,11 @@ final class UnclaimedLandTests: XCTestCase {
     func testDoubleClaimAppliesOnce() throws {
         let (engine, gs) = try game1850()
         let n0 = gs.countries.count
-        XCTAssertTrue(engine.claimLand("NGA"))
+        XCTAssertTrue(engine.claimLand("CMR"))
         let used = gs.actionsUsedThisTurn, ruth = gs.shadow.ruthlessness, ticker = gs.shadow.ticker.count
-        XCTAssertFalse(engine.claimLand("NGA"), "the retry is refused")
+        XCTAssertFalse(engine.claimLand("CMR"), "the retry is refused")
         XCTAssertEqual(gs.countries.count, n0 + 1)
-        XCTAssertEqual(gs.countries.filter { $0.id == "NGA" }.count, 1)
+        XCTAssertEqual(gs.countries.filter { $0.id == "CMR" }.count, 1)
         XCTAssertEqual(gs.actionsUsedThisTurn, used)
         XCTAssertEqual(gs.shadow.ruthlessness, ruth)
         XCTAssertEqual(gs.shadow.ticker.count, ticker)
@@ -896,23 +896,23 @@ final class UnclaimedLandTests: XCTestCase {
 
     func testDoubleRenameIsHarmless() throws {
         let (engine, gs) = try game1850()
-        engine.claimLand("NGA")
-        XCTAssertTrue(engine.renameTerritory("NGA", to: "New Albion"))
+        engine.claimLand("CMR")
+        XCTAssertTrue(engine.renameTerritory("CMR", to: "New Albion"))
         let ticker = gs.shadow.ticker.count, log = gs.shadow.warLog.count
-        XCTAssertTrue(engine.renameTerritory("NGA", to: "New Albion "), "resubmitting the same name succeeds")
+        XCTAssertTrue(engine.renameTerritory("CMR", to: "New Albion "), "resubmitting the same name succeeds")
         XCTAssertEqual(gs.shadow.ticker.count, ticker, "and changes nothing")
         XCTAssertEqual(gs.shadow.warLog.count, log)
     }
 
     func testRenameAfterSaveAndReload() throws {
         let (engine, gs) = try game1850()
-        engine.claimLand("NGA")
-        engine.renameTerritory("NGA", to: "New Albion")
+        engine.claimLand("CMR")
+        engine.renameTerritory("CMR", to: "New Albion")
         let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
         let engine2 = GameEngine(); engine2.gameState = loaded
-        XCTAssertTrue(engine2.renameTerritory("NGA", to: "Albion Major"))
-        XCTAssertEqual(loaded.getCountry(id: "NGA")?.name, "Albion Major")
-        XCTAssertFalse(engine2.claimLand("NGA"), "still claimed after the reload")
+        XCTAssertTrue(engine2.renameTerritory("CMR", to: "Albion Major"))
+        XCTAssertEqual(loaded.getCountry(id: "CMR")?.name, "Albion Major")
+        XCTAssertFalse(engine2.claimLand("CMR"), "still claimed after the reload")
         XCTAssertTrue(engine2.claimLand("KEN"), "other land is still unclaimed after the reload")
     }
 
@@ -923,15 +923,15 @@ final class UnclaimedLandTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let manager = SaveManager(folder: dir)
         let (engine, gs) = try game1850()
-        engine.claimLand("NGA")
-        engine.renameTerritory("NGA", to: "New Albion")
+        engine.claimLand("CMR")
+        engine.renameTerritory("CMR", to: "New Albion")
         try engine.saveGame(slot: 3, manager: manager)
         let engine2 = GameEngine()
         try engine2.loadGame(slot: 3, manager: manager)
         let loaded = try XCTUnwrap(engine2.gameState)
-        XCTAssertEqual(loaded.getCountry(id: "NGA")?.name, "New Albion")
-        XCTAssertEqual(loaded.getCountry(id: "NGA")?.territoryOf, "USA")
-        XCTAssertFalse(loaded.unclaimedLandIDs.contains("NGA"))
+        XCTAssertEqual(loaded.getCountry(id: "CMR")?.name, "New Albion")
+        XCTAssertEqual(loaded.getCountry(id: "CMR")?.territoryOf, "USA")
+        XCTAssertFalse(loaded.unclaimedLandIDs.contains("CMR"))
         XCTAssertEqual(loaded.unclaimedLandIDs, gs.unclaimedLandIDs)
     }
 
@@ -942,9 +942,9 @@ final class UnclaimedLandTests: XCTestCase {
         var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
         shadow.removeValue(forKey: "pendingSettlements"); json["shadow"] = shadow
         let loaded = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
-        XCTAssertTrue(loaded.unclaimedLandIDs.contains("NGA"))
+        XCTAssertTrue(loaded.unclaimedLandIDs.contains("CMR"))
         let engine = GameEngine(); engine.gameState = loaded
-        XCTAssertTrue(engine.claimLand("NGA"))
+        XCTAssertTrue(engine.claimLand("CMR"))
     }
 
     // Performance: era filtering + the unclaimed set across every playable year
@@ -979,21 +979,21 @@ final class UnclaimedLandPlayHistoryTests: XCTestCase {
         let (e, service) = PlayFixtures.engine(dir, remote: remote)
         e.startNewGame(playerCountryID: "USA", administration: Advisor.fillmoreAdministration(), turnLength: .month)
         let id = try XCTUnwrap(e.gameState?.shadow.playSessionID)
-        XCTAssertTrue(e.claimLand("NGA"))
-        XCTAssertTrue(e.renameTerritory("NGA", to: "New \"Albion\" <x>"))
-        XCTAssertTrue(e.renameTerritory("NGA", to: "New \"Albion\" <x>"))   // a resubmit logs nothing
+        XCTAssertTrue(e.claimLand("CMR"))
+        XCTAssertTrue(e.renameTerritory("CMR", to: "New \"Albion\" <x>"))
+        XCTAssertTrue(e.renameTerritory("CMR", to: "New \"Albion\" <x>"))   // a resubmit logs nothing
 
         let synced = await service.syncNow()
 
         XCTAssertTrue(synced)
         let events = await remote.events(id)
         let claimed = try XCTUnwrap(events.first { $0.kind == "claimed_land" })
-        XCTAssertEqual(PlayFixtures.detail(claimed)["land"] as? String, "NGA")
-        XCTAssertEqual(PlayFixtures.detail(claimed)["name"] as? String, "Nigeria")
+        XCTAssertEqual(PlayFixtures.detail(claimed)["land"] as? String, "CMR")
+        XCTAssertEqual(PlayFixtures.detail(claimed)["name"] as? String, "Cameroon")
         let renamed = events.filter { $0.kind == "renamed_territory" }
         XCTAssertEqual(renamed.count, 1)
         XCTAssertEqual(PlayFixtures.detail(renamed[0])["name"] as? String, "New \"Albion\" <x>")
-        XCTAssertEqual(PlayFixtures.detail(renamed[0])["old_name"] as? String, "Nigeria")
+        XCTAssertEqual(PlayFixtures.detail(renamed[0])["old_name"] as? String, "Cameroon")
         XCTAssertEqual(events.map(\.seq), Array(0..<events.count))
     }
 
@@ -1153,12 +1153,12 @@ final class AttackSizingTests: XCTestCase {
         engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
         let gs = try XCTUnwrap(engine.gameState)
         let (e2, gs2) = try twin(gs)
-        XCTAssertTrue(engine.claimLand("NGA", troops: 1), "a token force suffices: there's no army")
-        XCTAssertTrue(e2.claimLand("NGA", troops: 20))
-        let small = try XCTUnwrap(gs.getCountry(id: "NGA")), big = try XCTUnwrap(gs2.getCountry(id: "NGA"))
+        XCTAssertTrue(engine.claimLand("CMR", troops: 1), "a token force suffices: there's no army")
+        XCTAssertTrue(e2.claimLand("CMR", troops: 20))
+        let small = try XCTUnwrap(gs.getCountry(id: "CMR")), big = try XCTUnwrap(gs2.getCountry(id: "CMR"))
         XCTAssertLessThan(small.militaryStrength, big.militaryStrength)
         XCTAssertLessThan(small.stability, big.stability, "a bigger garrison holds the land more firmly")
-        XCTAssertEqual(gs2.shadow.garrisons["NGA"], 20)
+        XCTAssertEqual(gs2.shadow.garrisons["CMR"], 20)
         XCTAssertLessThan(AttackSizing.freeTroops(gs2), AttackSizing.freeTroops(gs), "the garrison is tied up")
         let (e3, gs3) = try twin(gs)
         _ = e3
@@ -1189,8 +1189,8 @@ final class AttackSizingTests: XCTestCase {
         let engine = GameEngine()
         engine.startNewGame(administration: Advisor.fillmoreAdministration(), turnLength: .month)
         let gs = try XCTUnwrap(engine.gameState)
-        for bad in [0.0, -5, .nan, .infinity, 1e9] { XCTAssertFalse(engine.claimLand("NGA", troops: bad), "\(bad)") }
-        XCTAssertTrue(gs.unclaimedLandIDs.contains("NGA"))
+        for bad in [0.0, -5, .nan, .infinity, 1e9] { XCTAssertFalse(engine.claimLand("CMR", troops: bad), "\(bad)") }
+        XCTAssertTrue(gs.unclaimedLandIDs.contains("CMR"))
         XCTAssertEqual(gs.actionsUsedThisTurn, 0)
     }
 
@@ -1388,12 +1388,12 @@ final class NavalOperationsTests: XCTestCase {
 
     func testAmphibiousLandingTakesUnclaimedCoastalLandIn1850() throws {
         let (engine, gs) = try game1850()
-        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "africa", target: "NGA", mission: .blockade), "unclaimed land has no ports to blockade")
-        XCTAssertNil(engine.fleetOrderProblem(fleetID: "africa", target: "NGA", mission: .amphibious))
-        XCTAssertNotNil(engine.orderFleet("africa", to: "NGA", mission: .amphibious))
+        XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "africa", target: "CMR", mission: .blockade), "unclaimed land has no ports to blockade")
+        XCTAssertNil(engine.fleetOrderProblem(fleetID: "africa", target: "CMR", mission: .amphibious))
+        XCTAssertNotNil(engine.orderFleet("africa", to: "CMR", mission: .amphibious))
         sail(engine, gs, turns: 2)
-        XCTAssertEqual(gs.getCountry(id: "NGA")?.territoryOf, "USA")
-        XCTAssertGreaterThan(gs.shadow.garrisons["NGA"] ?? 0, 0, "the landing force stays as the garrison")
+        XCTAssertEqual(gs.getCountry(id: "CMR")?.territoryOf, "USA")
+        XCTAssertGreaterThan(gs.shadow.garrisons["CMR"] ?? 0, 0, "the landing force stays as the garrison")
         XCTAssertNotNil(engine.fleetOrderProblem(fleetID: "home", target: "MLI", mission: .amphibious), "Mali is landlocked")
     }
 
@@ -1779,9 +1779,9 @@ final class ExpansionTests: XCTestCase {
     func testAnAbsurdSpreeStillRisksImpeachment() throws {
         let (engine, gs) = try game(Advisor.fillmoreAdministration())
         let lands = gs.unclaimedLandIDs.sorted()
-        XCTAssertGreaterThanOrEqual(lands.count, 47)
+        XCTAssertGreaterThanOrEqual(lands.count, 40, "3.14.1: Ethiopia, Liberia, Madagascar and the African states aren't unclaimed")
         let stages = spree(engine, gs, ids: lands, turns: 1, after: 12)
-        XCTAssertGreaterThanOrEqual(stages.max() ?? 0, 1, "47 lands in a week brings Congress down on the President")
+        XCTAssertGreaterThanOrEqual(stages.max() ?? 0, 1, "40-odd lands in a week brings Congress down on the President")
         XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("WARNING from the Chief of Staff") }, "and he is warned first")
     }
 }
@@ -1897,7 +1897,7 @@ final class TerritoryWealthTests: XCTestCase {
 
     func testExpansionStateSurvivesSaveAndOldSavesLoad() throws {
         let (engine, gs) = try game(Advisor.wilsonAdministration())
-        XCTAssertTrue(engine.claimLand("NGA"))
+        XCTAssertTrue(engine.claimLand("CMR"))
         years(engine, gs, 1)
         let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
         XCTAssertEqual(loaded.shadow.expansionLog, gs.shadow.expansionLog)
@@ -1910,7 +1910,7 @@ final class TerritoryWealthTests: XCTestCase {
         json["shadow"] = shadow
         let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
         XCTAssertTrue(old.shadow.expansionLog.isEmpty)
-        XCTAssertGreaterThan(ExpansionModel.annualIncome(old.getCountry(id: "NGA")!, in: old), 0, "old territories count as long held")
+        XCTAssertGreaterThan(ExpansionModel.annualIncome(old.getCountry(id: "CMR")!, in: old), 0, "old territories count as long held")
     }
 
     // Performance
@@ -2080,12 +2080,12 @@ final class CongressTests: XCTestCase {
         let engine = GameEngine()
         engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
         let gs = try XCTUnwrap(engine.gameState)
-        let w = engine.advisorWarnings(for: .claim(land: "NGA", troops: 5))
+        let w = engine.advisorWarnings(for: .claim(land: "CMR", troops: 5))
         XCTAssertTrue(w[1].text.contains("Claim #1"))
         XCTAssertEqual(w[2].level, 0, "a first imperial-era claim is safe")
         gs.shadow.ruthlessness = 30; gs.shadow.popularity = 31
         gs.shadow.expansionLog = Array(repeating: gs.currentDate, count: 30)
-        XCTAssertEqual(engine.advisorWarnings(for: .claim(land: "NGA", troops: 5))[2].level, 2, "the VP warns before the tipping claim")
+        XCTAssertEqual(engine.advisorWarnings(for: .claim(land: "CMR", troops: 5))[2].level, 2, "the VP warns before the tipping claim")
     }
 
     // Security
@@ -2278,16 +2278,16 @@ final class ManpowerAndOccupationTests: XCTestCase {
 
     func testNeglectedTerritoryBreaksAway() throws {
         let (engine, gs) = try game(Advisor.wilsonAdministration())
-        XCTAssertTrue(engine.claimLand("NGA", troops: 1))
-        let i = gs.countries.firstIndex { $0.id == "NGA" }!
+        XCTAssertTrue(engine.claimLand("CMR", troops: 1))
+        let i = gs.countries.firstIndex { $0.id == "CMR" }!
         for _ in 0..<14 {
             gs.countries[i].profile.outcry = 100
             months(engine, gs, 1)
-            if gs.getCountry(id: "NGA")?.territoryOf == nil { break }
+            if gs.getCountry(id: "CMR")?.territoryOf == nil { break }
         }
-        XCTAssertNil(gs.getCountry(id: "NGA")?.territoryOf, "a year boiling over with a token garrison: independence")
+        XCTAssertNil(gs.getCountry(id: "CMR")?.territoryOf, "a year boiling over with a token garrison: independence")
         XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("declares independence") })
-        XCTAssertNil(gs.shadow.garrisons["NGA"], "the garrison comes home")
+        XCTAssertNil(gs.shadow.garrisons["CMR"], "the garrison comes home")
     }
 
     func testAnnexationTakesAGarrison() throws {
@@ -2303,8 +2303,8 @@ final class ManpowerAndOccupationTests: XCTestCase {
 
     func testBadOrdersAreRefused() throws {
         let (engine, gs) = try game(Advisor.wilsonAdministration())
-        XCTAssertTrue(engine.claimLand("NGA", troops: 5))
-        for bad in [-1.0, 0, 0.2, .nan, .infinity, 1e9] { XCTAssertFalse(engine.setGarrison("NGA", thousands: bad), "\(bad)") }
+        XCTAssertTrue(engine.claimLand("CMR", troops: 5))
+        for bad in [-1.0, 0, 0.2, .nan, .infinity, 1e9] { XCTAssertFalse(engine.setGarrison("CMR", thousands: bad), "\(bad)") }
         XCTAssertFalse(engine.setGarrison("FRA", thousands: 5))
         XCTAssertFalse(engine.setGovernance("FRA", .selfRule))
         XCTAssertNil(engine.petitionStatehood("FRA", roll: 0))
@@ -2318,8 +2318,8 @@ final class ManpowerAndOccupationTests: XCTestCase {
 
     func testManpowerAndTerritoryStateSurvivesSave() throws {
         let (engine, gs) = try game(Advisor.wilsonAdministration())
-        XCTAssertTrue(engine.claimLand("NGA", troops: 5))
-        engine.setGovernance("NGA", .selfRule)
+        XCTAssertTrue(engine.claimLand("CMR", troops: 5))
+        engine.setGovernance("CMR", .selfRule)
         gs.actionsUsedThisTurn = 0
         XCTAssertTrue(engine.callUp(.mobilization))
         let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
@@ -2335,7 +2335,7 @@ final class ManpowerAndOccupationTests: XCTestCase {
         XCTAssertTrue(old.shadow.mobilizations.isEmpty && old.shadow.statesAdmitted.isEmpty)
         let e3 = GameEngine(); e3.gameState = old
         e3.processOccupation()
-        XCTAssertEqual(old.getCountry(id: "NGA")?.territoryOf, "USA", "an old save's territory without a garrison record is not lost")
+        XCTAssertEqual(old.getCountry(id: "CMR")?.territoryOf, "USA", "an old save's territory without a garrison record is not lost")
     }
 
     // Performance
@@ -2506,10 +2506,10 @@ final class GroupActionTests: XCTestCase {
         let engine = GameEngine()
         engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
         let gs = try XCTUnwrap(engine.gameState)
-        for id in ["NGA", "KEN", "GHA"] { gs.actionsUsedThisTurn = 0; XCTAssertTrue(engine.claimLand(id, troops: 2)) }
+        for id in ["CMR", "KEN", "GAB"] { gs.actionsUsedThisTurn = 0; XCTAssertTrue(engine.claimLand(id, troops: 2)) }
         gs.actionsUsedThisTurn = 0
         XCTAssertNotNil(engine.executeGroupAction(.garrison, members: engine.groupMembers(.territories), amount: 6, groupName: "Territories"))
-        for id in ["NGA", "KEN", "GHA"] { XCTAssertEqual(gs.shadow.garrisons[id], 6) }
+        for id in ["CMR", "KEN", "GAB"] { XCTAssertEqual(gs.shadow.garrisons[id], 6) }
         XCTAssertEqual(gs.actionsUsedThisTurn, 0, "garrison changes are free, as they are singly")
         let pool = gs.shadow.aidRemaining
         XCTAssertNotNil(engine.executeGroupAction(.money, members: ["FRA", "MEX"], amount: min(2, pool), split: .even))
@@ -2694,7 +2694,7 @@ final class NationPlayTests: XCTestCase {
     // Security: nations without data are playable with generic titles; names are never made up
 
     func testNationsWithoutDataUseGenericTitles() throws {
-        let gs = GameState(playerCountryID: "NGA")
+        let gs = GameState(playerCountryID: "CMR")
         let cab = NationModel.cabinet(for: gs.getPlayerCountry()!, on: day(2025, 1, 20))
         XCTAssertFalse(cab.isEmpty)
         XCTAssertTrue(cab.allSatisfy { $0.name == "(no record)" })
@@ -3771,5 +3771,137 @@ final class LivingWorldTests: XCTestCase {
     func testABusyWorldTurnIsQuick() {
         let (e, gs) = Self.simulate(year: 1913, difficulty: .nightmare, turns: 1)
         measure { gs.turn += 1; e.processWorldPolitics(); _ = gs.unclaimedLandIDs }
+    }
+}
+
+// MARK: - 3.14.1: independent Africa, the Balkan states, AI territories with stakes
+
+final class EraStatesTests: XCTestCase {
+    private func board(_ year: Int) throws -> GameState {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        return try XCTUnwrap(e.gameState)
+    }
+
+    // Unit: which African states stand alone, by year
+    func testIndependentAfricaByYear() {
+        XCTAssertEqual(WorldCountriesDatabase.independentAfrica(year: 1789), ["ETH", "MDG"])
+        XCTAssertEqual(WorldCountriesDatabase.independentAfrica(year: 1850), ["ETH", "LBR", "MDG"])
+        XCTAssertEqual(WorldCountriesDatabase.independentAfrica(year: 1900), ["ETH", "LBR"])
+        for y in stride(from: 1789, through: 1959, by: 5) {
+            XCTAssertFalse(WorldCountriesDatabase.unclaimedLandIDs(year: y).contains("ETH"), "Ethiopia was never unclaimed (\(y))")
+        }
+    }
+
+    // Functional: the boards and their names
+    func testAfricaIsEraTrue() throws {
+        let g1789 = try board(1789)
+        XCTAssertEqual(g1789.getCountry(id: "ETH")?.name, "Ethiopian Empire")
+        XCTAssertEqual(g1789.getCountry(id: "MDG")?.name, "Merina Kingdom")
+        XCTAssertNil(g1789.getCountry(id: "LBR"))
+        XCTAssertEqual(g1789.preState("GHA")?.era.name, "Ashanti Empire")
+        XCTAssertEqual(g1789.preState("TZA")?.era.owner, "OMN", "the Swahili coast under Oman")
+        XCTAssertFalse(g1789.unclaimedLandIDs.contains("GHA"), "peoples' land, not unclaimed")
+        let g1850 = try board(1850)
+        XCTAssertEqual(g1850.getCountry(id: "LBR")?.name, "Liberia")
+        XCTAssertEqual(g1850.preState("NGA")?.era.name, "Sokoto Caliphate")
+        XCTAssertEqual(g1850.getCountry(id: "MAR")?.name, "Morocco")
+        let g1913 = try board(1913)
+        XCTAssertNil(g1913.getCountry(id: "MDG"), "French Madagascar from 1896")
+        XCTAssertEqual(g1913.preState("GHA")?.era.name, "Gold Coast", "British after the Ashanti were conquered in 1901")
+        XCTAssertEqual(g1913.getCountry(id: "MAR")?.name, "French Morocco")
+    }
+
+    func testBalkanStatesStandAlone() throws {
+        let g1789 = try board(1789)
+        XCTAssertNil(g1789.getCountry(id: "SRB"))
+        XCTAssertEqual(g1789.preState("SRB")?.era.owner, "TUR")
+        let g1850 = try board(1850)
+        XCTAssertEqual(g1850.getCountry(id: "SRB")?.name, "Principality of Serbia")
+        XCTAssertEqual(g1850.getCountry(id: "GRC")?.name, "Kingdom of Greece")
+        XCTAssertNil(g1850.getCountry(id: "ROU"))
+        let g1881 = try board(1881)
+        for (id, name) in [("SRB", "Principality of Serbia"), ("MNE", "Principality of Montenegro"), ("ROU", "Kingdom of Romania"),
+                           ("BGR", "Principality of Bulgaria")] {
+            XCTAssertEqual(g1881.getCountry(id: id)?.name, name, id)
+        }
+        let g1913 = try board(1913)
+        XCTAssertEqual(g1913.getCountry(id: "SRB")?.name, "Kingdom of Serbia")
+        XCTAssertEqual(g1913.getCountry(id: "BGR")?.name, "Kingdom of Bulgaria")
+        XCTAssertNil(g1913.getCountry(id: "YUG"))
+        let present = Set(g1913.countries.map(\.id))
+        XCTAssertEqual(WorldMapData.owner(of: "MKD", in: present, year: 1913), "SRB", "Macedonia to Serbia after the Balkan Wars")
+        XCTAssertEqual(try board(1925).getCountry(id: "YUG")?.name, "Yugoslavia")
+    }
+
+    // Frame: every outline still resolves in the years the new states appear and vanish
+    func testSweepAroundTheNewDates() throws {
+        let shapes = WorldMapData.shared.shapes
+        for year in [1817, 1847, 1878, 1896, 1901, 1908] {
+            let gs = try board(year)
+            let present = Set(gs.countries.filter { !$0.isDestroyed }.map(\.id))
+            let unclaimed = gs.unclaimedLandIDs
+            let missing = shapes.filter { WorldMapData.selection(for: $0.id, in: gs, present: present, unclaimed: unclaimed) == nil }.map(\.id)
+            XCTAssertTrue(missing.isEmpty, "\(year): \(missing)")
+            XCTAssertTrue(unclaimed.isDisjoint(with: Set(PreStateModel.lands.filter { gs.preState($0) != nil })), "\(year): unclaimed and pre-state overlap")
+        }
+    }
+
+    // Integration: AI-held territories pay their owner and can rise up
+    func testAITerritoriesPayAndRevolt() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1900)
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertTrue(e.aiTakeLand("ZAF", by: "GBR") || gs.getCountry(id: "ZAF") != nil)
+        gs.shadow.claimDates["ZAF"] = GameCalendar.date(year: 1890, month: 1, day: 1)   // long held: full output
+        if let i = gs.countries.firstIndex(where: { $0.id == "ZAF" }) { gs.countries[i].territoryOf = "GBR" }
+        let gdp0 = gs.getCountry(id: "GBR")!.gdp
+        e.processAITerritories()
+        XCTAssertGreaterThan(gs.getCountry(id: "GBR")!.gdp, gdp0, "South African gold pays London")
+        XCTAssertGreaterThan(gs.shadow.worldStats["aiIncomeCents"] ?? 0, 0)
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "ZAF" })
+        var rose = false
+        for _ in 0..<120 where !rose {
+            gs.countries[i].profile.outcry = 95
+            gs.turn += 1
+            e.processAITerritories()
+            rose = gs.getCountry(id: "ZAF")?.territoryOf == nil
+        }
+        XCTAssertTrue(rose, "a territory boiling over wins its independence in time")
+        XCTAssertGreaterThanOrEqual(gs.shadow.worldStats["revolts"] ?? 0, 1)
+        XCTAssertFalse(gs.getCountry(id: "GBR")!.alliances.contains("ZAF"))
+    }
+
+    // Security: the player's free troops don't pay for AI garrisons
+    func testAIGarrisonsAreNotOnThePlayersBooks() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1890)
+        let gs = try XCTUnwrap(e.gameState)
+        let free = AttackSizing.freeTroops(gs)
+        let land = try XCTUnwrap(gs.unclaimedLandIDs.sorted().first { $0 != Antarctica.id })
+        XCTAssertTrue(e.aiTakeLand(land, by: "FRA"))
+        e.processAITerritories()
+        XCTAssertEqual(AttackSizing.freeTroops(gs), free, accuracy: 1e-9)
+        XCTAssertNil(gs.shadow.garrisons[land])
+    }
+
+    // Performance
+    func testAITerritoryTurnIsCheap() throws {
+        let (e, _) = LivingWorldTests.simulate(year: 1890, difficulty: .hard, turns: 24)
+        measure { e.processAITerritories() }
+    }
+
+    // Retry: old saves (no claim date for AI land) load and run
+    func testAITerritoryWithoutClaimDateStillWorks() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1890)
+        let gs = try XCTUnwrap(e.gameState)
+        let land = try XCTUnwrap(gs.unclaimedLandIDs.sorted().first { $0 != Antarctica.id })
+        XCTAssertTrue(e.aiTakeLand(land, by: "FRA"))
+        gs.shadow.claimDates.removeValue(forKey: land)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let e2 = GameEngine(); e2.gameState = loaded
+        e2.processAITerritories()
+        XCTAssertEqual(loaded.getCountry(id: land)?.territoryOf ?? "FRA", "FRA")
     }
 }
