@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.0] - 2026-10-20 — Takeable land on every continent
+
+### Added
+- **Pre-state land data**: `Documentation/territories/data.py` (99 dated eras on every continent plus 5 historical
+  acquisitions, sources listed) → `build.py` (validates, no overlapping eras) → `Shared/Engine/Shadow/TerritoryData.swift`.
+- **`PreStateModel`** (`PreStateModel.swift`):
+  - `GameState.preState` and `colonyLandIDs` / `indigenousLandIDs`. A colony whose owner isn't in the game counts as
+    unheld.
+  - Map: colonies in the owner's colour, hatched, with a "Name (Owner)" label; indigenous land in parchment with its
+    peoples' name; the legend gains Colony.
+  - `seizeColony`: sized troops against a colonial garrison (1.5% of the owner's force pool); war with the owner;
+    amphibious fleets can land.
+  - `purchaseColony`: price = ten years of value × relation factor; never at war.
+  - `supportIndependence`: $2B; likelier within five years of the real date. Success creates an allied state.
+  - `claimIndigenousLand`: resistance strength, a restless territory, and condemnation scaled by era.
+  - Historical U.S. offers: `openAcquisitions` / `acceptAcquisition` / `AcquisitionSheet`, announced on the ticker
+    as their windows open, plus a top-bar **Offer** button. Their value is added to territory income
+    (`ShadowState.acquisitionIncome`).
+- **Alaska** is split out of the U.S. outline (`USA_AK`), drawn as Russian America before 1867 and as U.S. land
+  afterwards or once bought. The Virgin Islands get a template.
+- Play history: `colony_seized`, `land_purchased`, `independence_backed`; indigenous claims are flagged on
+  `claimed_land`.
+- 13 tests across all seven categories (507 total, single muted run); snapshots in `Screenshots/3.13.0/`.
+
 ## [3.12.2] - 2026-10-20 — Evolving cabinets; the Gulf War scenario
 
 ### Added

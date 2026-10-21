@@ -23,13 +23,13 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers
         var id: String { rawValue }
     }
 
     private var selected: Country? { selectedCountryID.flatMap { gameState.getCountry(id: $0) } }
     /// The selected map outline when it is unclaimed land (3.3.0).
-    private var selectedLand: String? { selectedCountryID.flatMap { gameState.unclaimedLandIDs.contains($0) ? $0 : nil } }
+    private var selectedLand: String? { selectedCountryID.flatMap { gameState.unclaimedLandIDs.contains($0) || gameState.preState($0) != nil ? $0 : nil } }
 
     @State private var compactPanel = 0
 
@@ -63,6 +63,7 @@ struct SituationRoomView: View {
             case .group: GroupActionSheet(gameState: gameState).environmentObject(gameEngine)
             case .coalition: CoalitionSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .scorecard: ScorecardSheet(gameState: gameState)
+            case .offers: AcquisitionSheet(gameState: gameState).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -237,6 +238,9 @@ struct SituationTopBar: View {
             }
             Button("TROOPS \(Int(AttackSizing.freeTroops(gameState)))K") { onSheet(.manpower) }.buttonStyle(ThemedButtonStyle())
             Button("GROUP") { onSheet(.group) }.buttonStyle(ThemedButtonStyle())
+            if let offer = gameEngine.openAcquisitions().first {   // 3.13.0: a historical purchase in its window
+                Button("OFFER: \(offer.name.uppercased())") { onSheet(.offers) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+            }
             if gameState.shadow.scenarioID != nil {
                 Button("SCORECARD") { onSheet(.scorecard) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
             }
@@ -387,6 +391,68 @@ struct CountryDossier: View {
         .themedPanel(retroFill: EGA.blue)
     }
 
+    /// Land before its modern country (3.13.0): a colony to seize, buy or free; or indigenous land to claim by force.
+    private func preStateDossier(_ id: String, _ st: PreStateStatus) -> some View {
+        let me = gameState.getPlayerCountry()
+        let owner = gameState.getCountry(id: st.era.owner)
+        let free = AttackSizing.freeTroops(gameState)
+        let tpl = PreStateModel.template(id)
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text(st.era.kind == .colony ? (owner?.flag ?? "🏳") : "🏳").font(.scaled(size: 30))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: st.label.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
+                    Text(verbatim: "Today: \(tpl?.name ?? id)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
+            Text(st.era.kind == .colony ? "COLONY" : "PEOPLES NOT MODELLED AS A STATE")
+                .font(ThemeFont.mono(11, .bold)).foregroundColor(.black).padding(.horizontal, 6).padding(.vertical, 2)
+                .background(st.era.kind == .colony ? Color(white: 0.85) : VectorWorldMap.claimableColor)
+            if st.era.kind == .colony, let owner {
+                Text(verbatim: "Held by \(owner.name) since \(st.era.from == 1789 ? "before 1789" : String(st.era.from)); historically independent or transferred \(st.era.extra).")
+                    .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(verbatim: "Home to its own peoples and rulers, whom the game does not model as a state. They will resist (strength \(st.era.extra)); taking their land brings unrest and, after 1945, condemnation.")
+                    .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 6) {
+                Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                Button("−") { expedition = max(1, expedition - 1) }.buttonStyle(ThemedButtonStyle())
+                Text("\(Int(expedition))K").font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                Button("+") { expedition = min(max(1, free), expedition + 5) }.buttonStyle(ThemedButtonStyle())
+                Text("\(Int(free))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+            }
+            if let me {
+                let defenders = st.era.kind == .colony ? owner.map(PreStateModel.garrison) ?? 1 : PreStateModel.resistanceTroops(st.era.extra)
+                let odds = PreStateModel.seizeOdds(troops: expedition, attackerStrength: me.militaryStrength, defenders: max(0.5, defenders),
+                                                   defenderStrength: owner?.militaryStrength ?? 30)
+                Button(st.era.kind == .colony ? "SEIZE BY FORCE (\(Int(odds * 100))%)" : "TAKE BY FORCE (\(Int(odds * 100))%)") {
+                    let ok = st.era.kind == .colony ? gameEngine.seizeColony(id, troops: expedition) : gameEngine.claimIndigenousLand(id, troops: expedition)
+                    if ok == true { onSheet(.nameClaim) }
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
+                .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver)
+                if st.era.kind == .colony, let owner {
+                    let rel = owner.diplomaticRelations[me.id] ?? 0
+                    let price = PreStateModel.price(id, year: gameState.currentYear, relation: rel)
+                    let sale = PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: false)
+                    Button(String(format: "OFFER TO BUY: $%.1fB (%d%%)", price, Int(sale * 100))) { if gameEngine.purchaseColony(id) == true { onSheet(.nameClaim) } }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+                        .disabled(gameState.actionsRemaining == 0 || sale == 0)
+                    let revolt = PreStateModel.revoltOdds(year: gameState.currentYear, independence: st.era.extra,
+                                                          ownerAtWarWithPlayer: owner.atWarWith.contains(me.id), ownerStability: owner.stability)
+                    Button("BACK INDEPENDENCE ($2B, \(Int(revolt * 100))%)") { gameEngine.supportIndependence(id) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                        .disabled(gameState.actionsRemaining == 0)
+                }
+            }
+            if gameState.playerCountryID == "USA" && !NavalModel.isLandlocked(id) && !NavalModel.fleets(in: gameState.currentYear).isEmpty {
+                Button("FLEET ORDERS") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+            }
+        }
+        .padding(8)
+    }
+
     /// Unclaimed land (3.3.0): nobody to talk to, nobody to fight. One action sends an expedition to take it.
     private func landDossier(_ id: String) -> some View {
         let land = WorldCountriesDatabase.template(id: id)
@@ -525,6 +591,8 @@ struct CountryDossier: View {
                     .padding(.top, 4)
                 }
                 .padding(8)
+            } else if let id = unclaimedID, let st = gameState.preState(id) {
+                preStateDossier(id, st)
             } else if let id = unclaimedID {
                 landDossier(id)
             } else {

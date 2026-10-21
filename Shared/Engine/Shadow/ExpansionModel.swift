@@ -234,6 +234,7 @@ extension GameEngine {
                                                              "income_b": PlayHistory.num(income), "game_date": PlayHistory.day(gs.currentDate)])
             }
         }
+        total += gs.shadow.acquisitionIncome   // 3.13.0: purchases like Louisiana pay too
         let earned = total * yf
         gs.shadow.resourceEarnings += earned
         gs.countries[pi].gdp += earned / 1000

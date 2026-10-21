@@ -258,6 +258,7 @@ extension GameEngine {
     private func navalTargetPoint(_ id: String, in gs: GameState) -> (lat: Double, lon: Double, name: String)? {
         if let c = gs.getCountry(id: id) { return (c.coordinates.lat, c.coordinates.lon, c.name) }
         if gs.unclaimedLandIDs.contains(id), let t = WorldCountriesDatabase.template(id: id) { return (t.lat, t.lon, t.name) }
+        if let st = gs.preState(id), let t = PreStateModel.template(id) { return (t.lat, t.lon, st.label) }   // 3.13.0
         return nil
     }
 
@@ -275,7 +276,7 @@ extension GameEngine {
             return "That flies our own flag."
         }
         if gs.getCountry(id: target) == nil && mission != .amphibious {
-            return "Unclaimed land has no navy or ports to pressure: send an amphibious landing."
+            return "Land that isn't a country has no ports to pressure: send an amphibious landing."
         }
         if gs.actionsRemaining == 0 { return "No actions left this \(gs.turnLength.displayName.lowercased())." }
         return nil
@@ -387,7 +388,11 @@ extension GameEngine {
             gs.totalCasualties += Int(NavalModel.power(d) * 300)
         case .amphibious:
             let troops = NavalModel.landingTroops(d.ships, year: year) * Double(d.shipsAfloat) / Double(max(1, d.ships.total))
-            if target == nil {
+            if target == nil, let st = gs.preState(d.target) {
+                // 3.13.0: a landing on a colony fights its garrison; on indigenous land its people resist.
+                if st.era.kind == .colony { seizeColony(d.target, troops: max(1, troops.rounded()), spendAction: false) }
+                else { claimIndigenousLand(d.target, troops: max(1, troops.rounded()), spendAction: false) }
+            } else if target == nil {
                 if !claimLand(d.target, troops: max(1, troops.rounded()), spendAction: false) { break }
             } else {
                 war()

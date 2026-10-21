@@ -34,16 +34,28 @@ final class WorldMapData {
         guard let url = bundle.url(forResource: "world_countries", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(File.self, from: data) else { shapes = []; return }
-        shapes = file.countries.map { c in   // Antarctica included since 3.10.0
+        func shape(_ id: String, _ name: String, _ rings: [[Double]]) -> MapCountryShape {
             var p = Path()
-            for ring in c.rings where ring.count >= 6 {
+            for ring in rings where ring.count >= 6 {
                 p.move(to: CGPoint(x: ring[0], y: -ring[1]))
                 var i = 2
                 while i + 1 < ring.count { p.addLine(to: CGPoint(x: ring[i], y: -ring[i + 1])); i += 2 }
                 p.closeSubpath()
             }
-            return MapCountryShape(id: c.id, name: c.name, path: p, bounds: p.boundingRect)
+            return MapCountryShape(id: id, name: name, path: p, bounds: p.boundingRect)
         }
+        var out: [MapCountryShape] = []
+        for c in file.countries {   // Antarctica included since 3.10.0
+            if c.id == "USA" {
+                // 3.13.0: Alaska is its own outline, so Russian America can be drawn before 1867.
+                let isAlaska = { (r: [Double]) in stride(from: 0, to: r.count - 1, by: 2).allSatisfy { r[$0] < -129 && r[$0 + 1] > 50 } }
+                out.append(shape("USA", c.name, c.rings.filter { !isAlaska($0) }))
+                out.append(shape(PreStateModel.alaska, "Alaska", c.rings.filter(isAlaska)))
+            } else {
+                out.append(shape(c.id, c.name, c.rings))
+            }
+        }
+        shapes = out
     }
 
     /// Successor-state outlines claimed by historical countries when the modern state isn't in the game.
@@ -53,6 +65,7 @@ final class WorldMapData {
         "CSK": ["CZE", "SVK"],
         "XKX": ["KOS"],
         "DNK": ["GRL"],
+        "USA": [PreStateModel.alaska],
     ]
 
     /// Which game country owns a map outline in this game (nil = not a player in this era).
@@ -189,15 +202,28 @@ struct VectorWorldMap: View {
             let byID = Dictionary(gameState.countries.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             let player = gameState.getPlayerCountry()
             let unclaimed = gameState.unclaimedLandIDs
+            // 3.13.0: pre-state land on every continent: colonies (owner's colour, hatched) and indigenous-held land.
+            let pre = Dictionary(uniqueKeysWithValues: PreStateModel.lands.compactMap { id in gameState.preState(id).map { (id, $0) } })
             ZStack(alignment: .bottomLeading) {
                 Canvas { ctx, size in
                     ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(oceanColor))
                     for s in data.shapes {
                         let path = s.path.applying(t)
                         guard path.boundingRect.intersects(CGRect(origin: .zero, size: size)) else { continue }
-                        let ownerID = WorldMapData.owner(of: s.id, in: present)
+                        let ownerID = pre[s.id] == nil ? WorldMapData.owner(of: s.id, in: present) : nil
                         var fill = unclaimedColor
                         var territory = false
+                        var colonyOwner: Country?
+                        if let st = pre[s.id] {
+                            if st.era.kind == .colony, let own = byID[st.era.owner] {
+                                colonyOwner = own
+                                fill = filter.color(own, player: player)
+                            } else {
+                                fill = Self.claimableColor
+                            }
+                            if s.id == selectedCountryID { fill = Theme.isRetro ? EGA.lightMagenta : Color(red: 1.0, green: 0.85, blue: 0.25) }
+                            else if s.id == hoverID { fill = Theme.isRetro ? EGA.lightRed : fill.opacity(0.55) }
+                        }
                         // Land no government holds in this era (3.3.0): parchment under every filter, and selectable.
                         if ownerID == nil, unclaimed.contains(s.id) {
                             fill = s.id == selectedCountryID ? (Theme.isRetro ? EGA.lightMagenta : Color(red: 1.0, green: 0.85, blue: 0.25))
@@ -214,7 +240,10 @@ struct VectorWorldMap: View {
                             else if o == hoverID { fill = Theme.isRetro ? EGA.lightRed : fill.opacity(0.55) }
                         }
                         ctx.fill(path, with: .color(fill))
-                        if territory {
+                        if colonyOwner != nil {
+                            Self.hatch(&ctx, path, spacing: 7)
+                            ctx.stroke(path, with: .color(borderColor), style: StrokeStyle(lineWidth: zoom == .world ? 0.6 : 1.2, dash: [2, 2]))
+                        } else if territory {
                             Self.hatch(&ctx, path)
                             ctx.stroke(path, with: .color(Self.territoryInk), style: StrokeStyle(lineWidth: zoom == .world ? 1 : 1.6, dash: [3, 2]))
                         } else {
@@ -238,16 +267,17 @@ struct VectorWorldMap: View {
                     }
                 }
                 markers(transform: t, byID: byID, unclaimed: unclaimed)
-                hoverLabel(byID: byID, unclaimed: unclaimed)
+                preStateTags(transform: t, pre: pre)
+                hoverLabel(byID: byID, unclaimed: unclaimed, pre: pre)
             }
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onEnded { v in
-                if let id = hit(v.location, transform: t, present: present, unclaimed: unclaimed) {
+                if let id = hit(v.location, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys)) {
                     selectedCountryID = id
                     if zoom == .world { ShadowPack.shared.play("sfx.boop", volume: 0.4) }
                 }
             })
-            .modifier(HoverTracker { loc in hoverID = loc.flatMap { hit($0, transform: t, present: present, unclaimed: unclaimed) } })
+            .modifier(HoverTracker { loc in hoverID = loc.flatMap { hit($0, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys)) } })
             .clipped()
         }
     }
@@ -260,6 +290,26 @@ struct VectorWorldMap: View {
 
     /// Unclaimed land (3.3.0): parchment on the modern map, light gray on the EGA map (unplayable land stays dark gray).
     static var claimableColor: Color { Theme.isRetro ? EGA.lightGray : Color(red: 0.80, green: 0.72, blue: 0.52).opacity(0.6) }
+
+    /// "New Spain (Spain)": the selected or hovered colony / people at world zoom, every roomy one zoomed in (3.13.0).
+    @ViewBuilder
+    private func preStateTags(transform t: CGAffineTransform, pre: [String: PreStateStatus]) -> some View {
+        let pinned = Set([selectedCountryID, hoverID].compactMap { $0 }).intersection(pre.keys)
+        let roomy = zoom == .world ? Set<String>() : Set(pre.keys.filter { id in
+            (data.shapes.first { $0.id == id }?.bounds.applying(t).width ?? 0) > FontScale.w(90)
+        })
+        ForEach(Array(pinned.union(roomy)).sorted(), id: \.self) { id in
+            if let st = pre[id], let tpl = PreStateModel.template(id) {
+                Text(verbatim: st.label)
+                    .font(ThemeFont.mono(zoom == .world ? 7 : 9, .bold))
+                    .foregroundColor(Theme.isRetro ? EGA.black : .black)
+                    .padding(.horizontal, 2)
+                    .background(st.era.kind == .colony ? (Theme.isRetro ? EGA.lightCyan : Color(white: 0.9)) : (Theme.isRetro ? EGA.yellow : Color(red: 0.93, green: 0.87, blue: 0.70)))
+                    .position(CGPoint(x: tpl.lon, y: -tpl.lat).applying(t))
+                    .allowsHitTesting(false)
+            }
+        }
+    }
 
     /// Fleets at sea and their wakes (3.5.0).
     static var fleetInk: Color { Theme.isRetro ? EGA.lightCyan : Color(red: 0.4, green: 0.9, blue: 1.0) }
@@ -345,9 +395,12 @@ struct VectorWorldMap: View {
         }
     }
 
-    private func hoverLabel(byID: [String: Country], unclaimed: Set<String>) -> some View {
+    private func hoverLabel(byID: [String: Country], unclaimed: Set<String>, pre: [String: PreStateStatus]) -> some View {
         let id = hoverID ?? selectedCountryID
         let text: String = {
+            if let id, let st = pre[id] {
+                return st.era.kind == .colony ? "\(st.label.uppercased()) — COLONY" : "\(st.label.uppercased()) — PEOPLES NOT MODELLED AS A STATE"
+            }
             if let id, unclaimed.contains(id) {
                 return "UNCLAIMED LAND — \(WorldCountriesDatabase.template(id: id)?.name ?? id)"
             }
@@ -416,9 +469,10 @@ struct VectorWorldMap: View {
         return CGAffineTransform(a: sx, b: 0, c: 0, d: sy, tx: -rect.minX * sx, ty: -rect.minY * sy)
     }
 
-    private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>) -> String? {
+    private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>, pre: Set<String> = []) -> String? {
         let p = location.applying(t.inverted())
         for s in data.shapes where s.bounds.contains(p) && s.path.contains(p) {
+            if pre.contains(s.id) { return s.id }   // 3.13.0
             if let o = WorldMapData.owner(of: s.id, in: present) { return o }
             if unclaimed.contains(s.id) { return s.id }
         }
@@ -471,7 +525,18 @@ struct MapLegend: View {
                 }
                 Text(filter.highIsGood ? "high" : "crisis").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
-            if showUnclaimed { swatch(VectorWorldMap.claimableColor, "Unclaimed") }
+            if showUnclaimed {
+                swatch(VectorWorldMap.claimableColor, "Unclaimed / peoples")
+                HStack(spacing: 3) {   // 3.13.0: colonies, in their owner's colour under a wider hatch
+                    Canvas { ctx, size in
+                        let r = Path(CGRect(origin: .zero, size: size))
+                        ctx.fill(r, with: .color(Color.gray))
+                        VectorWorldMap.hatch(&ctx, r, spacing: 4)
+                    }
+                    .frame(width: FontScale.w(12), height: FontScale.h(9))
+                    Text("Colony").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
         }
     }
 

@@ -1503,3 +1503,47 @@ struct ScorecardSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Historical acquisitions (3.13.0)
+
+/// Purchases open in their real windows (Louisiana 1803, Florida 1819, Gadsden 1853, Alaska 1867, the Danish West
+/// Indies 1917): accept one for its historical price.
+struct AcquisitionSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let offers = gameEngine.openAcquisitions()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "signature")
+                Text("LAND FOR SALE")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if offers.isEmpty { Text("No offers on the table this year.").font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan) }
+            ForEach(offers) { a in
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: a.name.uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                        Text(verbatim: "Seller: \(gameState.getCountry(id: a.owner)?.name ?? a.owner) · price \(a.price) · window \(a.from)–\(a.to - 1)")
+                            .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        Text(a.land.isEmpty ? "Inside today's U.S. outline: adds its resources and score." : "Adds the land as U.S. territory.")
+                            .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                    }
+                    Spacer()
+                    Button("ACCEPT") { if gameEngine.acceptAcquisition(a.id) { dismiss() } }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                        .disabled(gameState.actionsRemaining == 0)
+                }
+                .padding(6).themedPanel()
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}

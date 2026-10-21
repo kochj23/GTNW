@@ -81,6 +81,7 @@ extension GameEngine {
         processWarPowers()
         processOccupation()
         processAntarctica()
+        processPreState()
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)

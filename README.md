@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-494%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.12.2-blue)
+![Tests](https://img.shields.io/badge/tests-507%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.13.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,42 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Takeable land on every continent (new in 3.13.0)**: before a modern country existed, its land is no longer
+  blank. About a hundred dated records (`Documentation/territories/`, generator `build.py` →
+  `TerritoryData.swift`) say who held it:
+  - **Colonies** of an era power in the game (New Spain and the Captaincy General of Guatemala under Spain, British
+    North America, Russian America, Portuguese Brazil, the viceroyalties of New Granada, Peru and the Río de la
+    Plata, the Caribbean colonies, the Australian colonies, French Indochina, British Malaya, Chosen under Japan, the
+    Ottoman provinces of the Middle East and the Balkans, Ireland, Congress Poland, the Grand Duchy of Finland and
+    more) are drawn in the owner's colour under a hatch with a "New Spain (Spain)" label. **Seize** one by force
+    (sized troops against the colonial garrison, or an amphibious fleet; it means war with the owner, and coalitions
+    work against the owner), **buy** it (price from its value and relations; never in wartime), or **back its
+    independence** (likelier near the real date): it becomes an allied state.
+  - **Land held by peoples the game doesn't model as states** (Aotearoa before 1840, New Guinea, the Konbaung
+    kingdom, the Malay and Gulf sheikhdoms, the Arabian emirates, the Polish–Lithuanian Commonwealth after 1789) is
+    shown as such. Its people resist: taking it needs enough troops, leaves an unstable territory with an
+    insurgency, and after 1945 draws condemnation.
+  - **Historical U.S. purchases** appear as offers in their real windows: Louisiana (1803, $15 million), Florida
+    (Adams–Onís, 1819), the Gadsden Purchase (1853), Alaska (1867, $7.2 million; Alaska is now its own outline) and
+    the Danish West Indies (1917). Louisiana, Florida and Gadsden lie inside today's U.S. outline, so they add
+    resources and score rather than a shape.
+  - Anything taken is an ordinary territory: name it, govern it, earn from it, and petition for statehood. Africa
+    keeps its 3.3.0 rules.
+
+  ```mermaid
+  flowchart TD
+      L[Land whose country doesn't exist yet] --> K{Who holds it? TerritoryData}
+      K -- era power --> C[Colony: owner's colour, hatched]
+      K -- peoples not modelled as a state --> I[Indigenous land]
+      C --> S[Seize: troops vs garrison · war with owner]
+      C --> B[Buy: price from value and relations]
+      C --> F[Back independence: allied state]
+      O[Historical offers in their windows<br/>Louisiana 1803 · Florida 1819 · Gadsden 1853 · Alaska 1867 · Danish West Indies 1917] --> T
+      I --> R[Take by force: resistance, unrest,<br/>condemnation after 1945]
+      S --> T[U.S. territory: name, govern, statehood]
+      B --> T
+      R --> T
   ```
 - **Evolving cabinets (new in 3.12.2)**: officeholders change on their real dates while the game still matches
   history (Bevin hands the Foreign Office to Morrison in March 1951). The player's own government follows history
@@ -854,6 +890,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Land (3.13.0) | Events `colony_seized`, `land_purchased`, `independence_backed`, and `claimed_land` with `indigenous` |
 | Coalitions (3.12.0) | Event `coalition_request` (`target`, `joined`, `refused`) |
 | Any game (3.11.0) | `game_start` and the session summary add `country_name`; the summary adds `leader` for non-U.S. nations |
 | Group actions (3.10.0) | Event `group_action` (`action`, `group`, `members`, `member_names`, `total`) |
@@ -878,18 +915,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **494 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **507 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 176 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 97 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 63 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 32 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 30 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 55 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 36 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 180 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 101 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 64 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 33 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 31 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 56 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 37 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -917,6 +954,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.13.0 | Oct 2026 | Takeable land on every continent: colonies to seize, buy or free, peoples' land to take at a cost, historical U.S. purchases |
 | 3.12.2 | Oct 2026 | Evolving cabinets that follow history until you diverge; the Gulf War 1990 scenario; Cuba scorecard adds the quarantine and DEFCON 2 |
 | 3.12.1 | Oct 2026 | Mute switch: silent, hidden test runs (GTNW_MUTE, -GTNWMute YES, XCTest host) |
 | 3.12.0 | Oct 2026 | Allied coalitions that share the blame; Pearl Harbor, Berlin 1948, Korea 1950 and 9/11 scenarios with history scorecards |

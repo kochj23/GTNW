@@ -134,6 +134,10 @@ struct ShadowState: Codable {
     var trackedGovernments: [String: String] = [:]
     var divergedNations: Set<String> = []
     var leaderNames: [String: String] = [:]
+    /// Historical acquisitions accepted (3.13.0), their yearly value, and offers already announced.
+    var acquired: Set<String> = []
+    var acquisitionIncome: Double = 0
+    var announcedOffers: Set<String> = []
 
     // Scenario
     var scenarioID: String?
@@ -172,6 +176,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
+        case acquired, acquisitionIncome, announcedOffers
     }
 
     init() {}
@@ -224,6 +229,9 @@ struct ShadowState: Codable {
         trackedGovernments = try c.decodeIfPresent([String: String].self, forKey: .trackedGovernments) ?? [:]
         divergedNations = try c.decodeIfPresent(Set<String>.self, forKey: .divergedNations) ?? []
         leaderNames = try c.decodeIfPresent([String: String].self, forKey: .leaderNames) ?? [:]
+        acquired = try c.decodeIfPresent(Set<String>.self, forKey: .acquired) ?? []
+        acquisitionIncome = try c.decodeIfPresent(Double.self, forKey: .acquisitionIncome) ?? 0
+        announcedOffers = try c.decodeIfPresent(Set<String>.self, forKey: .announcedOffers) ?? []
     }
 }
 
