@@ -310,5 +310,33 @@ final class SnapshotRenderTests: XCTestCase {
             gs.shadow.ruthlessness = 0; gs.shadow.popularity = 50; gs.shadow.expansionLog = log
         }
     }
+
+    /// 3.8.0: the Congress sheet, the top bar with Congress and a War Powers clock, and cabinet warnings.
+    @MainActor
+    func testRenderCongressAndWarnings() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .week)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = 1990
+        engine.requestAuthorization(target: "IRQ", kind: .useOfForce, roll: 0.999)
+        gs.actionsUsedThisTurn = 0
+        engine.declareWar(aggressor: "USA", defender: "MEX")
+        for _ in 0..<7 { gs.turn += 1; engine.processWarPowers() }
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            print("SNAPSHOT \(try render(CongressSheet(gameState: gs, targetID: "IRQ").environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(420)), name: "congress-\(t)").path)")
+            let bar = SituationTopBar(gameState: gs, onSheet: { _ in }, part: .statsOnly).environmentObject(engine)
+            print("SNAPSHOT \(try render(bar, size: CGSize(width: FontScale.w(1100), height: FontScale.h(70)), name: "topbar-congress-\(t)").path)")
+            let warnings = VStack(alignment: .leading, spacing: 8) {
+                CabinetWarningsView(warnings: engine.advisorWarnings(for: .attack(.groundInvasion, target: "CUB", size: nil)))
+                CabinetWarningsView(warnings: engine.advisorWarnings(for: .attack(.strategicNuke, target: "RUS", size: AttackSize(warheads: 20))))
+                CabinetWarningsView(warnings: engine.advisorWarnings(for: .fleet(fleetID: "sixth", target: "LBY", mission: .strike, preset: .overwhelming)))
+            }
+            .padding(10).frame(width: FontScale.w(520)).background(Theme.isRetro ? EGA.blue : Color.black)
+            print("SNAPSHOT \(try render(warnings, size: CGSize(width: FontScale.w(520), height: FontScale.h(460)), name: "cabinet-warnings-\(t)").path)")
+        }
+    }
 }
 #endif

@@ -1941,3 +1941,210 @@ final class TerritoryWealthPlayHistoryTests: XCTestCase {
         XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasPrefix("Gotit is now producing copper") })
     }
 }
+
+// MARK: - Congress and the war powers; advisor warnings (3.8.0)
+
+@MainActor
+final class CongressTests: XCTestCase {
+
+    private func game(year: Int, turn: TurnLength = .week) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: turn)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = year
+        return (engine, gs)
+    }
+
+    private func advance(_ engine: GameEngine, _ gs: GameState, turns: Int) {
+        for _ in 0..<turns { gs.turn += 1; gs.actionsUsedThisTurn = 0; engine.processWarPowers() }
+    }
+
+    // Unit
+
+    func testChambersVotesAndTrial() {
+        XCTAssertEqual(CongressModel.house(congress: 60, popularity: 40), 50)
+        XCTAssertEqual(CongressModel.senate(congress: 60, popularity: 40), 54, accuracy: 0.001)
+        var last = -1.0
+        for s in stride(from: 0.0, through: 100, by: 5) {
+            let e = CongressModel.expectedYes(support: s, warSupport: 50, casusBelli: 0, kind: .declaration)
+            XCTAssertGreaterThanOrEqual(e, last); last = e
+        }
+        XCTAssertGreaterThan(CongressModel.expectedYes(support: 50, warSupport: 50, casusBelli: 1, kind: .declaration),
+                             CongressModel.expectedYes(support: 50, warSupport: 50, casusBelli: 0, kind: .declaration), "a casus belli helps")
+        XCTAssertGreaterThan(CongressModel.expectedYes(support: 50, warSupport: 50, casusBelli: 0, kind: .useOfForce),
+                             CongressModel.expectedYes(support: 50, warSupport: 50, casusBelli: 0, kind: .declaration), "an AUMF is easier")
+        XCTAssertEqual(CongressModel.passOdds(expectedYes: 30), 0); XCTAssertEqual(CongressModel.passOdds(expectedYes: 70), 1)
+        XCTAssertTrue(CongressModel.convicts(senateSupport: 20)); XCTAssertFalse(CongressModel.convicts(senateSupport: 40))
+        XCTAssertEqual(CongressModel.impeachmentStageName(1), "INQUIRY")
+        XCTAssertTrue(MajorAction.isMajor(.groundInvasion)); XCTAssertTrue(MajorAction.isMajor(.strategicNuke))
+        XCTAssertTrue(MajorAction.isMajor(.chemicalAttack)); XCTAssertFalse(MajorAction.isMajor(.sendAmbassador))
+        XCTAssertFalse(MajorAction.isMajor(.nuclearTest))
+    }
+
+    // Functional: asking Congress
+
+    func testRequestPassesOrFailsWithTheOdds() throws {
+        let (engine, gs) = try game(year: 2001)
+        let o = try XCTUnwrap(engine.authorizationOdds(target: "AFG", kind: .useOfForce))
+        XCTAssertGreaterThan(o.odds, 0)
+        let v = try XCTUnwrap(engine.requestAuthorization(target: "AFG", kind: .useOfForce, roll: 0))
+        XCTAssertTrue(v.passed); XCTAssertGreaterThan(v.houseYes, 50); XCTAssertTrue(engine.isAuthorized("AFG"))
+        XCTAssertNil(engine.requestAuthorization(target: "AFG", kind: .declaration), "already authorized")
+        gs.actionsUsedThisTurn = 0
+        let pop = gs.shadow.popularity
+        let o2 = try XCTUnwrap(engine.authorizationOdds(target: "CHE", kind: .declaration))
+        let v2 = try XCTUnwrap(engine.requestAuthorization(target: "CHE", kind: .declaration, roll: 0.999))
+        XCTAssertFalse(v2.passed || o2.odds > 0.999)
+        XCTAssertLessThan(gs.shadow.popularity, pop, "a rebuff costs approval")
+    }
+
+    func testWarPowersClockFrom1973() throws {
+        let (engine, gs) = try game(year: 1980)
+        let c0 = gs.getPlayerCountry()!.congressionalSupport
+        engine.declareWar(aggressor: "USA", defender: "MEX")
+        advance(engine, gs, turns: 1)
+        XCTAssertNotNil(gs.shadow.warPowersClocks["MEX"])
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("60 days") })
+        advance(engine, gs, turns: 7)   // ~50 days
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("days left to win authorization") }, "warned before time is up")
+        advance(engine, gs, turns: 7)   // ~99 days
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("must leave the fight") })
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("defies the War Powers Resolution") })
+        XCTAssertLessThan(gs.getPlayerCountry()!.congressionalSupport, c0)
+    }
+
+    func testNoClockWhenAuthorizedOrBefore1973() throws {
+        let (e1, g1) = try game(year: 1980)
+        XCTAssertNotNil(e1.requestAuthorization(target: "MEX", kind: .useOfForce, roll: 0))
+        if e1.isAuthorized("MEX") {
+            e1.declareWar(aggressor: "USA", defender: "MEX")
+            advance(e1, g1, turns: 20)
+            XCTAssertNil(g1.shadow.warPowersClocks["MEX"])
+        }
+        let (e2, g2) = try game(year: 1965)
+        e2.declareWar(aggressor: "USA", defender: "MEX")
+        advance(e2, g2, turns: 20)
+        XCTAssertTrue(g2.shadow.warPowersClocks.isEmpty, "no War Powers Resolution before Nov 1973")
+    }
+
+    func testSenateTrialNeedsTwoThirds() throws {
+        for (congress, removed) in [(5, true), (95, false)] {
+            let engine = GameEngine()
+            engine.startNewGame(turnLength: .month)
+            let gs = try XCTUnwrap(engine.gameState)
+            let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+            gs.shadow.impeachmentStage = 3
+            gs.shadow.popularity = 10; gs.shadow.ruthlessness = 80
+            gs.countries[pi].congressionalSupport = congress
+            gs.turn += 1
+            engine.processShadowTurn()
+            if removed {
+                XCTAssertEqual(gs.shadow.domesticEnding, .impeached)
+            } else {
+                XCTAssertNil(gs.shadow.domesticEnding)
+                XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Senate acquits") })
+            }
+        }
+    }
+
+    // Functional: honest warnings
+
+    func testWarningsUseTheEnginesNumbers() throws {
+        let (engine, gs) = try game(year: 1985)
+        let usa = gs.getPlayerCountry()!, mex = gs.getCountry(id: "MEX")!
+        let std = AttackSizing.standard(.groundInvasion, in: gs)
+        let inv = engine.advisorWarnings(for: .attack(.groundInvasion, target: "MEX", size: std))
+        XCTAssertEqual(inv.map(\.who).count, 3)
+        XCTAssertTrue(inv[0].text.contains("\(Int(AttackSizing.invasionOdds(troops: std.troops, attacker: usa, defender: mex) * 100))%"))
+        XCTAssertTrue(inv[2].text.contains("War Powers"), "1985: the VP flags the clock")
+        let nuke = engine.advisorWarnings(for: .attack(.strategicNuke, target: "RUS", size: AttackSize(warheads: 12)))
+        XCTAssertTrue(nuke[0].text.contains("12 warheads")); XCTAssertTrue(nuke[0].text.contains("retaliation")); XCTAssertEqual(nuke[0].level, 2)
+        let chem = engine.advisorWarnings(for: .attack(.chemicalAttack, target: "MEX", size: nil))
+        XCTAssertTrue(chem[1].text.contains("Geneva Protocol"))
+        let (e1918, _) = try game(year: 1918)
+        XCTAssertFalse(e1918.advisorWarnings(for: .attack(.groundInvasion, target: "MEX", size: nil))[2].text.contains("War Powers"))
+        let fleet = engine.advisorWarnings(for: .fleet(fleetID: "seventh", target: "PRK", mission: .strike, preset: .standard))
+        XCTAssertTrue(fleet[0].text.contains("ships committed"))
+    }
+
+    func testClaimWarningsMatchTheExpansionModel() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        let w = engine.advisorWarnings(for: .claim(land: "NGA", troops: 5))
+        XCTAssertTrue(w[1].text.contains("Claim #1"))
+        XCTAssertEqual(w[2].level, 0, "a first imperial-era claim is safe")
+        gs.shadow.ruthlessness = 30; gs.shadow.popularity = 31
+        gs.shadow.expansionLog = Array(repeating: gs.currentDate, count: 30)
+        XCTAssertEqual(engine.advisorWarnings(for: .claim(land: "NGA", troops: 5))[2].level, 2, "the VP warns before the tipping claim")
+    }
+
+    // Security
+
+    func testBadRequestsAreRefused() throws {
+        let (engine, gs) = try game(year: 2001)
+        XCTAssertNil(engine.requestAuthorization(target: "USA", kind: .declaration))
+        XCTAssertNil(engine.requestAuthorization(target: "ZZZ", kind: .declaration))
+        gs.actionsUsedThisTurn = gs.actionsPerTurn
+        XCTAssertNil(engine.requestAuthorization(target: "MEX", kind: .declaration), "no actions left")
+        let suite = try XCTUnwrap(UserDefaults(suiteName: "GTNWTests.warnings.\(UUID().uuidString)"))
+        XCTAssertTrue(AdvisorWarnings.enabled(suite), "on by default")
+        suite.set(false, forKey: AdvisorWarnings.defaultsKey)
+        XCTAssertFalse(AdvisorWarnings.enabled(suite))
+    }
+
+    // Retry: votes and clocks survive a reload; old saves decode
+
+    func testCongressStateSurvivesSave() throws {
+        let (engine, gs) = try game(year: 1990)
+        engine.requestAuthorization(target: "IRQ", kind: .useOfForce, roll: 0)
+        gs.actionsUsedThisTurn = 0
+        engine.declareWar(aggressor: "USA", defender: "MEX")
+        advance(engine, gs, turns: 2)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.authorizations, gs.shadow.authorizations)
+        XCTAssertEqual(loaded.shadow.warPowersClocks, gs.shadow.warPowersClocks)
+        let e2 = GameEngine(); e2.gameState = loaded
+        XCTAssertNil(e2.requestAuthorization(target: "IRQ", kind: .declaration), "still authorized after the reload")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "authorizations"); shadow.removeValue(forKey: "warPowersClocks"); json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.authorizations.isEmpty); XCTAssertTrue(old.shadow.warPowersClocks.isEmpty)
+    }
+
+    // Performance
+
+    func testWarningsAreCheap() throws {
+        let (engine, _) = try game(year: 2001)
+        measure {
+            for _ in 0..<200 {
+                _ = engine.advisorWarnings(for: .attack(.groundInvasion, target: "MEX", size: nil))
+                _ = engine.advisorWarnings(for: .fleet(fleetID: "fifth", target: "IRN", mission: .blockade, preset: .standard))
+            }
+        }
+    }
+}
+
+final class CongressPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testVotesAndViolationsAreLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", turnLength: .week)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        XCTAssertNotNil(e.requestAuthorization(target: "IRN", kind: .useOfForce, roll: 0.999))
+        e.declareWar(aggressor: "USA", defender: "MEX")
+        for _ in 0..<16 { gs.turn += 1; e.processWarPowers() }
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        XCTAssertEqual(PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "congress_vote" }))["target"] as? String, "IRN")
+        XCTAssertTrue(events.contains { $0.kind == "war_powers_violation" })
+    }
+}
