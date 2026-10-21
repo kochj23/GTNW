@@ -508,5 +508,23 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet, size: CGSize(width: FontScale.w(820), height: FontScale.h(560)), name: "group-extraction-\(t)").path)")
         }
     }
+
+    /// 3.13.2: a fresh territory's recovery line on the Resources sheet.
+    @MainActor
+    func testRenderStabilityRecovery() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.mckinleyAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand("ZAF"))
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "ZAF" })
+        gs.countries[i].stability = 45
+        gs.shadow.garrisons["ZAF"] = OccupationModel.neededGarrison(gs.countries[i])
+        gs.turn += 4
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            print("SNAPSHOT \(try render(ResourcesSheet(gameState: gs, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(360)), name: "stability-recovery-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

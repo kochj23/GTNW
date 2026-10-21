@@ -3342,8 +3342,10 @@ final class TerritoryMoneyTests: XCTestCase {
         XCTAssertEqual(gs.getCountry(id: "ZAF")!.stability, max(0, st - 10))
         XCTAssertEqual(ExpansionModel.levyCooldown("ZAF", in: gs), 6)
         XCTAssertNil(engine.collectLevy("ZAF"), "cooling down")
-        gs.turn += 7
-        XCTAssertNotNil(engine.collectLevy("ZAF"), "ready again after the cooldown")
+        gs.turn += 5
+        XCTAssertEqual(ExpansionModel.levyCooldown("ZAF", in: gs), 1)
+        gs.turn += 1
+        XCTAssertNotNil(engine.collectLevy("ZAF"), "ready again after exactly six months (3.13.2)")
     }
 
     func testGroupExtractionAndLevy() throws {
@@ -3441,5 +3443,95 @@ final class TerritoryMoneyPlayHistoryTests: XCTestCase {
         XCTAssertTrue(synced)
         let kinds = await remote.events(id).map(\.kind)
         XCTAssertTrue(kinds.contains("territory_levy"))
+    }
+}
+
+// MARK: - 3.13.2: levy cooldown and first-year stability recovery
+
+final class TerritoryRecoveryTests: XCTestCase {
+
+    /// A fresh, fully garrisoned South Africa at stability 45.
+    private func fresh() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.mckinleyAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand("ZAF"))
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "ZAF" })
+        gs.countries[i].stability = 45
+        gs.shadow.garrisons["ZAF"] = OccupationModel.neededGarrison(gs.countries[i])
+        return (engine, gs)
+    }
+
+    private func zaf(_ gs: GameState) -> Country { gs.getCountry(id: "ZAF")! }
+
+    // Unit
+
+    func testRecoveryCountdown() throws {
+        let (_, gs) = try fresh()
+        XCTAssertEqual(ExpansionModel.stabilityRecoveryMonths(zaf(gs), in: gs), 12)
+        XCTAssertEqual(ExpansionModel.limit(zaf(gs), in: gs), "Stability 45 → 60 in ~12 months at this garrison.")
+        gs.turn += 4
+        XCTAssertEqual(ExpansionModel.stabilityRecoveryMonths(zaf(gs), in: gs), 8)
+        XCTAssertEqual(ExpansionModel.monthsUntilProducing("ZAF", in: gs), 2, "calendar months (3.13.2)")
+        gs.turn += 8
+        XCTAssertNil(ExpansionModel.stabilityRecoveryMonths(zaf(gs), in: gs), "only the first year")
+    }
+
+    func testLevyCooldownIsSixCalendarMonths() throws {
+        let (engine, gs) = try fresh()
+        gs.turn += 12
+        XCTAssertNotNil(engine.collectLevy("ZAF"))
+        XCTAssertEqual((0...6).map { _ -> Int in defer { gs.turn += 1 }; return ExpansionModel.levyCooldown("ZAF", in: gs) }, [6, 5, 4, 3, 2, 1, 0])
+    }
+
+    // Functional: good governance clears the warning within the year
+
+    func testGoodGovernanceReachesSixty() throws {
+        let (engine, gs) = try fresh()
+        var seen: [Int] = []
+        for _ in 0..<12 { gs.turn += 1; engine.processOccupation(); seen.append(zaf(gs).stability) }
+        XCTAssertGreaterThanOrEqual(zaf(gs).stability, 60)
+        XCTAssertEqual(seen, seen.sorted(), "steady recovery")
+        XCTAssertFalse(ExpansionModel.limit(zaf(gs), in: gs)?.contains("stability") ?? false)
+    }
+
+    // Security: no free recovery for squeezed or neglected land
+
+    func testNoRecoveryWhenSqueezedOrUndermanned() throws {
+        let (engine, gs) = try fresh()
+        engine.setExtraction("ZAF", .heavy)
+        XCTAssertNil(ExpansionModel.stabilityRecoveryMonths(zaf(gs), in: gs))
+        engine.setExtraction("ZAF", .light)
+        XCTAssertNotNil(ExpansionModel.stabilityRecoveryMonths(zaf(gs), in: gs))
+        gs.shadow.garrisons["ZAF"] = 0.5
+        XCTAssertNil(ExpansionModel.stabilityRecoveryMonths(zaf(gs), in: gs))
+        XCTAssertNil(ExpansionModel.stabilityRecoveryMonths(gs.getCountry(id: "FRA")!, in: gs), "not a territory")
+    }
+
+    // Integration: a full year of occupation and economy leaves a producing, stable territory
+
+    func testFirstYearEndsStableAndPaying() throws {
+        let (engine, gs) = try fresh()
+        for _ in 0..<12 { gs.turn += 1; engine.processOccupation(); engine.processTerritoryEconomy() }
+        XCTAssertEqual(gs.getCountry(id: "ZAF")?.territoryOf, "USA")
+        XCTAssertGreaterThanOrEqual(zaf(gs).stability, 60)
+        XCTAssertGreaterThan(gs.shadow.lastTurnCash, 0)
+    }
+
+    // Retry: a save mid-recovery resumes the countdown
+
+    func testRecoverySurvivesSave() throws {
+        let (_, gs) = try fresh()
+        gs.turn += 3
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(ExpansionModel.stabilityRecoveryMonths(loaded.getCountry(id: "ZAF")!, in: loaded), 9)
+    }
+
+    // Performance
+
+    func testRecoveryCheckIsCheap() throws {
+        let (_, gs) = try fresh()
+        let c = zaf(gs)
+        measure { for _ in 0..<2000 { _ = ExpansionModel.stabilityRecoveryMonths(c, in: gs) } }
     }
 }
