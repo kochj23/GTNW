@@ -70,7 +70,6 @@ extension GameEngine {
         guard let gs = gameState, !gs.gameOver else { return }
         let from = gs.previousTurnDate, to = gs.currentDate
         let scale = gs.scale
-        let seen = Set(gs.shadow.ticker.map(\.id))   // 3.15.0: Nova comments on what's new this turn
 
         applyOverdueSettlements()
         processFleets()
@@ -91,7 +90,6 @@ extension GameEngine {
         processCabinets()
         processEraTransitions()   // 3.15.0
         processAdvisorFates(scale: scale)
-        processCommentary(seen: seen)
         processHallOfInfamy()
 
         // Peace streak (years of peace = peaceTurns × turn length).

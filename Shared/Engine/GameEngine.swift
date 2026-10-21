@@ -165,6 +165,9 @@ class GameEngine: ObservableObject {
         addLog("═══════════════════════════════════════", type: .system)
         addLog("", type: .system)
 
+        // 3.16.1: Nova comments once both phases (Shadow world and AI moves) have run, on everything new this turn.
+        let seenBeforeTurn = Set(gameState.shadow.ticker.map(\.id))
+
         // Clear AI summary for new turn
         gameState.aiActionSummary.removeAll()
         gameState.hasUsedActionThisTurn = false
@@ -199,6 +202,7 @@ class GameEngine: ObservableObject {
         // times out falls back to fast rule-based AI so a turn never hangs.
         Task { @MainActor in
             await processAITurnsWithBrains()
+            processCommentary(seen: seenBeforeTurn)
             showAISummary()
             isProcessingAITurn = false   // Allow actions again
             turnPhase = .playerInput     // Unmistakable cue: control returns to the player

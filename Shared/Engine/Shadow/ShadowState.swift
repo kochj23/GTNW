@@ -155,6 +155,8 @@ struct ShadowState: Codable {
     var eraSyncYear = 0
     var eraGovernment: [String: String] = [:]
     var eraDiverged: Set<String> = []
+    /// The era board's nations at the last sync (3.16.1): a nation new to it is a founding.
+    var eraBoardIDs: Set<String> = []
     /// Peace brokered between other nations (3.16.0).
     var nobelMoments = 0
     /// Wars the player declared (3.16.0; the peaceful endings need none).
@@ -199,7 +201,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, nobelMoments, playerWarsStarted, startOutputShare
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, nobelMoments, playerWarsStarted, startOutputShare
     }
 
     init() {}
@@ -266,6 +268,7 @@ struct ShadowState: Codable {
         eraSyncYear = try c.decodeIfPresent(Int.self, forKey: .eraSyncYear) ?? 0
         eraGovernment = try c.decodeIfPresent([String: String].self, forKey: .eraGovernment) ?? [:]
         eraDiverged = try c.decodeIfPresent(Set<String>.self, forKey: .eraDiverged) ?? []
+        eraBoardIDs = try c.decodeIfPresent(Set<String>.self, forKey: .eraBoardIDs) ?? []
         nobelMoments = try c.decodeIfPresent(Int.self, forKey: .nobelMoments) ?? 0
         playerWarsStarted = try c.decodeIfPresent(Int.self, forKey: .playerWarsStarted) ?? 0
         startOutputShare = try c.decodeIfPresent(Double.self, forKey: .startOutputShare) ?? 0

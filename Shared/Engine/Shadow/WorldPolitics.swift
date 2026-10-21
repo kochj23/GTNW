@@ -373,12 +373,14 @@ extension GameEngine {
         guard let gs = gameState, gs.currentYear != gs.shadow.eraSyncYear else { return }
         let first = gs.shadow.eraSyncYear == 0
         gs.shadow.eraSyncYear = gs.currentYear
-        if first {   // remember each nation's starting government; nothing to change yet
+        let board = Dictionary(GameState.eraBoard(year: gs.currentYear).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        if first {   // remember each nation's starting government and the era's nations; nothing to change yet
             for c in gs.countries { gs.shadow.eraGovernment[c.id] = c.government.rawValue }
+            gs.shadow.eraBoardIDs = Set(board.keys)
             self.gameState = gs
             return
         }
-        let board = Dictionary(GameState.eraBoard(year: gs.currentYear).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        processFoundings(board)
         for i in gs.countries.indices {
             let c = gs.countries[i]
             guard c.id != gs.playerCountryID, !c.isDestroyed, !c.isTerritory, !gs.shadow.eraDiverged.contains(c.id),
@@ -395,9 +397,60 @@ extension GameEngine {
             gs.shadow.eraGovernment[c.id] = h.government.rawValue
             if h.name != c.name {
                 gs.shadow.post("\(c.name) becomes \(h.name).", date: gs.currentDate, severity: 1)
+                gs.shadow.worldStats["transitions", default: 0] += 1
                 logPlayEvent("era_transition", detail: ["country": c.id, "from": PlayHistory.text(c.name), "to": PlayHistory.text(h.name),
                                                         "game_date": PlayHistory.day(gs.currentDate)])
             }
+        }
+        self.gameState = gs
+    }
+}
+
+// MARK: - Mid-game foundings (3.16.1)
+
+extension GameEngine {
+    /// Nations founded since the last era sync (on the era board now, not last year): Serbia 1817, Greece 1829,
+    /// Belgium 1830, the post-WWI states, decolonisation… If the land is still held by its historical owner (a colony
+    /// of an era power, a dependency, or nobody), the nation is founded with its historical government. If the
+    /// player or a computer-run power took the land, history has diverged: no automatic founding, but an independence
+    /// movement presses (unrest +20, stability −10). Successor states absorb their parts still on their historical
+    /// path (Yugoslavia takes Serbia and Montenegro as constituent lands).
+    func processFoundings(_ board: [String: Country]) {
+        guard let gs = gameState else { return }
+        let fresh = Set(board.keys).subtracting(gs.shadow.eraBoardIDs)
+        gs.shadow.eraBoardIDs = Set(board.keys)
+        for id in fresh.sorted() {
+            guard var h = board[id] else { continue }
+            if let held = gs.countries.firstIndex(where: { $0.id == id }) {
+                guard let owner = gs.countries[held].territoryOf else { continue }   // already independent
+                gs.countries[held].profile.outcry = min(100, gs.countries[held].profile.outcry + 20)
+                gs.countries[held].stability = max(0, gs.countries[held].stability - 10)
+                let ownerName = owner == gs.playerCountryID ? "the United States" : (gs.getCountry(id: owner)?.name ?? owner)
+                gs.shadow.post("An independence movement in \(gs.countries[held].name) demands freedom from \(ownerName).", date: gs.currentDate, severity: 2)
+                logPlayEvent("independence_movement", detail: ["land": id, "owner": owner, "game_date": PlayHistory.day(gs.currentDate)])
+                continue
+            }
+            let ids = Set(gs.countries.map(\.id))
+            h.alliances = []
+            h.atWarWith = []
+            h.diplomaticRelations = h.diplomaticRelations.filter { ids.contains($0.key) }
+            gs.countries.append(h)
+            for i in gs.countries.indices where gs.countries[i].id != id {
+                gs.countries[i].diplomaticRelations[id] = h.diplomaticRelations[gs.countries[i].id] ?? 0
+            }
+            gs.shadow.eraGovernment[id] = h.government.rawValue
+            gs.shadow.worldStats["foundings", default: 0] += 1
+            // Constituent lands still on their historical path join the new state.
+            for part in WorldMapData.historicalOwners[id] ?? [] {
+                guard let k = gs.countries.firstIndex(where: { $0.id == part }), part != gs.playerCountryID,
+                      !gs.countries[k].isTerritory, !gs.shadow.eraDiverged.contains(part), board[part] == nil else { continue }
+                gs.countries[k].territoryOf = id
+                gs.countries[k].atWarWith = []
+                gs.countries[k].alliances = []
+                gs.shadow.post("\(gs.countries[k].name) joins \(h.name).", date: gs.currentDate, severity: 1)
+            }
+            gs.shadow.post("\(h.name) is founded.", date: gs.currentDate, severity: 2)
+            logPlayEvent("nation_founded", detail: ["country": id, "name": PlayHistory.text(h.name), "game_date": PlayHistory.day(gs.currentDate)])
         }
         self.gameState = gs
     }

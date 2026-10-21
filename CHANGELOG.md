@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.1] - 2026-10-20 — Mid-game foundings; commentary on the AI phase
+
+### Added
+- **Mid-game foundings** (`processFoundings`, in the yearly era sync): a nation new to this year's era board
+  (`shadow.eraBoardIDs` remembers last year's) is founded with its historical government and relations when its land
+  is still with its historical owner (colony, dependency or nobody). Successor states absorb constituent lands still
+  on their historical path (`WorldMapData.historicalOwners`). Land taken by the player or a computer-run power gets an
+  independence movement instead (unrest +20, stability −10). Play events `nation_founded`, `independence_movement`;
+  `worldStats` gains `foundings` and `transitions`.
+
+### Changed
+- Nova's commentary runs after the AI phase (`endTurn`), on everything new that turn, so AI nuclear strikes and war
+  declarations are included; the limits are unchanged (one line, or up to two flash events).
+- 9 tests across all seven categories (582 total, single muted run); snapshots in `Screenshots/3.16.1/`.
+
 ## [3.16.0] - 2026-10-20 — Peace victories
 
 ### Added
