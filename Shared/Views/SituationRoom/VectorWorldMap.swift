@@ -34,7 +34,7 @@ final class WorldMapData {
         guard let url = bundle.url(forResource: "world_countries", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(File.self, from: data) else { shapes = []; return }
-        shapes = file.countries.filter { $0.id != "ATA" }.map { c in
+        shapes = file.countries.map { c in   // Antarctica included since 3.10.0
             var p = Path()
             for ring in c.rings where ring.count >= 6 {
                 p.move(to: CGPoint(x: ring[0], y: -ring[1]))
@@ -179,7 +179,7 @@ struct VectorWorldMap: View {
     @State private var hoverID: String?
 
     private let data = WorldMapData.shared
-    private static let worldRect = CGRect(x: -180, y: -84, width: 360, height: 140)   // lat 84N … 56S
+    private static let worldRect = CGRect(x: -180, y: -84, width: 360, height: 158)   // lat 84N … 74S (Antarctica's coast, 3.10.0)
 
     var body: some View {
         GeometryReader { geo in

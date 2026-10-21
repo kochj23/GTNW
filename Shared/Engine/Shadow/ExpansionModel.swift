@@ -16,12 +16,14 @@ import Foundation
 
 enum ResourceKind: String, Codable, CaseIterable {
     case gold, diamonds, copper, cobalt, rubber, ivory, cocoa, coffee, tea, cotton, oil, uranium, phosphates, timber,
-         palmOil, groundnuts, tin, ironOre, manganese, bauxite, sisal, tobacco, vanilla, agriculture
+         palmOil, groundnuts, tin, ironOre, manganese, bauxite, sisal, tobacco, vanilla, agriculture,
+         whaling, sealing, science, minerals
 
     var title: String {
         switch self {
         case .palmOil: return "palm oil"
         case .ironOre: return "iron ore"
+        case .science: return "science prestige"
         default: return rawValue
         }
     }
@@ -87,6 +89,10 @@ enum ExpansionModel {
         "EGY": [.init(kind: .cotton, from: 1821, value: 3), .init(kind: .oil, from: 1909, value: 2)],
         "SDN": [.init(kind: .cotton, from: 1925, value: 1)],
         "MAR": [.init(kind: .phosphates, from: 1921, value: 2)],
+        // Antarctica (3.10.0): whaling to the 1960s, sealing in the 1800s, science from the IGY (1957), and minerals
+        // and oil only once the Madrid Protocol's mining ban can be reviewed (2048).
+        "ATA": [.init(kind: .sealing, from: 1789, to: 1900, value: 0.5), .init(kind: .whaling, from: 1789, to: 1964, value: 1.5),
+                .init(kind: .science, from: 1957, value: 0.5), .init(kind: .minerals, from: 2048, value: 5), .init(kind: .oil, from: 2048, value: 5)],
     ]
 
     /// What a land yields in a year. Lands not in the table, or before their resources were found, farm a little.

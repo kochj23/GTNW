@@ -128,7 +128,7 @@ struct WorldCountriesDatabase {
     }
 
     /// The modern-map template for a land (name, flag, capital, coordinates, region), or nil.
-    static func template(id: String) -> CountryTemplate? { templatesByID[id] }
+    static func template(id: String) -> CountryTemplate? { id == Antarctica.id ? Antarctica.template : templatesByID[id] }
     private static let templatesByID = Dictionary(allCountries().map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
 
     // MARK: - Era-Filtered Countries

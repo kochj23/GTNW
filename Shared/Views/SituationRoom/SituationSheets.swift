@@ -1256,3 +1256,146 @@ struct ManpowerSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Group actions (3.10.0)
+
+/// Act on many nations at once: choose the group, the action and the amount, check the per-nation breakdown and
+/// total, then confirm once.
+struct GroupActionSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    /// Offscreen snapshots can't render scroll views or text fields; they pass false.
+    var live = true
+
+    enum Pick: Hashable { case territories, allies, region, handPicked, saved(String) }
+    @State var pick: Pick = .allies
+    @State var region: WorldRegion = .europe
+    @State var handPicked: Set<String> = []
+    @State var kind: GroupActionKind = .message
+    @State var amount: Double = 10
+    @State var garrison: Double = 5
+    @State var split: AidSplit = .byNeed
+    @State var saveName = ""
+
+    private var selector: GroupSelector {
+        switch pick {
+        case .territories: return .territories
+        case .allies: return .allies
+        case .region: return .region(region)
+        case .handPicked: return .custom(name: "Hand-picked", ids: handPicked.sorted())
+        case .saved(let name): return .custom(name: name, ids: gameState.shadow.savedGroups[name] ?? [])
+        }
+    }
+
+    var body: some View {
+        let members = gameEngine.groupMembers(selector)
+        let plan = gameEngine.planGroupAction(kind, members: members, amount: kind == .garrison ? garrison : amount, split: split)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "square.stack.3d.up.fill")
+                Text("GROUP ACTION")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Text("GROUP").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            HStack(spacing: 6) {
+                pickButton("TERRITORIES", .territories)
+                pickButton("ALLIES", .allies)
+                pickButton("REGION", .region)
+                pickButton("HAND-PICK", .handPicked)
+                ForEach(gameState.shadow.savedGroups.keys.sorted(), id: \.self) { name in pickButton(name.uppercased(), .saved(name)) }
+            }
+            if pick == .region {
+                HStack(spacing: 4) {
+                    ForEach(WorldRegion.allCases, id: \.self) { r in
+                        Button(r.rawValue.uppercased()) { region = r }.buttonStyle(ThemedButtonStyle(prominent: region == r))
+                    }
+                }
+            }
+            if pick == .handPicked {
+                let all = gameState.countries.filter { !$0.isDestroyed && $0.id != gameState.playerCountryID }.sorted { $0.name < $1.name }
+                Group {
+                    if live {
+                        ScrollView { picker(all) }.frame(height: FontScale.h(110))
+                    } else {
+                        picker(Array(all.prefix(18)))
+                    }
+                }
+                HStack(spacing: 6) {
+                    TerritoryNameField(text: $saveName, placeholder: "Save this group as…", live: live)
+                    Button("SAVE GROUP") { if gameEngine.saveGroup(name: saveName, ids: handPicked.sorted()) { pick = .saved(saveName.trimmingCharacters(in: .whitespacesAndNewlines)) } }
+                        .buttonStyle(ThemedButtonStyle())
+                        .disabled(handPicked.isEmpty || CombatModel.validTerritoryName(saveName) == nil)
+                }
+            }
+            Text("ACTION").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            HStack(spacing: 6) {
+                ForEach(GroupActionKind.allCases) { k in
+                    Button(k.title.uppercased()) { kind = k }
+                        .buttonStyle(ThemedButtonStyle(color: k == .sanctions || k == .recall ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: kind == k))
+                }
+            }
+            if kind == .money || kind == .aid {
+                HStack(spacing: 6) {
+                    Button("−") { amount = max(1, amount - 1) }.buttonStyle(ThemedButtonStyle())
+                    Text(String(format: "$%.0fB TOTAL", amount)).font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Button("+") { amount += 1 }.buttonStyle(ThemedButtonStyle())
+                    ForEach(AidSplit.allCases) { s in
+                        Button(s.title.uppercased()) { split = s }.buttonStyle(ThemedButtonStyle(prominent: split == s))
+                    }
+                    Text(String(format: "$%.1fB LEFT THIS YEAR", gameState.shadow.aidRemaining)).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
+            if kind == .garrison {
+                HStack(spacing: 6) {
+                    Button("−") { garrison = max(0.5, garrison - 1) }.buttonStyle(ThemedButtonStyle())
+                    Text("\(Int(garrison))K EACH").font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Button("+") { garrison += 1 }.buttonStyle(ThemedButtonStyle())
+                    Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
+            // The confirmation: per-nation breakdown and total.
+            Text(String(format: "%d NATION%@ · TOTAL %@", plan.lines.count, plan.lines.count == 1 ? "" : "S",
+                        kind == .garrison ? "\(Int(plan.total))K MORE TROOPS" : String(format: "$%.2fB", plan.total)))
+                .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(plan.lines.prefix(12), id: \.self) { l in
+                    Text(verbatim: "\(l.name): \(l.detail)").font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(1)
+                }
+                if plan.lines.count > 12 { Text("…and \(plan.lines.count - 12) more").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan) }
+            }
+            if let problem = plan.problem { Text(verbatim: problem).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed) }
+            HStack {
+                Button("CANCEL") { dismiss() }.buttonStyle(ThemedButtonStyle())
+                Spacer()
+                Button("CONFIRM \(kind.title.uppercased()) FOR \(plan.lines.count)") {
+                    if gameEngine.executeGroupAction(kind, members: members, amount: kind == .garrison ? garrison : amount, split: split,
+                                                     groupName: selector.title) != nil { dismiss() }
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                .disabled(plan.problem != nil)
+            }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(820))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    private func pickButton(_ title: String, _ p: Pick) -> some View {
+        Button(title) { pick = p }.buttonStyle(ThemedButtonStyle(prominent: pick == p))
+    }
+
+    private func picker(_ all: [Country]) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3), spacing: 2) {
+            ForEach(all, id: \.id) { c in
+                Button { if handPicked.contains(c.id) { handPicked.remove(c.id) } else { handPicked.insert(c.id) } } label: {
+                    Text(verbatim: "\(handPicked.contains(c.id) ? "☑" : "☐") \(c.name)").font(ThemeFont.mono(9))
+                        .foregroundColor(handPicked.contains(c.id) ? GTNWColors.terminalAmber : (Theme.isRetro ? EGA.white : .white)).lineLimit(1)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}

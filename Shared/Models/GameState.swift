@@ -111,7 +111,8 @@ class GameState: ObservableObject, Codable {
     /// President has since claimed (a claimed land becomes a country with the same id). Derived, so it survives
     /// save / load with no new fields and older saves get it too.
     var unclaimedLandIDs: Set<String> {
-        WorldCountriesDatabase.unclaimedLandIDs(year: eraStartYear).subtracting(countries.map(\.id))
+        // Antarctica (3.10.0) is claimable in every era until someone takes it.
+        WorldCountriesDatabase.unclaimedLandIDs(year: eraStartYear).union([Antarctica.id]).subtracting(countries.map(\.id))
     }
 
     // MARK: - Era-aware delivery system labels

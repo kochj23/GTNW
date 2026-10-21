@@ -79,6 +79,7 @@ extension GameEngine {
         processCombat(from: from, to: to)
         processWarPowers()
         processOccupation()
+        processAntarctica()
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
@@ -454,6 +455,13 @@ extension GameEngine {
         }
         gs.shadow.ruthlessness += politics.ruthlessness
         gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + politics.popularity)
+        // 3.10.0: claiming Antarctica breaks the Antarctic Treaty from 23 Jun 1961 (restricted since signing in 1959).
+        let antarcticStatus = id == Antarctica.id ? Antarctica.legalStatus(on: gs.currentDate) : .legal
+        if antarcticStatus != .legal {
+            applyTreatyCost(antarcticStatus, target: nil)
+            gs.shadow.post(antarcticStatus == .treatyBanned ? "The claim on Antarctica violates the Antarctic Treaty. The signatories protest."
+                           : "The claim on Antarctica defies the newly signed Antarctic Treaty.", date: gs.currentDate, severity: 3)
+        }
         let owned = owner.id == "USA" ? "U.S." : owner.name
         gs.shadow.post("An expedition plants the flag in \(claimed.name). It is now a \(owned) territory.", date: gs.currentDate, severity: 2)
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): unclaimed \(claimed.name) claimed as \(CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)).")

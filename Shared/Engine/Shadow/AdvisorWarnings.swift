@@ -132,6 +132,15 @@ extension GameEngine {
             let n = ExpansionModel.takenLastYear(gs, before: gs.currentDate) + 1
             let pol = ExpansionModel.politics(year: year, nth: n)
             let f = AttackSizing.relationFactor(scale: troops / AttackSizing.expeditionStandard) * pol.worldFactor
+            if land == Antarctica.id {
+                let status = Antarctica.legalStatus(on: gs.currentDate)
+                let c = ArsenalCatalog.cost(status)
+                return [AdvisorWarning(who: "Joint Chiefs", text: "The ice needs only \(Antarctica.neededGarrison)K men, but the cold takes 5% of them a month and upkeep is heavy.", level: 1),
+                        AdvisorWarning(who: stateWho, text: status == .treatyBanned ? "This breaks the Antarctic Treaty (in force 1961): relations −\(c.world) everywhere, allies −\(c.world + c.allies), sanctions."
+                                       : (status == .restricted ? "The Antarctic Treaty is signed but not yet in force; claiming now looks like bad faith." : "Seven nations already claim slices of it; none really rules it."),
+                                       level: status == .treatyBanned ? 2 : (status == .restricted ? 1 : 0)),
+                        vp(dPop: pol.popularity - (status == .legal ? 0 : c.popularity), dRuth: pol.ruthlessness + (status == .legal ? 0 : c.ruthlessness), war: nil)]
+            }
             return [AdvisorWarning(who: "Joint Chiefs", text: "No army to fight in \(name). \(Int(troops))K troops will hold it as a garrison.", level: 0),
                     AdvisorWarning(who: stateWho, text: "Claim #\(n) this year: rivals −\(Int((5 * f).rounded())), others −\(Int((2 * f).rounded())).",
                                    level: pol.worldFactor > 1.5 ? 1 : 0),

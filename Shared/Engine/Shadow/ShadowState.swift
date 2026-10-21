@@ -114,6 +114,8 @@ struct ShadowState: Codable {
     var mobilizations: [Mobilization] = []
     var territoryPolicies: [String: TerritoryPolicy] = [:]
     var statesAdmitted: [StatehoodRecord] = []
+    /// Custom nation groups the President saved for group actions (3.10.0), by name.
+    var savedGroups: [String: [String]] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -150,7 +152,7 @@ struct ShadowState: Codable {
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
-        case mobilizations, territoryPolicies, statesAdmitted
+        case mobilizations, territoryPolicies, statesAdmitted, savedGroups
     }
 
     init() {}
@@ -196,6 +198,7 @@ struct ShadowState: Codable {
         mobilizations = try c.decodeIfPresent([Mobilization].self, forKey: .mobilizations) ?? []
         territoryPolicies = try c.decodeIfPresent([String: TerritoryPolicy].self, forKey: .territoryPolicies) ?? [:]
         statesAdmitted = try c.decodeIfPresent([StatehoodRecord].self, forKey: .statesAdmitted) ?? []
+        savedGroups = try c.decodeIfPresent([String: [String]].self, forKey: .savedGroups) ?? [:]
     }
 }
 

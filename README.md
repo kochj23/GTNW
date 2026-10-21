@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-444%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.9.0-blue)
+![Tests](https://img.shields.io/badge/tests-457%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.10.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,29 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Antarctica (new in 3.10.0)**: the continent is on both map styles (and the card grid) and can be claimed in any
+  era. Before the Antarctic Treaty it is open land with seven overlapping national claims shown on its dossier
+  (United Kingdom 1908, New Zealand 1923, France 1924, Australia 1933, Norway 1939, Chile 1940, Argentina 1943),
+  none sovereign. Between signing (1 Dec 1959) and entry into force (23 Jun 1961) a claim is restricted; after that
+  it **violates the treaty** and costs like any treaty-banned option (world and allies furious, sanctions,
+  impeachment hearings). It needs only a 0.5K garrison, but the cold takes 5% of it a month and upkeep is heavy. It
+  yields sealing (to 1900), whaling (to 1964), science prestige (from 1957), and minerals and oil only from 2048, when
+  the Madrid Protocol's mining ban can be reviewed.
+- **Group actions (new in 3.10.0)**: **Group** in the top bar acts on many nations at once: all U.S. territories,
+  all allies (the era's treaty allies plus alliances made in play), all of a region, a hand-picked set, or a saved
+  custom group. Give money or send aid (split evenly or by need), set garrisons, impose sanctions, send a diplomatic
+  message or recall ambassadors. One confirmation shows the total and the per-nation breakdown. Each nation goes
+  through the same single-nation code as before (identical effects and logging), the group costs one action
+  (garrison changes are free), and play history gets one `group_action` event listing the members.
+
+  ```mermaid
+  flowchart LR
+      S[Pick: territories · allies · region · hand-picked · saved] --> A[Action + amount + split]
+      A --> P[Plan: per-nation breakdown and total]
+      P --> C{Confirm}
+      C --> E[Each member through the single-nation code<br/>sendAid · setGarrison · presidential action]
+      E --> L[One action · one group_action event]
   ```
 - **Occupation and statehood (new in 3.9.0)**: **Govern** on a U.S. territory's dossier sets its **garrison**
   (drawn from the troop pool; it needs about 2K per √million people), its **government** (military governor, local
@@ -780,6 +803,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Group actions (3.10.0) | Event `group_action` (`action`, `group`, `members`, `member_names`, `total`) |
 | Manpower and territories (3.9.0) | Events `draft_called`, `mobilization_called`, `statehood` (`land`, `name`, `number`), `territory_lost` |
 | Congress (3.8.0) | Events `congress_vote` (`target`, `kind`, `passed`, `house_yes`, `senate_yes`, `odds`) and `war_powers_violation` |
 | Territory starts producing (3.7.0) | Event `territory_producing` (`land`, `name`, `resources`, `income_b`) |
@@ -801,18 +825,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **444 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **457 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 165 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 79 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 59 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 28 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 26 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 51 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 31 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 168 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 84 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 60 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 29 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 27 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 52 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 32 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -836,6 +860,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.10.0 | Oct 2026 | Antarctica can be claimed (treaty rules by date, its own map shape); group actions on many nations at once |
 | 3.9.0 | Oct 2026 | Govern territories (garrison, insurgency, elections) up to statehood; finite era manpower with drafts and mobilization; the AI sizes its attacks |
 | 3.8.0 | Oct 2026 | Congress by chamber, war votes, the War Powers clock, a Senate trial for impeachment, and cabinet warnings before major actions |
 | 3.7.0 | Oct 2026 | "No fair!" fixed: territories yield era-accurate resources and score, expansion politics by era and pace, visible impeachment risk with warnings |

@@ -264,7 +264,11 @@ extension GameEngine {
     }
 
     /// The diplomatic and domestic price of a weapon of this status (used on use, or when a restart is discovered).
-    func applyWMDCost(_ status: LegalStatus, kind: WMDKind, target: String?) {
+    func applyWMDCost(_ status: LegalStatus, kind: WMDKind, target: String?) { applyTreatyCost(status, target: target) }
+
+    /// What breaking (or bending) a treaty costs, by legal status: chemical / biological weapons (3.6.0), a claim on
+    /// Antarctica (3.10.0).
+    func applyTreatyCost(_ status: LegalStatus, target: String?) {
         guard let gs = gameState, let player = gs.getPlayerCountry() else { return }
         let c = ArsenalCatalog.cost(status)
         if let t = target { modifyDiplomaticRelation(from: t, to: player.id, by: -c.target) }

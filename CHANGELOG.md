@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.0] - 2026-10-20 — Antarctica and group actions
+
+### Added
+- **Antarctica** (`Shared/Engine/Shadow/Antarctica.swift`):
+  - Claimable in every era via `GameState.unclaimedLandIDs`. The Natural Earth outline is drawn now, and the world
+    map runs to 74°S so the coast shows in both styles and the card grid.
+  - Legal status: open before 1 Dec 1959, restricted until entry into force on 23 Jun 1961, then treaty-banned. The
+    cost comes from `applyTreatyCost`, the 3.6.0 machinery now shared with chemical/biological weapons.
+  - The dossier lists the seven national claims by year; the advisors warn.
+  - Garrison need 0.5K, 5% monthly attrition and $0.4B a year upkeep per thousand men; no insurgency.
+  - Resources: sealing, whaling, science prestige, and minerals and oil from 2048.
+- **Group actions** (`Shared/Engine/Shadow/GroupActions.swift`, `GroupActionSheet`, top-bar **Group**):
+  - Groups: territories, allies (era treaty bloc plus in-play alliances), a region, a hand-picked set, or saved
+    groups (`ShadowState.savedGroups`).
+  - Actions: money, aid (even or by need), garrisons, sanctions, diplomatic message, recall.
+  - `planGroupAction` gives the per-nation breakdown and total for the confirmation. `executeGroupAction` runs the
+    existing single-nation code for each member, costs one action, counts the domestic effect once, and logs one
+    `group_action` play event with the members.
+- 13 tests across all seven categories (457 total); snapshots in `Screenshots/3.10.0/`.
+
+### Changed
+- A modern game's unclaimed land is now just Antarctica (test updated).
+- The 3.7.0 replay test ignores a random assassination, which could end it early about 2% of the time.
+
 ## [3.9.0] - 2026-10-20 — Occupation, statehood, draft and mobilization
 
 ### Added

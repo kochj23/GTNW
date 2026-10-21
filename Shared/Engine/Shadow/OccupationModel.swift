@@ -62,7 +62,9 @@ enum OccupationModel {
     static func historicalStates(year: Int) -> Int { admissions.filter { $0 <= year }.count }
 
     /// Garrison (thousands) a territory needs to be held firmly: about 2K per square root of a million people.
-    static func neededGarrison(_ c: Country) -> Double { max(2, Double(max(1, c.population)).squareRoot() * 2) }
+    static func neededGarrison(_ c: Country) -> Double {
+        c.id == Antarctica.id ? Antarctica.neededGarrison : max(2, Double(max(1, c.population)).squareRoot() * 2)
+    }
 
     /// Where insurgency heads: 50, less up to 35 for a full garrison, shifted by governance; floored at 0.
     static func insurgencyTarget(garrison: Double, needed: Double, governance: TerritoryGovernance) -> Double {

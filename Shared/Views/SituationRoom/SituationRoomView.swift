@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group
         var id: String { rawValue }
     }
 
@@ -60,6 +60,7 @@ struct SituationRoomView: View {
             case .resources: ResourcesSheet(gameState: gameState)
             case .govern: GovernSheet(gameState: gameState, countryID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .manpower: ManpowerSheet(gameState: gameState).environmentObject(gameEngine)
+            case .group: GroupActionSheet(gameState: gameState).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -231,6 +232,7 @@ struct SituationTopBar: View {
                 Button("RESOURCES") { onSheet(.resources) }.buttonStyle(ThemedButtonStyle())
             }
             Button("TROOPS \(Int(AttackSizing.freeTroops(gameState)))K") { onSheet(.manpower) }.buttonStyle(ThemedButtonStyle())
+            Button("GROUP") { onSheet(.group) }.buttonStyle(ThemedButtonStyle())
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
                 gameEngine.endTurn()
@@ -385,7 +387,7 @@ struct CountryDossier: View {
                 Text("🏳").font(.scaled(size: 30))
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: (land?.name ?? id).uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
-                    Text(verbatim: land?.region.rawValue ?? "").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                    Text(verbatim: id == Antarctica.id ? "Antarctica" : (land?.region.rawValue ?? "")).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 }
             }
             Text("UNCLAIMED")
@@ -395,6 +397,16 @@ struct CountryDossier: View {
             Text("Unclaimed land — no government, no army.")
                 .font(ThemeFont.mono(11)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                 .fixedSize(horizontal: false, vertical: true)
+            if id == Antarctica.id {
+                let claims = Antarctica.claims(by: gameState.currentYear)
+                Text(verbatim: claims.isEmpty ? "No nation has claimed it yet." : "Overlapping claims, none sovereign: " + claims.joined(separator: ", ") + ".")
+                    .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+                let status = Antarctica.legalStatus(on: gameState.currentDate)
+                if status != .legal {
+                    Text(status == .treatyBanned ? "TREATY-BANNED — Antarctic Treaty (in force 23 Jun 1961)" : "RESTRICTED — Antarctic Treaty signed 1 Dec 1959")
+                        .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed).fixedSize(horizontal: false, vertical: true)
+                }
+            }
             Text("An expedition takes it at once as a \(owner.map { $0.id == "USA" ? "U.S." : $0.name } ?? "U.S.") territory. "
                  + "Costs one action and some goodwill abroad: rivals about 5, others about 2, more in a spree or after 1945.")
                 .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
