@@ -10,6 +10,11 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var gameEngine: GameEngine
     @State private var showingCountrySelection = false
+    @State private var showingNationPicker = false
+    @State private var selectedNation = "USA"
+    private var nationName: String {
+        CountryFactory.createCountriesForYear(selectedAdministration?.startYear ?? 2025).first { $0.id == selectedNation }?.name ?? "United States"
+    }
     @State private var showingDifficultySelection = false
     @State private var showingAdministrationSelection = false
     @State private var selectedDifficulty: DifficultyLevel = .normal
@@ -166,16 +171,24 @@ struct ContentView: View {
                 .foregroundColor(ModernColors.textSecondary)
                 .padding(.bottom, 10)
 
-            // Start button - Always start as USA
+            // 3.11.0: play any nation that exists in the start year (the U.S. by default).
+            Button { showingNationPicker = true } label: {
+                Text(verbatim: "NATION: \(nationName) ▾")
+            }
+            .buttonStyle(ThemedButtonStyle(color: ModernColors.yellow))
+            .sheet(isPresented: $showingNationPicker) {
+                NationPickerSheet(year: selectedAdministration?.startYear ?? 2025, selection: $selectedNation)
+            }
+
             Button(action: {
                 gameEngine.startNewGame(
-                    playerCountryID: "USA",
+                    playerCountryID: selectedNation,
                     difficulty: selectedDifficulty,
                     administration: selectedAdministration,
                     turnLength: turnLength
                 )
             }) {
-                Text("INITIALIZE GAME (AS USA)")
+                Text(verbatim: "INITIALIZE GAME (AS \(selectedNation == "USA" ? "USA" : nationName.uppercased()))")
                     .font(.scaled(size: 20, weight: .bold, design: .monospaced))
                     .foregroundColor(.black)
                     .padding()
@@ -644,5 +657,51 @@ struct CountrySelectionView: View {
                 .padding()
             }
         }
+    }
+}
+
+
+// MARK: - Nation picker (3.11.0)
+
+/// Every nation that exists in the start year, with its leader on that date and whether its real cabinet is known.
+struct NationPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let year: Int
+    @Binding var selection: String
+    @State private var search = ""
+
+    var body: some View {
+        let date = GameCalendar.inauguration(year: year)
+        let all = CountryFactory.createCountriesForYear(year).sorted { $0.name < $1.name }
+        let shown = search.isEmpty ? all : all.filter { $0.name.localizedCaseInsensitiveContains(search) }
+        VStack(alignment: .leading, spacing: 8) {
+            Text("PLAY AS — \(String(year))").font(.scaled(size: 18, weight: .bold, design: .monospaced)).foregroundColor(ModernColors.cyan)
+            Text("★ = real cabinet from the research data; others get generic titles. The computer runs the United States if you don't.")
+                .font(.scaled(size: 11, design: .monospaced)).foregroundColor(ModernColors.textSecondary)
+            TextField("Search nations…", text: $search).textFieldStyle(.roundedBorder)
+            List(shown, id: \.id) { c in
+                Button {
+                    selection = c.id
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text(c.flag)
+                        Text(verbatim: c.name).font(.scaled(size: 13, weight: .semibold, design: .monospaced))
+                        if NationModel.nation(c.id) != nil || c.id == "USA" { Text("★").foregroundColor(ModernColors.yellow) }
+                        Spacer()
+                        if c.id != "USA" {
+                            let l = NationModel.leader(for: c, on: date)
+                            Text(verbatim: l.generic ? l.title : l.display).font(.scaled(size: 10, design: .monospaced))
+                                .foregroundColor(ModernColors.textSecondary).lineLimit(1)
+                        }
+                        if c.id == selection { Image(systemName: "checkmark.circle.fill").foregroundColor(ModernColors.cyan) }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding()
+        .frame(minWidth: FontScale.w(640), minHeight: FontScale.h(560))
     }
 }

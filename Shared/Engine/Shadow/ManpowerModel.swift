@@ -95,6 +95,7 @@ extension GameEngine {
     /// Can the President call one now? Nil when allowed, else why not.
     func callUpProblem(_ kind: ManpowerKind) -> String? {
         guard let gs = gameState else { return "No game." }
+        if gs.playerCountryID != "USA" { return "Drafts are modelled for the United States only." }
         if gs.actionsRemaining == 0 { return "No actions left this \(gs.turnLength.displayName.lowercased())." }
         if gs.shadow.mobilizations.contains(where: { $0.kind == kind }) { return "Already called." }
         if kind == .draft, let h = ManpowerModel.historicalDraft(on: gs.currentDate) { return "The \(h.name) is already in force." }

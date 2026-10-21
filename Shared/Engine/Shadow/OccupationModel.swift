@@ -139,7 +139,7 @@ extension GameEngine {
     /// Ask Congress to admit a territory as a state (one action). Nil if conditions aren't met; else whether it passed.
     @discardableResult
     func petitionStatehood(_ id: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
-        guard let gs = gameState, gs.actionsRemaining > 0, let ti = gs.countries.firstIndex(where: { $0.id == id }),
+        guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0, let ti = gs.countries.firstIndex(where: { $0.id == id }),
               gs.countries[ti].territoryOf == gs.playerCountryID, !gs.shadow.statesAdmitted.contains(where: { $0.id == id }),
               OccupationModel.statehoodProblems(c: gs.countries[ti], policy: gs.shadow.territoryPolicies[id],
                                                 heldSince: gs.shadow.claimDates[id], now: gs.currentDate).isEmpty,

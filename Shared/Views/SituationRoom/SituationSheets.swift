@@ -484,6 +484,12 @@ struct DomesticEndingBanner: View {
                 drawn("person.crop.circle.badge.xmark", "DEFEATED AT THE POLLS")
             case .civilWar:
                 drawn("flame.fill", "CIVIL WAR")
+            case .noConfidence: drawn("hand.thumbsdown.fill", "NO CONFIDENCE")
+            case .coup: drawn("shield.slash.fill", "COUP D'ÉTAT")
+            case .revolution: drawn("flag.fill", "REVOLUTION")
+            case .partyCongress: drawn("person.3.fill", "REMOVED BY THE PARTY")
+            case .juntaDecision: drawn("star.slash.fill", "REPLACED BY THE JUNTA")
+            case .royalDismissal: drawn("crown.fill", "DISMISSED BY THE CROWN")
             }
         }
         .frame(maxHeight: FontScale.h(220))
@@ -945,7 +951,9 @@ struct ImpeachmentRiskBadge: View {
         let risk = ExpansionModel.risk(pressure: p)
         let color = risk == .high ? GTNWColors.terminalRed : (risk == .rising ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
         VStack(alignment: .leading, spacing: 0) {
-            Text("IMPEACH RISK \(risk.rawValue)").font(ThemeFont.mono(11, .bold)).foregroundColor(color)
+            let mech = gameState.getPlayerCountry().map { NationModel.removal($0, on: gameState.currentDate) } ?? .impeachment
+            Text(mech == .impeachment ? "IMPEACH RISK \(risk.rawValue)" : "\(mech.title.uppercased()) RISK \(risk.rawValue)")
+                .font(ThemeFont.mono(11, .bold)).foregroundColor(color)
             Text(gameState.shadow.impeachmentStage > 0 ? "STAGE: \(CongressModel.impeachmentStageName(gameState.shadow.impeachmentStage))"
                  : "APPROVAL FLOOR \(Int(ExpansionModel.popularityFloor))%")
                 .font(ThemeFont.mono(9, gameState.shadow.impeachmentStage > 0 ? .bold : .regular))
@@ -1174,6 +1182,7 @@ struct GovernSheet: View {
                     }
                     Text("A military governor provokes insurgency; elections calm it; self-rule calms it most but keeps 40% of the wealth at home. A territory left boiling for a year without enough troops will break away.")
                         .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+                    if gameState.playerCountryID == "USA" {   // statehood is a U.S. process (3.11.0)
                     Text("STATEHOOD").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
                     let problems = OccupationModel.statehoodProblems(c: c, policy: policy, heldSince: gameState.shadow.claimDates[c.id], now: gameState.currentDate)
                     let yes = OccupationModel.statehoodYes(congress: gameState.getPlayerCountry()?.congressionalSupport ?? 50, stability: c.stability)
@@ -1185,6 +1194,7 @@ struct GovernSheet: View {
                     Button("PETITION CONGRESS FOR STATEHOOD") { if gameEngine.petitionStatehood(c.id) != nil { dismiss() } }
                         .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
                         .disabled(!problems.isEmpty || gameState.actionsRemaining == 0)
+                    }
                 }
             }
             HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }

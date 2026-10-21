@@ -110,7 +110,7 @@ extension GameEngine {
     /// Ask Congress (one action). The chambers vote at once; `roll` (0..<1) is for tests. Returns the vote.
     @discardableResult
     func requestAuthorization(target: String, kind: WarAuthorizationKind, roll: Double = Double.random(in: 0..<1)) -> WarAuthorization? {
-        guard let gs = gameState, gs.actionsRemaining > 0, !isAuthorized(target),
+        guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0, !isAuthorized(target),
               let o = authorizationOdds(target: target, kind: kind), let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return nil }
         let swing = (roll - 0.5) * 16   // the same ±8 points the odds assume
         let houseYes = Int(min(99, max(1, o.house + swing)).rounded()), senateYes = Int(min(99, max(1, o.senate + swing)).rounded())
@@ -155,7 +155,7 @@ extension GameEngine {
 
     /// Each turn (from Nov 1973): start, advance and enforce the War Powers clock on unauthorized hostilities.
     func processWarPowers() {
-        guard let gs = gameState, gs.currentDate >= CongressModel.warPowersResolution,
+        guard let gs = gameState, gs.playerCountryID == "USA", gs.currentDate >= CongressModel.warPowersResolution,
               let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
         let targets = hostilitiesTargets().filter { !isAuthorized($0) }
         for key in gs.shadow.warPowersClocks.keys where !targets.contains(key) { gs.shadow.warPowersClocks.removeValue(forKey: key) }

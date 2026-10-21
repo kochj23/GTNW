@@ -134,6 +134,9 @@ enum PlaySummary {
         var s: [String: Any] = [
             "scenario": sh.scenarioID.flatMap { StoreValidation.isIdentifier($0) ? $0 : nil } ?? "sandbox",
             "country": String(gs.playerCountryID.prefix(8)),
+            // 3.11.0: the nation played and its leader, so the column can say who ran what.
+            "country_name": PlayHistory.text(player?.name ?? gs.playerCountryID),
+            "leader": PlayHistory.text(gs.playerCountryID == "USA" ? "" : (player.map { NationModel.leader(for: $0, on: gs.startDate).display } ?? "")),
             "difficulty": gs.difficultyLevel.rawValue,
             "turn_length": gs.turnLength.rawValue,
             "game_date_start": GameCalendar.format(gs.startDate),
@@ -253,6 +256,7 @@ extension GameEngine {
         guard store?.remote != nil else { return }
         sendPlaySession(gs, t, now: now)
         var detail: [String: Any] = ["scenario": gs.shadow.scenarioID ?? "sandbox", "country": gs.playerCountryID,
+                                     "country_name": PlayHistory.text(gs.getPlayerCountry()?.name ?? gs.playerCountryID),
                                      "difficulty": gs.difficultyLevel.rawValue, "turn_length": gs.turnLength.rawValue,
                                      "game_date": gs.currentDateLabel, "turn": gs.turn]
         if let resumedFromTurn { detail["resumed_from_turn"] = resumedFromTurn }

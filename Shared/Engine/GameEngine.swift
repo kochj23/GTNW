@@ -114,7 +114,13 @@ class GameEngine: ObservableObject {
                               turnLength: turnLength)
         logMessages = []
         showingGameOver = false
-        setupShadowSystems()
+        // 3.11.0: another nation's leader gets that nation's real cabinet for the date, and no U.S. presidential elections.
+        if playerCountryID != "USA", let gs = gameState, let me = gs.getPlayerCountry() {
+            gs.advisors = NationModel.cabinet(for: me, on: gs.currentDate)
+            setupShadowSystems(electionsEnabled: false)
+        } else {
+            setupShadowSystems()
+        }
         beginPlaySession()
 
         addLog("WOPR SYSTEM INITIALIZED", type: .system)

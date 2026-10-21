@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] - 2026-10-20 — Play as other nations
+
+### Added
+- **Cabinet research in the repo**: `Documentation/cabinets/`. `data.py`, `build.py` and `nations/` regenerate
+  `cabinets.json`, `generic_roles.json` and `cabinets.md` (33 nations, 12,967 officeholders, 905 uncertain records).
+  `gen_compact.py` builds the bundled `Shared/Resources/nation_cabinets.json`.
+- **`NationModel`** (`Shared/Engine/Shadow/NationModel.swift`):
+  - Holders by date (Gregorian, including Russian imperial dates), with generic titles by government type for gaps
+    and never an invented name. Uncertain holders are marked "?". After 30 Apr 2026 the last earlier holder is kept,
+    marked "(acting/unverified)".
+  - The player's office by government type: PM, party leader or head of state.
+  - The cabinet maps onto the Situation Room posts via the new optional `Advisor.role`, and the rail shows national
+    office titles.
+  - `RemovalMechanism`: no-confidence, coup, revolution, party congress, junta decision or royal dismissal, each with
+    staged warnings and a new `DomesticEnding` and banner. These replace impeachment and the Senate trial for
+    non-U.S. players.
+- **Start screen**: a Nation picker (`NationPickerSheet`) lists every nation in the start year with its leader on
+  that date.
+- Non-U.S. games:
+  - No U.S. presidential elections; the U.S. is computer-run.
+  - Congress, War Powers, the draft, statehood and named U.S. fleets are hidden or refused.
+  - Removal risk is labelled by mechanism.
+- Play history: `country_name` on `game_start` and in the summary, plus `leader`.
+- 13 tests across all seven categories (470 total); snapshots in `Screenshots/3.11.0/`.
+
+### Fixed
+- The 3.8.0 Senate-trial test tolerates a random assassination after an acquittal.
+
 ## [3.10.0] - 2026-10-20 — Antarctica and group actions
 
 ### Added

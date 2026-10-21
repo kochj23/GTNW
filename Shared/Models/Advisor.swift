@@ -44,6 +44,8 @@ struct Advisor: Identifiable, Codable, Hashable {
     /// The concrete action this advisor is currently urging (PresidentialAction raw value) and its target.
     var recommendedAction: String? = nil
     var recommendedTarget: String? = nil
+    /// Situation Room post for a non-U.S. cabinet member (3.11.0); nil = derived from the title as before.
+    var role: String? = nil
 
     /// Initialize a new advisor
     init(
@@ -89,7 +91,7 @@ struct Advisor: Identifiable, Codable, Hashable {
 
     /// Get advisor's initials for placeholder
     var initials: String {
-        name.components(separatedBy: " ")
+        name.hasPrefix("(") ? "—" : name.components(separatedBy: " ")
             .compactMap { $0.first }
             .map { String($0) }
             .joined()

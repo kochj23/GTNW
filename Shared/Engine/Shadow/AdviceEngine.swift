@@ -28,7 +28,7 @@ enum AdvisorStatus: String, Codable {
 extension Advisor {
     var isActive: Bool { (status ?? .active) == .active }
     /// Which of the seven Situation Room posts this advisor fills, if any.
-    var roleKey: String? { ShadowPack.advisorKey(forTitle: title) }
+    var roleKey: String? { role ?? ShadowPack.advisorKey(forTitle: title) }
 }
 
 enum AdviceStance: String, Codable {

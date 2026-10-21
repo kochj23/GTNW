@@ -51,7 +51,7 @@ extension GameEngine {
             let p = pressure(dPop: dPop, dRuth: dRuth)
             var text = String(format: "Approval %+.0f at home.", dPop)
             var level = dPop < -3 ? 1 : 0
-            if let t = war, !isAuthorized(t), gs.currentDate >= CongressModel.warPowersResolution {
+            if let t = war, gs.playerCountryID == "USA", !isAuthorized(t), gs.currentDate >= CongressModel.warPowersResolution {
                 text += " No authorization from Congress: the 60-day War Powers clock starts."
                 level = max(level, 1)
             }

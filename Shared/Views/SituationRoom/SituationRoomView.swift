@@ -217,8 +217,10 @@ struct SituationTopBar: View {
                     .foregroundColor(GTNWColors.terminalRed)
             }
             ImpeachmentRiskBadge(gameState: gameState)
-            divider
-            CongressBadge(gameState: gameState)
+            if gameState.playerCountryID == "USA" {   // U.S.-only systems (3.11.0)
+                divider
+                CongressBadge(gameState: gameState)
+            }
     }
 
     @ViewBuilder private var controls: some View {
@@ -282,7 +284,8 @@ struct AdvisorRail: View {
                             AdvisorPortrait(title: adv?.title ?? AdviceEngine.roleTitle(role), name: adv?.name ?? "Vacant",
                                             size: 38, status: adv == nil ? departed?.status : nil)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(AdviceEngine.roleTitle(role).uppercased())
+                                // 3.11.0: other nations' cabinets show their own offices.
+                                Text((gameState.playerCountryID == "USA" ? AdviceEngine.roleTitle(role) : (adv?.title ?? AdviceEngine.roleTitle(role))).uppercased())
                                     .font(ThemeFont.mono(8, .bold))
                                     .foregroundColor(GTNWColors.neonCyan)
                                     .lineLimit(2)
@@ -317,7 +320,8 @@ struct AdvisorBriefingSheet: View {
             HStack(alignment: .top, spacing: 12) {
                 AdvisorPortrait(title: adv?.title ?? AdviceEngine.roleTitle(role), name: adv?.name ?? "Vacant", size: 90)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(AdviceEngine.roleTitle(role).uppercased()).font(ThemeFont.mono(14, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                    Text((gameState.playerCountryID == "USA" ? AdviceEngine.roleTitle(role) : (adv?.title ?? AdviceEngine.roleTitle(role))).uppercased())
+                        .font(ThemeFont.mono(14, .bold)).foregroundColor(GTNWColors.terminalAmber)
                     Text(adv?.name ?? "This post is vacant").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.neonCyan)
                     if let a = adv {
                         Text("Loyalty \(a.loyalty) · Expertise \(a.expertise) · Hawkishness \(a.hawkishness)")
@@ -433,7 +437,7 @@ struct CountryDossier: View {
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
                 .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver)
                 .accessibilityLabel("Send an expedition to claim \(land?.name ?? id)")
-            if !NavalModel.isLandlocked(id) && !NavalModel.fleets(in: gameState.currentYear).isEmpty {
+            if gameState.playerCountryID == "USA" && !NavalModel.isLandlocked(id) && !NavalModel.fleets(in: gameState.currentYear).isEmpty {
                 Button("FLEET ORDERS") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
             }
         }
@@ -499,7 +503,7 @@ struct CountryDossier: View {
                             Button("SEND AID") { onSheet(.aid) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
                         }
                         Button("CITY VIEW") { onSheet(.city) }.buttonStyle(ThemedButtonStyle())
-                        if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID {
+                        if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID && gameState.playerCountryID == "USA" {
                             Button("CONGRESS") { onSheet(.congress) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
                                 .help("Ask Congress for a declaration of war or an authorization to use force")
                             Button("FLEET") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))

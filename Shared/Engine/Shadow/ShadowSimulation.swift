@@ -687,11 +687,15 @@ extension GameEngine {
             // Congress watches the polls.
             let stage = PopularityModel.nextImpeachmentStage(current: gs.shadow.impeachmentStage, popularity: gs.shadow.popularity,
                                                              ruthlessness: gs.shadow.ruthlessness, congress: player.congressionalSupport)
+            // 3.11.0: other nations' leaders fall their own way (no-confidence, coup, party congress…).
+            let mechanism = NationModel.removal(player, on: to)
             if stage != gs.shadow.impeachmentStage {
-                if stage > 0 { gs.shadow.post(PopularityModel.impeachmentText(stage: stage), date: to, severity: stage >= 3 ? 3 : 2) }
-                else { gs.shadow.post("Congress drops its investigation of the White House.", date: to, severity: 1) }
+                if stage > 0 && (stage < 4 || mechanism == .impeachment) { gs.shadow.post(mechanism.stageText(stage), date: to, severity: stage >= 3 ? 3 : 2) }
+                else { gs.shadow.post(mechanism == .impeachment ? "Congress drops its investigation of the White House." : "The threat to your leadership passes.", date: to, severity: 1) }
                 gs.shadow.impeachmentStage = stage
-                if stage >= 4 {
+                if stage >= 4 && mechanism != .impeachment {
+                    endPresidency(mechanism.ending)
+                } else if stage >= 4 {
                     // 3.8.0: the Senate trial. Two-thirds must vote to convict.
                     let senate = CongressModel.senate(congress: gs.countries[pi].congressionalSupport, popularity: gs.shadow.popularity)
                     if CongressModel.convicts(senateSupport: senate) {
@@ -760,7 +764,7 @@ extension GameEngine {
         gs.shadow.post(ending.headline, date: gs.currentDate, severity: 3)
         addLog("🏛️ \(ending.headline)", type: .critical)
         switch ending {
-        case .impeached: ShadowPack.shared.play("sfx.lockdown")
+        case .impeached, .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal: ShadowPack.shared.play("sfx.lockdown")
         case .assassinated: ShadowPack.shared.play("sfx.gunshot")
         default: break
         }

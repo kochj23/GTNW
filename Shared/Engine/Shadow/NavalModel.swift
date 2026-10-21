@@ -264,6 +264,7 @@ extension GameEngine {
     /// Why this order can't be given right now, in a line for the sheet; nil when it can.
     func fleetOrderProblem(fleetID: String, target: String, mission: NavalMission) -> String? {
         guard let gs = gameState else { return "No game in progress." }
+        if gs.playerCountryID != "USA" { return "Named fleets are U.S. fleets: other navies aren't modelled yet." }
         guard let fleet = NavalModel.fleet(id: fleetID), fleet.period(in: gs.currentYear) != nil else {
             return "That fleet doesn't exist in \(gs.currentYear)."
         }

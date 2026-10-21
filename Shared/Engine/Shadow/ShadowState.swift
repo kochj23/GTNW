@@ -17,6 +17,8 @@ enum DomesticEnding: String, Codable, CaseIterable {
     case impeached
     case assassinated
     case civilWar
+    // How leaders of other nations fall (3.11.0).
+    case noConfidence, coup, revolution, partyCongress, juntaDecision, royalDismissal
 
     var headline: String {
         switch self {
@@ -24,6 +26,12 @@ enum DomesticEnding: String, Codable, CaseIterable {
         case .impeached: return "Congress has removed you from office."
         case .assassinated: return "The President has been assassinated."
         case .civilWar: return "The country has collapsed into civil war."
+        case .noConfidence: return "The government loses a vote of no confidence. You are out."
+        case .coup: return "The army has seized power. You are overthrown."
+        case .revolution: return "Revolution sweeps the regime away."
+        case .partyCongress: return "The party congress removes you from the leadership."
+        case .juntaDecision: return "The junta votes to replace you."
+        case .royalDismissal: return "The monarch dismisses you from office."
         }
     }
 }

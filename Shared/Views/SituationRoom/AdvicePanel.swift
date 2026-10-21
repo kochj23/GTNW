@@ -90,6 +90,7 @@ struct AdvisorPortrait: View {
     }
 
     private var initials: String {
+        if name.hasPrefix("(") { return "—" }   // "(no record)" (3.11.0)
         let parts = name.replacingOccurrences(of: "Acting: ", with: "").split(separator: " ")
         return parts.prefix(2).compactMap { $0.first }.map(String.init).joined()
     }
