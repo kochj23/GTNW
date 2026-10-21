@@ -5202,3 +5202,178 @@ final class DirtyTacticsDeceptionTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.17.5: dirty tactics — the sea, and what is left on the ground
+
+@MainActor
+final class DirtyTacticsSeaTests: XCTestCase {
+
+    private func game(_ year: Int) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        return (e, try XCTUnwrap(e.gameState))
+    }
+
+    private func war(_ year: Int, with foe: String) throws -> (GameEngine, GameState) {
+        let (e, gs) = try game(year)
+        e.declareWar(aggressor: gs.playerCountryID, defender: foe)
+        e.syncFronts()
+        return (e, gs)
+    }
+
+    // Unit: the eras and the treaties, including the ones the United States never joined
+    func testSeaErasAndTreaties() {
+        let press = DirtyTactics.tactic("impressment")!
+        XCTAssertTrue(press.exists(in: 1807))
+        XCTAssertFalse(press.exists(in: 1860), "impressment died with the age of sail")
+        let subs = DirtyTactics.tactic("unrestricted_submarine")!
+        XCTAssertTrue(subs.isStance)
+        XCTAssertFalse(subs.exists(in: 1914))
+        XCTAssertEqual(subs.status(in: 1917), .legal, "no treaty yet; prize rules were custom")
+        XCTAssertEqual(subs.status(in: 1932), .restricted, "the London Naval Treaty of 1930")
+        XCTAssertEqual(subs.status(in: 1941), .treatyBanned, "the London Protocol of 1936")
+        let hired = DirtyTactics.tactic("hired_troops")!
+        XCTAssertEqual(hired.status(in: 1776), .legal)
+        XCTAssertEqual(hired.status(in: 1990), .restricted, "AP I Art. 47")
+        XCTAssertTrue(try XCTUnwrap(hired.note(in: 2010)).contains("not a party"), "the U.S. never joined the Mercenary Convention")
+        let mines = DirtyTactics.tactic("landmines")!
+        XCTAssertFalse(mines.exists(in: 1861))
+        XCTAssertEqual(mines.status(in: 1900), .legal)
+        XCTAssertEqual(mines.status(in: 1990), .restricted, "CCW Protocol II")
+        XCTAssertEqual(mines.status(in: 2005), .treatyBanned, "Ottawa, in force 1 March 1999")
+        XCTAssertTrue(try XCTUnwrap(mines.note(in: 2005)).contains("never joined"))
+        let fire = DirtyTactics.tactic("firebomb_cities")!
+        XCTAssertTrue(fire.isStance)
+        XCTAssertFalse(fire.exists(in: 1936))
+        XCTAssertEqual(fire.status(in: 1945), .legal, "the 1923 Hague air rules were never adopted")
+        XCTAssertEqual(fire.status(in: 1990), .restricted)
+        XCTAssertEqual(fire.status(in: 2010), .treatyBanned)
+    }
+
+    // Functional: press gangs put men on top of the era's pool, and somebody objects
+    func testPressGangsAddMenAndAGrievance() throws {
+        let (e, gs) = try game(1807)
+        let pool = AttackSizing.troopPool(gs)
+        XCTAssertNotNil(e.useTactic("impressment"))
+        XCTAssertGreaterThan(AttackSizing.troopPool(gs), pool, "men on top of the era's army")
+        XCTAssertGreaterThan(gs.shadow.pressedTroops, 0)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("its subjects") })
+    }
+
+    // Functional: hired regiments come on top of the cap, and their sovereign can take them back
+    func testHiredTroopsAndTheirSovereign() throws {
+        let (e, gs) = try game(1800)
+        let lender = try XCTUnwrap(gs.liveCountries.first { $0.id != gs.playerCountryID })
+        gs.setRelation(from: lender.id, to: gs.playerCountryID, value: 40)
+        let pool = AttackSizing.troopPool(gs)
+        XCTAssertNotNil(e.useTactic("hired_troops", target: lender.id))
+        XCTAssertGreaterThan(AttackSizing.troopPool(gs), pool)
+        XCTAssertGreaterThan(gs.shadow.hiredContingents[lender.id] ?? 0, 0)
+        // Fall out with them and the regiments go home.
+        gs.setRelation(from: lender.id, to: gs.playerCountryID, value: -50)
+        e.processDirtyTactics()
+        XCTAssertNil(gs.shadow.hiredContingents[lender.id], "their sovereign has a say")
+        XCTAssertEqual(AttackSizing.troopPool(gs), pool, accuracy: 1e-6)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("recalls") })
+    }
+
+    // Functional: a nation that will not lend, and one at war with you
+    func testHiringNeedsAWillingSovereign() throws {
+        let (e, gs) = try game(1800)
+        let lender = try XCTUnwrap(gs.liveCountries.first { $0.id != gs.playerCountryID })
+        gs.setRelation(from: lender.id, to: gs.playerCountryID, value: -30)
+        XCTAssertNotNil(e.tacticProblem("hired_troops", target: lender.id), "nobody rents regiments to a nation they dislike")
+        gs.setRelation(from: lender.id, to: gs.playerCountryID, value: 40)
+        XCTAssertNil(e.tacticProblem("hired_troops", target: lender.id))
+        e.declareWar(aggressor: lender.id, defender: gs.playerCountryID)
+        XCTAssertNotNil(e.tacticProblem("hired_troops", target: lender.id))
+    }
+
+    // Functional: unrestricted submarine warfare strangles an island enemy and angers the neutrals
+    func testUnrestrictedSubmarineWarfare() throws {
+        let (e, gs) = try war(1942, with: "JPN")
+        XCTAssertTrue(e.setStance("unrestricted_submarine", target: "JPN", on: true))
+        let gdp = try XCTUnwrap(gs.getCountry(id: "JPN")).gdp
+        for _ in 0..<24 { gs.turn += 1; e.processTacticStances() }
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "JPN")).gdp, gdp * 0.9)
+        // A neutral goes down about once every other year, so give it the years rather than one roll.
+        var sankANeutral = gs.shadow.ticker.contains { $0.text.contains("without warning") }
+        for _ in 0..<96 where !sankANeutral {
+            gs.turn += 1
+            e.processTacticStances()
+            sankANeutral = gs.shadow.ticker.contains { $0.text.contains("without warning") }
+        }
+        XCTAssertTrue(sankANeutral, "neutral shipping goes down too")
+    }
+
+    // Functional: a firebombing stance, and what it does to a city
+    func testFirebombingStance() throws {
+        let (e, gs) = try war(1945, with: "JPN")
+        XCTAssertTrue(e.setStance("firebomb_cities", target: "JPN", on: true))
+        let stability = try XCTUnwrap(gs.getCountry(id: "JPN")).stability
+        let dead = gs.totalCasualties
+        for _ in 0..<6 { gs.turn += 1; e.processTacticStances() }
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "JPN")).stability, stability)
+        XCTAssertGreaterThan(gs.totalCasualties, dead)
+        XCTAssertTrue(e.setStance("firebomb_cities", target: "JPN", on: false))
+        XCTAssertTrue(gs.shadow.tacticStances.isEmpty)
+    }
+
+    // Security: nothing from a later era, and no stance on a nation you are not fighting
+    func testSeaTargetsAndEras() throws {
+        let (e, gs) = try game(1807)
+        XCTAssertNil(e.useTactic("landmines", target: "GBR"), "land torpedoes are 1862")
+        XCTAssertNil(e.useTactic("firebomb_cities", target: "GBR"))
+        XCTAssertNotNil(e.tacticProblem("unrestricted_submarine", target: "GBR"))
+        XCTAssertTrue(gs.shadow.tacticUses.isEmpty)
+        let (e2, gs2) = try game(1945)
+        XCTAssertNotNil(e2.tacticProblem("impressment"), "the press gang belongs to the age of sail")
+        XCTAssertNil(e2.useTactic("impressment"))
+        XCTAssertEqual(gs2.shadow.pressedTroops, 0)
+    }
+
+    // Integration: mines go on killing for thirty years, through the turn loop
+    func testMinesKeepKillingForYears() throws {
+        let (e, gs) = try war(1970, with: "VNM")
+        XCTAssertNotNil(e.useTactic("landmines", target: "VNM"))
+        XCTAssertEqual(gs.shadow.aftermath.count, 1)
+        var tolls = 0
+        for _ in 0..<35 {
+            gs.turn += 12
+            let before = gs.shadow.ticker.count
+            e.processDirtyTactics()
+            if gs.shadow.ticker.dropFirst(before).contains(where: { $0.text.contains("kill farmers") }) { tolls += 1 }
+        }
+        XCTAssertGreaterThan(tolls, 10, "a mined country keeps paying")
+        XCTAssertTrue(gs.shadow.aftermath.isEmpty, "and then, after thirty years, it stops")
+    }
+
+    // Retry: pressed and hired men survive a save, and an old save has neither
+    func testManpowerStateSurvivesSave() throws {
+        let legacy = try JSONDecoder().decode(ShadowState.self, from: Data("{\"popularity\":50}".utf8))
+        XCTAssertEqual(legacy.pressedTroops, 0)
+        XCTAssertTrue(legacy.hiredContingents.isEmpty)
+        let (e, gs) = try game(1800)
+        let lender = try XCTUnwrap(gs.liveCountries.first { $0.id != gs.playerCountryID })
+        gs.setRelation(from: lender.id, to: gs.playerCountryID, value: 40)
+        e.useTactic("impressment")
+        e.useTactic("hired_troops", target: lender.id)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertGreaterThan(loaded.shadow.pressedTroops, 0)
+        XCTAssertGreaterThan(loaded.shadow.hiredContingents[lender.id] ?? 0, 0)
+    }
+
+    // Performance: all six groups stay cheap to list and price
+    func testAllSixGroupsStayCheap() {
+        XCTAssertEqual(Set(DirtyTactics.all.map(\.group)).count, TacticGroup.allCases.count, "every group has tactics")
+        measure {
+            for _ in 0..<400 {
+                for y in [1789, 1807, 1862, 1917, 1945, 1999, 2025] {
+                    for g in TacticGroup.allCases {
+                        for t in DirtyTactics.available(in: y, group: g) { _ = DirtyTactics.discoveryChance(t, year: y) }
+                    }
+                }
+            }
+        }
+    }
+}

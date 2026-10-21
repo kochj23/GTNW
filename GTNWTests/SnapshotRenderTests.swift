@@ -721,5 +721,21 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(760)), name: "tactics-deception-1964-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.5: the sea and what is left on the ground, in 1945, at war with Japan.
+    @MainActor
+    func testRenderDirtyTacticsSea() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1945)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.declareWar(aggressor: gs.playerCountryID, defender: "JPN")
+        engine.syncFronts()
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let sheet = DirtyTacticsSheet(gameState: gs, targetID: "JPN", scrolls: false, startGroup: .sea)
+            print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(760)), name: "tactics-sea-1945-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif
