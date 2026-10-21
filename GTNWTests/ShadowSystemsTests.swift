@@ -789,7 +789,7 @@ final class UnclaimedLandTests: XCTestCase {
         XCTAssertEqual(gs.eraStartYear, 1850)
         XCTAssertTrue(gs.unclaimedLandIDs.contains("NGA"))
         XCTAssertNil(gs.getCountry(id: "NGA"), "unclaimed land is not a country, so it never takes a computer turn")
-        XCTAssertTrue(GameState(playerCountryID: "USA").unclaimedLandIDs.isEmpty)
+        XCTAssertEqual(GameState(playerCountryID: "USA").unclaimedLandIDs, [Antarctica.id], "only Antarctica (3.10.0) in a modern game")
     }
 
     // Functional: the whole flow
@@ -1749,6 +1749,8 @@ final class ExpansionTests: XCTestCase {
             gs.turn += 1
             engine.processShadowTurn()
             stages.append(gs.shadow.impeachmentStage)
+            // A random assassination is noise for a balance replay; only impeachment counts here.
+            if gs.shadow.domesticEnding == .assassinated { gs.shadow.domesticEnding = nil; gs.gameOver = false }
             if gs.shadow.domesticEnding != nil { break }
         }
         return stages
@@ -2369,5 +2371,210 @@ final class ManpowerPlayHistoryTests: XCTestCase {
         let events = await remote.events(id)
         XCTAssertTrue(events.contains { $0.kind == "mobilization_called" })
         XCTAssertEqual(PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "statehood" }))["number"] as? Int, 49)
+    }
+}
+
+// MARK: - Antarctica and group actions (3.10.0)
+
+@MainActor
+final class AntarcticaTests: XCTestCase {
+
+    private func day(_ y: Int, _ m: Int, _ d: Int) -> Date { GameCalendar.date(year: y, month: m, day: d) }
+
+    private func game(year: Int) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        gs.eraStartYear = year
+        return (engine, gs)
+    }
+
+    func testTreatyClaimsAndResourcesByEra() {
+        XCTAssertEqual(Antarctica.legalStatus(on: day(1959, 11, 30)), .legal)
+        XCTAssertEqual(Antarctica.legalStatus(on: day(1960, 6, 1)), .restricted, "signed, not yet in force")
+        XCTAssertEqual(Antarctica.legalStatus(on: day(1961, 6, 22)), .restricted)
+        XCTAssertEqual(Antarctica.legalStatus(on: day(1961, 6, 23)), .treatyBanned)
+        XCTAssertTrue(Antarctica.claims(by: 1907).isEmpty)
+        XCTAssertEqual(Antarctica.claims(by: 1925).count, 3)
+        XCTAssertEqual(Antarctica.claims(by: 1950).count, 7)
+        let k = { (y: Int) in Set(ExpansionModel.deposits(for: Antarctica.id, year: y).map(\.kind)) }
+        XCTAssertTrue(k(1950).contains(.whaling)); XCTAssertFalse(k(1970).contains(.whaling))
+        XCTAssertTrue(k(1880).contains(.sealing)); XCTAssertFalse(k(1950).contains(.science)); XCTAssertTrue(k(1960).contains(.science))
+        XCTAssertFalse(k(2047).contains(.minerals)); XCTAssertTrue(k(2048).contains(.minerals), "Madrid Protocol review")
+        XCTAssertFalse(k(2030).contains(.oil))
+        XCTAssertNotNil(WorldCountriesDatabase.template(id: Antarctica.id))
+        XCTAssertTrue(WorldMapData.shared.shapes.contains { $0.id == Antarctica.id }, "it has its own map shape")
+    }
+
+    func testClaimBeforeTheTreatyIsJustAnotherClaim() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(gs.unclaimedLandIDs.contains(Antarctica.id))
+        XCTAssertTrue(engine.claimLand(Antarctica.id, troops: 1))
+        XCTAssertEqual(gs.getCountry(id: Antarctica.id)?.territoryOf, "USA")
+        XCTAssertEqual(gs.shadow.impeachmentStage, 0)
+        XCTAssertFalse(gs.shadow.ticker.contains { $0.text.contains("Antarctic Treaty") })
+        XCTAssertEqual(OccupationModel.neededGarrison(gs.getCountry(id: Antarctica.id)!), 0.5)
+    }
+
+    func testClaimAfter1961BreaksTheTreaty() throws {
+        let (engine, gs) = try game(year: 2025)
+        let fra0 = gs.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0
+        let w = engine.advisorWarnings(for: .claim(land: Antarctica.id, troops: 1))
+        XCTAssertEqual(w[1].level, 2); XCTAssertTrue(w[1].text.contains("Antarctic Treaty"))
+        XCTAssertTrue(engine.claimLand(Antarctica.id, troops: 1))
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("violates the Antarctic Treaty") })
+        XCTAssertGreaterThanOrEqual(gs.shadow.impeachmentStage, 1, "a treaty violation opens hearings")
+        XCTAssertLessThan(gs.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0, fra0 - 30)
+    }
+
+    func testTheColdTakesItsToll() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand(Antarctica.id, troops: 10))
+        let gdp = gs.getPlayerCountry()!.gdp
+        for _ in 0..<6 { gs.turn += 1; engine.processAntarctica() }
+        XCTAssertLessThan(gs.shadow.garrisons[Antarctica.id] ?? 99, 8, "5% a month to the cold")
+        XCTAssertLessThan(gs.getPlayerCountry()!.gdp, gdp, "and upkeep is paid")
+        XCTAssertEqual(gs.getCountry(id: Antarctica.id)?.profile.outcry, 0, "nobody to rebel")
+        for _ in 0..<200 { gs.turn += 1; engine.processAntarctica() }
+        XCTAssertGreaterThanOrEqual(gs.shadow.garrisons[Antarctica.id] ?? 0, 0.5, "a skeleton crew always remains")
+    }
+}
+
+@MainActor
+final class GroupActionTests: XCTestCase {
+
+    private func modern() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    private func twin(_ gs: GameState) throws -> (GameEngine, GameState) {
+        let copy = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let e = GameEngine(); e.gameState = copy
+        return (e, copy)
+    }
+
+    func testMembersOfEachKindOfGroup() throws {
+        let (engine, gs) = try modern()
+        let allies = engine.groupMembers(.allies)
+        XCTAssertFalse(allies.isEmpty)
+        XCTAssertTrue(allies.contains("GBR") && allies.contains("FRA"), "NATO allies in 2025")
+        XCTAssertFalse(allies.contains("RUS")); _ = gs
+        XCTAssertFalse(allies.contains("USA"))
+        let europe = engine.groupMembers(.region(.europe))
+        XCTAssertTrue(europe.contains("FRA")); XCTAssertFalse(europe.contains("JPN"))
+        XCTAssertEqual(engine.groupMembers(.custom(name: "x", ids: ["FRA", "ZZZ", "DEU"])), ["FRA", "DEU"], "unknown ids drop out")
+        XCTAssertTrue(engine.groupMembers(.territories).isEmpty)
+    }
+
+    func testPlansSplitTheMoneyAndAddUp() throws {
+        let (engine, _) = try modern()
+        let members = ["FRA", "MEX", "IND"]
+        let even = engine.planGroupAction(.money, members: members, amount: 9, split: .even)
+        XCTAssertNil(even.problem)
+        XCTAssertEqual(even.lines.map(\.amount), [3, 3, 3])
+        let need = engine.planGroupAction(.aid, members: members, amount: 9, split: .byNeed)
+        XCTAssertEqual(need.lines.reduce(0) { $0 + $1.amount }, 9, accuracy: 1e-9)
+        XCTAssertNotEqual(Set(need.lines.map(\.amount)).count, 1, "by need is not even")
+    }
+
+    func testGroupMessageMatchesSingleActionsAndCostsOneAction() throws {
+        let (e1, g1) = try modern()
+        let (e2, g2) = try twin(g1)
+        let members = ["FRA", "DEU", "JPN"]
+        let used = g1.actionsUsedThisTurn
+        XCTAssertNotNil(e1.executeGroupAction(.message, members: members, groupName: "Friends"))
+        for id in members { e2.executeShadowPresidentAction(.jointStatement, from: "USA", to: id) }
+        for id in members {
+            XCTAssertEqual(g1.getCountry(id: id)!.diplomaticRelations["USA"], g2.getCountry(id: id)!.diplomaticRelations["USA"], id)
+            XCTAssertEqual(g1.getPlayerCountry()!.diplomaticRelations[id], g2.getPlayerCountry()!.diplomaticRelations[id], id)
+        }
+        XCTAssertEqual(g1.actionsUsedThisTurn, used + 1, "one action for the whole group")
+    }
+
+    func testMoneyAndGarrisonsGoThroughTheSingleNationCode() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        for id in ["NGA", "KEN", "GHA"] { gs.actionsUsedThisTurn = 0; XCTAssertTrue(engine.claimLand(id, troops: 2)) }
+        gs.actionsUsedThisTurn = 0
+        XCTAssertNotNil(engine.executeGroupAction(.garrison, members: engine.groupMembers(.territories), amount: 6, groupName: "Territories"))
+        for id in ["NGA", "KEN", "GHA"] { XCTAssertEqual(gs.shadow.garrisons[id], 6) }
+        XCTAssertEqual(gs.actionsUsedThisTurn, 0, "garrison changes are free, as they are singly")
+        let pool = gs.shadow.aidRemaining
+        XCTAssertNotNil(engine.executeGroupAction(.money, members: ["FRA", "MEX"], amount: min(2, pool), split: .even))
+        XCTAssertLessThanOrEqual(gs.shadow.aidRemaining, pool)
+        XCTAssertNotNil(gs.shadow.aidSent["FRA"])
+    }
+
+    // Security
+
+    func testBadGroupOrdersAreRefusedAndChangeNothing() throws {
+        let (engine, gs) = try modern()
+        let snapshot = gs.countries
+        XCTAssertNil(engine.executeGroupAction(.sanctions, members: []))
+        XCTAssertNil(engine.executeGroupAction(.money, members: ["FRA"], amount: .nan))
+        XCTAssertNil(engine.executeGroupAction(.money, members: ["FRA"], amount: gs.shadow.aidRemaining + 1000))
+        XCTAssertNil(engine.executeGroupAction(.garrison, members: ["FRA"], amount: 5), "garrisons are for territories")
+        XCTAssertEqual(gs.countries, snapshot)
+        XCTAssertFalse(engine.saveGroup(name: "", ids: ["FRA"]))
+        XCTAssertFalse(engine.saveGroup(name: "Bad\nName", ids: ["FRA"]))
+        XCTAssertFalse(engine.saveGroup(name: "Empty", ids: []))
+        gs.actionsUsedThisTurn = gs.actionsPerTurn
+        XCTAssertNotNil(engine.planGroupAction(.message, members: ["FRA"]).problem, "no actions left")
+    }
+
+    // Retry / persistence
+
+    func testSavedGroupsSurviveAReloadAndOldSavesDecode() throws {
+        let (engine, gs) = try modern()
+        XCTAssertTrue(engine.saveGroup(name: "  Old Friends ", ids: ["GBR", "FRA", "GBR"]))
+        XCTAssertEqual(gs.shadow.savedGroups["Old Friends"], ["FRA", "GBR"])
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.savedGroups, gs.shadow.savedGroups)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        shadow.removeValue(forKey: "savedGroups"); json["shadow"] = shadow
+        XCTAssertTrue(try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json)).shadow.savedGroups.isEmpty)
+    }
+
+    // Performance
+
+    func testPlanningBigGroupsIsCheap() throws {
+        let (engine, _) = try modern()
+        measure {
+            for r in WorldRegion.allCases {
+                let m = engine.groupMembers(.region(r))
+                _ = engine.planGroupAction(.aid, members: m, amount: 5, split: .byNeed)
+                _ = engine.planGroupAction(.sanctions, members: m)
+            }
+        }
+    }
+}
+
+final class GroupActionPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testOneEventPerGroupActionListingItsMembers() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        let id = try XCTUnwrap(e.gameState?.shadow.playSessionID)
+        XCTAssertNotNil(e.executeGroupAction(.recall, members: ["IRN", "PRK"], groupName: "Rogues"))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let groups = await remote.events(id).filter { $0.kind == "group_action" }
+        XCTAssertEqual(groups.count, 1)
+        let d = PlayFixtures.detail(groups[0])
+        XCTAssertEqual(d["members"] as? [String], ["IRN", "PRK"])
+        XCTAssertEqual(d["group"] as? String, "Rogues")
     }
 }

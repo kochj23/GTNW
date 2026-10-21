@@ -362,5 +362,30 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(detail, size: CGSize(width: FontScale.w(800), height: FontScale.h(700)), name: "grid-territory-\(t)").path)")
         }
     }
+
+    /// 3.10.0: Antarctica on the map and in its dossier (1913 and 2025), and the group-action sheet.
+    @MainActor
+    func testRenderAntarcticaAndGroupActions() throws {
+        let old = GameEngine()
+        old.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let g1913 = try XCTUnwrap(old.gameState)
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            let map = VectorWorldMap(gameState: g1913, selectedCountryID: .constant(Antarctica.id), zoom: .constant(.world), filter: .constant(.alignment))
+            print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "antarctica-map-\(t)").path)")
+            let dossiers = HStack(alignment: .top) {
+                CountryDossier(gameState: g1913, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: Antarctica.id).environmentObject(old).frame(width: FontScale.w(300))
+                CountryDossier(gameState: gs, country: nil, onSheet: { _ in }, scrolls: false, unclaimedID: Antarctica.id).environmentObject(engine).frame(width: FontScale.w(300))
+            }
+            print("SNAPSHOT \(try render(dossiers, size: CGSize(width: FontScale.w(620), height: FontScale.h(640)), name: "antarctica-dossier-\(t)").path)")
+            let sheet = GroupActionSheet(gameState: gs, live: false, pick: .allies, kind: .aid, amount: 12, split: .byNeed).environmentObject(engine)
+            print("SNAPSHOT \(try render(sheet, size: CGSize(width: FontScale.w(820), height: FontScale.h(560)), name: "group-action-\(t)").path)")
+        }
+    }
 }
 #endif
