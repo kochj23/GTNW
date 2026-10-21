@@ -1728,12 +1728,16 @@ struct DirtyTacticsSheet: View {
     var targetID: String?
     /// Offscreen snapshots can't render scroll views; they pass false.
     var scrolls = true
-    @State private var group: TacticGroup = .chemical
+    /// Which group the panel opens on (snapshots pick one).
+    var startGroup: TacticGroup = .chemical
+    @State private var group: TacticGroup?
     @State private var preset: AttackPreset = .standard
 
     var body: some View {
         let year = gameState.currentYear
         let groups = TacticGroup.allCases.filter { !DirtyTactics.available(in: year, group: $0).isEmpty }
+        let want = group ?? startGroup
+        let pick = groups.contains(want) ? want : (groups.first ?? want)
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "eye.slash")
@@ -1743,20 +1747,20 @@ struct DirtyTacticsSheet: View {
             }
             .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
             if groups.count > 1 {
-                ScaledSegmentedPicker(selection: $group, options: groups.map { ($0, $0.title) })
+                ScaledSegmentedPicker(selection: Binding(get: { pick }, set: { group = $0 }), options: groups.map { ($0, $0.title) })
             }
             HStack(spacing: 8) {
                 Text("SCALE").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
                 ScaledSegmentedPicker(selection: $preset, options: AttackPreset.allCases.map { ($0, $0.title) })
             }
-            let shown = DirtyTactics.available(in: year, group: groups.contains(group) ? group : groups.first)
+            let shown = DirtyTactics.available(in: year, group: pick)
             if shown.isEmpty {
                 Text("Nothing in this line of work is possible in \(String(year)).")
                     .font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan)
             }
             let list = VStack(alignment: .leading, spacing: 6) {
                 ForEach(shown) { t in row(t) }
-                ForEach(DirtyTactics.all.filter { $0.group == group && year < $0.from }) { t in
+                ForEach(DirtyTactics.all.filter { $0.group == pick && year < $0.from }) { t in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(verbatim: "\(t.name.uppercased()) — NOT POSSIBLE UNTIL \(String(t.from))")
                             .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.neonCyan)

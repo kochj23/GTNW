@@ -65,6 +65,10 @@ enum NovaCommentary {
         } else if t.contains("gas") || t.contains("infected") || t.contains("defoliant") || t.contains("programme") || t.contains("sprayi") {
             pool = ["Chemistry: the most patient branch of warfare.", "Nobody writes songs about this one.",
                     "The wind, I should mention, does not take orders."]
+        } else if t.contains("burn") || t.contains("alight") || t.contains("napalm") || t.contains("flamethrow") || t.contains("incendiar") {
+            // 3.17.1: fire.
+            pool = ["Fire does not read the orders either.", "Somebody will call this a turning point. Somebody lived there.",
+                    "The glow is visible for thirty miles. So is the decision."]
         } else if t.contains("territor") || t.contains("claim") || t.contains("levy") || t.contains("annex") || t.contains("producing") {
             pool = ["Another flag, another ledger line.", "The map gets redder; the accountants get happier.",
                     "Empire: it's mostly paperwork and resentment."]

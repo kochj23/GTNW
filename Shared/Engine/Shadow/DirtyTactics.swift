@@ -135,7 +135,7 @@ enum DirtyTactics {
     // MARK: Catalog
 
     /// Every tactic in the game. Groups are added one release at a time (3.17.0 … 3.17.5).
-    static let all: [DirtyTactic] = chemical
+    static let all: [DirtyTactic] = chemical + incendiary
 
     static func tactic(_ id: String) -> DirtyTactic? { all.first { $0.id == id } }
 
@@ -273,6 +273,82 @@ extension DirtyTactics {
             blurb: "Spray the cover off the country. Operation Ranch Hand flew from January 1962 to January 1971 and "
                  + "put some 20 million gallons of herbicide, Agent Orange among them, over South Vietnam. The enemy "
                  + "loses his cover and his harvest; the dioxin bill arrives twenty years later.",
+            target: .nation, canBeCovert: false, people: 10),
+    ]
+}
+
+// MARK: - The incendiary group (3.17.1)
+
+extension DirtyTactics {
+    static let ccwNote = "Restricted: CCW Protocol III on incendiary weapons (in force 1983; the United States ratified it in 2009 with a reservation)."
+    static let hague1907DestructionNote = "Restricted: Hague IV Art. 23(g) and Art. 25 (1907) — no destruction beyond the necessity of war, no attack on undefended towns."
+    static let geneva1949DestructionNote = "Banned: Geneva Convention IV Art. 53 (1949) — wanton destruction of property."
+
+    /// Fire as a weapon, era by era. Byzantine Greek fire — first used in the defence of Constantinople in 672 and
+    /// credited to Kallinikos of Heliopolis — is older than this game and its recipe was lost; the nineteenth-century
+    /// "Greek fire" shells below only borrowed the name.
+    static let incendiary: [DirtyTactic] = [
+        DirtyTactic(
+            id: "hot_shot", group: .incendiary, name: "Heated shot",
+            from: 1789, to: 1865,
+            periods: [p(1789, .legal, "No rule of war covers it; it is ordinary gunnery.")],
+            blurb: "Round shot heated in a furnace until it glows, fired into wooden hulls and waterfronts. It broke "
+                 + "the floating batteries at Gibraltar in 1782 and stayed in coastal forts until iron hulls and "
+                 + "explosive shell made it pointless.",
+            target: .nation, canBeCovert: false, people: 1),
+        DirtyTactic(
+            id: "congreve_rockets", group: .incendiary, name: "Congreve rockets",
+            from: 1805, to: 1870,
+            periods: [p(1805, .legal, "No rule of war covers it."),
+                      p(1863, .restricted, lieberNote)],
+            blurb: "William Congreve's rockets, in service from 1805: Boulogne 1806, Copenhagen 1807, Fort McHenry "
+                 + "in September 1814 — the rockets' red glare — and a U.S. rocket battery at Veracruz in 1847. They "
+                 + "cannot be aimed, which is rather the point: they set fire to whatever is behind the enemy.",
+            target: .nation, canBeCovert: false, people: 2),
+        DirtyTactic(
+            id: "incendiary_shells", group: .incendiary, name: "Incendiary shells and arson",
+            from: 1861, to: 1945,
+            periods: [p(1861, .legal, "No rule of war covers it yet."),
+                      p(1863, .restricted, lieberNote),
+                      p(1899, .restricted, hague1907DestructionNote),
+                      p(1949, .treatyBanned, geneva1949DestructionNote)],
+            blurb: "Shells of burning compound fired into a city, or agents with the same stuff in carpet bags. The "
+                 + "Union fired \"Greek fire\" shells into Charleston from the Marsh Battery in August 1863; "
+                 + "Confederate agents tried to burn the New York hotels on 25 November 1864 and were hanged for it. "
+                 + "Byzantine Greek fire, first used in 672, was something else entirely, and its recipe was lost.",
+            target: .nation, canBeCovert: true, people: 1),
+        DirtyTactic(
+            id: "burn_towns", group: .incendiary, name: "Burn the towns",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule of war covers it."),
+                      p(1863, .restricted, lieberNote),
+                      p(1907, .restricted, hague1907DestructionNote),
+                      p(1949, .treatyBanned, geneva1949DestructionNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Put the countryside and its towns to the torch so the enemy cannot live in them. The British "
+                 + "burned Washington on 24 August 1814; Sherman burned Atlanta in November 1864 and Columbia in "
+                 + "February 1865; Sheridan burned the Shenandoah Valley through September and October 1864. An army "
+                 + "cannot do this quietly.",
+            target: .nation, canBeCovert: false, people: 40),
+        DirtyTactic(
+            id: "flamethrowers", group: .incendiary, name: "Flamethrowers",
+            from: 1915,
+            periods: [p(1915, .legal, "No treaty covers it; the law of war applies as usual."),
+                      p(1983, .restricted, ccwNote)],
+            blurb: "Burn the defenders out of what they are holding. German Flammenwerfer troops were first used at "
+                 + "Hooge on 30 July 1915; U.S. M1A1 and M2 flamethrowers cleared caves and bunkers across the "
+                 + "Pacific from 1943. It takes positions that artillery cannot.",
+            target: .nation, canBeCovert: false, people: 5),
+        DirtyTactic(
+            id: "napalm_wp", group: .incendiary, name: "Napalm and white phosphorus",
+            from: 1942,
+            periods: [p(1942, .legal, "No treaty covers incendiaries."),
+                      p(1983, .restricted, ccwNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Thickened petrol that sticks and burns, and phosphorus that cannot be put out. Napalm came out "
+                 + "of Louis Fieser's work at Harvard in 1942–43 and went into combat in 1944; white phosphorus had "
+                 + "been in service since the First World War. Against a city it is the most destructive thing short "
+                 + "of a warhead.",
             target: .nation, canBeCovert: false, people: 10),
     ]
 }
@@ -501,6 +577,17 @@ extension DirtyTactics {
         case "defoliants":
             return "Synthetic herbicides come out of wartime research: 2,4-D was published in 1944 and the spray "
                  + "aircraft that carry them later still."
+        case "congreve_rockets":
+            return "William Congreve's rockets did not enter service until 1805."
+        case "incendiary_shells":
+            return "Rifled guns and incendiary compounds able to carry fire into a city are a product of the 1860s. "
+                 + "Byzantine Greek fire, first used in the defence of Constantinople in 672, is older than this "
+                 + "game and its recipe was lost."
+        case "flamethrowers":
+            return "The first portable flamethrowers were used in 1915; nothing before that could project burning "
+                 + "fuel far enough to matter."
+        case "napalm_wp":
+            return "Napalm came out of Louis Fieser's Harvard laboratory in 1942 and went into combat in 1944."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -530,6 +617,12 @@ extension DirtyTactics {
         case "contaminated_goods": return "The United States admits distributing infected stores\(at)."
         case "gas_resistance": return "American aircraft drop gas on resisting villages\(at)."
         case "defoliants": return "American aircraft begin spraying defoliant over\(at.isEmpty ? " the war zone" : at)."
+        case "hot_shot": return "American batteries fire heated shot into\(at.isEmpty ? " the harbour" : at)."
+        case "congreve_rockets": return "Rocket batteries set\(at.isEmpty ? " the town" : at) alight."
+        case "incendiary_shells": return "Incendiary shells fall on\(at.isEmpty ? " the city" : at); whole blocks burn."
+        case "burn_towns": return "American troops burn the towns and farms of\(at.isEmpty ? " the valley" : at)."
+        case "flamethrowers": return "American flamethrower teams burn out the defences of\(at.isEmpty ? " the position" : at)."
+        case "napalm_wp": return "American aircraft put napalm and phosphorus over\(at.isEmpty ? " the city" : at)."
         default: return "The United States orders \(t.name.lowercased())\(at)."
         }
     }
@@ -541,6 +634,7 @@ extension DirtyTactics {
         case "contaminated_goods": return "A quartermaster's letters surface: the United States handed out infected stores\(at)."
         case "gas_resistance": return "Photographs of gassed villages\(at) reach the newspapers."
         case "human_subject_program": return "A defector's testimony exposes an American programme that experimented on prisoners."
+        case "incendiary_shells": return "An agent is taken with a carpet bag of incendiary compound\(at); the papers have the rest."
         default: return "The press exposes an American \(t.name.lowercased())\(at)."
         }
     }
@@ -597,6 +691,33 @@ extension GameEngine {
                                               due: GameCalendar.calendar.date(byAdding: .year, value: 20, to: gs.currentDate) ?? gs.currentDate,
                                               text: "Veterans of the spraying campaign win their claim. The settlement and the headlines both cost.",
                                               ruthlessness: 8, popularity: 6, world: 2, cash: 4 * m))
+        // --- 3.17.1: fire ---
+        case "hot_shot":
+            // Wooden hulls and waterfront stores: the enemy's navy and his trade.
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].militaryStrength = max(1, gs.countries[i].militaryStrength - Int(2 * m))
+                gs.countries[i].gdp *= 1 - 0.01 * m
+            }
+            frontBlow(use.target, will: 0.03 * m, troops: 0.02 * m)
+        case "congreve_rockets":
+            if let target = use.target { burnTarget(target, gdp: 0.015 * m, stability: 6 * m, dead: 60 * m) }
+            frontBlow(use.target, will: 0.06 * m, troops: 0.01 * m)
+        case "incendiary_shells":
+            if let target = use.target { burnTarget(target, gdp: 0.025 * m, stability: 10 * m, dead: 200 * m) }
+            frontBlow(use.target, will: 0.05 * m, troops: 0)
+        case "burn_towns":
+            if let target = use.target { burnTarget(target, gdp: 0.06 * m, stability: 18 * m, dead: 600 * m) }
+            frontBlow(use.target, will: 0.18 * m, troops: 0.03 * m)
+        case "flamethrowers":
+            // Takes positions artillery cannot: it helps the side the U.S. is fighting on.
+            if let target = use.target, let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) {
+                let weAttack = gs.shadow.fronts[fi].defender == target
+                gs.shadow.fronts[fi].attackerMomentum = min(1, gs.shadow.fronts[fi].attackerMomentum + (weAttack ? 0.15 : -0.15) * m)
+            }
+            frontBlow(use.target, will: 0.08 * m, troops: 0.04 * m)
+        case "napalm_wp":
+            if let target = use.target { burnTarget(target, gdp: 0.05 * m, stability: 15 * m, dead: 900 * m) }
+            frontBlow(use.target, will: 0.15 * m, troops: 0.05 * m)
         default:
             break
         }
@@ -613,6 +734,30 @@ extension GameEngine {
         } else {
             // Land not yet taken: the resistance it will put up is softened.
             gs.shadow.resistanceBroken[land] = (gs.shadow.resistanceBroken[land] ?? 0) + amount
+        }
+        self.gameState = gs
+    }
+
+    /// Fire on a country: its output, its nerve and its dead. Game stats only.
+    func burnTarget(_ target: String, gdp: Double, stability: Double, dead: Double) {
+        guard let gs = gameState, let i = gs.countries.firstIndex(where: { $0.id == target }) else { return }
+        gs.countries[i].gdp *= 1 - gdp
+        gs.countries[i].stability = max(0, gs.countries[i].stability - Int(stability))
+        gs.countries[i].profile.anxieties.military += stability
+        gs.totalCasualties += Int(Double(max(1, gs.countries[i].population)) * dead)
+        self.gameState = gs
+    }
+
+    /// A blow to whichever front the target is fighting on: its will and its troops in theatre.
+    func frontBlow(_ target: String?, will: Double, troops: Double) {
+        guard let gs = gameState, let target,
+              let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) else { return }
+        if gs.shadow.fronts[fi].defender == target {
+            gs.shadow.fronts[fi].defenderWill = max(0, gs.shadow.fronts[fi].defenderWill - will)
+            gs.shadow.fronts[fi].defenderTroops *= 1 - troops
+        } else {
+            gs.shadow.fronts[fi].attackerWill = max(0, gs.shadow.fronts[fi].attackerWill - will)
+            gs.shadow.fronts[fi].attackerTroops *= 1 - troops
         }
         self.gameState = gs
     }

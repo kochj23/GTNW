@@ -54,9 +54,9 @@ Written by Jordan Koch.
 | **Land and empire** | Unclaimed land, colonies and peoples' land on every continent, resources and income by era, occupation and statehood, Antarctica, group actions, territory money (extraction rates, levies) | 3.3–3.13 |
 | **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy | 3.11–3.16 |
 | **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard | 3.12 |
-| **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd | 3.17 |
+| **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries | 3.17 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
-| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 603 tests in seven categories | 3.1–3.17 |
+| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 614 tests in seven categories | 3.1–3.17 |
 
 The sections below are grouped by theme; each feature notes the version that introduced it.
 
@@ -348,6 +348,21 @@ Infamy and Nova has something to say about all of it.
 | **Gas against a resisting people** — Spain in the Rif 1921–27, Italy in Ethiopia 1935–36; breaks resistance before you take the land | 1920– | Geneva Protocol (signed, unratified) → banned 1928 → CWC 1997 |
 | **Human-subject biological programme** — Unit 731 at Pingfang, 1932–45; three years to an arsenal, ruinous if found | 1932– | Geneva Protocol → Geneva 1949 → BWC 1975 → Rome Statute 2002 |
 | **Defoliants** — Operation Ranch Hand, Jan 1962 – Jan 1971, about 20 million gallons; the dioxin bill arrives twenty years later | 1961– | legal → EO 11850 (1975) → CWC 1997 |
+
+**Incendiaries by era (3.17.1)**
+
+| Tactic | Era | Legal status over time |
+|--------|-----|------------------------|
+| **Heated shot** — furnace-heated round shot into hulls and waterfronts; Gibraltar 1782 | 1789–1865 | legal throughout |
+| **Congreve rockets** — in service from 1805; Boulogne 1806, Fort McHenry 1814, Veracruz 1847 | 1805–1870 | legal → Lieber Code 1863 |
+| **Incendiary shells and arson** — "Greek fire" into Charleston 1863, the New York hotels 25 Nov 1864; the one fire a single agent can set quietly | 1861–1945 | legal → Lieber 1863 → Hague 1907 → Geneva 1949 |
+| **Burn the towns** — Washington 1814, Atlanta and Columbia 1864–65, the Shenandoah 1864 | 1789– | legal → Lieber 1863 → Hague 1907 → Geneva 1949 → Rome Statute 2002 |
+| **Flamethrowers** — Hooge 30 July 1915; the Pacific from 1943 | 1915– | legal → CCW Protocol III 1983 |
+| **Napalm and white phosphorus** — Fieser at Harvard 1942–43, in combat 1944 | 1942– | legal → CCW Protocol III 1983 → Rome Statute 2002 |
+
+Byzantine Greek fire — first used in the defence of Constantinople in 672 and credited to Kallinikos of Heliopolis —
+is older than this game and its recipe was lost; the nineteenth-century shells only borrowed the name. The panel
+says so.
 
 **Not in the game, deliberately.** There is no player action for chattel slavery or slave labour, and none for
 genocide or ethnic cleansing. Both stay in GTNW as history and as things other powers do.
@@ -1132,19 +1147,19 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **603 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **614 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 197 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds |
-| **Functional** | 126 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open |
-| **Security** | 75 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be |
-| **Integration** | 46 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on and a secret programme that leaks |
-| **Performance** | 41 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 under one second (profiled at about 0.25 s, 0.5 s at worst, in Debug) |
-| **Retry** | 67 | `RetryPolicy` and `Retry.run`; LLM clients, Ollama, MLX and Games DB sync all retry; every new save field decodes from older saves; a failed commentary backend leaves the template line |
-| **Frame** | 48 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/` |
+| **Unit** | 199 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden |
+| **Functional** | 129 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open, burning towns, the scale a President orders, flamethrowers on a front |
+| **Security** | 76 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire |
+| **Integration** | 48 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal |
+| **Performance** | 42 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 under one second (profiled at about 0.25 s, 0.5 s at worst, in Debug) |
+| **Retry** | 68 | `RetryPolicy` and `Retry.run`; LLM clients, Ollama, MLX and Games DB sync all retry; every new save field decodes from older saves; a failed commentary backend leaves the template line |
+| **Frame** | 49 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/` |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -1172,6 +1187,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.17.1 | Oct 2026 | Dirty tactics, part two: fire by era — heated shot, Congreve rockets, incendiary shells and arson, burning towns, flamethrowers, napalm and white phosphorus |
 | 3.17.0 | Oct 2026 | Dirty tactics, part one: the frame (era windows, legal status by treaty, open or covert, discovery, tribunals) and the early chemical and biological group |
 | 3.16.2 | Oct 2026 | Historical absorptions (Korea 1910, the Baltics 1940, the Anschluss, the partitions of Poland) with restorations, or a crisis when the target is your ally; a README for the whole 3.x series |
 | 3.16.1 | Oct 2026 | Nations founded mid-game on their real dates (or an independence movement where the land was taken); Nova comments on the AI phase too |

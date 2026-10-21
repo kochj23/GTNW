@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.1] - 2026-10-21 — Dirty tactics: incendiaries by era
+
+### Added
+- **The incendiary group** (`DirtyTactics.incendiary`), six ways to set fire to the enemy, each in its real window:
+  - **Heated shot** (1789–1865, legal): round shot heated in a furnace, as at Gibraltar in 1782 and in coastal forts
+    until iron hulls and explosive shell ended it. Costs the enemy's navy and his waterfront trade.
+  - **Congreve rockets** (1805–1870, legal → Lieber Code 1863): in service from 1805 — Boulogne 1806, Copenhagen
+    1807, Fort McHenry September 1814, a U.S. rocket battery at Veracruz 1847. They cannot be aimed, which is the
+    point.
+  - **Incendiary shells and arson** (1861–1945, legal → Lieber 1863 → Hague 1907 → Geneva IV Art. 53 1949): the
+    "Greek fire" shells fired into Charleston from the Marsh Battery in August 1863, and the Confederate attempt on
+    the New York hotels of 25 November 1864. The only incendiary one man can do quietly, so the only one with a
+    covert option. The panel notes that **Byzantine Greek fire, first used in 672, predates the game and its recipe
+    was lost**.
+  - **Burn the towns** (1789–, legal → Lieber 1863 → Hague 1907 → Geneva 1949 → Rome Statute 2002): Washington on
+    24 August 1814, Atlanta in November 1864, Columbia in February 1865, the Shenandoah through September and
+    October 1864. The heaviest blow to an enemy's output, stability and will — and an army cannot do it quietly.
+  - **Flamethrowers** (1915–, legal → CCW Protocol III 1983): Hooge, 30 July 1915; the M1A1 and M2 across the
+    Pacific from 1943. They push the assault on whichever front the United States is fighting.
+  - **Napalm and white phosphorus** (1942–, legal → CCW Protocol III 1983 → Rome Statute 2002): Fieser's work at
+    Harvard in 1942–43, in combat from 1944.
+- `burnTarget` and `frontBlow`: shared benefit helpers over the existing country and War Room front models.
+- Nova has lines for fire.
+
+### Changed
+- The DIRTY TACTICS panel gains a group picker now there is more than one group, and opens on a chosen group.
+- 11 tests across all seven categories (614 total, single muted run); snapshots in `Screenshots/3.17.1/`.
+
 ## [3.17.0] - 2026-10-21 — Dirty tactics: early chemical and biological
 
 The first of seven releases that let the President fight dirty and let the game judge him for it — but only if he
