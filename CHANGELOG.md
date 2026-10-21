@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-10-20 — Congress, the war powers, and advisor warnings
+
+### Added
+- **`CongressModel`** (`Shared/Engine/Shadow/CongressModel.swift`):
+  - Support by chamber: House = ½ congressional support + ½ approval; Senate = 0.7 + 0.3.
+  - `requestAuthorization` (one action) for a Declaration of War or an AUMF, voted by both chambers. Expected yes =
+    0.5 support + 0.3 war support + 30 × casus belli (+8 for an AUMF) + 5; pass odds (yes − 42) ÷ 16 per chamber.
+  - A pass gives war support +10 and approval +3 and clears the clock; a rebuff costs approval −3 and support −5.
+  - War Powers Resolution from 7 Nov 1973 (`processWarPowers`): unauthorized hostilities the U.S. starts or joins
+    start a 60-day clock, warned at 45 and 60 days, then 30 days to withdraw. Defiance costs Congress −15 and
+    outrage +15.
+  - Congress's support drifts monthly toward 30 + ½ approval − 0.2 outrage.
+  - Impeachment stages are named (inquiry, articles, House vote, Senate trial). Removal now needs a Senate trial with
+    two-thirds to convict (Senate support under 34); an acquittal resets it with a small rally.
+- **`CongressSheet`** (dossier **Congress**): odds and expected votes by chamber, casus belli, past votes.
+  **`CongressBadge`** in the top bar: Congress by chamber and the War Powers clock.
+- **Advisor warnings** (`AdvisorWarnings.swift`, `CabinetWarningsView`): one line each from the Joint Chiefs, the
+  Secretary of State and the Vice President before attacks, nukes, chemical/biological weapons, annexations, claims
+  and fleet orders. Every figure comes from the engine's own functions (odds, losses, retaliation, world reaction,
+  treaties, approval, the War Powers clock, impeachment pressure). DO IT becomes OVERRULE & PROCEED on a danger line.
+  *Settings → Advisor warnings before major actions* (on by default).
+- Play history: `congress_vote`, `war_powers_violation`.
+- 12 tests across all seven categories (432 total); snapshots in `Screenshots/3.8.0/`.
+
 ## [3.7.0] - 2026-10-20 — Territory wealth, fair expansion, no surprise impeachment
 
 Jordan's 3.3.0 session (1913 start, 27 claims in two months) ended in removal in Sep 1913 with a score of 1290: each

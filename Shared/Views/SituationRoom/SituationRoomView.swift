@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress
         var id: String { rawValue }
     }
 
@@ -58,6 +58,7 @@ struct SituationRoomView: View {
             case .warRoom: WarRoomView(gameState: gameState).environmentObject(gameEngine)
             case .saves: SaveLoadView().environmentObject(gameEngine)
             case .resources: ResourcesSheet(gameState: gameState)
+            case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .nameClaim, .rename:
@@ -213,6 +214,8 @@ struct SituationTopBar: View {
                     .foregroundColor(GTNWColors.terminalRed)
             }
             ImpeachmentRiskBadge(gameState: gameState)
+            divider
+            CongressBadge(gameState: gameState)
     }
 
     @ViewBuilder private var controls: some View {
@@ -402,6 +405,7 @@ struct CountryDossier: View {
                 Text("CHIEF OF STAFF: \u{201C}One more and Congress moves against you at the next poll. Let the country cool off.\u{201D}")
                     .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed).fixedSize(horizontal: false, vertical: true)
             }
+            CabinetWarningsView(warnings: gameEngine.advisorWarnings(for: .claim(land: id, troops: expedition)))
             let free = AttackSizing.freeTroops(gameState)
             HStack(spacing: 6) {
                 Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
@@ -480,6 +484,8 @@ struct CountryDossier: View {
                         }
                         Button("CITY VIEW") { onSheet(.city) }.buttonStyle(ThemedButtonStyle())
                         if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID {
+                            Button("CONGRESS") { onSheet(.congress) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
+                                .help("Ask Congress for a declaration of war or an authorization to use force")
                             Button("FLEET") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
                                 .help(NavalModel.isLandlocked(c.id) ? "\(c.name) is landlocked" : "Fleet orders")
                         }
@@ -658,6 +664,8 @@ struct ActionLadderSheet: View {
                         }
                         let advice = AdviceEngine.advise(action: a, player: player, target: target, gameState: gameState)
                         AdvicePanel(advice: advice)
+                        let warnings = MajorAction.isMajor(a) ? gameEngine.advisorWarnings(for: .attack(a, target: target.id, size: size)) : []
+                        CabinetWarningsView(warnings: warnings)
                         HStack {
                             Button("CANCEL") {
                                 gameEngine.declineAdvisedAction(advice: advice)
@@ -665,7 +673,7 @@ struct ActionLadderSheet: View {
                             }
                             .buttonStyle(ThemedButtonStyle())
                             Spacer()
-                            Button("DO IT") { perform(a, advice: advice) }
+                            Button(CabinetWarningsView.proceedTitle(warnings, default: "DO IT")) { perform(a, advice: advice) }
                                 .buttonStyle(ThemedButtonStyle(color: a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen, prominent: true))
                                 .disabled(gameState.actionsRemaining == 0 || gameEngine.wmdProblem(a) != nil
                                           || AttackSizing.kinds(for: a).contains { AttackSizing.available($0, in: gameState) <= 0 })
@@ -680,7 +688,7 @@ struct ActionLadderSheet: View {
             }
         }
         .padding(14)
-        .frame(width: FontScale.w(720), height: FontScale.h(size == nil ? 480 : 640))
+        .frame(width: FontScale.w(720), height: FontScale.h(size == nil ? 560 : 720))
         .background(Theme.isRetro ? EGA.blue : Color.black)
         .overlay {
             if let anim = playingAnimation {

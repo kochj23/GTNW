@@ -77,7 +77,9 @@ extension GameEngine {
         updateAnxietiesAndSociety(scale: scale)
         syncFronts()
         processCombat(from: from, to: to)
+        processWarPowers()
         processEconomy(from: from, to: to, scale: scale)
+        driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
         processTerritoryEconomy()   // after the poll, so its impeachment warning always precedes the next one
         processAdvisorFates(scale: scale)
@@ -668,7 +670,17 @@ extension GameEngine {
                 if stage > 0 { gs.shadow.post(PopularityModel.impeachmentText(stage: stage), date: to, severity: stage >= 3 ? 3 : 2) }
                 else { gs.shadow.post("Congress drops its investigation of the White House.", date: to, severity: 1) }
                 gs.shadow.impeachmentStage = stage
-                if stage >= 4 { endPresidency(.impeached) }
+                if stage >= 4 {
+                    // 3.8.0: the Senate trial. Two-thirds must vote to convict.
+                    let senate = CongressModel.senate(congress: gs.countries[pi].congressionalSupport, popularity: gs.shadow.popularity)
+                    if CongressModel.convicts(senateSupport: senate) {
+                        endPresidency(.impeached)
+                    } else {
+                        gs.shadow.impeachmentStage = 0
+                        gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 2)
+                        gs.shadow.post("The Senate acquits the President: the votes to convict fall short of two-thirds.", date: to, severity: 3)
+                    }
+                }
             }
         }
 

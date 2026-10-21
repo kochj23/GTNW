@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-420%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.7.0-blue)
+![Tests](https://img.shields.io/badge/tests-432%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.8.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,37 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Congress and the war powers (new in 3.8.0)**: the top bar shows Congress's support **by chamber** (the House
+  follows the public more, the Senate less) and any **War Powers clock**. **Congress** on a dossier asks for a
+  *Declaration of War* or an *Authorization for Use of Military Force* (one action). Both chambers vote, with odds from
+  their support, the public's war support and the casus belli (the target attacked us, struck us with nuclear weapons,
+  is at war with an ally, or is plainly hostile); an authorization is easier than a declaration. A pass rallies the
+  country; a rebuff costs approval and support. From the **War Powers Resolution (7 Nov 1973)**, hostilities the U.S.
+  starts or joins without authorization start a 60-day clock, with warnings at 45 and 60 days, then 30 days to
+  withdraw; defying it costs Congress's support and adds outrage. Congress's support drifts monthly with approval and
+  outrage. **Impeachment** is a visible process (inquiry → articles → House vote → Senate trial) and ends in a
+  **Senate trial that needs two-thirds to convict**; an acquittal ends it. Party control isn't modelled.
+- **Advisor warnings (new in 3.8.0)**: before any major action (invasion, air strike, bombardment, blockade, nuclear
+  strike, chemical or biological weapon, annexation, land claim, fleet order) the **Joint Chiefs**, the **Secretary of
+  State** and the **Vice President** each give one line, from the same numbers the engine uses: odds and losses,
+  the world's reaction and treaties, approval, the War Powers clock and impeachment pressure. Overrule (proceed) or
+  cancel. *Settings → Advisor warnings* turns them off.
+
+  ```mermaid
+  flowchart TD
+      A[Major action] --> W{Advisor warnings on?}
+      W -- yes --> L[Joint Chiefs · Secretary of State · Vice President<br/>odds, losses, world, approval, Congress]
+      L --> O{Overrule or cancel}
+      W -- no --> X[Act]
+      O -- overrule --> X
+      X --> H{Hostilities after Nov 1973<br/>without authorization?}
+      H -- yes --> C[War Powers clock: 60 days + 30 to withdraw<br/>warnings at 45 and 60]
+      C -- defied --> P[Congress support −15, outrage +15]
+      Q[Ask Congress: declaration / AUMF] --> V{House and Senate vote}
+      V -- pass --> K[Authorized: clock cleared, rally]
+      V -- fail --> F[Approval −3, support −5]
+      P --> I[Impeachment: inquiry → articles → House vote → Senate trial, ⅔ to convict]
   ```
 - **Territory wealth and the politics of expansion (new in 3.7.0)**: taking land now pays, and is priced fairly.
   - **Resources**: every territory, claimed or annexed, yields era-accurate resources from roughly when they were first
@@ -720,6 +751,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Congress (3.8.0) | Events `congress_vote` (`target`, `kind`, `passed`, `house_yes`, `senate_yes`, `odds`) and `war_powers_violation` |
 | Territory starts producing (3.7.0) | Event `territory_producing` (`land`, `name`, `resources`, `income_b`) |
 | Chemical / biological (3.6.0) | Events `wmd_used` (`kind`, `target`, `legal_status`, `treaty`), `wmd_program_started`, `wmd_program_discovered` |
 | Fleet orders (3.5.0) | Events `fleet_ordered` (`fleet`, `target`, `mission`, `preset`, `ships`, `transit_days`), `fleet_action` on arrival (`sentence` such as "Fifth Fleet blockaded Japan", `ships_lost`) and `fleet_recalled` |
@@ -739,18 +771,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **420 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **432 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 161 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 70 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 57 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 26 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 24 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 49 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 29 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 162 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 75 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 58 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 27 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 25 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 50 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 30 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -774,6 +806,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.8.0 | Oct 2026 | Congress by chamber, war votes, the War Powers clock, a Senate trial for impeachment, and cabinet warnings before major actions |
 | 3.7.0 | Oct 2026 | "No fair!" fixed: territories yield era-accurate resources and score, expansion politics by era and pace, visible impeachment risk with warnings |
 | 3.6.0 | Oct 2026 | Era weapons catalog: every U.S. attack option by year, with legal status; chemical and biological weapons priced by treaty, restart-only once destroyed |
 | 3.5.0 | Oct 2026 | Naval operations: order named fleets of the era (Fifth Fleet, Great White Fleet, Asiatic Squadron…) on shows of force, blockades, strikes and amphibious landings, with transit, engagements and map markers |

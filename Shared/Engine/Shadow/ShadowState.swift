@@ -107,6 +107,9 @@ struct ShadowState: Codable {
     var producing: Set<String> = []
     var resourceEarnings: Double = 0
     var impeachmentWarned = false
+    /// Congress (3.8.0): every vote on a war request, and War Powers clocks by enemy.
+    var authorizations: [WarAuthorization] = []
+    var warPowersClocks: [String: WarPowersClock] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -142,7 +145,7 @@ struct ShadowState: Codable {
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
-        case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned
+        case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
     }
 
     init() {}
@@ -183,6 +186,8 @@ struct ShadowState: Codable {
         producing = try c.decodeIfPresent(Set<String>.self, forKey: .producing) ?? []
         resourceEarnings = try c.decodeIfPresent(Double.self, forKey: .resourceEarnings) ?? 0
         impeachmentWarned = try c.decodeIfPresent(Bool.self, forKey: .impeachmentWarned) ?? false
+        authorizations = try c.decodeIfPresent([WarAuthorization].self, forKey: .authorizations) ?? []
+        warPowersClocks = try c.decodeIfPresent([String: WarPowersClock].self, forKey: .warPowersClocks) ?? [:]
     }
 }
 

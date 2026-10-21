@@ -547,6 +547,7 @@ struct SettlementSheet: View {
                                   + "while it is rebuilt, and anger abroad: rivals by 20, the rest of the world by 10.",
                            choice: .annex, button: "ANNEX", color: GTNWColors.terminalRed)
                     TerritoryNameField(text: $annexName, placeholder: "Rename it (optional) — blank keeps \(loser?.name ?? "its name")", live: scrolls)
+                    CabinetWarningsView(warnings: gameEngine.advisorWarnings(for: .annex(country: settlement.loser)))
                     Text("OR LET \((loser?.name ?? "IT").uppercased()) FORM A NEW GOVERNMENT:")
                         .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
                     ForEach(PostWarGovernment.allCases) { g in
@@ -845,7 +846,9 @@ struct FleetOrderSheet: View {
                 readout(f)
                 let problem = gameEngine.fleetOrderProblem(fleetID: id, target: targetID, mission: mission)
                 if let problem { Text(verbatim: problem).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed) }
-                Button("ORDER \(f.name.uppercased()) OUT") {
+                let warnings = gameEngine.advisorWarnings(for: .fleet(fleetID: id, target: targetID, mission: mission, preset: preset))
+                CabinetWarningsView(warnings: warnings)
+                Button(CabinetWarningsView.proceedTitle(warnings, default: "ORDER \(f.name.uppercased()) OUT")) {
                     if gameEngine.orderFleet(id, to: targetID, mission: mission, preset: preset) != nil { dismiss() }
                 }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
@@ -943,7 +946,10 @@ struct ImpeachmentRiskBadge: View {
         let color = risk == .high ? GTNWColors.terminalRed : (risk == .rising ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
         VStack(alignment: .leading, spacing: 0) {
             Text("IMPEACH RISK \(risk.rawValue)").font(ThemeFont.mono(11, .bold)).foregroundColor(color)
-            Text("APPROVAL FLOOR \(Int(ExpansionModel.popularityFloor))%").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+            Text(gameState.shadow.impeachmentStage > 0 ? "STAGE: \(CongressModel.impeachmentStageName(gameState.shadow.impeachmentStage))"
+                 : "APPROVAL FLOOR \(Int(ExpansionModel.popularityFloor))%")
+                .font(ThemeFont.mono(9, gameState.shadow.impeachmentStage > 0 ? .bold : .regular))
+                .foregroundColor(gameState.shadow.impeachmentStage > 0 ? GTNWColors.terminalRed : GTNWColors.neonCyan)
         }
         .help(String(format: "Congress's pressure %.0f (it acts above %.0f at the monthly poll)", p, ExpansionModel.impeachmentThreshold))
     }
@@ -1002,6 +1008,120 @@ struct ResourcesSheet: View {
                         .font(ThemeFont.mono(10, .bold)).foregroundColor(r.income > 0 ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
                 }
                 .padding(4).themedPanel(retroFill: EGA.black)
+            }
+        }
+    }
+}
+
+// MARK: - Advisor warnings and Congress (3.8.0)
+
+/// The cabinet's three-line risk read-out before a major action (hidden when the setting is off).
+struct CabinetWarningsView: View {
+    let warnings: [AdvisorWarning]
+
+    var body: some View {
+        if AdvisorWarnings.enabled() && !warnings.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("BEFORE YOU DECIDE").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                ForEach(warnings, id: \.self) { w in
+                    Text(verbatim: "\(w.who.uppercased()): \u{201C}\(w.text)\u{201D}")
+                        .font(ThemeFont.mono(9, w.level == 2 ? .bold : .regular))
+                        .foregroundColor(w.level == 2 ? GTNWColors.terminalRed : (w.level == 1 ? GTNWColors.terminalAmber : GTNWColors.neonCyan))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .themedPanel(retroFill: EGA.black)
+        }
+    }
+
+    /// "OVERRULE & PROCEED" when a danger line is showing.
+    static func proceedTitle(_ warnings: [AdvisorWarning], default title: String) -> String {
+        AdvisorWarnings.enabled() && warnings.contains(where: { $0.level == 2 }) ? "OVERRULE & PROCEED" : title
+    }
+}
+
+/// Ask Congress for a declaration of war or an authorization to use force, with the odds by chamber.
+struct CongressSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let targetID: String
+
+    var body: some View {
+        let name = gameState.getCountry(id: targetID)?.name ?? targetID
+        let p = gameState.getPlayerCountry()
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "building.columns.fill")
+                Text(verbatim: "ASK CONGRESS — \(name.uppercased())")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if let p {
+                Text(String(format: "SUPPORT: HOUSE %.0f%% · SENATE %.0f%% · PUBLIC WAR SUPPORT %d%%",
+                            CongressModel.house(congress: p.congressionalSupport, popularity: gameState.shadow.popularity),
+                            CongressModel.senate(congress: p.congressionalSupport, popularity: gameState.shadow.popularity), p.warSupport))
+                    .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.neonCyan)
+            }
+            if gameEngine.isAuthorized(targetID) {
+                Text("Congress has already authorized hostilities against \(name).").font(ThemeFont.mono(11)).foregroundColor(GTNWColors.terminalGreen)
+            }
+            ForEach(WarAuthorizationKind.allCases) { kind in
+                if let o = gameEngine.authorizationOdds(target: targetID, kind: kind) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(kind.title.uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                            Text(String(format: "Odds %.0f%% · expected yes: House %.0f%%, Senate %.0f%% · casus belli %@", o.odds * 100, o.house, o.senate,
+                                        o.casusBelli >= 0.7 ? "strong" : (o.casusBelli > 0 ? "some" : "none")))
+                                .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        }
+                        Spacer()
+                        Button("REQUEST") { if gameEngine.requestAuthorization(target: targetID, kind: kind) != nil { dismiss() } }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                            .disabled(gameState.actionsRemaining == 0 || gameEngine.isAuthorized(targetID))
+                    }
+                    .padding(6).themedPanel()
+                }
+            }
+            Text(gameState.currentDate >= CongressModel.warPowersResolution
+                 ? "War Powers Resolution (1973): hostilities without authorization start a 60-day clock, then 30 days to withdraw."
+                 : "Before the War Powers Resolution (1973) Presidents often fought without asking; asking still rallies the country.")
+                .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            let votes = gameState.shadow.authorizations.filter { $0.target == targetID }
+            ForEach(votes) { v in
+                Text(verbatim: "\(GameCalendar.format(v.date)): \(v.kind.title) \(v.passed ? "PASSED" : "FAILED") (House \(v.houseYes)%, Senate \(v.senateYes)%)")
+                    .font(ThemeFont.mono(9)).foregroundColor(v.passed ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(640))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+
+/// Top-bar read-out: Congress by chamber, and any War Powers clock running.
+struct CongressBadge: View {
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let p = gameState.getPlayerCountry()
+        let h = CongressModel.house(congress: p?.congressionalSupport ?? 50, popularity: gameState.shadow.popularity)
+        let s = CongressModel.senate(congress: p?.congressionalSupport ?? 50, popularity: gameState.shadow.popularity)
+        let clock = gameState.shadow.warPowersClocks.values.min { $0.started < $1.started }
+        VStack(alignment: .leading, spacing: 0) {
+            Text(String(format: "CONGRESS H %.0f · S %.0f", h, s)).font(ThemeFont.mono(11, .bold))
+                .foregroundColor(min(h, s) < 34 ? GTNWColors.terminalRed : (min(h, s) < 50 ? GTNWColors.terminalAmber : GTNWColors.terminalGreen))
+            if let c = clock {
+                let days = GameCalendar.days(from: c.started, to: gameState.currentDate)
+                let left = CongressModel.clockDays - days
+                Text(left > 0 ? "WAR POWERS: \(left) DAYS" : "WAR POWERS: WITHDRAW \(max(0, left + CongressModel.withdrawalDays)) DAYS")
+                    .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.terminalRed)
+            } else {
+                Text("WAR POWERS: CLEAR").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
         }
     }
