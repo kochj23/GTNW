@@ -16,6 +16,16 @@ Dates are approximate, encyclopedia level. Sources: Encyclopaedia Britannica cou
 """
 
 ERAS = [
+    # West and East Africa (3.14.1): states the game models as peoples' land until the colonial conquest
+    ("GHA", 1789, 1901, "indigenous", "", "Ashanti Empire", 70),
+    ("GHA", 1901, 1957, "colony", "GBR", "Gold Coast", 1957),
+    ("NGA", 1789, 1804, "indigenous", "", "Hausa kingdoms", 40),
+    ("NGA", 1804, 1903, "indigenous", "", "Sokoto Caliphate", 70),
+    ("NGA", 1903, 1960, "colony", "GBR", "Nigeria Protectorate", 1960),
+    ("TZA", 1789, 1856, "colony", "OMN", "Swahili coast (Oman)", 1856),
+    ("TZA", 1856, 1885, "indigenous", "", "Sultanate of Zanzibar", 45),
+    ("TZA", 1885, 1919, "colony", "DEU", "German East Africa", 1919),
+    ("TZA", 1919, 1961, "colony", "GBR", "Tanganyika", 1961),
     # North America and the Caribbean
     ("CAN", 1789, 1867, "colony", "GBR", "British North America", 1867),
     ("MEX", 1789, 1821, "colony", "ESP", "New Spain", 1821),
@@ -114,9 +124,9 @@ ERAS = [
     ("SVK", 1789, 1918, "colony", "AUT", "Upper Hungary", 1918),
     ("GRC", 1789, 1829, "colony", "TUR", "Ottoman Greece", 1829),
     ("ALB", 1789, 1912, "colony", "TUR", "Ottoman Albania", 1912),
-    ("BGR", 1789, 1908, "colony", "TUR", "Ottoman Bulgaria", 1908),
-    ("ROU", 1789, 1881, "colony", "TUR", "Danubian Principalities", 1878),
-    ("SRB", 1789, 1882, "colony", "TUR", "Ottoman Serbia", 1878),
+    ("BGR", 1789, 1878, "colony", "TUR", "Ottoman Bulgaria", 1878),
+    ("ROU", 1789, 1878, "colony", "TUR", "Danubian Principalities", 1878),
+    ("SRB", 1789, 1817, "colony", "TUR", "Ottoman Serbia", 1817),
     ("BEL", 1789, 1795, "colony", "AUT", "Austrian Netherlands", 1830),
     ("BEL", 1795, 1815, "colony", "FRA", "Belgian departments of France", 1830),
     ("BEL", 1815, 1830, "colony", "NLD", "Southern Netherlands", 1830),

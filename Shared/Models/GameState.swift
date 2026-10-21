@@ -129,7 +129,9 @@ class GameState: ObservableObject, Codable {
             !present.contains(id) && WorldCountriesDatabase.template(id: id) != nil
                 && WorldMapData.owner(of: id, in: present, year: self.currentYear) == nil && self.preState(id) == nil
         }
+        // 3.14.1: land with a pre-state status (e.g. the Ashanti Empire) is peoples' land or a colony, not unclaimed.
         return WorldCountriesDatabase.unclaimedLandIDs(year: eraStartYear).union([Antarctica.id]).union(orphans).subtracting(present)
+            .filter { preState($0) == nil }
     }
 
     // MARK: - Era-aware delivery system labels
@@ -1021,8 +1023,8 @@ class GameState: ObservableObject, Codable {
 
             // ── Ethiopia ──────────────────────────────────────────────────────
             case "ETH":
-                if year < 1896 {
-                    country = renamedCountry(country, name: "Abyssinia")
+                if year < 1936 {
+                    country = renamedCountry(country, name: "Ethiopian Empire")   // 3.14.1
                 } else if year >= 1936 && year < 1941 {
                     // Italian occupation 1936-1941
                     country = adjustedCountry(country,
@@ -1032,8 +1034,26 @@ class GameState: ObservableObject, Codable {
                         alignment: .nonAligned, government: .military
                     )
                 } else if year < 1975 {
-                    country = renamedCountry(country, name: "Abyssinia")
+                    country = renamedCountry(country, name: "Ethiopian Empire")
                 }
+
+            // ── 3.14.1: Madagascar, Liberia and the Balkan states by era ─────────
+            case "MDG":
+                if year < 1896 { country = renamedCountry(country, name: "Merina Kingdom") }
+            case "SRB":
+                if year < 1882 { country = renamedCountry(country, name: "Principality of Serbia") }
+                else if year < 1918 { country = renamedCountry(country, name: "Kingdom of Serbia") }
+            case "MNE":
+                if year < 1910 { country = renamedCountry(country, name: "Principality of Montenegro") }
+                else if year < 1918 { country = renamedCountry(country, name: "Kingdom of Montenegro") }
+            case "ROU":
+                if year < 1881 { country = renamedCountry(country, name: "Principality of Romania") }
+                else if year < 1947 { country = renamedCountry(country, name: "Kingdom of Romania") }
+            case "BGR":
+                if year < 1908 { country = renamedCountry(country, name: "Principality of Bulgaria") }
+                else if year < 1946 { country = renamedCountry(country, name: "Kingdom of Bulgaria") }
+            case "GRC":
+                if year < 1924 { country = renamedCountry(country, name: "Kingdom of Greece") }
 
             // ── Sudan ─────────────────────────────────────────────────────────
             case "SDN":

@@ -48,7 +48,8 @@ enum WorldPolitics {
         w("FRA", "RUS", 1854, 1856), w("GBR", "CHN", 1856, 1860), w("FRA", "AUT", 1859, 1859), w("ESP", "MAR", 1859, 1860),
         w("DEU", "DNK", 1864, 1864), w("PRY", "BRA", 1864, 1870), w("PRY", "ARG", 1864, 1870), w("ESP", "PER", 1865, 1866),
         w("DEU", "AUT", 1866, 1866), w("ITA", "AUT", 1866, 1866), w("FRA", "DEU", 1870, 1871), cold("FRA", "DEU", 1871, 1914),
-        w("RUS", "TUR", 1877, 1878), w("CHL", "PER", 1879, 1884), w("CHL", "BOL", 1879, 1884), w("GBR", "AFG", 1878, 1880),
+        w("RUS", "TUR", 1877, 1878), w("SRB", "TUR", 1876, 1878), w("SRB", "BGR", 1885, 1885), w("SRB", "TUR", 1912, 1913),
+        w("MNE", "TUR", 1912, 1913), w("BGR", "SRB", 1913, 1913), w("CHL", "PER", 1879, 1884), w("CHL", "BOL", 1879, 1884), w("GBR", "AFG", 1878, 1880),
         w("FRA", "CHN", 1884, 1885), w("JPN", "CHN", 1894, 1895), w("ITA", "ETH", 1895, 1896), w("TUR", "GRC", 1897, 1897),
         w("JPN", "RUS", 1904, 1905), w("ITA", "TUR", 1911, 1912), w("GRC", "TUR", 1912, 1913), w("BGR", "TUR", 1912, 1913),
         w("AUT", "SRB", 1914, 1918), w("DEU", "RUS", 1914, 1917), w("DEU", "FRA", 1914, 1918), w("GBR", "DEU", 1914, 1918),
@@ -96,6 +97,8 @@ enum WorldPolitics {
     static let colonialPowers: [String: Int] = ["GBR": 0, "FRA": 0, "ESP": 0, "PRT": 0, "NLD": 0, "DEU": 1884, "ITA": 1885,
                                                 "BEL": 1885, "JPN": 1895]
     static let nearDegrees = 25.0
+    /// AI colonial garrisons, as a share of what a land needs (3.14.1).
+    static let aiGarrisonShare = 0.6
 
     static func reachesOverseas(_ id: String, year: Int) -> Bool { colonialPowers[id].map { year >= $0 } ?? false }
 
@@ -121,6 +124,7 @@ extension GameEngine {
         processReactionsToPlayer()
         processAllianceChurn()
         processTreatyOffers()
+        processAITerritories()
         _ = gs
     }
 
@@ -184,6 +188,7 @@ extension GameEngine {
         var taken = CombatModel.claim(template, for: power)
         if let c = colony { taken.name = c.era.name }
         gs.countries.append(taken)
+        gs.shadow.claimDates[land] = gs.currentDate   // 3.14.1: AI land ramps up like the player's
         bumpWorld("claims")
         gs.shadow.post("\(power.name) \(how) \(taken.name).", date: gs.currentDate, severity: 1)
         logPlayEvent("world_claim", detail: ["power": powerID, "land": land, "how": how, "game_date": PlayHistory.day(gs.currentDate)])
@@ -290,6 +295,40 @@ extension GameEngine {
         gs.shadow.treatyOffers.append(TreatyOffer(from: f.id, type: type, date: gs.currentDate))
         gs.shadow.post("\(f.name) proposes a \(type.rawValue.lowercased()) with the United States.", date: gs.currentDate, severity: 1)
         bumpWorld("diplomacy")
+        self.gameState = gs
+    }
+
+    /// 3.14.1: AI-held territories run on the player's occupation and income model. Colonial garrisons are thin
+    /// (60% of what a land needs, under a military governor), so unrest builds; rivals arming rebels push it higher.
+    /// Income (the same `annualIncome`) goes to the owner's economy; a territory boiling over (unrest above 70) may
+    /// win its independence (30% a year).
+    func processAITerritories() {
+        guard let gs = gameState else { return }
+        let keep = pow(0.7, gs.turnLength.yearFraction / 0.25)
+        for i in gs.countries.indices {
+            let c = gs.countries[i]
+            guard let owner = c.territoryOf, owner != gs.playerCountryID, !c.isDestroyed,
+                  let oi = gs.countries.firstIndex(where: { $0.id == owner }) else { continue }
+            let needed = OccupationModel.neededGarrison(c)
+            let target = OccupationModel.insurgencyTarget(garrison: needed * WorldPolitics.aiGarrisonShare, needed: needed, governance: .militaryGovernor)
+            gs.countries[i].profile.outcry = c.profile.outcry * keep + target * (1 - keep)
+            let st = OccupationModel.stabilityTarget(insurgency: gs.countries[i].profile.outcry, governance: .militaryGovernor)
+            gs.countries[i].stability = Int((Double(c.stability) * keep + Double(st) * (1 - keep)).rounded())
+            let income = ExpansionModel.annualIncome(gs.countries[i], in: gs) * gs.turnLength.yearFraction
+            gs.countries[oi].gdp += income / 1000
+            gs.shadow.worldStats["aiIncomeCents", default: 0] += Int((income * 100).rounded())
+            if gs.countries[i].profile.outcry > 70 && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.3) {
+                var free = gs.countries[i]
+                free.territoryOf = nil
+                CombatModel.installChosenGovernment(.provisional, on: &free, by: gs.countries[oi])
+                free.diplomaticRelations[owner] = -40
+                free.alliances.remove(owner)
+                gs.countries[i] = free
+                gs.countries[oi].alliances.remove(c.id)
+                gs.shadow.worldStats["revolts", default: 0] += 1
+                gs.shadow.post("\(c.name) rises against \(gs.countries[oi].name) and declares independence.", date: gs.currentDate, severity: 2)
+            }
+        }
         self.gameState = gs
     }
 

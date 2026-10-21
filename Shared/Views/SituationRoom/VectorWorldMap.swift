@@ -82,7 +82,7 @@ final class WorldMapData {
             "MSR": gbr, "PCN": gbr, "SHN": gbr, "JEY": gbr, "GGY": gbr, "IMN": gbr, "IOT": [(1814, "FRA"), (9999, "GBR")],
             "ABW": nld, "CUW": nld, "SXM": nld, "SUR": nld, "MAF": fra, "BLM": fra, "SPM": fra, "NCL": fra, "PYF": fra,
             "WLF": fra, "ATF": fra, "FRO": [(9999, "DNK")], "ALA": [(1809, "SWE"), (1917, "RUS"), (9999, "FIN")],
-            "NIU": [(1901, "GBR"), (9999, "NZL")], "COK": [(1901, "GBR"), (9999, "NZL")],
+            "NIU": [(1901, "GBR"), (9999, "NZL"), (9999, "GBR")], "COK": [(1901, "GBR"), (9999, "NZL"), (9999, "GBR")],
             "NFK": [(1914, "GBR"), (9999, "AUS")], "HMD": [(1947, "GBR"), (9999, "AUS")], "IOA": [(1955, "GBR"), (9999, "AUS")],
             "NRU": [(1914, "DEU"), (9999, "AUS")], "WSM": [(1914, "DEU"), (9999, "NZL")],
             "FJI": [(9999, "GBR")], "SLB": gbr, "VUT": gbr, "KIR": gbr, "TUV": gbr, "MLT": gbr, "MDV": gbr,
@@ -92,7 +92,7 @@ final class WorldMapData {
             "CYP": [(1878, "TUR"), (9999, "GBR")], "PSE": [(1917, "TUR"), (1948, "GBR"), (9999, "JOR")],
             "LKA": [(1796, "NLD"), (9999, "GBR")], "DZA": [(1830, "TUR"), (9999, "FRA")], "MRT": [(9999, "FRA")],
             "GNQ": [(9999, "ESP")], "TLS": [(1975, "PRT"), (9999, "IDN")], "PRK": [(1910, "KOR"), (1945, "JPN"), (9999, "KOR")],
-            "SRB": [(1918, "TUR")], "MNE": [(1918, "TUR")], "MKD": [(1918, "TUR")], "KOS": [(1918, "TUR")],
+            "SRB": [(1918, "TUR")], "MNE": [(1918, "TUR")], "MKD": [(1913, "TUR"), (1918, "SRB")], "KOS": [(1913, "TUR"), (1918, "SRB")],
             "HRV": [(1918, "AUT")], "SVN": [(1918, "AUT")], "BIH": [(1878, "TUR"), (1918, "AUT")],
             "CZE": [(1918, "AUT")], "SVK": [(1918, "AUT")],
         ]

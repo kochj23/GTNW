@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-540%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.14.0-blue)
+![Tests](https://img.shields.io/badge/tests-549%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.14.1-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -166,6 +166,15 @@ Everything happens on one screen:
   - **Every land selectable in every era**: dependencies and not-yet-independent lands map to their owner by year
     (`WorldMapData.dependencies`: Puerto Rico under Spain until 1898, Mongolia under the Qing, the Balkans under the
     Ottomans and Habsburgs…), anything else is unclaimed land, and the card grid gains colonies and peoples' land.
+  - **Independent Africa and the Balkans (3.14.1)**: the Ethiopian Empire is a state throughout (Italian East Africa
+    1936–41), Liberia from 1847, and Madagascar's Merina Kingdom until 1896; the Ashanti Empire (to 1901), the Hausa
+    kingdoms and Sokoto Caliphate (to 1903) and the Sultanate of Zanzibar's coast (Omani until 1856, to 1885) are
+    peoples' land, then the Gold Coast, Nigeria, German East Africa and Tanganyika. Serbia stands alone from 1817
+    (Principality, Kingdom from 1882), Greece from 1829, Montenegro, Romania and Bulgaria from 1878, each with its
+    era name, until Yugoslavia in 1918.
+  - **AI territories have stakes (3.14.1)**: the land the powers take runs on the player's occupation and income
+    model. Its income goes to the owner, colonial garrisons are thin, and a territory whose unrest passes 70 may rise
+    and win independence (30% a year).
   - **The 1790s draft**: before 1861 "mobilization" is a militia call (13K, then 50K from 1812), and there is no
     federal draft before 1863.
 
@@ -181,6 +190,7 @@ Everything happens on one screen:
       R --> W[Fronts and battles]
       AI --> W
       E --> M[Map: their colour, no longer claimable]
+      M --> I[Their territories pay the owner;<br/>unrest over 70 → revolt]
   ```
 - **Territory money (new in 3.13.1)**: what your territories earn now lands in your **spendable funds** (the same
   pot as aid, group actions and colony purchases) every turn, with a "Territories paid $X B this month." ticker line;
@@ -986,18 +996,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **540 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **549 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 187 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 110 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 67 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 37 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 34 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 59 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 41 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 188 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 112 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 68 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 38 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 35 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 60 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 43 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -1025,6 +1035,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.14.1 | Oct 2026 | Independent Africa (Ethiopia, Liberia, Madagascar; Ashanti, Sokoto, Zanzibar), the Balkan states from their real dates, AI territories that pay and revolt |
 | 3.14.0 | Oct 2026 | A living world in every era (scaled by difficulty), era-true nations in every event, every land selectable on the map and card grid, militia calls in the 1790s |
 | 3.13.2 | Oct 2026 | Levy cooldown is exactly six months; well-run new territories recover to 60 stability in their first year |
 | 3.13.1 | Oct 2026 | Territory money: cash into your funds every turn, extraction rates, levies, a Resources panel that says what's holding each land back |

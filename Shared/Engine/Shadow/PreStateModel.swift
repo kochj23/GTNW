@@ -64,7 +64,7 @@ enum PreStateModel {
     static let ownerNames: [String: String] = [
         "GBR": "UK", "ESP": "Spain", "PRT": "Portugal", "FRA": "France", "NLD": "Netherlands", "RUS": "Russia",
         "TUR": "Ottoman Empire", "CHN": "China", "JPN": "Japan", "THA": "Siam", "AUT": "Austria", "DNK": "Denmark",
-        "SWE": "Sweden", "IND": "British India", "AUS": "Australia", "PAK": "Pakistan", "HTI": "Haiti",
+        "SWE": "Sweden", "OMN": "Oman", "DEU": "Germany", "IND": "British India", "AUS": "Australia", "PAK": "Pakistan", "HTI": "Haiti",
     ]
     static func ownerName(_ id: String) -> String { ownerNames[id] ?? id }
 

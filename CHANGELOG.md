@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.1] - 2026-10-20 — Independent Africa, the Balkan states, AI territories with stakes
+
+### Fixed
+- **Ethiopia was never unclaimed**: the Ethiopian Empire is on the board from 1789 (Italian East Africa 1936–41).
+  Liberia is a state from 1847 and Madagascar's Merina Kingdom until the French conquest of 1896
+  (`WorldCountriesDatabase.independentAfrica`). Morocco and Egypt were already era-correct.
+- **West and East African states**: the Ashanti Empire (to 1901), the Hausa kingdoms and Sokoto Caliphate (to 1903)
+  and the Sultanate of Zanzibar's coast (under Oman to 1856, to 1885) are peoples' land, followed by the Gold Coast,
+  Nigeria Protectorate, German East Africa and Tanganyika as colonies. Land with a pre-state status is never also
+  unclaimed.
+- **The Balkans**: Serbia from 1817 (Principality; Kingdom 1882), Greece from 1829 (Kingdom), Montenegro and Romania
+  from 1878 (Kingdom of Montenegro 1910, of Romania 1881), Bulgaria from 1878 (Principality; Kingdom 1908); Macedonia
+  and Kosovo pass from the Ottomans to Serbia in 1913. The Serbo-Turkish, Serbo-Bulgarian and Balkan wars join the
+  rivalries.
+- Niue and the Cook Islands stay British until New Zealand is on the board.
+
+### Added
+- **AI territories with stakes** (`processAITerritories`): AI-held land uses the player's occupation model with thin
+  colonial garrisons (60% of need), pays the owner the same `annualIncome`, and may revolt (unrest above 70, 30% a
+  year). AI land ramps up from its claim date. `worldStats` gains `revolts` and `aiIncomeCents`.
+- 9 tests across all seven categories, including a map sweep around the new dates (549 total, single muted run);
+  snapshots in `Screenshots/3.14.1/`.
+- Older tests that used Nigeria and Ghana as their stock unclaimed land now use Cameroon and Gabon (Nigeria and
+  Ghana are Sokoto and Ashanti land in those years).
+
 ## [3.14.0] - 2026-10-20 — A living world
 
 ### Added

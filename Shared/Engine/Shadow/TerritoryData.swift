@@ -10,6 +10,15 @@ import Foundation
 
 extension PreStateModel {
     static let eras: [PreStateEra] = [
+        PreStateEra(land: "GHA", from: 1789, to: 1901, kind: .indigenous, owner: "", name: "Ashanti Empire", extra: 70),
+        PreStateEra(land: "GHA", from: 1901, to: 1957, kind: .colony, owner: "GBR", name: "Gold Coast", extra: 1957),
+        PreStateEra(land: "NGA", from: 1789, to: 1804, kind: .indigenous, owner: "", name: "Hausa kingdoms", extra: 40),
+        PreStateEra(land: "NGA", from: 1804, to: 1903, kind: .indigenous, owner: "", name: "Sokoto Caliphate", extra: 70),
+        PreStateEra(land: "NGA", from: 1903, to: 1960, kind: .colony, owner: "GBR", name: "Nigeria Protectorate", extra: 1960),
+        PreStateEra(land: "TZA", from: 1789, to: 1856, kind: .colony, owner: "OMN", name: "Swahili coast (Oman)", extra: 1856),
+        PreStateEra(land: "TZA", from: 1856, to: 1885, kind: .indigenous, owner: "", name: "Sultanate of Zanzibar", extra: 45),
+        PreStateEra(land: "TZA", from: 1885, to: 1919, kind: .colony, owner: "DEU", name: "German East Africa", extra: 1919),
+        PreStateEra(land: "TZA", from: 1919, to: 1961, kind: .colony, owner: "GBR", name: "Tanganyika", extra: 1961),
         PreStateEra(land: "CAN", from: 1789, to: 1867, kind: .colony, owner: "GBR", name: "British North America", extra: 1867),
         PreStateEra(land: "MEX", from: 1789, to: 1821, kind: .colony, owner: "ESP", name: "New Spain", extra: 1821),
         PreStateEra(land: "GTM", from: 1789, to: 1821, kind: .colony, owner: "ESP", name: "Captaincy General of Guatemala", extra: 1821),
@@ -103,9 +112,9 @@ extension PreStateModel {
         PreStateEra(land: "SVK", from: 1789, to: 1918, kind: .colony, owner: "AUT", name: "Upper Hungary", extra: 1918),
         PreStateEra(land: "GRC", from: 1789, to: 1829, kind: .colony, owner: "TUR", name: "Ottoman Greece", extra: 1829),
         PreStateEra(land: "ALB", from: 1789, to: 1912, kind: .colony, owner: "TUR", name: "Ottoman Albania", extra: 1912),
-        PreStateEra(land: "BGR", from: 1789, to: 1908, kind: .colony, owner: "TUR", name: "Ottoman Bulgaria", extra: 1908),
-        PreStateEra(land: "ROU", from: 1789, to: 1881, kind: .colony, owner: "TUR", name: "Danubian Principalities", extra: 1878),
-        PreStateEra(land: "SRB", from: 1789, to: 1882, kind: .colony, owner: "TUR", name: "Ottoman Serbia", extra: 1878),
+        PreStateEra(land: "BGR", from: 1789, to: 1878, kind: .colony, owner: "TUR", name: "Ottoman Bulgaria", extra: 1878),
+        PreStateEra(land: "ROU", from: 1789, to: 1878, kind: .colony, owner: "TUR", name: "Danubian Principalities", extra: 1878),
+        PreStateEra(land: "SRB", from: 1789, to: 1817, kind: .colony, owner: "TUR", name: "Ottoman Serbia", extra: 1817),
         PreStateEra(land: "BEL", from: 1789, to: 1795, kind: .colony, owner: "AUT", name: "Austrian Netherlands", extra: 1830),
         PreStateEra(land: "BEL", from: 1795, to: 1815, kind: .colony, owner: "FRA", name: "Belgian departments of France", extra: 1830),
         PreStateEra(land: "BEL", from: 1815, to: 1830, kind: .colony, owner: "NLD", name: "Southern Netherlands", extra: 1830),

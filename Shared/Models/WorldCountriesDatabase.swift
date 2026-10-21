@@ -132,6 +132,16 @@ struct WorldCountriesDatabase {
     /// Ids of the lands nobody governs in `year` (each also removed by `countriesForYear`).
     static func unclaimedLandIDs(year: Int) -> Set<String> {
         unclaimedLands.reduce(into: Set<String>()) { out, e in if year < e.until { out.formUnion(e.ids) } }
+            .subtracting(independentAfrica(year: year))
+    }
+
+    /// 3.14.1: African states that were independent while the rest of the continent was colonised: the Ethiopian
+    /// Empire throughout, Liberia from 1847, and Madagascar's Merina Kingdom until the French conquest of 1896.
+    static func independentAfrica(year: Int) -> Set<String> {
+        var s: Set<String> = ["ETH"]
+        if year >= 1847 { s.insert("LBR") }
+        if year < 1896 { s.insert("MDG") }
+        return s
     }
 
     /// The modern-map template for a land (name, flag, capital, coordinates, region), or nil.
@@ -198,7 +208,10 @@ struct WorldCountriesDatabase {
 
         // Yugoslavia: unified 1918-1992 (3.14.0: not before 1918; its lands are Ottoman / Habsburg then)
         if year < 1992 {
-            let removeYugo = ["SRB","HRV","BIH","SVN","MKD","MNE","XKX"]
+            // 3.14.1: before 1918 Serbia (autonomous 1817, independent 1878) and Montenegro (independent 1878) stand alone
+            let removeYugo = ["SRB","HRV","BIH","SVN","MKD","MNE","XKX"].filter { id in
+                !(year < 1918 && ((id == "SRB" && year >= 1817) || (id == "MNE" && year >= 1878)))
+            }
             countries.removeAll { removeYugo.contains($0.id) }
             if year >= 1918 { countries.append(yugoslavia()) }
         }
@@ -278,7 +291,8 @@ struct WorldCountriesDatabase {
         // Many African nations gained independence ~1960
         // Remove the most historically significant absences before 1960
         if year < 1960 {
-            countries.removeAll { postColonialAfrica.contains($0.id) }
+            let independent = independentAfrica(year: year)   // 3.14.1
+            countries.removeAll { postColonialAfrica.contains($0.id) && !independent.contains($0.id) }
         }
 
         // Timor-Leste: independent 2002
@@ -461,13 +475,13 @@ struct WorldCountriesDatabase {
             // Czechoslovakia block adds CSK for 1918-1993
         }
 
-        // ROMANIA — roughly independent 1881, but various forms before
-        if year < 1881 {
+        // ROMANIA — independent 1878 (Kingdom 1881)
+        if year < 1878 {
             countries.removeAll { $0.id == "ROU" }
         }
 
-        // BULGARIA — independent 1908 (was Ottoman/autonomous before)
-        if year < 1908 {
+        // BULGARIA — autonomous principality 1878, independent kingdom 1908
+        if year < 1878 {
             countries.removeAll { $0.id == "BGR" }
         }
 
@@ -483,9 +497,8 @@ struct WorldCountriesDatabase {
         }
 
         // SERBIA (modern) — handled by Yugoslavia block for 1918-1992
-        // Pre-1918: Kingdom of Serbia existed from 1882
-        // For simplicity: remove pre-1882
-        if year < 1882 {
+        // Pre-1918: Principality of Serbia (autonomous) from 1817, Kingdom from 1882 (3.14.1)
+        if year < 1817 {
             countries.removeAll { $0.id == "SRB" }
         }
 
