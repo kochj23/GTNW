@@ -225,3 +225,60 @@ enum NationModel {
         return holder(c.id, role: leaderRole(government: gov), on: date, government: gov)
     }
 }
+
+// MARK: - Evolving cabinets (3.12.2)
+
+extension GameEngine {
+    /// Each turn: while history and the game agree, officeholders change on their real dates.
+    /// - The player's government (non-U.S. nations with data) follows history until the player's choices diverge:
+    ///   the player makes an appointment (any departure is replaced by the player's acting appointee), wins an
+    ///   election, or history records someone else taking the player's own office. After that it is the player's.
+    /// - Computer-run nations with data keep their historical leaders (shown on the dossier) until their own story
+    ///   diverges: a change of government, annexation or destruction.
+    func processCabinets() {
+        guard let gs = gameState, let me = gs.getPlayerCountry() else { return }
+        let date = gs.currentDate
+        if me.id != "USA", gs.shadow.cabinetFollowsHistory, NationModel.nation(me.id) != nil {
+            let leader = NationModel.leader(for: me, on: date)
+            if let start = gs.shadow.playerLeader, !leader.generic, leader.name != start {
+                gs.shadow.cabinetFollowsHistory = false
+                gs.shadow.post("History records \(leader.name) taking over as \(leader.title). In this game you remain in office; the cabinet is yours now.",
+                               date: date, severity: 1)
+            } else {
+                for new in NationModel.cabinet(for: me, on: date) {
+                    guard let i = gs.advisors.lastIndex(where: { $0.isActive && $0.role == new.role && $0.id.hasPrefix(me.id + "-") }),
+                          gs.advisors[i].name != new.name else { continue }
+                    let old = gs.advisors[i]
+                    gs.advisors[i].status = .resigned
+                    var a = new
+                    a.role = new.role
+                    gs.advisors.append(Advisor(id: "\(new.id)@\(GameCalendar.year(of: date))-\(gs.advisors.count)", name: a.name, title: a.title,
+                                               department: a.department, bio: a.bio, expertise: a.expertise, loyalty: a.loyalty, influence: a.influence,
+                                               publicSupport: a.publicSupport, hawkishness: a.hawkishness, interventionism: a.interventionism,
+                                               fiscalConservatism: a.fiscalConservatism, adviceAreas: a.adviceAreas, portraitColor: a.portraitColor))
+                    gs.advisors[gs.advisors.count - 1].role = new.role
+                    gs.shadow.post("\(new.name) replaces \(old.name) as \(new.title).", date: date, severity: 1)
+                }
+            }
+        }
+        for c in gs.countries where c.id != me.id && NationModel.nation(c.id) != nil && !gs.shadow.divergedNations.contains(c.id) {
+            let gov = c.government.rawValue
+            if let first = gs.shadow.trackedGovernments[c.id], first != gov || c.isTerritory || c.isDestroyed {
+                gs.shadow.divergedNations.insert(c.id)
+                gs.shadow.leaderNames.removeValue(forKey: c.id)
+                continue
+            }
+            gs.shadow.trackedGovernments[c.id] = gov
+            let l = NationModel.leader(for: c, on: date)
+            if !l.generic { gs.shadow.leaderNames[c.id] = "\(l.display), \(l.title)" }
+        }
+        self.gameState = gs
+    }
+
+    /// The player's choices take the government off history's script.
+    func divergeCabinet() {
+        guard let gs = gameState else { return }
+        gs.shadow.cabinetFollowsHistory = false
+        self.gameState = gs
+    }
+}

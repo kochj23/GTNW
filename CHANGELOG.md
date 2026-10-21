@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.2] - 2026-10-20 — Evolving cabinets; the Gulf War scenario
+
+### Added
+- **Evolving cabinets** (`GameEngine.processCabinets`, each turn and at setup):
+  - Non-U.S. players' cabinets follow the research dates (the outgoing minister is retired, the new one appointed,
+    ticker line) while `ShadowState.cabinetFollowsHistory`.
+  - That stops when the player appoints anyone (any departure), wins an election, or history puts someone else in
+    the player's own office.
+  - Computer-run nations with data show their historical leader on the dossier (`ShadowState.leaderNames`) until
+    their government changes or they are annexed or destroyed (`divergedNations`).
+- **"The Gulf War, 1990"** scenario (2 Aug 1990) with a five-line scorecard. Thirteen Days (1962) gains "Naval
+  quarantine of Cuba" (24 Oct 1962) and "DEFCON 2 reached".
+- 10 tests (494 total; the suite now runs once per release, muted); snapshots in `Screenshots/3.12.2/`.
+
 ## [3.12.1] - 2026-10-20 — Mute switch
 
 ### Fixed

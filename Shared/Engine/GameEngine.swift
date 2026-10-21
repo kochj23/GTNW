@@ -117,6 +117,7 @@ class GameEngine: ObservableObject {
         // 3.11.0: another nation's leader gets that nation's real cabinet for the date, and no U.S. presidential elections.
         if playerCountryID != "USA", let gs = gameState, let me = gs.getPlayerCountry() {
             gs.advisors = NationModel.cabinet(for: me, on: gs.currentDate)
+            gs.shadow.playerLeader = NationModel.leader(for: me, on: gs.currentDate).name
             setupShadowSystems(electionsEnabled: false)
         } else {
             setupShadowSystems()

@@ -58,7 +58,7 @@ struct ScenarioDefinition: Identifiable {
 
     static func d(_ y: Int, _ m: Int, _ day: Int) -> Date { GameCalendar.date(year: y, month: m, day: day) }
 
-    static let all: [ScenarioDefinition] = [pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, sept11_2001, modern2025]
+    static let all: [ScenarioDefinition] = [pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, gulf1990, sept11_2001, modern2025]
 
     static func find(_ id: String) -> ScenarioDefinition? { all.first { $0.id == id } }
 
@@ -181,6 +181,24 @@ struct ScenarioDefinition: Identifiable {
         ],
         suggestedTurnLength: .week, boardYear: 1950)
 
+    static let gulf1990 = ScenarioDefinition(
+        id: "gulf1990",
+        title: "The Gulf War, 1990",
+        summary: "August 2, 1990. Iraqi armoured divisions have overrun Kuwait in a matter of hours and stand on the "
+            + "Saudi border. The oil of the Gulf, and the credibility of the post-Cold War order, are at stake.",
+        startDate: d(1990, 8, 2), eraYear: 1990, defcon: .defcon4,
+        wars: [("IRQ", "KWT")],
+        relations: [("IRQ", "KWT", -95), ("KWT", "IRQ", -95), ("USA", "IRQ", -60), ("IRQ", "USA", -50), ("SAU", "IRQ", -60), ("USA", "SAU", 60)],
+        events: [
+            ScheduledEvent(date: d(1990, 8, 6), kind: .news, actor: nil, target: nil,
+                           text: "The UN Security Council imposes sanctions on Iraq (Resolution 661)."),
+            ScheduledEvent(date: d(1990, 8, 7), kind: .news, actor: nil, target: nil,
+                           text: "Operation Desert Shield: the first U.S. forces deploy to Saudi Arabia."),
+            ScheduledEvent(date: d(1990, 11, 29), kind: .news, actor: nil, target: nil,
+                           text: "The Security Council authorizes 'all necessary means' if Iraq is not out of Kuwait by 15 January (Resolution 678)."),
+        ],
+        suggestedTurnLength: .week)
+
     static let sept11_2001 = ScenarioDefinition(
         id: "sept11_2001",
         title: "September 11, 2001",
@@ -259,9 +277,19 @@ enum Scorecard {
                    line("Nuclear weapons used", history: false, when: "", game: nukes),
                    line("North Korea defeated", history: false, when: "armistice 27 Jul 1953", game: defeated("PRK", in: gs))]
         case "cuba1962":
-            out = [line("War with the Soviet Union", history: false, when: "", game: fought("USA", "RUS", in: gs)),
+            out = [line("Naval quarantine of Cuba", history: true, when: "from 24 Oct 1962",
+                        game: gs.shadow.fleetDeployments.contains { $0.target == "CUB" && $0.mission == .blockade }),
+                   line("DEFCON 2 reached", history: true, when: "Strategic Air Command, 24 Oct 1962", game: gs.defconLevel.rawValue <= 2 || gs.reachedDEFCON1),
+                   line("War with the Soviet Union", history: false, when: "", game: fought("USA", "RUS", in: gs)),
                    line("Invasion of Cuba", history: false, when: "", game: fought("USA", "CUB", in: gs)),
                    line("Nuclear weapons used", history: false, when: "missiles withdrawn, Oct–Nov 1962", game: nukes)]
+        case "gulf1990":
+            let liberated = defeated("IRQ", in: gs) || gs.shadow.fronts.contains { $0.attacker == "IRQ" && $0.defender == "KWT" && $0.status == .defenderWon }
+            out = [line("Congress authorizes force", history: true, when: "12 Jan 1991", game: gs.shadow.authorizations.contains { $0.target == "IRQ" && $0.passed }),
+                   line("A coalition joins the U.S.", history: true, when: "35 nations", game: !(gs.shadow.coalitions["IRQ"]?.members.isEmpty ?? true)),
+                   line("The U.S. fights Iraq", history: true, when: "Desert Storm, from 17 Jan 1991", game: fought("USA", "IRQ", in: gs)),
+                   line("Kuwait liberated", history: true, when: "28 Feb 1991", game: liberated),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes)]
         case "ablearcher1983":
             out = [line("War with the Soviet Union", history: false, when: "", game: fought("USA", "RUS", in: gs)),
                    line("Nuclear weapons used", history: false, when: "", game: nukes)]

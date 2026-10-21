@@ -47,6 +47,7 @@ extension GameEngine {
         }
         for i in gs.advisors.indices { AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs) }
         self.gameState = gs
+        processCabinets()   // 3.12.2: historical leaders of the day from the start
     }
 
     /// Start a scenario from the scenario list.
@@ -84,6 +85,7 @@ extension GameEngine {
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
         processTerritoryEconomy()   // after the poll, so its impeachment warning always precedes the next one
+        processCabinets()
         processAdvisorFates(scale: scale)
 
         // Peace streak (years of peace = peaceTurns × turn length).
@@ -747,6 +749,7 @@ extension GameEngine {
         gs.shadow.lastElection = result
         ShadowPack.shared.play("sfx.election_speech\(Int.random(in: 1...3))")
         if won {
+            gs.shadow.cabinetFollowsHistory = false   // 3.12.2: a re-elected leader writes their own history
             gs.shadow.termsWon += 1
             gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 5)
             gs.shadow.post(String(format: "ELECTION NIGHT: You win %.1f%% to %.1f%%. Four more years.", share, 100 - share), date: day, severity: 3)
@@ -794,6 +797,7 @@ extension GameEngine {
     func departAdvisor(index i: Int, status: AdvisorStatus, reason: String) {
         guard let gs = gameState, gs.advisors.indices.contains(i), gs.advisors[i].isActive else { return }
         gs.advisors[i].status = status
+        gs.shadow.cabinetFollowsHistory = false   // 3.12.2: the player's own appointment ends history's script
         let acting = AdviceEngine.appointActing(replacing: gs.advisors[i], sequence: gs.advisors.count)
         gs.advisors.append(acting)
         gs.shadow.post(reason, date: gs.currentDate, severity: 2)

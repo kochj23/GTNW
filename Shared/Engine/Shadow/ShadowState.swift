@@ -126,6 +126,14 @@ struct ShadowState: Codable {
     var savedGroups: [String: [String]] = [:]
     /// Coalitions the player has assembled, by target (3.12.0).
     var coalitions: [String: Coalition] = [:]
+    /// Evolving cabinets (3.12.2): whether the player's government still follows history, the leader the player
+    /// started as, the government each computer-run nation had when tracking began, nations whose story has
+    /// diverged, and their historical leaders' names for the dossier.
+    var cabinetFollowsHistory = true
+    var playerLeader: String?
+    var trackedGovernments: [String: String] = [:]
+    var divergedNations: Set<String> = []
+    var leaderNames: [String: String] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -163,6 +171,7 @@ struct ShadowState: Codable {
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
+        case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
     }
 
     init() {}
@@ -210,6 +219,11 @@ struct ShadowState: Codable {
         statesAdmitted = try c.decodeIfPresent([StatehoodRecord].self, forKey: .statesAdmitted) ?? []
         savedGroups = try c.decodeIfPresent([String: [String]].self, forKey: .savedGroups) ?? [:]
         coalitions = try c.decodeIfPresent([String: Coalition].self, forKey: .coalitions) ?? [:]
+        cabinetFollowsHistory = try c.decodeIfPresent(Bool.self, forKey: .cabinetFollowsHistory) ?? true
+        playerLeader = try c.decodeIfPresent(String.self, forKey: .playerLeader)
+        trackedGovernments = try c.decodeIfPresent([String: String].self, forKey: .trackedGovernments) ?? [:]
+        divergedNations = try c.decodeIfPresent(Set<String>.self, forKey: .divergedNations) ?? []
+        leaderNames = try c.decodeIfPresent([String: String].self, forKey: .leaderNames) ?? [:]
     }
 }
 

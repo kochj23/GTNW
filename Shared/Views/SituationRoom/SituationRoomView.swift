@@ -462,6 +462,9 @@ struct CountryDossier: View {
                             Text(c.name.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
                             Text("\(c.region.rawValue) · \(p.ideology.rawValue)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                             Text(c.government.rawValue.uppercased()).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                            if let leader = gameState.shadow.leaderNames[c.id] {   // 3.12.2: the historical leader of the day
+                                Text(verbatim: leader).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(2)
+                            }
                         }
                     }
                     if let o = c.territoryOf {
