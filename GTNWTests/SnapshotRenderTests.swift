@@ -707,5 +707,19 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(760)), name: "tactics-civilians-1902-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.4: the deception panel in 1964, the year of the Gulf of Tonkin.
+    @MainActor
+    func testRenderDirtyTacticsDeception() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1964)
+        let gs = try XCTUnwrap(engine.gameState)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let sheet = DirtyTacticsSheet(gameState: gs, targetID: "VNM", scrolls: false, startGroup: .deception)
+            print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(760)), name: "tactics-deception-1964-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

@@ -5062,3 +5062,143 @@ final class DirtyTacticsCiviliansTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.17.4: dirty tactics — deception
+
+@MainActor
+final class DirtyTacticsDeceptionTests: XCTestCase {
+
+    private func game(_ year: Int) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        return (e, try XCTUnwrap(e.gameState))
+    }
+
+    private func war(_ year: Int, with foe: String) throws -> (GameEngine, GameState) {
+        let (e, gs) = try game(year)
+        e.declareWar(aggressor: gs.playerCountryID, defender: foe)
+        e.syncFronts()
+        return (e, gs)
+    }
+
+    // Unit: the eras and the treaties
+    func testDeceptionErasAndTreaties() {
+        let flag = DirtyTactics.tactic("false_flag")!
+        XCTAssertEqual(flag.status(in: 1898), .legal, "nothing yet covered how a war begins")
+        XCTAssertEqual(flag.status(in: 1964), .treatyBanned, "the UN Charter Art. 2(4), 1945")
+        let press = DirtyTactics.tactic("yellow_press")!
+        XCTAssertFalse(press.exists(in: 1894))
+        XCTAssertEqual(press.status(in: 1898), .legal, "nothing forbids a newspaper from printing what sells")
+        XCTAssertEqual(press.status(in: 2025), .legal)
+        let greif = DirtyTactics.tactic("enemy_uniforms")!
+        XCTAssertEqual(greif.status(in: 1864), .legal)
+        XCTAssertEqual(greif.status(in: 1944), .restricted, "Hague IV Art. 23(f)")
+        XCTAssertEqual(greif.status(in: 1990), .treatyBanned, "perfidy under AP I, 1977")
+        let notes = DirtyTactics.tactic("counterfeit_currency")!
+        XCTAssertEqual(notes.status(in: 1777), .legal)
+        XCTAssertEqual(notes.status(in: 1943), .restricted, "the 1929 counterfeiting convention, in force 1931")
+        let opium = DirtyTactics.tactic("opium_policy")!
+        XCTAssertEqual(opium.status(in: 1840), .legal)
+        XCTAssertEqual(opium.status(in: 1920), .restricted, "the Hague Opium Convention of 1912")
+        XCTAssertEqual(opium.status(in: 1980), .treatyBanned, "the Single Convention of 1961")
+    }
+
+    // Functional: a pretext Congress accepts, and the annulment when it is exposed
+    func testPretextCarriesCongressUntilExposed() throws {
+        let (e, gs) = try game(1964)
+        let plain = try XCTUnwrap(e.authorizationOdds(target: "VNM", kind: .declaration)).casusBelli
+        XCTAssertNotNil(e.useTactic("false_flag", target: "VNM", covert: true, discoveryRoll: 0.99))
+        let withPretext = try XCTUnwrap(e.authorizationOdds(target: "VNM", kind: .declaration))
+        XCTAssertGreaterThan(withPretext.casusBelli, plain, "the incident is a casus belli")
+        XCTAssertNotNil(e.requestAuthorization(target: "VNM", kind: .useOfForce, roll: 0.0))
+        XCTAssertTrue(e.isAuthorized("VNM"))
+        e.exposeTactic(try XCTUnwrap(gs.shadow.tacticUses.first).id)
+        XCTAssertFalse(e.isAuthorized("VNM"), "Congress annuls what the lie bought")
+        XCTAssertEqual(e.pretextBonus("VNM"), 0)
+        XCTAssertGreaterThanOrEqual(gs.shadow.impeachmentStage, 2)
+    }
+
+    // Functional: the papers raise war support, and an exposé takes it back
+    func testYellowPressRaisesWarSupportAndTheExposeTakesIt() throws {
+        let (e, gs) = try game(1898)
+        let support = try XCTUnwrap(gs.getPlayerCountry()).warSupport
+        XCTAssertNotNil(e.useTactic("yellow_press", covert: true, discoveryRoll: 0.99))
+        let after = try XCTUnwrap(gs.getPlayerCountry()).warSupport
+        XCTAssertGreaterThan(after, support)
+        e.exposeTactic(try XCTUnwrap(gs.shadow.tacticUses.first).id)
+        XCTAssertLessThan(try XCTUnwrap(gs.getPlayerCountry()).warSupport, after)
+    }
+
+    // Functional: counterfeiting pays the President and costs the enemy
+    func testCounterfeitingPaysAndBites() throws {
+        let (e, gs) = try war(1943, with: "DEU")
+        let funds = gs.shadow.aidRemaining
+        let gdp = try XCTUnwrap(gs.getCountry(id: "DEU")).gdp
+        XCTAssertNotNil(e.useTactic("counterfeit_currency", target: "DEU", covert: true, discoveryRoll: 0.99))
+        XCTAssertGreaterThan(gs.shadow.aidRemaining, funds)
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "DEU")).gdp, gdp)
+    }
+
+    // Functional: enemy uniforms buy momentum, and cost men when they are found out
+    func testEnemyUniformsBuyMomentum() throws {
+        let (e, gs) = try war(1944, with: "DEU")
+        let momentum = try XCTUnwrap(gs.shadow.fronts.first).attackerMomentum
+        XCTAssertNotNil(e.useTactic("enemy_uniforms", target: "DEU", covert: true, discoveryRoll: 0.99))
+        XCTAssertGreaterThan(try XCTUnwrap(gs.shadow.fronts.first).attackerMomentum, momentum)
+        let troops = try XCTUnwrap(gs.shadow.fronts.first).attackerTroops
+        e.exposeTactic(try XCTUnwrap(gs.shadow.tacticUses.first).id)
+        XCTAssertLessThan(try XCTUnwrap(gs.shadow.fronts.first).attackerTroops, troops, "men out of uniform are shot")
+    }
+
+    // Integration: the opium trade as state policy, through the existing drug-operations action
+    func testOpiumPolicyMultipliesDrugOperations() throws {
+        let (plain, g1) = try game(1850)
+        plain.runDrugOperations(target: "CHN")
+        let ordinary = g1.shadow.resourceEarnings
+
+        let (state, g2) = try game(1850)
+        XCTAssertNotNil(state.useTactic("opium_policy", target: "CHN", covert: false))
+        XCTAssertTrue(state.opiumPolicyActive(against: "CHN"))
+        let afterPolicy = g2.shadow.resourceEarnings
+        state.runDrugOperations(target: "CHN")
+        XCTAssertGreaterThan(g2.shadow.resourceEarnings - afterPolicy, ordinary * 2, "state policy runs on another scale")
+        XCTAssertLessThan(try XCTUnwrap(g2.getCountry(id: "CHN")).stability,
+                          try XCTUnwrap(g1.getCountry(id: "CHN")).stability)
+        // And through the menu action the game already had.
+        state.executeShadowPresidentAction(.drugOps, from: g2.playerCountryID, to: "CHN")
+        XCTAssertTrue(g2.shadow.ticker.contains { $0.text.contains("under the flag") })
+    }
+
+    // Security: a pretext that was exposed is worth nothing, and none of this works on yourself
+    func testDeceptionTargetsAndSpentPretexts() throws {
+        let (e, gs) = try game(1964)
+        XCTAssertNotNil(e.tacticProblem("false_flag", target: gs.playerCountryID))
+        XCTAssertNotNil(e.tacticProblem("counterfeit_currency", target: gs.playerCountryID))
+        XCTAssertNil(e.useTactic("enemy_uniforms", target: gs.playerCountryID, covert: true))
+        e.useTactic("false_flag", target: "VNM", covert: true, discoveryRoll: 0.0)
+        XCTAssertEqual(e.pretextBonus("VNM"), 0, "a pretext that was caught is worth nothing")
+        XCTAssertEqual(e.pretextBonus("FRA"), 0)
+        XCTAssertFalse(e.opiumPolicyActive(against: "CHN"))
+    }
+
+    // Retry: deception records and the pretext survive a save
+    func testDeceptionSurvivesSave() throws {
+        let (e, gs) = try game(1964)
+        e.useTactic("false_flag", target: "VNM", covert: true, discoveryRoll: 0.99)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        let e2 = GameEngine()
+        e2.gameState = loaded
+        XCTAssertGreaterThan(e2.pretextBonus("VNM"), 0, "the lie is still standing after a reload")
+    }
+
+    // Performance: five groups in the catalog stay cheap
+    func testFiveGroupsStayCheap() {
+        measure {
+            for _ in 0..<500 {
+                for y in [1789, 1850, 1898, 1944, 1964, 2025] {
+                    for g in TacticGroup.allCases { _ = DirtyTactics.available(in: y, group: g) }
+                }
+            }
+        }
+    }
+}
