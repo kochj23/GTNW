@@ -310,7 +310,9 @@ extension GameEngine {
     func claimIndigenousLand(_ land: String, troops: Double, roll: Double = Double.random(in: 0..<1), spendAction: Bool = true) -> Bool? {
         guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, let st = gs.preState(land), st.era.kind == .indigenous,
               let me = gs.getPlayerCountry(), troops.isFinite, troops >= 1, troops <= max(5, AttackSizing.freeTroops(gs)) else { return nil }
-        let resisters = PreStateModel.resistanceTroops(st.era.extra)
+        // 3.17.0: gas, infected stores or a slaughtered food supply have already broken some of the resistance.
+        let strength = max(0, st.era.extra - Int((gs.shadow.resistanceBroken[land] ?? 0).rounded()))
+        let resisters = PreStateModel.resistanceTroops(strength)
         let odds = PreStateModel.seizeOdds(troops: troops, attackerStrength: me.militaryStrength, defenders: max(0.5, resisters), defenderStrength: 30)
         let won = roll < odds
         let pol = ExpansionModel.politics(year: gs.currentYear, nth: ExpansionModel.takenLastYear(gs, before: gs.currentDate) + 1)

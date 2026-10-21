@@ -188,8 +188,17 @@ extension PresidentialAction {
 
     /// Shown on a date: the action's era year, nothing nuclear before Trinity, and chemical / biological options only
     /// while a stockpile exists or once it can be restarted (an attack then needs the restarted program).
-    func isAvailable(on date: Date) -> Bool {
+    /// 3.17.0: `gs` lets a programme the President ran himself (a crude war-gas or human-subject programme, see
+    /// `DirtyTactics`) put the option on the board before history did. Without it only the historical dates count.
+    func isAvailable(on date: Date, in gs: GameState? = nil) -> Bool {
         let y = GameCalendar.year(of: date)
+        let delivered = wmd.flatMap { gs?.shadow.wmdPrograms[$0.rawValue] }.map { $0.ready <= date } ?? false
+        switch self {
+        case .chemicalAttack, .biologicalAttack:
+            if delivered { return true }
+        default:
+            break
+        }
         guard eraAvailableYear <= y else { return false }
         if category == .nuclear && eraAvailableYear >= 1945 && date < ArsenalCatalog.trinity { return false }
         switch self {
@@ -210,7 +219,7 @@ extension GameEngine {
     func wmdProblem(_ action: PresidentialAction) -> String? {
         guard let kind = action.wmd, let gs = gameState else { return nil }
         let date = gs.currentDate
-        guard action.isAvailable(on: date) else { return "Not available in \(gs.currentYear)." }
+        guard action.isAvailable(on: date, in: gs) else { return "Not available in \(gs.currentYear)." }
         let program = gs.shadow.wmdPrograms[kind.rawValue]
         switch action {
         case .restartChemical, .restartBiological:

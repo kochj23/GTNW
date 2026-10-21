@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.0] - 2026-10-21 — Dirty tactics: early chemical and biological
+
+The first of seven releases that let the President fight dirty and let the game judge him for it — but only if he
+is caught. Jordan's rule: **it's only illegal if you get caught.**
+
+### Added
+- **`DirtyTactics`** (`DirtyTactics.swift`), the frame every later group plugs into. Each tactic carries:
+  - a **real era window** (`from` / `to`), with a research programme able to pull something earlier only where the
+    era's technology plausibly allowed it;
+  - a **legal status by era** (`LegalStatus`, reused from the 3.6.0 weapons catalog) that tightens with the real
+    treaties, and the treaty line that did it;
+  - an **open or covert** choice. `discoveryChance` = 6% × the era (`eraExposure`: a partisan press before 1850, a
+    mass press to 1915, aerial reconnaissance and correspondents to 1960, satellites to 1990, modern intelligence
+    after), × the crowd in on it (√ the hundreds involved), × the scale ordered (Probe / Standard / Overwhelming),
+    capped at 90%;
+  - the **consequences on discovery**: the 3.6.0 treaty cost (relations with the target and the world, allies,
+    ruthlessness, approval, sanctions, impeachment hearings) plus a quarter again for the cover-up, and a
+    **war-crimes tribunal** roll in the eras that have one (none before Nuremberg, 10% to 1993, 20% to 2002, 35%
+    under the Rome Statute). A covert use always costs a fifth of its ruthlessness, because the men who did it know.
+- **Five tactics** (`DirtyTactics.chemical`):
+  - **Crude war-gas programme** (1880–, legal → Hague 1899 → Geneva Protocol 1928 → CWC 1997): four years and $12B
+    of industrial chemistry to put chlorine and phosgene in shells before 1917. It delivers a real stockpile the
+    weapons catalog then prices as usual. **A 1790s programme is refused with the reason** — electrolytic chlorine
+    plants date from the 1890s, and no money moves that.
+  - **Contaminated goods** (1789–, legal → Lieber Code 1863 → Hague 1899 → Geneva 1949): the Fort Pitt precedent of
+    June 1763, correctly attributed to British officers. Low, random effectiveness, and a 35% chance the sickness
+    crosses back into American camps and towns.
+  - **Gas against a resisting people** (1920–; the Rif 1921–27, Ethiopia 1935–36): resistance collapses on a
+    people's land, so it is cheaper to take afterwards (`shadow.resistanceBroken` feeds `claimIndigenousLand`).
+  - **Human-subject biological programme** (1932–; Unit 731 at Pingfang, 1932–45): three years to a biological
+    arsenal, 30 hundred people in on it, and no political survival if it comes out.
+  - **Defoliants** (1961–; Operation Ranch Hand, Jan 1962 – Jan 1971, about 20 million gallons): the enemy loses his
+    cover, his harvest and 4% of his output per scale point — and the dioxin bill arrives twenty years later
+    (`TacticAftermath`).
+- **Delayed costs** (`TacticAftermath`): a cost queued for a date years away, applied by `processDirtyTactics`, and
+  able to repeat yearly until its window closes.
+- **DIRTY TACTICS panel** (`DirtyTacticsSheet`, top-bar **TACTICS**): the era's tactics with legal status, the
+  treaty behind each, the covert risk at the chosen scale, OPENLY / IN SECRET buttons — and the tactics the era
+  cannot do yet, with the reason.
+- **Hall of Infamy**: two records, *most dirty tactics ordered* and *most tactics exposed*.
+- **Nova** has lines for an exposure and for the chemical trade.
+- Play events `tactic_used`, `tactic_exposed`, `tactic_tribunal`, `tactic_program_started`, `tactic_program_ready`,
+  `tactic_program_discovered`, `tactic_aftermath`.
+
+### Changed
+- `PresidentialAction.isAvailable(on:in:)` takes the game state, so a programme the President ran himself can put
+  chemical or biological weapons on the board before history did. Without it only the historical dates count.
+- 13 tests across all seven categories (603 total, single muted run); snapshots in `Screenshots/3.17.0/`.
+
+### Deliberately not in the game
+- No player action for chattel slavery or slave labour, and none for genocide or ethnic cleansing. Both stay as
+  history and as things other powers do.
+
 ## [3.16.2] - 2026-10-20 — Historical absorptions; polish
 
 ### Added

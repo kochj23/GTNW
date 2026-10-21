@@ -74,6 +74,7 @@ extension GameEngine {
         applyOverdueSettlements()
         processFleets()
         processWMDPrograms()
+        processDirtyTactics()   // 3.17.0: secret programmes, stances and the bills that come due
         processScriptedEvents(from: from, to: to)
         updateAnxietiesAndSociety(scale: scale)
         syncFronts()
@@ -842,7 +843,7 @@ extension GameEngine {
     func performAdvisedAction(_ action: PresidentialAction, targetID: String, advice: ActionAdvice?, size: AttackSize? = nil) {
         guard let gs = gameState else { return }
         // 3.6.0: nothing the era didn't have (no nukes before Trinity), and chemical / biological only when possible.
-        guard action.isAvailable(on: gs.currentDate) else {
+        guard action.isAvailable(on: gs.currentDate, in: gs) else {
             addLog("❌ \(action.rawValue) is not available in \(gs.currentYear).", type: .error); return
         }
         if action.wmd != nil, let problem = wmdProblem(action) { addLog("❌ \(action.rawValue): \(problem)", type: .error); return }

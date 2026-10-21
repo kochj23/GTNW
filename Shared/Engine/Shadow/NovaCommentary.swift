@@ -58,6 +58,13 @@ enum NovaCommentary {
         } else if t.contains("impeach") || t.contains("congress") {
             pool = ["Congress has noticed. Congress rarely notices anything.", "The Capitol is sharpening its pencils.",
                     "Approval ratings are a renewable resource, until they aren't."]
+        } else if t.contains("exposes") || t.contains("surface") || t.contains("tribunal") || t.contains("leak") {
+            // 3.17.0: a dirty tactic comes out.
+            pool = ["It was only illegal because somebody wrote it down.", "The cover-up was the easy part. This is the hard part.",
+                    "Somewhere a clerk kept a carbon copy. They always do."]
+        } else if t.contains("gas") || t.contains("infected") || t.contains("defoliant") || t.contains("programme") || t.contains("sprayi") {
+            pool = ["Chemistry: the most patient branch of warfare.", "Nobody writes songs about this one.",
+                    "The wind, I should mention, does not take orders."]
         } else if t.contains("territor") || t.contains("claim") || t.contains("levy") || t.contains("annex") || t.contains("producing") {
             pool = ["Another flag, another ledger line.", "The map gets redder; the accountants get happier.",
                     "Empire: it's mostly paperwork and resentment."]
@@ -140,6 +147,8 @@ extension GameEngine {
 
 enum InfamyRecord: String, Codable, CaseIterable, Identifiable {
     case territories, territoryCash, nukes, ruthlessness, warsAtOnce, turnsSurvived, lowestApproval
+    // Dirty tactics (3.17.0): what was ordered, and what was found out.
+    case dirtyTactics, tacticsExposed
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -150,6 +159,8 @@ enum InfamyRecord: String, Codable, CaseIterable, Identifiable {
         case .warsAtOnce: return "Most wars at once"
         case .turnsSurvived: return "Longest time in office (turns)"
         case .lowestApproval: return "Lowest approval survived"
+        case .dirtyTactics: return "Most dirty tactics ordered"
+        case .tacticsExposed: return "Most tactics exposed"
         }
     }
     var lowerIsWorse: Bool { self == .lowestApproval }
@@ -171,6 +182,8 @@ enum InfamyRecord: String, Codable, CaseIterable, Identifiable {
         case .warsAtOnce: return Double(gs.getPlayerCountry()?.atWarWith.count ?? 0)
         case .turnsSurvived: return Double(gs.turn)
         case .lowestApproval: return gs.shadow.popularity
+        case .dirtyTactics: return Double(gs.shadow.tacticUses.count + gs.shadow.tacticStances.count)
+        case .tacticsExposed: return Double(gs.shadow.tacticUses.filter(\.discovered).count)
         }
     }
     /// The least a value must be to count as a record at all (nobody wants "0 wars").

@@ -25,6 +25,7 @@
 		1133AF3FACD6B76AFF6F8365 /* GameEngineBrains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */; };
 		128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
 		A6DF9F2CF772E926EC377AF2 /* PeaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6DF9F2CF772E926EC377AF1 /* PeaceModel.swift */; };
+		DB7EB963E415B731928C9F2 /* DirtyTactics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7EB963E415B731928C9F1 /* DirtyTactics.swift */; };
 		54E317E2332711DF31570AF2 /* NovaCommentary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E317E2332711DF31570AF1 /* NovaCommentary.swift */; };
 		41F5A3CAFF18464B5A3F6AF2 /* WorldPolitics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F5A3CAFF18464B5A3F6AF1 /* WorldPolitics.swift */; };
 		A49D733873BC4FDD74DBBAF2 /* TerritoryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D733873BC4FDD74DBBAF1 /* TerritoryData.swift */; };
@@ -91,6 +92,7 @@
 		4964D75AAE78229C8DE429D7 /* AIBrainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1204760B8883BA6B8FB377CD /* AIBrainTests.swift */; };
 		49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
 		A6DF9F2CF772E926EC377AF3 /* PeaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6DF9F2CF772E926EC377AF1 /* PeaceModel.swift */; };
+		DB7EB963E415B731928C9F3 /* DirtyTactics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7EB963E415B731928C9F1 /* DirtyTactics.swift */; };
 		54E317E2332711DF31570AF3 /* NovaCommentary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E317E2332711DF31570AF1 /* NovaCommentary.swift */; };
 		41F5A3CAFF18464B5A3F6AF3 /* WorldPolitics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F5A3CAFF18464B5A3F6AF1 /* WorldPolitics.swift */; };
 		A49D733873BC4FDD74DBBAF3 /* TerritoryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D733873BC4FDD74DBBAF1 /* TerritoryData.swift */; };
@@ -305,6 +307,7 @@
 		1204760B8883BA6B8FB377CD /* AIBrainTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIBrainTests.swift; sourceTree = "<group>"; };
 		15C61B45692E5ECBC414422A /* CombatModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CombatModel.swift; sourceTree = "<group>"; };
 		A6DF9F2CF772E926EC377AF1 /* PeaceModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeaceModel.swift; sourceTree = "<group>"; };
+		DB7EB963E415B731928C9F1 /* DirtyTactics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DirtyTactics.swift; sourceTree = "<group>"; };
 		54E317E2332711DF31570AF1 /* NovaCommentary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NovaCommentary.swift; sourceTree = "<group>"; };
 		41F5A3CAFF18464B5A3F6AF1 /* WorldPolitics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldPolitics.swift; sourceTree = "<group>"; };
 		A49D733873BC4FDD74DBBAF1 /* TerritoryData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TerritoryData.swift; sourceTree = "<group>"; };
@@ -594,6 +597,7 @@
 				A6C1C6823465A248C2FB6EB4 /* AdviceEngine.swift */,
 				15C61B45692E5ECBC414422A /* CombatModel.swift */,
 				A6DF9F2CF772E926EC377AF1 /* PeaceModel.swift */,
+				DB7EB963E415B731928C9F1 /* DirtyTactics.swift */,
 				54E317E2332711DF31570AF1 /* NovaCommentary.swift */,
 				41F5A3CAFF18464B5A3F6AF1 /* WorldPolitics.swift */,
 				A49D733873BC4FDD74DBBAF1 /* TerritoryData.swift */,
@@ -1101,6 +1105,7 @@
 				90B31D41F89299D7F17E4E12 /* AdviceEngine.swift in Sources */,
 				128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */,
 				A6DF9F2CF772E926EC377AF2 /* PeaceModel.swift in Sources */,
+				DB7EB963E415B731928C9F2 /* DirtyTactics.swift in Sources */,
 				54E317E2332711DF31570AF2 /* NovaCommentary.swift in Sources */,
 				41F5A3CAFF18464B5A3F6AF2 /* WorldPolitics.swift in Sources */,
 				A49D733873BC4FDD74DBBAF2 /* TerritoryData.swift in Sources */,
@@ -1249,6 +1254,7 @@
 				F8E99855968309BF030115A3 /* AdviceEngine.swift in Sources */,
 				49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */,
 				A6DF9F2CF772E926EC377AF3 /* PeaceModel.swift in Sources */,
+				DB7EB963E415B731928C9F3 /* DirtyTactics.swift in Sources */,
 				54E317E2332711DF31570AF3 /* NovaCommentary.swift in Sources */,
 				41F5A3CAFF18464B5A3F6AF3 /* WorldPolitics.swift in Sources */,
 				A49D733873BC4FDD74DBBAF3 /* TerritoryData.swift in Sources */,
@@ -1449,7 +1455,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
@@ -1462,7 +1468,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.16.2;
+				MARKETING_VERSION = 3.17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1531,7 +1537,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1550,7 +1556,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.16.2;
+				MARKETING_VERSION = 3.17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1569,7 +1575,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1581,7 +1587,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.16.2;
+				MARKETING_VERSION = 3.17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1599,7 +1605,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1611,7 +1617,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.16.2;
+				MARKETING_VERSION = 3.17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

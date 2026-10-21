@@ -1714,3 +1714,106 @@ struct PeaceSheet: View {
     }
 }
 
+
+// MARK: - Dirty tactics (3.17.0)
+
+/// The era's dirty tactics, each with its legal status, the treaty behind it, its benefit and — where it can be
+/// hidden — the chance a covert use is found out. The President chooses OPEN or COVERT; "it's only illegal if you
+/// get caught."
+struct DirtyTacticsSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    /// The nation, territory or land the map has selected, used for tactics that need one.
+    var targetID: String?
+    /// Offscreen snapshots can't render scroll views; they pass false.
+    var scrolls = true
+    @State private var group: TacticGroup = .chemical
+    @State private var preset: AttackPreset = .standard
+
+    var body: some View {
+        let year = gameState.currentYear
+        let groups = TacticGroup.allCases.filter { !DirtyTactics.available(in: year, group: $0).isEmpty }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "eye.slash")
+                Text("DIRTY TACTICS")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if groups.count > 1 {
+                ScaledSegmentedPicker(selection: $group, options: groups.map { ($0, $0.title) })
+            }
+            HStack(spacing: 8) {
+                Text("SCALE").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                ScaledSegmentedPicker(selection: $preset, options: AttackPreset.allCases.map { ($0, $0.title) })
+            }
+            let shown = DirtyTactics.available(in: year, group: groups.contains(group) ? group : groups.first)
+            if shown.isEmpty {
+                Text("Nothing in this line of work is possible in \(String(year)).")
+                    .font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan)
+            }
+            let list = VStack(alignment: .leading, spacing: 6) {
+                ForEach(shown) { t in row(t) }
+                ForEach(DirtyTactics.all.filter { $0.group == group && year < $0.from }) { t in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: "\(t.name.uppercased()) — NOT POSSIBLE UNTIL \(String(t.from))")
+                            .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.neonCyan)
+                        Text(verbatim: DirtyTactics.eraReason(t, year: year))
+                            .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    }
+                    .padding(5).themedPanel(retroFill: EGA.black)
+                }
+            }
+            if scrolls { ScrollView { list } } else { list }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(700))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    @ViewBuilder private func row(_ t: DirtyTactic) -> some View {
+        let year = gameState.currentYear
+        let status = t.status(in: year)
+        let problem = gameEngine.tacticProblem(t.id, target: targetID)
+        let program = gameState.shadow.tacticPrograms[t.id]
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(verbatim: t.name.uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                Text(verbatim: status.label.uppercased()).font(ThemeFont.mono(9, .bold))
+                    .foregroundColor(status == .legal ? GTNWColors.terminalGreen : (status == .restricted ? GTNWColors.terminalAmber : GTNWColors.terminalRed))
+                Spacer()
+                if let p = program {
+                    Text(verbatim: "UNDER WAY · READY \(GameCalendar.format(p.ready))").font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.neonCyan)
+                } else if t.canBeCovert {
+                    Text(String(format: "COVERT RISK %.0f%%", DirtyTactics.discoveryChance(t, year: year, scale: preset.multiplier) * 100))
+                        .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
+            Text(verbatim: t.blurb).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+            if let note = t.note(in: year) {
+                Text(verbatim: note).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalAmber)
+            }
+            if let problem {
+                Text(verbatim: problem).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+            } else {
+                HStack {
+                    Button(DirtyTactics.programYears(t) != nil ? "AUTHORISE" : "OPENLY") {
+                        gameEngine.useTactic(t.id, target: targetID, covert: false, preset: preset)
+                    }
+                    .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
+                    .disabled(gameState.actionsRemaining == 0)
+                    if t.canBeCovert && DirtyTactics.programYears(t) == nil {
+                        Button("IN SECRET") { gameEngine.useTactic(t.id, target: targetID, covert: true, preset: preset) }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))
+                            .disabled(gameState.actionsRemaining == 0)
+                    }
+                    Spacer()
+                }
+            }
+        }
+        .padding(5).themedPanel(retroFill: EGA.black)
+    }
+}
