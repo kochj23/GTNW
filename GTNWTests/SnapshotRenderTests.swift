@@ -338,5 +338,29 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(warnings, size: CGSize(width: FontScale.w(520), height: FontScale.h(460)), name: "cabinet-warnings-\(t)").path)")
         }
     }
+
+    /// 3.9.0: the Govern sheet, the Manpower sheet, and the World Map grid's unclaimed-land and territory sheets.
+    @MainActor
+    func testRenderGovernManpowerAndGrid() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand("GMB", troops: 5))
+        engine.renameTerritory("GMB", to: "Fort Wilson")
+        engine.setGovernance("GMB", .localElections)
+        for _ in 0..<8 { gs.turn += 1; engine.processOccupation() }
+        gs.actionsUsedThisTurn = 0
+        engine.callUp(.mobilization)
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            print("SNAPSHOT \(try render(GovernSheet(gameState: gs, countryID: "GMB").environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(420)), name: "govern-\(t)").path)")
+            print("SNAPSHOT \(try render(ManpowerSheet(gameState: gs).environmentObject(engine), size: CGSize(width: FontScale.w(620), height: FontScale.h(420)), name: "manpower-\(t)").path)")
+            print("SNAPSHOT \(try render(UnclaimedLandSheet(gameState: gs, landID: "NGA").environmentObject(engine), size: CGSize(width: FontScale.w(560), height: FontScale.h(320)), name: "grid-unclaimed-\(t)").path)")
+            let detail = CountryDetailSheet(country: gs.getCountry(id: "GMB")!, gameState: gs).environmentObject(engine)
+            print("SNAPSHOT \(try render(detail, size: CGSize(width: FontScale.w(800), height: FontScale.h(700)), name: "grid-territory-\(t)").path)")
+        }
+    }
 }
 #endif

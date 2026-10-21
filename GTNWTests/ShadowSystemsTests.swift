@@ -1085,10 +1085,10 @@ final class AttackSizingTests: XCTestCase {
         let std = AttackSizing.standard(.groundInvasion, in: gs1).troops
         // Both at or above Standard, so both always succeed (an undersized attack can fail: see the odds test).
         e1.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 1.2))
-        e2.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 2))
+        e2.performAdvisedAction(.groundInvasion, targetID: "MEX", advice: nil, size: AttackSize(troops: std * 1.4))   // within the 3.9.0 manpower pool
         let f1 = try XCTUnwrap(gs1.shadow.fronts.first { $0.defender == "MEX" && $0.status == .fighting })
         let f2 = try XCTUnwrap(gs2.shadow.fronts.first { $0.defender == "MEX" && $0.status == .fighting })
-        XCTAssertEqual(f1.attackerTroops, (std * 1.2).rounded()); XCTAssertEqual(f2.attackerTroops, std * 2)
+        XCTAssertEqual(f1.attackerTroops, (std * 1.2).rounded()); XCTAssertEqual(f2.attackerTroops, (std * 1.4).rounded())
         let o1 = CombatModel.battle(f1, attackerStrength: 100, defenderStrength: 50, rolls: (0.5, 0.5))
         let o2 = CombatModel.battle(f2, attackerStrength: 100, defenderStrength: 50, rolls: (0.5, 0.5))
         XCTAssertGreaterThan(o2.momentumChange, o1.momentumChange, "more troops win faster")
@@ -1985,6 +1985,8 @@ final class CongressTests: XCTestCase {
 
     func testRequestPassesOrFailsWithTheOdds() throws {
         let (engine, gs) = try game(year: 2001)
+        let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+        gs.countries[pi].congressionalSupport = 60; gs.countries[pi].warSupport = 50   // fixed, not the random start
         let o = try XCTUnwrap(engine.authorizationOdds(target: "AFG", kind: .useOfForce))
         XCTAssertGreaterThan(o.odds, 0)
         let v = try XCTUnwrap(engine.requestAuthorization(target: "AFG", kind: .useOfForce, roll: 0))
@@ -2097,7 +2099,9 @@ final class CongressTests: XCTestCase {
 
     func testCongressStateSurvivesSave() throws {
         let (engine, gs) = try game(year: 1990)
-        engine.requestAuthorization(target: "IRQ", kind: .useOfForce, roll: 0)
+        let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+        gs.countries[pi].congressionalSupport = 60; gs.countries[pi].warSupport = 50   // fixed, not the random start
+        XCTAssertTrue(try XCTUnwrap(engine.requestAuthorization(target: "IRQ", kind: .useOfForce, roll: 0)).passed)
         gs.actionsUsedThisTurn = 0
         engine.declareWar(aggressor: "USA", defender: "MEX")
         advance(engine, gs, turns: 2)
@@ -2146,5 +2150,224 @@ final class CongressPlayHistoryTests: XCTestCase {
         let events = await remote.events(id)
         XCTAssertEqual(PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "congress_vote" }))["target"] as? String, "IRN")
         XCTAssertTrue(events.contains { $0.kind == "war_powers_violation" })
+    }
+}
+
+// MARK: - Occupation, statehood, draft and mobilization; AI attack sizing (3.9.0)
+
+@MainActor
+final class ManpowerAndOccupationTests: XCTestCase {
+
+    private func day(_ y: Int, _ m: Int, _ d: Int) -> Date { GameCalendar.date(year: y, month: m, day: d) }
+
+    private func game(_ admin: Administration?, turn: TurnLength = .month) throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: admin, turnLength: turn)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    private func months(_ engine: GameEngine, _ gs: GameState, _ n: Int) {
+        for _ in 0..<n { gs.turn += 1; gs.actionsUsedThisTurn = 0; engine.processOccupation() }
+    }
+
+    // Unit: manpower by era
+
+    func testManpowerFollowsTheEraAndTheDrafts() {
+        XCTAssertEqual(ManpowerModel.standing(year: 1850), 20)
+        XCTAssertLessThan(ManpowerModel.total(on: day(1850, 6, 1), called: []), 50)
+        XCTAssertNil(ManpowerModel.historicalDraft(on: day(1917, 5, 17)))
+        XCTAssertNotNil(ManpowerModel.historicalDraft(on: day(1917, 5, 18)), "Selective Service Act of 1917")
+        XCTAssertNotNil(ManpowerModel.historicalDraft(on: day(1863, 6, 1)))
+        XCTAssertNotNil(ManpowerModel.historicalDraft(on: day(1968, 6, 1)))
+        XCTAssertNil(ManpowerModel.historicalDraft(on: day(1975, 6, 1)), "all-volunteer force after 1973")
+        XCTAssertGreaterThan(ManpowerModel.total(on: day(1944, 6, 1), called: []), 5000, "WWII mobilization")
+        XCTAssertGreaterThan(ManpowerModel.total(on: day(1941, 3, 1), called: []), ManpowerModel.total(on: day(1940, 10, 1), called: []), "draftees train over months")
+        let drafted = [Mobilization(kind: .draft, started: day(2025, 1, 1))]
+        XCTAssertEqual(ManpowerModel.total(on: day(2025, 1, 1), called: drafted), ManpowerModel.standing(year: 2025))
+        XCTAssertGreaterThan(ManpowerModel.total(on: day(2025, 8, 1), called: drafted), ManpowerModel.standing(year: 2025) + 400)
+        XCTAssertLessThan(ManpowerModel.callCost(.draft, atWar: false).popularity, ManpowerModel.callCost(.mobilization, atWar: false).popularity)
+    }
+
+    func testOccupationCurvesAndStatehoodRules() {
+        var last = 101.0
+        for g in stride(from: 0.0, through: 30, by: 2) {
+            let t = OccupationModel.insurgencyTarget(garrison: g, needed: 10, governance: .militaryGovernor)
+            XCTAssertLessThanOrEqual(t, last); last = t
+        }
+        XCTAssertLessThan(OccupationModel.insurgencyTarget(garrison: 5, needed: 10, governance: .selfRule),
+                          OccupationModel.insurgencyTarget(garrison: 5, needed: 10, governance: .localElections))
+        XCTAssertGreaterThan(OccupationModel.stabilityTarget(insurgency: 10, governance: .localElections), OccupationModel.stabilityTarget(insurgency: 80, governance: .localElections))
+        XCTAssertEqual(OccupationModel.historicalStates(year: 1912), 48)
+        XCTAssertEqual(OccupationModel.historicalStates(year: 1958), 48)
+        XCTAssertEqual(OccupationModel.historicalStates(year: 1960), 50)
+        XCTAssertEqual(OccupationModel.ordinal(51), "51st"); XCTAssertEqual(OccupationModel.ordinal(52), "52nd"); XCTAssertEqual(OccupationModel.ordinal(13), "13th")
+    }
+
+    func testComputersSizeTheirOwnAttacks() throws {
+        let (engine, gs) = try game(nil)
+        let a = try XCTUnwrap(gs.getCountry(id: "BRA")), d = try XCTUnwrap(gs.getCountry(id: "ARG"))
+        var hawk = a; hawk.aggressionLevel = 90
+        var dove = a; dove.aggressionLevel = 10
+        XCTAssertEqual(AttackSizing.aiPreset(attacker: hawk, defender: d), CombatModel.forcePool(a) > 3 * CombatModel.forcePool(d) ? .standard : .overwhelming)
+        XCTAssertEqual(AttackSizing.aiPreset(attacker: dove, defender: d), .probe)
+        XCTAssertGreaterThan(AttackSizing.aiTroops(attacker: hawk, defender: d), AttackSizing.aiTroops(attacker: dove, defender: d))
+        XCTAssertLessThanOrEqual(AttackSizing.aiTroops(attacker: hawk, defender: d), CombatModel.forcePool(a) * 0.9)
+        engine.declareWar(aggressor: "BRA", defender: "ARG")
+        engine.syncFronts()
+        let f = try XCTUnwrap(gs.shadow.fronts.first { $0.attacker == "BRA" && $0.defender == "ARG" })
+        XCTAssertEqual(f.attackerTroops, AttackSizing.aiTroops(attacker: a, defender: d), accuracy: 0.001, "the computer's front opens at its own size")
+        var rus = try XCTUnwrap(gs.getCountry(id: "RUS")); rus.aggressionLevel = 90
+        XCTAssertGreaterThan(AttackSizing.aiWarheads(3, attacker: rus, defender: gs.getCountry(id: "USA")!), 3)
+        XCTAssertGreaterThanOrEqual(AttackSizing.aiWarheads(3, attacker: dove, defender: d), 0)
+    }
+
+    // Functional: you can't send troops you don't have; drafts add them
+
+    func testTroopsAreFiniteAndADraftAddsThem() throws {
+        let (engine, gs) = try game(nil)
+        let free0 = AttackSizing.freeTroops(gs)
+        XCTAssertEqual(free0, ManpowerModel.standing(year: 2025), accuracy: 1)
+        XCTAssertEqual(AttackSizing.clamp(AttackSize(troops: 1e6), for: .groundInvasion, in: gs).troops, free0.rounded(.down), accuracy: 1)
+        engine.declareWar(aggressor: "BRA", defender: "ARG"); engine.syncFronts()
+        let fid = try XCTUnwrap(gs.shadow.fronts.first { $0.defender == "ARG" }).id
+        XCTAssertFalse(engine.commitTroops(frontID: fid, side: "BRA", thousands: free0 + 100), "more than the U.S. has")
+        let pop = gs.shadow.popularity
+        XCTAssertTrue(engine.callUp(.draft))
+        XCTAssertLessThan(gs.shadow.popularity, pop, "a peacetime draft is unpopular")
+        XCTAssertNotNil(engine.callUpProblem(.draft), "already called")
+        gs.turn += 7
+        XCTAssertGreaterThan(AttackSizing.freeTroops(gs), free0 + 400)
+        XCTAssertTrue(engine.standDown(.draft))
+        XCTAssertEqual(AttackSizing.freeTroops(gs), free0, accuracy: 1)
+        let (e1944, g1944) = try game(nil)
+        g1944.eraStartYear = 1944
+        XCTAssertNotNil(e1944.callUpProblem(.draft), "a historical draft is already in force")
+    }
+
+    // Functional: occupation, governance, statehood, breakaway
+
+    func testGovernAndAdmitAsTheFortyNinthState() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        XCTAssertTrue(engine.claimLand("GMB", troops: 5))
+        XCTAssertTrue(engine.renameTerritory("GMB", to: "Fort Wilson"))
+        XCTAssertTrue(engine.setGovernance("GMB", .localElections))
+        let needed = OccupationModel.neededGarrison(gs.getCountry(id: "GMB")!)
+        XCTAssertTrue(engine.setGarrison("GMB", thousands: (needed * 1.5).rounded(.up)))
+        months(engine, gs, 6)
+        XCTAssertLessThan(gs.getCountry(id: "GMB")!.profile.outcry, 30, "garrison and elections calm it")
+        XCTAssertNil(engine.petitionStatehood("GMB", roll: 0), "not yet: five years")
+        months(engine, gs, 60)
+        let p = gs.countries.firstIndex { $0.id == "USA" }!
+        gs.countries[p].congressionalSupport = 80
+        let score0 = GameScore.calculate(from: gs, victoryType: nil).expansionBonus ?? 0
+        XCTAssertEqual(engine.petitionStatehood("GMB", roll: 0), true)
+        let s = try XCTUnwrap(gs.shadow.statesAdmitted.first)
+        XCTAssertEqual(s.number, 49, "after 48 states in 1918")
+        XCTAssertEqual(s.name, "Fort Wilson", "it keeps the President's name")
+        XCTAssertEqual(gs.territoryLabel(gs.getCountry(id: "GMB")!), "U.S. STATE ★49")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("49th state") && $0.text.contains("star") })
+        XCTAssertGreaterThanOrEqual((GameScore.calculate(from: gs, victoryType: nil).expansionBonus ?? 0) - score0, 1000)
+    }
+
+    func testNeglectedTerritoryBreaksAway() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        XCTAssertTrue(engine.claimLand("NGA", troops: 1))
+        let i = gs.countries.firstIndex { $0.id == "NGA" }!
+        for _ in 0..<14 {
+            gs.countries[i].profile.outcry = 100
+            months(engine, gs, 1)
+            if gs.getCountry(id: "NGA")?.territoryOf == nil { break }
+        }
+        XCTAssertNil(gs.getCountry(id: "NGA")?.territoryOf, "a year boiling over with a token garrison: independence")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("declares independence") })
+        XCTAssertNil(gs.shadow.garrisons["NGA"], "the garrison comes home")
+    }
+
+    func testAnnexationTakesAGarrison() throws {
+        let (engine, gs) = try game(nil)
+        engine.declareWar(aggressor: "USA", defender: "CUB"); engine.syncFronts()
+        let i = try XCTUnwrap(gs.shadow.fronts.firstIndex { $0.defender == "CUB" && $0.status == .fighting })
+        engine.resolveFront(index: i, verdict: .attackerWon)
+        XCTAssertTrue(engine.settle(gs.shadow.pendingSettlements[0].id, choice: .annex))
+        XCTAssertEqual(gs.shadow.garrisons["CUB"] ?? 0, OccupationModel.neededGarrison(gs.getCountry(id: "CUB")!).rounded(), accuracy: 1)
+    }
+
+    // Security
+
+    func testBadOrdersAreRefused() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        XCTAssertTrue(engine.claimLand("NGA", troops: 5))
+        for bad in [-1.0, 0, 0.2, .nan, .infinity, 1e9] { XCTAssertFalse(engine.setGarrison("NGA", thousands: bad), "\(bad)") }
+        XCTAssertFalse(engine.setGarrison("FRA", thousands: 5))
+        XCTAssertFalse(engine.setGovernance("FRA", .selfRule))
+        XCTAssertNil(engine.petitionStatehood("FRA", roll: 0))
+        XCTAssertNil(engine.petitionStatehood("ZZZ", roll: 0))
+        gs.actionsUsedThisTurn = gs.actionsPerTurn
+        XCTAssertNotNil(engine.callUpProblem(.mobilization))
+        XCTAssertFalse(engine.callUp(.mobilization))
+    }
+
+    // Retry: state survives a reload; old saves decode
+
+    func testManpowerAndTerritoryStateSurvivesSave() throws {
+        let (engine, gs) = try game(Advisor.wilsonAdministration())
+        XCTAssertTrue(engine.claimLand("NGA", troops: 5))
+        engine.setGovernance("NGA", .selfRule)
+        gs.actionsUsedThisTurn = 0
+        XCTAssertTrue(engine.callUp(.mobilization))
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.mobilizations, gs.shadow.mobilizations)
+        XCTAssertEqual(loaded.shadow.territoryPolicies, gs.shadow.territoryPolicies)
+        let e2 = GameEngine(); e2.gameState = loaded
+        XCTAssertFalse(e2.callUp(.mobilization), "can't be called twice across a reload")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["mobilizations", "territoryPolicies", "statesAdmitted", "garrisons"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.mobilizations.isEmpty && old.shadow.statesAdmitted.isEmpty)
+        let e3 = GameEngine(); e3.gameState = old
+        e3.processOccupation()
+        XCTAssertEqual(old.getCountry(id: "NGA")?.territoryOf, "USA", "an old save's territory without a garrison record is not lost")
+    }
+
+    // Performance
+
+    func testManpowerAndOccupationAreCheap() throws {
+        let (engine, gs) = try game(Advisor.fillmoreAdministration())
+        for id in gs.unclaimedLandIDs.sorted() { gs.actionsUsedThisTurn = 0; _ = engine.claimLand(id, troops: 1) }
+        let dates = (1789...2030).map { day($0, 6, 1) }
+        measure {
+            for d in dates { _ = ManpowerModel.total(on: d, called: []) }
+            for _ in 0..<20 { engine.processOccupation() }
+        }
+    }
+}
+
+final class ManpowerPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testDraftAndStatehoodAreLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", administration: Advisor.wilsonAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        XCTAssertTrue(e.callUp(.mobilization))
+        gs.actionsUsedThisTurn = 0
+        XCTAssertTrue(e.claimLand("GMB", troops: 5))
+        e.setGovernance("GMB", .localElections)
+        _ = e.setGarrison("GMB", thousands: 20)
+        for _ in 0..<66 { gs.turn += 1; gs.actionsUsedThisTurn = 0; e.processOccupation() }
+        gs.countries[gs.countries.firstIndex { $0.id == "USA" }!].congressionalSupport = 90
+        XCTAssertEqual(e.petitionStatehood("GMB", roll: 0), true)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        XCTAssertTrue(events.contains { $0.kind == "mobilization_called" })
+        XCTAssertEqual(PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "statehood" }))["number"] as? Int, 49)
     }
 }
