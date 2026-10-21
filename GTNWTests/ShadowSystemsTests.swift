@@ -4388,3 +4388,205 @@ final class AbsorptionTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.17.0: dirty tactics — early chemical and biological
+
+@MainActor
+final class DirtyTacticsChemicalTests: XCTestCase {
+
+    private func game(_ year: Int, difficulty: DifficultyLevel = .normal) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(difficulty: difficulty, turnLength: .month, year: year)
+        return (e, try XCTUnwrap(e.gameState))
+    }
+
+    /// A resisting people's land on the board in `year`.
+    private func land(_ gs: GameState) throws -> String { try XCTUnwrap(gs.indigenousLandIDs.sorted().first) }
+
+    // Unit: the catalog is sane, and every legal status tightens with the real treaties
+    func testCatalogAndLegalStatusByEra() {
+        for t in DirtyTactics.all {
+            XCTAssertLessThan(t.from, t.to ?? 3000, t.id)
+            XCTAssertFalse(t.periods.isEmpty, t.id)
+            XCTAssertEqual(t.periods.map(\.from), t.periods.map(\.from).sorted(), "\(t.id): periods are chronological")
+            XCTAssertGreaterThanOrEqual(t.periods[0].from, t.from, t.id)
+            XCTAssertFalse(t.blurb.isEmpty, t.id)
+        }
+        let goods = DirtyTactics.tactic("contaminated_goods")!
+        XCTAssertEqual(goods.status(in: 1800), .legal, "no rule of war covered it")
+        XCTAssertEqual(goods.status(in: 1870), .restricted, "the Lieber Code of 1863")
+        XCTAssertEqual(goods.status(in: 1900), .treatyBanned, "Hague 1899")
+        XCTAssertEqual(goods.status(in: 1960), .treatyBanned)
+        let gas = DirtyTactics.tactic("chem_program")!
+        XCTAssertFalse(gas.exists(in: 1879), "industrial chemistry is not there yet")
+        XCTAssertTrue(gas.exists(in: 1880))
+        XCTAssertEqual(gas.status(in: 1890), .legal)
+        XCTAssertEqual(gas.status(in: 1905), .restricted, "Hague 1899")
+        XCTAssertEqual(gas.status(in: 1930), .treatyBanned, "Geneva Protocol, in force 1928")
+        XCTAssertEqual(DirtyTactics.tactic("defoliants")!.status(in: 1965), .legal)
+        XCTAssertEqual(DirtyTactics.tactic("defoliants")!.status(in: 1980), .restricted, "EO 11850, 1975")
+        XCTAssertEqual(DirtyTactics.tactic("defoliants")!.status(in: 2000), .treatyBanned, "CWC 1997")
+        XCTAssertEqual(DirtyTactics.available(in: 1850).count, 1, "only contaminated goods in 1850")
+        XCTAssertTrue(DirtyTactics.available(in: 1970, group: .chemical).count >= 4)
+    }
+
+    // Unit: discovery rises with the era, the crowd and the scale ordered, and never reaches certainty
+    func testDiscoveryRisesWithEraCrowdAndScale() {
+        let t = DirtyTactics.tactic("gas_resistance")!
+        XCTAssertLessThan(DirtyTactics.eraExposure(year: 1800), DirtyTactics.eraExposure(year: 1900))
+        XCTAssertLessThan(DirtyTactics.eraExposure(year: 1900), DirtyTactics.eraExposure(year: 1950))
+        XCTAssertLessThan(DirtyTactics.eraExposure(year: 1950), DirtyTactics.eraExposure(year: 2025))
+        XCTAssertLessThan(DirtyTactics.discoveryChance(t, year: 1925), DirtyTactics.discoveryChance(t, year: 2025))
+        XCTAssertLessThan(DirtyTactics.discoveryChance(t, year: 1960, scale: 0.5),
+                          DirtyTactics.discoveryChance(t, year: 1960, scale: 2.5))
+        let lonely = DirtyTactics.tactic("contaminated_goods")!
+        XCTAssertLessThan(DirtyTactics.discoveryChance(lonely, year: 1930), DirtyTactics.discoveryChance(t, year: 1930),
+                          "one quartermaster keeps a secret better than a squadron")
+        for y in [1789, 1900, 2030] {
+            XCTAssertLessThan(DirtyTactics.discoveryChance(t, year: y, scale: 9), 0.91)
+            XCTAssertGreaterThan(DirtyTactics.discoveryChance(t, year: y, scale: 0.1), 0)
+        }
+        XCTAssertEqual(DirtyTactics.tribunalChance(year: 1930, status: .treatyBanned), 0, "nothing before Nuremberg")
+        XCTAssertGreaterThan(DirtyTactics.tribunalChance(year: 2010, status: .treatyBanned),
+                             DirtyTactics.tribunalChance(year: 1960, status: .treatyBanned))
+        XCTAssertEqual(DirtyTactics.tribunalChance(year: 2010, status: .legal), 0, "a legal order has no tribunal")
+    }
+
+    // Functional: an 1790s gas programme is refused, and the game says why
+    func testAnEarlyGasProgrammeIsRefusedWithAReason() throws {
+        let (e, _) = try game(1792)
+        let problem = try XCTUnwrap(e.tacticProblem("chem_program"))
+        XCTAssertTrue(problem.contains("1792"), problem)
+        XCTAssertTrue(problem.contains("chlorine"), "it explains the chemistry, not just the year")
+        XCTAssertNil(e.useTactic("chem_program"), "and nothing happens")
+    }
+
+    // Functional: the programme runs for four years, then the Army has gas the catalog prices as usual
+    func testTheWarGasProgrammeDeliversAStockpileBefore1917() throws {
+        let (e, gs) = try game(1890)
+        XCTAssertFalse(PresidentialAction.chemicalAttack.isAvailable(on: gs.currentDate, in: gs))
+        XCTAssertNotNil(e.useTactic("chem_program"))
+        XCTAssertNotNil(gs.shadow.tacticPrograms["chem_program"])
+        for _ in 0..<60 { gs.turn += 1; e.processDirtyTactics() }
+        XCTAssertNil(gs.shadow.tacticPrograms["chem_program"], "delivered")
+        XCTAssertNotNil(gs.shadow.wmdPrograms[WMDKind.chemical.rawValue])
+        XCTAssertTrue(PresidentialAction.chemicalAttack.isAvailable(on: gs.currentDate, in: gs), "gas in 1895")
+        XCTAssertNil(e.wmdProblem(.chemicalAttack))
+        XCTAssertEqual(ArsenalCatalog.legalStatus(.chemical, on: gs.currentDate), .legal, "no treaty bound the U.S. in 1895")
+    }
+
+    // Functional: covert costs little while it holds, and more than an open order once it comes out
+    func testCovertCostsLittleUntilItComesOut() throws {
+        let (open, g1) = try game(1930)
+        let l1 = try land(g1)
+        open.useTactic("gas_resistance", target: l1, covert: false, discoveryRoll: 0.99)
+        let openCost = g1.shadow.ruthlessness
+
+        let (quiet, g2) = try game(1930)
+        quiet.useTactic("gas_resistance", target: try land(g2), covert: true, discoveryRoll: 0.99)
+        XCTAssertLessThan(g2.shadow.ruthlessness, openCost, "nobody knows yet")
+        XCTAssertFalse(g2.shadow.tacticUses[0].discovered)
+
+        let (caught, g3) = try game(1930)
+        caught.useTactic("gas_resistance", target: try land(g3), covert: true, discoveryRoll: 0.0)
+        XCTAssertTrue(g3.shadow.tacticUses[0].discovered)
+        XCTAssertGreaterThan(g3.shadow.ruthlessness, openCost, "the cover-up is its own scandal")
+        XCTAssertTrue(g3.shadow.ticker.contains { $0.text.contains("newspapers") })
+        XCTAssertGreaterThan(g3.shadow.impeachmentStage, 0, "a treaty-banned order opens hearings")
+    }
+
+    // Functional: gas breaks a resisting people, so the land is easier to take afterwards
+    func testGasBreaksResistanceBeforeAClaim() throws {
+        let (e, gs) = try game(1930)
+        let l = try land(gs)
+        let before = try XCTUnwrap(gs.preState(l)).era.extra
+        e.useTactic("gas_resistance", target: l, covert: true, discoveryRoll: 0.99)
+        XCTAssertGreaterThan(gs.shadow.resistanceBroken[l] ?? 0, 0)
+        XCTAssertGreaterThan(before, 0, "the land resisted to begin with")
+    }
+
+    // Security: a tactic can't be aimed at the wrong kind of land, or at yourself
+    func testTargetsAreChecked() throws {
+        let (e, gs) = try game(1930)
+        XCTAssertNotNil(e.tacticProblem("gas_resistance", target: gs.playerCountryID), "not your own country")
+        XCTAssertNotNil(e.tacticProblem("gas_resistance", target: "FRA"), "France is not a resisting people")
+        XCTAssertNotNil(e.tacticProblem("gas_resistance", target: nil))
+        XCTAssertNotNil(e.tacticProblem("defoliants", target: gs.playerCountryID))
+        XCTAssertNotNil(e.tacticProblem("no_such_tactic", target: "FRA"))
+        XCTAssertNil(e.useTactic("gas_resistance", target: "FRA", covert: true))
+        XCTAssertTrue(gs.shadow.tacticUses.isEmpty)
+        // One order, one action.
+        let before = gs.actionsRemaining
+        e.useTactic("gas_resistance", target: try land(gs), covert: true, discoveryRoll: 0.99)
+        XCTAssertEqual(gs.actionsRemaining, before - 1)
+    }
+
+    // Integration: the dioxin bill arrives twenty years later, through the turn loop
+    func testTheDefoliantBillArrivesTwentyYearsLater() throws {
+        let (e, gs) = try game(1965)
+        e.declareWar(aggressor: gs.playerCountryID, defender: "VNM")
+        let gdp = try XCTUnwrap(gs.getCountry(id: "VNM")).gdp
+        XCTAssertNotNil(e.useTactic("defoliants", target: "VNM"))
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "VNM")).gdp, gdp, "the harvest and the cover are gone")
+        XCTAssertEqual(gs.shadow.aftermath.count, 1)
+        let pop = gs.shadow.popularity
+        for _ in 0..<21 { gs.turn += 12; e.processDirtyTactics() }
+        XCTAssertTrue(gs.shadow.aftermath.isEmpty, "the bill was paid")
+        XCTAssertLessThan(gs.shadow.popularity, pop)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Veterans") })
+    }
+
+    // Integration: a secret programme can leak before it is ready, and then it costs
+    func testASecretProgrammeCanLeak() throws {
+        let (e, gs) = try game(1935)
+        XCTAssertNotNil(e.useTactic("human_subject_program"))
+        var leaked = false
+        for _ in 0..<36 where !leaked {
+            gs.turn += 1
+            e.processDirtyTactics()
+            leaked = gs.shadow.tacticPrograms["human_subject_program"]?.discovered ?? true
+        }
+        XCTAssertTrue(leaked, "a programme on this scale does not stay quiet for three years")
+    }
+
+    // Security: the Hall of Infamy counts what was ordered and what came out, and only the player's own
+    func testHallOfInfamyCountsTacticsAndExposures() throws {
+        let (e, gs) = try game(1930)
+        XCTAssertFalse(InfamyRecord.dirtyTactics.counts(0))
+        e.useTactic("gas_resistance", target: try land(gs), covert: true, discoveryRoll: 0.0)
+        XCTAssertEqual(InfamyRecord.dirtyTactics.value(gs), 1)
+        XCTAssertEqual(InfamyRecord.tacticsExposed.value(gs), 1)
+        XCTAssertTrue(InfamyRecord.dirtyTactics.counts(1))
+    }
+
+    // Retry: new state decodes from a save that never had it, and survives a round trip
+    func testTacticStateSurvivesOldAndNewSaves() throws {
+        let legacy = try JSONDecoder().decode(ShadowState.self, from: Data("{\"popularity\":51}".utf8))
+        XCTAssertTrue(legacy.tacticUses.isEmpty)
+        XCTAssertTrue(legacy.tacticPrograms.isEmpty)
+        XCTAssertTrue(legacy.aftermath.isEmpty)
+        XCTAssertTrue(legacy.resistanceBroken.isEmpty)
+        XCTAssertTrue(legacy.tacticStances.isEmpty)
+        let (e, gs) = try game(1965)
+        e.declareWar(aggressor: gs.playerCountryID, defender: "VNM")
+        e.useTactic("defoliants", target: "VNM")
+        e.useTactic("chem_program")
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.tacticUses.count, 1)
+        XCTAssertEqual(loaded.shadow.aftermath.count, 1)
+        XCTAssertEqual(loaded.shadow.tacticPrograms["chem_program"]?.tactic, "chem_program")
+    }
+
+    // Performance: the catalog and the per-turn pass are cheap
+    func testTacticLookupsAreCheap() throws {
+        let (e, gs) = try game(1965)
+        measure {
+            for _ in 0..<200 {
+                for y in [1789, 1890, 1930, 1965, 2025] { _ = DirtyTactics.available(in: y) }
+                _ = e.tacticProblem("defoliants", target: "VNM")
+                e.processDirtyTactics()
+            }
+        }
+        XCTAssertTrue(gs.shadow.aftermath.isEmpty)
+    }
+}

@@ -641,5 +641,19 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "europe-1939-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.0: the dirty-tactics panel in 1930, with a resisting people's land selected.
+    @MainActor
+    func testRenderDirtyTacticsChemical() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1930)
+        let gs = try XCTUnwrap(engine.gameState)
+        let land = gs.indigenousLandIDs.sorted().first
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            print("SNAPSHOT \(try render(DirtyTacticsSheet(gameState: gs, targetID: land, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(620)), name: "tactics-chemical-1930-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif
