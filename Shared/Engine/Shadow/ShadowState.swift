@@ -172,6 +172,10 @@ struct ShadowState: Codable {
     var tacticPrograms: [String: TacticProgram] = [:]
     var aftermath: [TacticAftermath] = []
     var resistanceBroken: [String: Double] = [:]
+    /// Men outside the era's manpower tables (3.17.5): pressed crews, and regiments hired from other states (by
+    /// lender, so their sovereign can recall them). Both count on top of the pool.
+    var pressedTroops: Double = 0
+    var hiredContingents: [String: Double] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -211,7 +215,7 @@ struct ShadowState: Codable {
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
         case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare
-        case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken
+        case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents
     }
 
     init() {}
@@ -288,6 +292,8 @@ struct ShadowState: Codable {
         tacticPrograms = try c.decodeIfPresent([String: TacticProgram].self, forKey: .tacticPrograms) ?? [:]
         aftermath = try c.decodeIfPresent([TacticAftermath].self, forKey: .aftermath) ?? []
         resistanceBroken = try c.decodeIfPresent([String: Double].self, forKey: .resistanceBroken) ?? [:]
+        pressedTroops = try c.decodeIfPresent(Double.self, forKey: .pressedTroops) ?? 0
+        hiredContingents = try c.decodeIfPresent([String: Double].self, forKey: .hiredContingents) ?? [:]
     }
 }
 

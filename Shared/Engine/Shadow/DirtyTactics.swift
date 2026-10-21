@@ -135,7 +135,7 @@ enum DirtyTactics {
     // MARK: Catalog
 
     /// Every tactic in the game. Groups are added one release at a time (3.17.0 … 3.17.5).
-    static let all: [DirtyTactic] = chemical + incendiary + starvation + civilians + deception
+    static let all: [DirtyTactic] = chemical + incendiary + starvation + civilians + deception + sea
 
     static func tactic(_ id: String) -> DirtyTactic? { all.first { $0.id == id } }
 
@@ -576,6 +576,69 @@ extension DirtyTactics {
     ]
 }
 
+// MARK: - The sea and other group (3.17.5)
+
+extension DirtyTactics {
+    static let ottawaNote = "Banned by the Ottawa Convention (signed December 1997, in force 1 March 1999). The United States never joined it."
+    static let londonSubmarineNote = "Banned: the London Protocol of 1936 — a submarine must put passengers and crew in a place of safety first."
+
+    static let sea: [DirtyTactic] = [
+        DirtyTactic(
+            id: "impressment", group: .sea, name: "Press gangs",
+            from: 1789, to: 1835,
+            periods: [p(1789, .legal, "Lawful by custom; no treaty covers it.")],
+            blurb: "Take the crews you need off merchant decks and out of waterfront taverns. The Royal Navy pressed "
+                 + "men throughout the French wars, took four from USS Chesapeake on 22 June 1807, and the practice "
+                 + "was one of the causes the United States gave for the war of 1812. Manpower now, resentment at "
+                 + "home, and a grievance for whoever's sailors you took.",
+            target: .none, canBeCovert: false, people: 3),
+        DirtyTactic(
+            id: "unrestricted_submarine", group: .sea, name: "Unrestricted submarine warfare",
+            from: 1915,
+            periods: [p(1915, .legal, "No treaty yet; prize rules are custom."),
+                      p(1930, .restricted, "Restricted: Part IV of the London Naval Treaty (1930)."),
+                      p(1936, .treatyBanned, londonSubmarineNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Sink on sight, warning or not. Germany declared the war zone round Britain on 4 February 1915 "
+                 + "and resumed unrestricted sinkings on 1 February 1917; the United States ordered unrestricted "
+                 + "air and submarine warfare against Japan on 7 December 1941. It strangles an island enemy — and "
+                 + "every neutral ship sunk pushes a neutral toward the other side.",
+            target: .nation, canBeCovert: false, people: 15, isStance: true),
+        DirtyTactic(
+            id: "hired_troops", group: .sea, name: "Hired foreign troops",
+            from: 1789,
+            periods: [p(1789, .legal, "Lawful and ordinary: states hired each other's regiments by treaty."),
+                      p(1977, .restricted, "Restricted: Additional Protocol I Art. 47 (1977) denies a mercenary prisoner-of-war status."),
+                      p(2001, .restricted, "Restricted: the UN Mercenary Convention (in force 2001). The United States is not a party.")],
+            blurb: "Rent another state's soldiers and put them beyond your own manpower. Britain hired about 30,000 "
+                 + "German auxiliaries from Hesse-Kassel, Brunswick and others for the American war from 1776, and "
+                 + "paid their princes a subsidy for each. The troops come on top of your cap — and their sovereign "
+                 + "has a view about where they are sent.",
+            target: .nation, canBeCovert: false, people: 8),
+        DirtyTactic(
+            id: "landmines", group: .sea, name: "Mines and booby traps",
+            from: 1862,
+            periods: [p(1862, .legal, "No rule covers them; Union officers protested anyway."),
+                      p(1983, .restricted, "Restricted: CCW Protocol II on mines and booby traps (in force 1983, amended 1996)."),
+                      p(1999, .treatyBanned, ottawaNote)],
+            blurb: "Sow the ground so the enemy cannot walk on it. Gabriel J. Rains left land torpedoes behind at "
+                 + "Yorktown in May 1862 and started the argument that is still running. They hold a line cheaply, "
+                 + "and they keep killing whoever lives there long after the war is over.",
+            target: .nation, canBeCovert: false, people: 6),
+        DirtyTactic(
+            id: "firebomb_cities", group: .sea, name: "Firebomb the cities",
+            from: 1937,
+            periods: [p(1937, .legal, "No treaty bound aerial bombardment: the 1923 Hague Rules of Air Warfare were never adopted."),
+                      p(1977, .restricted, "Restricted: Additional Protocol I Arts. 48, 51 and 52 (1977). The United States has not ratified it."),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "A standing order to burn the enemy's cities rather than his factories. The Condor Legion burned "
+                 + "Guernica on 26 April 1937; the Blitz ran from September 1940; Dresden burned on 13–15 February "
+                 + "1945; the Tokyo raid of 9–10 March 1945 burned sixteen square miles and killed about 100,000 "
+                 + "people in a night. Enemy output and will collapse; so does anything anyone thinks of you.",
+            target: .nation, canBeCovert: false, people: 30, isStance: true),
+    ]
+}
+
 // MARK: - Engine
 
 extension GameEngine {
@@ -614,6 +677,17 @@ extension GameEngine {
         case "starve_blockade":
             guard let target, gs.shadow.fleetDeployments.contains(where: { $0.target == target && $0.mission == .blockade }) else {
                 return "Blockade the country first: this is a stance on a blockade, not a blockade of its own."
+            }
+        case "hired_troops":
+            // The soldiers' sovereign has a say: he will not rent his regiments to a nation he dislikes, nor fight
+            // one he is already fighting.
+            guard let target, let c = gs.getCountry(id: target), (c.diplomaticRelations[gs.playerCountryID] ?? 0) >= 0,
+                  !c.atWarWith.contains(gs.playerCountryID) else {
+                return "Their sovereign will not lend his regiments to you."
+            }
+        case "unrestricted_submarine", "firebomb_cities":
+            guard let target, gs.getCountry(id: target)?.atWarWith.contains(gs.playerCountryID) == true else {
+                return "Only against a country you are at war with."
             }
         default:
             break
@@ -786,8 +860,47 @@ extension GameEngine {
             gs.countries[i].profile.anxieties.social += 20 * yf
             gs.totalCasualties += Int(Double(max(1, gs.countries[i].population)) * 1500 * yf)
             frontBlow(target, will: 0.18 * yf, troops: 0.05 * yf)
+        case "unrestricted_submarine":
+            // Sink on sight. It strangles an island enemy, and every neutral lost pushes a neutral away.
+            guard let target, let i = gs.countries.firstIndex(where: { $0.id == target }) else { return }
+            gs.countries[i].gdp *= 1 - 0.14 * yf
+            gs.countries[i].stability = max(0, gs.countries[i].stability - Int((10 * yf).rounded()))
+            frontBlow(target, will: 0.12 * yf, troops: 0.04 * yf)
+            if Double.random(in: 0..<1) < gs.scale.probability(annual: 0.6) {
+                let neutrals = gs.liveCountries.filter { $0.id != gs.playerCountryID && $0.id != target && !$0.atWarWith.contains(gs.playerCountryID) }
+                if let n = neutrals.randomElement() {
+                    modifyDiplomaticRelation(from: n.id, to: gs.playerCountryID, by: -25)
+                    gs.shadow.post("An American submarine sinks a \(n.name) merchantman without warning. \(n.name) is furious.",
+                                   date: gs.currentDate, severity: 2)
+                }
+            }
+        case "firebomb_cities":
+            // Burn the cities rather than the factories.
+            guard let target, let i = gs.countries.firstIndex(where: { $0.id == target }) else { return }
+            gs.countries[i].gdp *= 1 - 0.18 * yf
+            gs.countries[i].stability = max(0, gs.countries[i].stability - Int((25 * yf).rounded()))
+            gs.countries[i].profile.anxieties.military += 40 * yf
+            gs.totalCasualties += Int(Double(max(1, gs.countries[i].population)) * 6000 * yf)
+            frontBlow(target, will: 0.25 * yf, troops: 0.06 * yf)
         default:
             break
+        }
+        self.gameState = gs
+    }
+
+
+    /// Each turn: regiments rented from another state go home when their sovereign falls out with the United
+    /// States (relations below −20) or joins the other side. Pressed men do not go home.
+    func processHiredTroops() {
+        guard let gs = gameState, !gs.shadow.hiredContingents.isEmpty else { return }
+        for (lender, men) in gs.shadow.hiredContingents {
+            guard let c = gs.getCountry(id: lender) else { gs.shadow.hiredContingents.removeValue(forKey: lender); continue }
+            guard (c.diplomaticRelations[gs.playerCountryID] ?? 0) < -20 || c.atWarWith.contains(gs.playerCountryID) || c.isDestroyed else { continue }
+            gs.shadow.hiredContingents.removeValue(forKey: lender)
+            gs.shadow.post(String(format: "%@ recalls its %.0fK hired soldiers. They are no longer at American disposal.", c.name, men),
+                           date: gs.currentDate, severity: 2)
+            logPlayEvent("hired_troops_recalled", detail: ["lender": lender, "men_k": PlayHistory.num(men),
+                                                           "game_date": PlayHistory.day(gs.currentDate)])
         }
         self.gameState = gs
     }
@@ -810,6 +923,7 @@ extension GameEngine {
             self.gameState = gs
             applyTacticCost(t, target: nil, coverUp: true)
         }
+        processHiredTroops()
         processTacticStances()
         processTacticAftermath()
     }
@@ -919,6 +1033,14 @@ extension DirtyTactics {
             return "Interning a population at home begins with Executive Order 9066 on 19 February 1942."
         case "yellow_press":
             return "A mass-circulation press able to make a war begins with the Hearst and Pulitzer papers of 1895."
+        case "unrestricted_submarine":
+            return "Submarines able to make war on trade appear in 1915; before that there is nothing to order."
+        case "landmines":
+            return "Victory-fused land mines begin with Gabriel J. Rains's land torpedoes at Yorktown in May 1862."
+        case "firebomb_cities":
+            return "Bombers able to burn a city appear in the 1930s; Guernica was 26 April 1937."
+        case "impressment":
+            return "Impressment belongs to the age of sail; it had died out everywhere by the 1830s."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -969,6 +1091,11 @@ extension DirtyTactics {
         case "enemy_uniforms": return "American troops go through the enemy's lines in his own uniform\(at)."
         case "counterfeit_currency": return "Forged\(at.isEmpty ? " enemy" : at) banknotes are spent into\(at.isEmpty ? " the enemy's" : at + "'s") economy by the crate."
         case "opium_policy": return "The opium trade into\(at.isEmpty ? " the enemy" : at) becomes American state policy."
+        case "impressment": return "Press gangs work the waterfronts. The Navy will have its crews."
+        case "unrestricted_submarine": return "American submarines are ordered to sink on sight\(at.isEmpty ? "" : " around" + at)."
+        case "hired_troops": return "The United States hires foreign regiments\(at.isEmpty ? "" : " from" + at)."
+        case "landmines": return "American engineers sow mines and booby traps across\(at.isEmpty ? " the front" : at)."
+        case "firebomb_cities": return "American bombers are ordered onto\(at.isEmpty ? " the enemy's" : at + "'s") cities, not his factories."
         default: return "The United States orders \(t.name.lowercased())\(at)."
         }
     }
@@ -1223,6 +1350,42 @@ extension GameEngine {
             let takings = 6.0 * m
             gs.shadow.aidRemaining += takings
             gs.shadow.resourceEarnings += takings
+        // --- 3.17.5: the sea, and what is left on the ground ---
+        case "impressment":
+            // Crews taken where they can be found: men on top of the era's pool, resentment at home, a grievance
+            // abroad of exactly the kind that started the war of 1812.
+            let pressed = 20.0 * m
+            gs.shadow.pressedTroops += pressed
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 3 * m)
+            if let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
+                gs.countries[pi].profile.anxieties.political += 10 * m
+            }
+            if let other = gs.liveCountries.filter({ $0.id != gs.playerCountryID }).max(by: { $0.gdp < $1.gdp }) {
+                modifyDiplomaticRelation(from: other.id, to: gs.playerCountryID, by: -20)
+                gs.shadow.post(String(format: "Press gangs bring in %.0fK men. %@ protests that some of them are its subjects.",
+                                      pressed, other.name), date: gs.currentDate, severity: 2)
+            }
+        case "hired_troops":
+            // Regiments rented from another state, on top of your own manpower — while their sovereign allows it.
+            if let target = use.target, let c = gs.getCountry(id: target) {
+                let men = 30.0 * m, price = 2.0 * m
+                spendFunds(price)
+                gs.shadow.hiredContingents[target, default: 0] += men
+                modifyDiplomaticRelation(from: target, to: gs.playerCountryID, by: 10)
+                gs.shadow.post(String(format: "A treaty with %@ hires %.0fK of its soldiers for $%.1fB. They sail at once.",
+                                      c.name, men, price), date: gs.currentDate, severity: 2)
+            }
+        case "landmines":
+            // A line held cheaply, and a country that goes on killing its own people long after the war.
+            frontBlow(use.target, will: 0.08 * m, troops: 0.07 * m)
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].profile.anxieties.military += 15 * m
+                scheduleAftermath(TacticAftermath(tactic: t.id,
+                                                  due: GameCalendar.calendar.date(byAdding: .year, value: 3, to: gs.currentDate) ?? gs.currentDate,
+                                                  text: "Mines left in \(gs.countries[i].name) kill farmers and children again this year.",
+                                                  ruthlessness: 3 * m, popularity: 1.5 * m, world: 1,
+                                                  until: GameCalendar.calendar.date(byAdding: .year, value: 30, to: gs.currentDate)))
+            }
         default:
             break
         }

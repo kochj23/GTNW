@@ -410,7 +410,9 @@ enum AttackSizing {
     /// other countries.
     static func troopPool(_ gs: GameState) -> Double {
         guard let p = gs.getPlayerCountry() else { return 0 }
-        return p.id == "USA" ? ManpowerModel.total(on: gs.currentDate, called: gs.shadow.mobilizations) : CombatModel.forcePool(p)
+        let own = p.id == "USA" ? ManpowerModel.total(on: gs.currentDate, called: gs.shadow.mobilizations) : CombatModel.forcePool(p)
+        // 3.17.5: pressed crews and hired foreign regiments sit on top of the era's own manpower.
+        return own + gs.shadow.pressedTroops + gs.shadow.hiredContingents.values.reduce(0, +)
     }
 
     /// Troops (thousands) not already in a fight or garrisoning a territory.

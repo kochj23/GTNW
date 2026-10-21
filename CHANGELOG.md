@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.5] - 2026-10-21 — Dirty tactics: the sea, and what is left on the ground
+
+### Added
+- **The sea and other group** (`DirtyTactics.sea`), the last of the six:
+  - **Press gangs** (1789–1835, legal by custom): crews taken off merchant decks, 20K men per scale point on top of
+    the era's manpower tables. The Royal Navy took four men off USS *Chesapeake* on 22 June 1807, and impressment
+    was one of the causes the United States gave for the war of 1812. Somebody always claims the men were his.
+  - **Unrestricted submarine warfare** (a stance, 1915–; legal → London Naval Treaty Part IV 1930 → the London
+    Protocol 1936 → Rome 2002): Germany's war zone of 4 February 1915 and the resumption of 1 February 1917; the
+    American order of 7 December 1941. It takes 14% of an island enemy's output a year — and a neutral merchantman
+    goes down about every other year, which costs that neutral's goodwill.
+  - **Hired foreign troops** (1789–, legal → AP I Art. 47 1977 → the UN Mercenary Convention 2001, which the United
+    States is not a party to): Britain hired some 30,000 German auxiliaries from Hesse-Kassel, Brunswick and others
+    from 1776 and paid their princes a subsidy. 30K men per scale point on top of your cap, for a fee — and **their
+    sovereign has a say**: he will not lend to a nation he dislikes or is fighting, and `processHiredTroops`
+    recalls the regiments when relations fall below −20 or he joins the other side.
+  - **Mines and booby traps** (1862–, legal → CCW Protocol II 1983 → Ottawa 1999, which the United States never
+    joined): Gabriel J. Rains's land torpedoes at Yorktown in May 1862. They hold a line cheaply and then kill
+    farmers and children every year for thirty years (a lingering `TacticAftermath`).
+  - **Firebomb the cities** (a stance, 1937–; legal, because the 1923 Hague Rules of Air Warfare were never adopted
+    → AP I 1977, unratified by the United States → Rome 2002): Guernica on 26 April 1937, the Blitz from September
+    1940, Dresden on 13–15 February 1945, and the Tokyo raid of 9–10 March 1945, sixteen square miles and about
+    100,000 dead in a night.
+- **`ShadowState.pressedTroops` and `hiredContingents`**: men outside the era's manpower tables, added to
+  `AttackSizing.troopPool` so they really are on top of the cap.
+
+### Changed
+- 11 tests across all seven categories (657 total, single muted run); snapshots in `Screenshots/3.17.5/`.
+
 ## [3.17.4] - 2026-10-21 — Dirty tactics: deception
 
 ### Added
