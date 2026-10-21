@@ -670,5 +670,24 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(700)), name: "tactics-incendiary-1864-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.2: starvation and supply in 1917, with the blockade of Germany already on station.
+    @MainActor
+    func testRenderDirtyTacticsStarvation() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1917)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.declareWar(aggressor: gs.playerCountryID, defender: "DEU")
+        gs.shadow.fleetDeployments.append(FleetDeployment(fleetID: "atlantic", target: "DEU", mission: .blockade,
+                                                          commitment: 1, ships: FleetComposition(surface: 20), fromLat: 0, fromLon: 0,
+                                                          toLat: 0, toLon: 0, departed: gs.currentDate, arrives: gs.currentDate,
+                                                          status: .onStation))
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let sheet = DirtyTacticsSheet(gameState: gs, targetID: "DEU", scrolls: false, startGroup: .starvation)
+            print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(700)), name: "tactics-starvation-1917-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

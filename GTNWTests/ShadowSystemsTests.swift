@@ -4740,3 +4740,166 @@ final class DirtyTacticsIncendiaryTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.17.2: dirty tactics — starvation and supply
+
+@MainActor
+final class DirtyTacticsStarvationTests: XCTestCase {
+
+    private func war(_ year: Int, with foe: String) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.declareWar(aggressor: gs.playerCountryID, defender: foe)
+        e.syncFronts()
+        return (e, gs)
+    }
+
+    /// A game with one territory the player holds.
+    private func withTerritory(_ year: Int, _ id: String) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == id })
+        gs.countries[i].territoryOf = gs.playerCountryID
+        gs.shadow.claimDates[id] = GameCalendar.date(year: year - 3, month: 1, day: 1)
+        return (e, gs)
+    }
+
+    // Unit: windows and treaties
+    func testStarvationErasAndTreaties() {
+        let scorch = DirtyTactics.tactic("scorched_earth")!
+        XCTAssertEqual(scorch.status(in: 1812), .legal)
+        XCTAssertEqual(scorch.status(in: 1864), .restricted, "the Lieber Code of 1863")
+        XCTAssertEqual(scorch.status(in: 1960), .treatyBanned, "Geneva IV Art. 53")
+        let blockade = DirtyTactics.tactic("starve_blockade")!
+        XCTAssertTrue(blockade.isStance)
+        XCTAssertEqual(blockade.status(in: 1917), .legal, "no treaty bound the British blockade")
+        XCTAssertEqual(blockade.status(in: 1960), .restricted)
+        XCTAssertEqual(blockade.status(in: 1990), .treatyBanned, "Additional Protocol I Art. 54, 1977")
+        let herds = DirtyTactics.tactic("buffalo_slaughter")!
+        XCTAssertFalse(herds.exists(in: 1860))
+        XCTAssertTrue(herds.exists(in: 1874))
+        XCTAssertFalse(herds.exists(in: 1890), "there were no herds left")
+        let beef = DirtyTactics.tactic("profiteer_contracts")!
+        XCTAssertFalse(beef.exists(in: 1850))
+        XCTAssertEqual(beef.status(in: 1898), .legal)
+        XCTAssertEqual(beef.status(in: 1910), .restricted, "the Pure Food and Drug Act of 1906")
+    }
+
+    // Unit: federal food inspection after 1906 makes a ration scandal far likelier to come out
+    func testPureFoodActRaisesDetection() {
+        let beef = DirtyTactics.tactic("profiteer_contracts")!
+        let before = DirtyTactics.discoveryChance(beef, year: 1898)
+        let after = DirtyTactics.discoveryChance(beef, year: 1910)
+        XCTAssertGreaterThan(after, before * 2, "inspection changes the odds, not just the era")
+        XCTAssertEqual(DirtyTactics.exposureBonus(beef, year: 1898), 1)
+        XCTAssertGreaterThan(DirtyTactics.exposureBonus(beef, year: 1907), 1)
+        XCTAssertEqual(DirtyTactics.exposureBonus(DirtyTactics.tactic("scorched_earth")!, year: 1910), 1)
+    }
+
+    // Functional: scorched earth takes the enemy's supply and his will
+    func testScorchedEarth() throws {
+        let (e, gs) = try war(1864, with: "GBR")
+        let troops = try XCTUnwrap(gs.shadow.fronts.first).defenderTroops
+        let gdp = try XCTUnwrap(gs.getCountry(id: "GBR")).gdp
+        XCTAssertNotNil(e.useTactic("scorched_earth", target: "GBR"))
+        XCTAssertLessThan(try XCTUnwrap(gs.shadow.fronts.first).defenderTroops, troops)
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "GBR")).gdp, gdp)
+    }
+
+    // Functional: the starvation stance needs a blockade, bites every turn, and lapses when the blockade is lifted
+    func testStarvationBlockadeStance() throws {
+        let (e, gs) = try war(1917, with: "DEU")
+        XCTAssertNotNil(e.tacticProblem("starve_blockade", target: "DEU"), "no blockade, no stance")
+        gs.shadow.fleetDeployments.append(FleetDeployment(fleetID: "atlantic", target: "DEU", mission: .blockade,
+                                                          commitment: 1, ships: FleetComposition(), fromLat: 0, fromLon: 0,
+                                                          toLat: 0, toLon: 0, departed: gs.currentDate, arrives: gs.currentDate,
+                                                          status: .onStation))
+        XCTAssertNil(e.tacticProblem("starve_blockade", target: "DEU"))
+        XCTAssertTrue(e.setStance("starve_blockade", target: "DEU", on: true))
+        XCTAssertFalse(e.setStance("starve_blockade", target: "DEU", on: true), "already in force")
+        let gdp = try XCTUnwrap(gs.getCountry(id: "DEU")).gdp
+        let ruth = gs.shadow.ruthlessness
+        for _ in 0..<6 { gs.turn += 1; e.processTacticStances() }
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "DEU")).gdp, gdp, "the blockade bites every turn")
+        XCTAssertGreaterThan(gs.shadow.ruthlessness, ruth, "a standing policy is nobody's secret")
+        gs.shadow.fleetDeployments.removeAll()
+        e.processTacticStances()
+        XCTAssertTrue(gs.shadow.tacticStances.isEmpty, "the stance lapses with the blockade")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("has been lifted") })
+    }
+
+    // Functional: the herds, and the land that is easier to take afterwards
+    func testDestroyingTheHerdsBreaksResistance() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1874)
+        let gs = try XCTUnwrap(e.gameState)
+        let land = try XCTUnwrap(gs.indigenousLandIDs.sorted().first)
+        XCTAssertNotNil(e.useTactic("buffalo_slaughter", target: land))
+        XCTAssertGreaterThan(gs.shadow.resistanceBroken[land] ?? 0, 0)
+        XCTAssertGreaterThan(gs.shadow.ruthlessness, 0)
+    }
+
+    // Functional: the embalmed-beef bargain — cash now, sick soldiers now, a commission later
+    func testProfiteeringPaysThenCosts() throws {
+        let (e, gs) = try war(1898, with: "ESP")
+        let funds = gs.shadow.aidRemaining
+        let will = try XCTUnwrap(gs.shadow.fronts.first).attackerWill
+        XCTAssertNotNil(e.useTactic("profiteer_contracts", covert: true, discoveryRoll: 0.99))
+        XCTAssertGreaterThan(gs.shadow.aidRemaining, funds, "cash and kickbacks now")
+        XCTAssertLessThan(try XCTUnwrap(gs.shadow.fronts.first).attackerWill, will, "your own men are sick")
+        XCTAssertEqual(gs.shadow.aftermath.count, 1)
+        let pop = gs.shadow.popularity
+        for _ in 0..<24 { gs.turn += 1; e.processDirtyTactics() }
+        XCTAssertLessThan(gs.shadow.popularity, pop, "the commission of inquiry")
+        XCTAssertGreaterThan(gs.shadow.impeachmentStage, 0)
+    }
+
+    // Security: a requisition only works on your own territory, and a stance only on a stance tactic
+    func testStarvationTargetsAreChecked() throws {
+        let (e, gs) = try withTerritory(1900, "CUB")
+        XCTAssertNotNil(e.tacticProblem("requisition_harvest", target: "GBR"), "not another nation")
+        XCTAssertNotNil(e.tacticProblem("requisition_harvest", target: gs.playerCountryID))
+        XCTAssertNil(e.tacticProblem("requisition_harvest", target: "CUB"))
+        XCTAssertFalse(e.setStance("scorched_earth", target: "GBR", on: true), "not a stance")
+        XCTAssertFalse(e.setStance("starve_blockade", target: "GBR", on: false), "nothing to lift")
+    }
+
+    // Integration: a requisition pays at once and brings a famine a year later, through the turn loop
+    func testRequisitionPaysThenStarves() throws {
+        let (e, gs) = try withTerritory(1900, "CUB")
+        let funds = gs.shadow.aidRemaining
+        XCTAssertNotNil(e.useTactic("requisition_harvest", target: "CUB"))
+        XCTAssertGreaterThan(gs.shadow.aidRemaining, funds)
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: "CUB")).stability, 100)
+        for _ in 0..<14 { gs.turn += 1; e.processDirtyTactics() }
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Famine") })
+        XCTAssertTrue(gs.shadow.aftermath.isEmpty)
+    }
+
+    // Retry: a stance in force survives a save and reload
+    func testStancesSurviveSave() throws {
+        let (e, gs) = try war(1917, with: "DEU")
+        gs.shadow.fleetDeployments.append(FleetDeployment(fleetID: "atlantic", target: "DEU", mission: .blockade,
+                                                          commitment: 1, ships: FleetComposition(), fromLat: 0, fromLon: 0,
+                                                          toLat: 0, toLon: 0, departed: gs.currentDate, arrives: gs.currentDate,
+                                                          status: .onStation))
+        e.setStance("starve_blockade", target: "DEU", on: true)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertTrue(loaded.shadow.tacticStances.contains(DirtyTactics.stanceKey("starve_blockade", target: "DEU")))
+        XCTAssertEqual(DirtyTactics.splitStance("starve_blockade:DEU").1, "DEU")
+        XCTAssertNil(DirtyTactics.splitStance("starve_blockade").1)
+    }
+
+    // Performance: stances cost nothing to carry
+    func testStanceTickIsCheap() throws {
+        let (e, gs) = try war(1917, with: "DEU")
+        gs.shadow.fleetDeployments.append(FleetDeployment(fleetID: "atlantic", target: "DEU", mission: .blockade,
+                                                          commitment: 1, ships: FleetComposition(), fromLat: 0, fromLon: 0,
+                                                          toLat: 0, toLon: 0, departed: gs.currentDate, arrives: gs.currentDate,
+                                                          status: .onStation))
+        e.setStance("starve_blockade", target: "DEU", on: true)
+        measure { for _ in 0..<300 { e.processTacticStances() } }
+    }
+}
