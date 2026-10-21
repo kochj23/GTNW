@@ -279,12 +279,14 @@ class GameState: ObservableObject, Codable {
         case militaryActionsUsed, reachedDEFCON1
     }
 
-    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil, turnLength: TurnLength = .month, startDate: Date? = nil) {
+    /// `boardYear` (3.12.0) builds the countries for that year instead of the administration's first year (a scenario
+    /// set mid-term, e.g. Korea 1950 under an administration that began in 1945).
+    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil, turnLength: TurnLength = .month, startDate: Date? = nil, boardYear: Int? = nil) {
         self.playerCountryID = playerCountryID
         self.turnLength = turnLength
         self.difficultyLevel = difficultyLevel
         // Use era-appropriate country list when playing as a historical administration
-        let eraYear = administration?.startYear ?? 2025
+        let eraYear = boardYear ?? administration?.startYear ?? 2025
         self.countries = CountryFactory.createCountriesForYear(eraYear)
         self.activeWars = []
         self.treaties = []
@@ -303,7 +305,7 @@ class GameState: ObservableObject, Codable {
             // Era country adjustments (nuclear arsenals, Soviet rename, etc.) are handled
             // by WorldCountriesDatabase.countriesForYear() above.
             // Apply additional fine-grained nuclear tweaks for the specific year:
-            adjustCountriesForEra(year: admin.startYear)
+            adjustCountriesForEra(year: boardYear ?? admin.startYear)
         } else {
             self.advisors = Advisor.trumpCabinet()
             self.eraStartYear = 2025

@@ -48,6 +48,8 @@ struct ScenarioDefinition: Identifiable {
     let relations: [(String, String, Int)]
     let events: [ScheduledEvent]
     let suggestedTurnLength: TurnLength
+    /// Build the board for this year rather than the administration's first year (3.12.0); nil = as before.
+    var boardYear: Int? = nil
 
     var administration: Administration? {
         let all = Advisor.allAdministrations()
@@ -56,7 +58,7 @@ struct ScenarioDefinition: Identifiable {
 
     static func d(_ y: Int, _ m: Int, _ day: Int) -> Date { GameCalendar.date(year: y, month: m, day: day) }
 
-    static let all: [ScenarioDefinition] = [world1990, cuba1962, ableArcher1983, modern2025]
+    static let all: [ScenarioDefinition] = [pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, sept11_2001, modern2025]
 
     static func find(_ id: String) -> ScenarioDefinition? { all.first { $0.id == id } }
 
@@ -128,6 +130,71 @@ struct ScenarioDefinition: Identifiable {
         ],
         suggestedTurnLength: .day)
 
+    // MARK: Historical crises (3.12.0). Encyclopedia-level facts only; the scorecard compares the player with history.
+
+    static let pearlHarbor1941 = ScenarioDefinition(
+        id: "pearl1941",
+        title: "Day of Infamy, 1941",
+        summary: "December 7, 1941. Japanese carrier aircraft have struck the Pacific Fleet at Pearl Harbor. Europe has "
+            + "been at war for two years and Germany is deep inside the Soviet Union. The nation waits for your answer.",
+        startDate: d(1941, 12, 7), eraYear: 1941, defcon: .defcon2,
+        wars: [("JPN", "USA"), ("DEU", "GBR"), ("DEU", "RUS"), ("ITA", "GBR"), ("JPN", "CHN")],
+        relations: [("USA", "JPN", -95), ("JPN", "USA", -95), ("USA", "DEU", -60), ("USA", "GBR", 80)],
+        events: [
+            ScheduledEvent(date: d(1941, 12, 8), kind: .news, actor: nil, target: nil,
+                           text: "Japanese forces strike the Philippines, Guam, Wake, Hong Kong and Malaya."),
+            ScheduledEvent(date: d(1941, 12, 11), kind: .invade, actor: "DEU", target: "USA",
+                           text: "Germany declares war on the United States."),
+            ScheduledEvent(date: d(1941, 12, 11), kind: .invade, actor: "ITA", target: "USA",
+                           text: "Italy declares war on the United States."),
+        ],
+        suggestedTurnLength: .week, boardYear: 1941)
+
+    static let berlin1948 = ScenarioDefinition(
+        id: "berlin1948",
+        title: "The Berlin Blockade, 1948",
+        summary: "June 24, 1948. Soviet forces have cut every road, rail and canal link to West Berlin. Two million "
+            + "people have weeks of food. Supply the city, force the corridor, or let it go.",
+        startDate: d(1948, 6, 24), eraYear: 1948, defcon: .defcon3,
+        wars: [],
+        relations: [("USA", "RUS", -60), ("RUS", "USA", -60), ("USA", "GBR", 85), ("USA", "FRA", 70)],
+        events: [
+            ScheduledEvent(date: d(1948, 6, 26), kind: .news, actor: nil, target: nil,
+                           text: "The first transport aircraft land at Tempelhof with supplies for West Berlin."),
+            ScheduledEvent(date: d(1949, 4, 4), kind: .news, actor: nil, target: nil,
+                           text: "The North Atlantic Treaty is signed in Washington."),
+        ],
+        suggestedTurnLength: .week, boardYear: 1948)
+
+    static let korea1950 = ScenarioDefinition(
+        id: "korea1950",
+        title: "Korea, 1950",
+        summary: "June 25, 1950. North Korean armies have crossed the 38th parallel and are driving on Seoul. "
+            + "The Security Council is meeting without the Soviet delegate.",
+        startDate: d(1950, 6, 25), eraYear: 1950, defcon: .defcon3,
+        wars: [("PRK", "KOR")],
+        relations: [("USA", "PRK", -80), ("USA", "KOR", 60), ("USA", "CHN", -50)],
+        events: [
+            ScheduledEvent(date: d(1950, 6, 28), kind: .news, actor: nil, target: nil, text: "Seoul falls to North Korean forces."),
+            ScheduledEvent(date: d(1950, 10, 25), kind: .invade, actor: "CHN", target: "KOR",
+                           text: "Chinese 'volunteers' cross the Yalu River in force."),
+        ],
+        suggestedTurnLength: .week, boardYear: 1950)
+
+    static let sept11_2001 = ScenarioDefinition(
+        id: "sept11_2001",
+        title: "September 11, 2001",
+        summary: "September 11, 2001. Hijacked airliners have struck the World Trade Center and the Pentagon. "
+            + "The attack was planned from Afghanistan, where the Taliban shelter al-Qaeda.",
+        startDate: d(2001, 9, 11), eraYear: 2001, defcon: .defcon3,
+        wars: [],
+        relations: [("USA", "AFG", -90), ("AFG", "USA", -70), ("USA", "PAK", 10), ("USA", "GBR", 90)],
+        events: [
+            ScheduledEvent(date: d(2001, 9, 12), kind: .news, actor: nil, target: nil,
+                           text: "NATO invokes Article 5 for the first time: an attack on one is an attack on all."),
+        ],
+        suggestedTurnLength: .week, boardYear: 2001)
+
     static let modern2025 = ScenarioDefinition(
         id: "modern2025",
         title: "The World Today",
@@ -140,6 +207,89 @@ struct ScenarioDefinition: Identifiable {
         suggestedTurnLength: .month)
 }
 
+// MARK: - Scorecard (3.12.0)
+
+/// One line of a scenario's scorecard: what happened in history against what happened in this game.
+struct ScorecardLine: Hashable {
+    let label: String
+    let historical: String
+    let player: String
+    /// nil when there is nothing to compare yet.
+    let matchesHistory: Bool?
+}
+
+enum Scorecard {
+    /// Did a and b fight (a war either way, or U.S. troops on a front against the other)?
+    static func fought(_ a: String, _ b: String, in gs: GameState) -> Bool {
+        gs.activeWars.contains { ($0.aggressor == a && $0.defender == b) || ($0.aggressor == b && $0.defender == a) }
+            || gs.shadow.fronts.contains { f in
+                (f.attacker == a && f.defender == b) || (f.attacker == b && f.defender == a)
+                    || (a == "USA" && f.usSide != nil && (f.attacker == b || f.defender == b) && f.usSide != b)
+            }
+    }
+
+    static func defeated(_ id: String, in gs: GameState) -> Bool {
+        gs.shadow.fronts.contains { $0.defender == id && $0.status == .attackerWon } || (gs.getCountry(id: id)?.isTerritory ?? false)
+            || (gs.getCountry(id: id)?.isDestroyed ?? false)
+    }
+
+    private static func yes(_ b: Bool) -> String { b ? "Yes" : "No" }
+
+    /// A yes/no line: history's answer and date, and the game's.
+    private static func line(_ label: String, history: Bool, when: String, game: Bool) -> ScorecardLine {
+        ScorecardLine(label: label, historical: yes(history) + (when.isEmpty ? "" : " (\(when))"), player: yes(game), matchesHistory: history == game)
+    }
+
+    static func lines(for id: String, in gs: GameState) -> [ScorecardLine] {
+        let nukes = !gs.nuclearStrikes.isEmpty
+        var out: [ScorecardLine] = []
+        switch id {
+        case "pearl1941":
+            out = [line("The U.S. fights Japan", history: true, when: "declared 8 Dec 1941", game: fought("USA", "JPN", in: gs)),
+                   line("The U.S. fights Germany", history: true, when: "11 Dec 1941", game: fought("USA", "DEU", in: gs)),
+                   line("Japan defeated", history: true, when: "surrender 2 Sep 1945", game: defeated("JPN", in: gs)),
+                   line("Nuclear weapons used", history: true, when: "Hiroshima and Nagasaki, Aug 1945", game: nukes)]
+        case "berlin1948":
+            out = [line("War with the Soviet Union", history: false, when: "", game: fought("USA", "RUS", in: gs)),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes),
+                   line("NATO founded", history: true, when: "4 Apr 1949", game: gs.currentDate >= ScenarioDefinition.d(1949, 4, 4))]
+        case "korea1950":
+            out = [line("The U.S. fights North Korea", history: true, when: "from Jun 1950, under the UN flag", game: fought("USA", "PRK", in: gs)),
+                   line("China enters the war", history: true, when: "Oct 1950", game: fought("CHN", "KOR", in: gs) || fought("USA", "CHN", in: gs)),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes),
+                   line("North Korea defeated", history: false, when: "armistice 27 Jul 1953", game: defeated("PRK", in: gs))]
+        case "cuba1962":
+            out = [line("War with the Soviet Union", history: false, when: "", game: fought("USA", "RUS", in: gs)),
+                   line("Invasion of Cuba", history: false, when: "", game: fought("USA", "CUB", in: gs)),
+                   line("Nuclear weapons used", history: false, when: "missiles withdrawn, Oct–Nov 1962", game: nukes)]
+        case "ablearcher1983":
+            out = [line("War with the Soviet Union", history: false, when: "", game: fought("USA", "RUS", in: gs)),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes)]
+        case "world1990":
+            out = [line("Iraq invades Kuwait", history: true, when: "2 Aug 1990", game: fought("IRQ", "KWT", in: gs)),
+                   line("The U.S. fights Iraq", history: true, when: "Desert Storm, from 17 Jan 1991", game: fought("USA", "IRQ", in: gs)),
+                   line("A coalition joins the U.S.", history: true, when: "35 nations", game: !(gs.shadow.coalitions["IRQ"]?.members.isEmpty ?? true)),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes)]
+        case "sept11_2001":
+            out = [line("Congress authorizes force", history: true, when: "AUMF, 18 Sep 2001", game: gs.shadow.authorizations.contains { $0.target == "AFG" && $0.passed }),
+                   line("The U.S. fights Afghanistan", history: true, when: "from 7 Oct 2001", game: fought("USA", "AFG", in: gs)),
+                   line("A coalition joins the U.S.", history: true, when: "NATO Article 5, 12 Sep 2001", game: !(gs.shadow.coalitions["AFG"]?.members.isEmpty ?? true)),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes)]
+        case "modern2025":
+            out = [line("Nuclear weapons used", history: false, when: "to date", game: nukes)]
+        default:
+            break
+        }
+        return out
+    }
+
+    /// Lines that match history, out of those that can be compared.
+    static func score(_ lines: [ScorecardLine]) -> (matched: Int, total: Int) {
+        let c = lines.compactMap(\.matchesHistory)
+        return (c.filter { $0 }.count, c.count)
+    }
+}
+
 // MARK: - Applying a scenario
 
 enum ScenarioLoader {
@@ -147,7 +297,7 @@ enum ScenarioLoader {
     static func makeGameState(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal,
                               turnLength: TurnLength? = nil, packFolder: URL? = ShadowPack.shared.isInstalled ? ShadowPack.shared.folder : nil) -> GameState {
         let gs = GameState(playerCountryID: "USA", difficultyLevel: difficulty, administration: s.administration,
-                           turnLength: turnLength ?? s.suggestedTurnLength, startDate: s.startDate)
+                           turnLength: turnLength ?? s.suggestedTurnLength, startDate: s.startDate, boardYear: s.boardYear)
         apply(s, to: gs, packFolder: packFolder)
         return gs
     }

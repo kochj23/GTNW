@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.0] - 2026-10-20 — Coalitions and historical scenarios
+
+### Added
+- **Coalitions** (`Shared/Engine/Shadow/Coalitions.swift`, `CoalitionSheet`, dossier **Coalition**):
+  - Candidates are treaty, in-play and friendly nations, never the target's allies.
+  - `CoalitionModel.joinOdds` uses relations, ties to the target, a legislative authorization, the casus belli and
+    any chemical/biological use.
+  - Members send 10% of their forces to the front and the world reaction is shared (1/(n+1), applied to sized
+    attacks); refusers lose 5 relations. Coalitions persist in `ShadowState.coalitions`.
+  - Play event `coalition_request`.
+- **Scenarios**: Day of Infamy 1941, the Berlin Blockade 1948, Korea 1950 and September 11, 2001, with boards set by
+  date. The new `ScenarioDefinition.boardYear` / `GameState(boardYear:)` builds countries for the scenario year
+  rather than the administration's first year. Every scenario has a **scorecard** (`Scorecard`, `ScorecardSheet`,
+  top-bar **Scorecard**) comparing yes/no milestones with dated history.
+- 11 tests across all seven categories (481 total); snapshots in `Screenshots/3.12.0/`.
+
 ## [3.11.0] - 2026-10-20 — Play as other nations
 
 ### Added

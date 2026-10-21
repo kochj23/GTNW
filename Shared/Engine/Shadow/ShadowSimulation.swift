@@ -501,7 +501,8 @@ extension GameEngine {
             }
         }
         // The world reacts to the size of it, and a very large attack climbs the escalation ladder.
-        let hit = AttackSizing.worldHit(scale: m)
+        // 3.12.0: a coalition shares the world's reaction.
+        let hit = Int((Double(AttackSizing.worldHit(scale: m)) * opinionShare(against: target)).rounded())
         if hit > 0 {
             for c in gs.countries where c.id != player && c.id != target && !c.isDestroyed && !c.isTerritory {
                 modifyDiplomaticRelation(from: c.id, to: player, by: -hit)

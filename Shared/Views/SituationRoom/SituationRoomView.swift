@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard
         var id: String { rawValue }
     }
 
@@ -61,6 +61,8 @@ struct SituationRoomView: View {
             case .govern: GovernSheet(gameState: gameState, countryID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .manpower: ManpowerSheet(gameState: gameState).environmentObject(gameEngine)
             case .group: GroupActionSheet(gameState: gameState).environmentObject(gameEngine)
+            case .coalition: CoalitionSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
+            case .scorecard: ScorecardSheet(gameState: gameState)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -235,6 +237,9 @@ struct SituationTopBar: View {
             }
             Button("TROOPS \(Int(AttackSizing.freeTroops(gameState)))K") { onSheet(.manpower) }.buttonStyle(ThemedButtonStyle())
             Button("GROUP") { onSheet(.group) }.buttonStyle(ThemedButtonStyle())
+            if gameState.shadow.scenarioID != nil {
+                Button("SCORECARD") { onSheet(.scorecard) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
+            }
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
                 gameEngine.endTurn()
@@ -503,6 +508,10 @@ struct CountryDossier: View {
                             Button("SEND AID") { onSheet(.aid) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
                         }
                         Button("CITY VIEW") { onSheet(.city) }.buttonStyle(ThemedButtonStyle())
+                        if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID {
+                            Button("COALITION") { onSheet(.coalition) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                                .help("Ask allies to join an operation against \(c.name)")
+                        }
                         if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID && gameState.playerCountryID == "USA" {
                             Button("CONGRESS") { onSheet(.congress) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
                                 .help("Ask Congress for a declaration of war or an authorization to use force")

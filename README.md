@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-470%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.11.0-blue)
+![Tests](https://img.shields.io/badge/tests-481%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.12.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,26 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Allied coalitions (new in 3.12.0)**: **Coalition** on a dossier asks the era's treaty allies (NATO from 1949, the
+  Warsaw Pact…), alliances made in play and friendly nations (a coalition of the willing) to join an operation
+  against that country, one action for all. Each decides by its relations with you, its ties to the target and the
+  legitimacy of the action: a legislative authorization or a real casus belli helps, chemical or biological weapons
+  drive allies away. Members send a tenth of their forces to the front and **share the world's reaction**; those who
+  refuse cool a little. The sheet shows each nation's odds from the same formula.
+- **Historical scenarios (new in 3.12.0)**: Day of Infamy (7 Dec 1941), the Berlin Blockade (24 Jun 1948), Korea
+  (25 Jun 1950) and September 11, 2001 join Thirteen Days (1962), Able Archer (1983), the World in 1990 and the World
+  Today, each with a historically set board and dated events. Each has a **scorecard** (top-bar **Scorecard**) that
+  compares your game with what actually happened (e.g. "The U.S. fights Germany: Yes, 11 Dec 1941 / this game: No"),
+  encyclopedia-level facts only.
+
+  ```mermaid
+  flowchart LR
+      T[Target] --> C[Coalition candidates:<br/>treaty allies · in-play allies · friends]
+      C --> O[Odds: relations, ties to the target,<br/>authorization, casus belli, banned weapons]
+      O -- join --> J[Troops to the front<br/>world reaction shared 1/(n+1)]
+      O -- refuse --> R[Relations −5]
+      S[Historical scenario] --> B[Board + dated events] --> SC[Scorecard: history vs this game]
   ```
 - **Play as other nations (new in 3.11.0)**: **Nation** on the start screen picks any nation that exists in the
   start year (★ = real cabinet data). The cabinet is the nation's real officeholders on the start date, from bundled
@@ -826,6 +846,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Coalitions (3.12.0) | Event `coalition_request` (`target`, `joined`, `refused`) |
 | Any game (3.11.0) | `game_start` and the session summary add `country_name`; the summary adds `leader` for non-U.S. nations |
 | Group actions (3.10.0) | Event `group_action` (`action`, `group`, `members`, `member_names`, `total`) |
 | Manpower and territories (3.9.0) | Events `draft_called`, `mobilization_called`, `statehood` (`land`, `name`, `number`), `territory_lost` |
@@ -849,18 +870,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **470 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **481 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 173 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 87 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 61 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 30 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 28 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 53 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 33 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 175 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 91 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 62 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 31 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 29 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 54 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 34 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 ```bash
 xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -destination 'platform=macOS' test
@@ -884,6 +905,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.12.0 | Oct 2026 | Allied coalitions that share the blame; Pearl Harbor, Berlin 1948, Korea 1950 and 9/11 scenarios with history scorecards |
 | 3.11.0 | Oct 2026 | Play as any nation of the era with its real cabinet; leaders fall by no-confidence, coup, revolution or party congress; the AI runs the U.S. |
 | 3.10.0 | Oct 2026 | Antarctica can be claimed (treaty rules by date, its own map shape); group actions on many nations at once |
 | 3.9.0 | Oct 2026 | Govern territories (garrison, insurgency, elections) up to statehood; finite era manpower with drafts and mobilization; the AI sizes its attacks |

@@ -1409,3 +1409,97 @@ struct GroupActionSheet: View {
         }
     }
 }
+
+// MARK: - Coalitions and scenario scorecards (3.12.0)
+
+/// Ask allies and friends to join an operation against the selected country: each with its odds of joining.
+struct CoalitionSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let targetID: String
+
+    var body: some View {
+        let odds = gameEngine.coalitionOdds(against: targetID)
+        let current = gameState.shadow.coalitions[targetID]
+        let name = gameState.getCountry(id: targetID)?.name ?? targetID
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "person.3.sequence.fill")
+                Text(verbatim: "COALITION AGAINST \(name.uppercased())")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Text("Members send troops to the front and share the world's reaction. Authorization from the legislature and a real casus belli help; chemical or biological weapons drive allies away. Those who refuse cool a little.")
+                .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            if let c = current, !c.members.isEmpty {
+                Text(verbatim: "IN THE COALITION: " + c.members.compactMap { gameState.getCountry(id: $0)?.name }.joined(separator: ", "))
+                    .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalGreen).fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(odds.prefix(16), id: \.id) { o in
+                    HStack {
+                        Text(verbatim: gameState.getCountry(id: o.id)?.name ?? o.id).font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        Spacer()
+                        Text("\(Int(o.odds * 100))%").font(ThemeFont.mono(10, .bold))
+                            .foregroundColor(o.odds >= 0.5 ? GTNWColors.terminalGreen : (o.odds >= 0.2 ? GTNWColors.terminalAmber : GTNWColors.terminalRed))
+                    }
+                }
+                if odds.count > 16 { Text("…and \(odds.count - 16) more").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan) }
+                if odds.isEmpty { Text("Nobody to ask: no allies or friends outside the target's camp.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalRed) }
+            }
+            HStack {
+                Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle())
+                Spacer()
+                Button("ASK \(odds.count) NATION\(odds.count == 1 ? "" : "S") TO JOIN") { if gameEngine.requestCoalition(against: targetID) != nil { dismiss() } }
+                    .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                    .disabled(odds.isEmpty || gameState.actionsRemaining == 0)
+            }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(640))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+
+/// A historical scenario's scorecard: history against this game, line by line.
+struct ScorecardSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let id = gameState.shadow.scenarioID ?? ""
+        let lines = Scorecard.lines(for: id, in: gameState)
+        let score = Scorecard.score(lines)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "list.bullet.clipboard.fill")
+                Text(verbatim: "SCORECARD — \((ScenarioDefinition.find(id)?.title ?? "SANDBOX").uppercased())")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Text("YOU MATCHED HISTORY ON \(score.matched) OF \(score.total)").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            HStack {
+                Text("").frame(maxWidth: .infinity, alignment: .leading)
+                Text("HISTORY").frame(width: FontScale.w(230), alignment: .leading)
+                Text("THIS GAME").frame(width: FontScale.w(90), alignment: .leading)
+            }
+            .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.neonCyan)
+            ForEach(lines, id: \.self) { l in
+                HStack(alignment: .top) {
+                    Text(verbatim: l.label).font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(verbatim: l.historical).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan).frame(width: FontScale.w(230), alignment: .leading)
+                    Text(verbatim: l.player + (l.matchesHistory == false ? " ≠" : "")).font(ThemeFont.mono(11, .bold))
+                        .foregroundColor(l.matchesHistory == false ? GTNWColors.terminalAmber : GTNWColors.terminalGreen).frame(width: FontScale.w(90), alignment: .leading)
+                }
+            }
+            if lines.isEmpty { Text("No scorecard for a sandbox game.").font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan) }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(700))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
