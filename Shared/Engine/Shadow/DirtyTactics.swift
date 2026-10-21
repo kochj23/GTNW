@@ -135,7 +135,7 @@ enum DirtyTactics {
     // MARK: Catalog
 
     /// Every tactic in the game. Groups are added one release at a time (3.17.0 … 3.17.5).
-    static let all: [DirtyTactic] = chemical + incendiary
+    static let all: [DirtyTactic] = chemical + incendiary + starvation
 
     static func tactic(_ id: String) -> DirtyTactic? { all.first { $0.id == id } }
 
@@ -167,7 +167,30 @@ enum DirtyTactics {
     static let discoveryBase = 0.06
 
     static func discoveryChance(_ t: DirtyTactic, year: Int, scale: Double = 1) -> Double {
-        min(0.9, discoveryBase * eraExposure(year: year) * crowdFactor(people: t.people) * max(0.5, scale))
+        min(0.9, discoveryBase * eraExposure(year: year) * crowdFactor(people: t.people) * max(0.5, scale) * exposureBonus(t, year: year))
+    }
+
+
+    // MARK: Stances
+
+    /// A stance stays in force until it is lifted. Its key is the tactic, and the nation it is aimed at if any.
+    static func stanceKey(_ id: String, target: String?) -> String {
+        (target?.isEmpty == false) ? "\(id):\(target!)" : id
+    }
+
+    static func splitStance(_ key: String) -> (String, String?) {
+        let parts = key.split(separator: ":", maxSplits: 1).map(String.init)
+        return (parts[0], parts.count > 1 ? parts[1] : nil)
+    }
+
+    /// The share of a stance's full price it pays every year it stays in force. DESIGN CHOICE.
+    static let stanceYearlyShare = 0.35
+
+    /// Extra exposure a particular tactic carries from a date. DESIGN CHOICE: federal food inspection after the
+    /// Pure Food and Drug Act and the Meat Inspection Act (both 30 June 1906) makes a ration-contract scandal far
+    /// likelier to come out.
+    static func exposureBonus(_ t: DirtyTactic, year: Int) -> Double {
+        t.id == "profiteer_contracts" && year >= 1906 ? 2.5 : 1
     }
 
     /// Chance a secret programme leaks in a year before it is ready, on the same terms as the 3.6.0 restarts.
@@ -353,6 +376,75 @@ extension DirtyTactics {
     ]
 }
 
+// MARK: - The starvation and supply group (3.17.2)
+
+extension DirtyTactics {
+    static let apiStarvationNote = "Restricted: Additional Protocol I Art. 54 (1977) forbids starvation of civilians as a method of warfare."
+    static let geneva1949OccupierNote = "Banned: Geneva Convention IV Art. 55 (1949) — an occupier must ensure the food supply of the population."
+    static let parisNote = "Blockades must be effective and declared (Declaration of Paris, 1856)."
+
+    static let starvation: [DirtyTactic] = [
+        DirtyTactic(
+            id: "scorched_earth", group: .starvation, name: "Scorched earth",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule of war covers it."),
+                      p(1863, .restricted, lieberNote),
+                      p(1907, .restricted, hague1907DestructionNote),
+                      p(1949, .treatyBanned, geneva1949DestructionNote),
+                      p(1977, .treatyBanned, apiStarvationNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Take or destroy the mills, barns, stock and standing crops so the enemy army cannot feed itself "
+                 + "off the land. Russia did it ahead of Napoleon in 1812; Sheridan did it in the Shenandoah in "
+                 + "1864; the British burned Boer farms from 1900. The enemy's supply and will go first; his "
+                 + "civilians go with them.",
+            target: .nation, canBeCovert: false, people: 30),
+        DirtyTactic(
+            id: "starve_blockade", group: .starvation, name: "Starvation blockade",
+            from: 1789,
+            periods: [p(1789, .legal, parisNote),
+                      p(1856, .legal, parisNote),
+                      p(1949, .restricted, "Restricted: Geneva Convention IV (1949) requires free passage of food and medicine for civilians."),
+                      p(1977, .treatyBanned, apiStarvationNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "A stance on a blockade already in place: stop food and fertiliser too, not only war material. "
+                 + "The Union's Anaconda plan squeezed the Confederacy from 1861; the British blockade of Germany "
+                 + "ran from 1914 until the Versailles signature in June 1919, and the German Board of Public Health "
+                 + "put the deaths from it at 763,000.",
+            target: .nation, canBeCovert: false, people: 20, isStance: true),
+        DirtyTactic(
+            id: "buffalo_slaughter", group: .starvation, name: "Destroy the herds",
+            from: 1868, to: 1884,
+            periods: [p(1868, .legal, "No law of the United States or of war covers it; a Texas bill to stop it was vetoed in 1875.")],
+            blurb: "Pay and protect the hide hunters until the herds a people lives on are gone. The southern bison "
+                 + "herd was destroyed between 1872 and 1874 and the northern herd by 1883. Resistance on the plains "
+                 + "ends not in battle but in hunger.",
+            target: .indigenous, canBeCovert: false, people: 5),
+        DirtyTactic(
+            id: "requisition_harvest", group: .starvation, name: "Requisition the harvest",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule of war covers it."),
+                      p(1863, .restricted, lieberNote),
+                      p(1907, .restricted, "Restricted: Hague IV Art. 52 (1907) — requisitions in proportion to the resources of the country."),
+                      p(1949, .treatyBanned, geneva1949OccupierNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Take the grain out of an occupied territory and ship it home. It pays at once and it goes on "
+                 + "paying while anyone is left to farm. The hunger it makes is not an accident of the policy; it is "
+                 + "the policy.",
+            target: .territory, canBeCovert: false, people: 10),
+        DirtyTactic(
+            id: "profiteer_contracts", group: .starvation, name: "War-profiteering contracts",
+            from: 1861,
+            periods: [p(1861, .legal, "Fraud on the government is a crime; the contracts themselves are not."),
+                      p(1906, .restricted, "Restricted: the Pure Food and Drug Act and the Meat Inspection Act (both 30 June 1906) make it far likelier to come out."),
+                      p(1949, .restricted, "Restricted: the Geneva Conventions (1949) oblige a state to feed and care for its own prisoners and wounded.")],
+            blurb: "Award the ration contracts to friends on terms that pay you back. The Army's canned and "
+                 + "chemically treated beef in 1898 sickened its own men; Nelson A. Miles called it embalmed beef "
+                 + "and the Dodge Commission sat on it through the winter of 1898–99. Cash and kickbacks now; sick "
+                 + "soldiers soon; a scandal after that.",
+            target: .none, canBeCovert: true, people: 2),
+    ]
+}
+
 // MARK: - Engine
 
 extension GameEngine {
@@ -372,24 +464,30 @@ extension GameEngine {
             return "\(t.name) belongs to an age that has passed."
         }
         if gs.shadow.tacticPrograms[id] != nil { return "\(t.name) is already under way." }
-        if t.isStance { return nil }
         switch t.target {
         case .none:
-            return nil
+            break
         case .nation:
             guard let target, let c = gs.getCountry(id: target), c.id != gs.playerCountryID, !c.isDestroyed, !c.isTerritory else {
                 return "Pick a nation."
             }
-            return nil
         case .territory:
             guard let target, gs.getCountry(id: target)?.territoryOf == gs.playerCountryID else { return "Pick one of your territories." }
-            return nil
         case .indigenous:
             guard let target, gs.indigenousLandIDs.contains(target) || gs.getCountry(id: target)?.territoryOf == gs.playerCountryID else {
                 return "Pick a resisting people's land, or a territory still fighting you."
             }
-            return nil
         }
+        // What a particular tactic needs on top of a target.
+        switch id {
+        case "starve_blockade":
+            guard let target, gs.shadow.fleetDeployments.contains(where: { $0.target == target && $0.mission == .blockade }) else {
+                return "Blockade the country first: this is a stance on a blockade, not a blockade of its own."
+            }
+        default:
+            break
+        }
+        return nil
     }
 
     /// Order a tactic (one action). `roll` and `discoveryRoll` are injected by tests.
@@ -476,6 +574,92 @@ extension GameEngine {
         applyTacticCost(t, target: target, coverUp: true)
     }
 
+
+    /// Put a stance in force, or lift it. Setting one costs an action; lifting one is free.
+    @discardableResult
+    func setStance(_ id: String, target: String? = nil, on: Bool) -> Bool {
+        guard let gs = gameState, let t = DirtyTactics.tactic(id), t.isStance else { return false }
+        let key = DirtyTactics.stanceKey(id, target: target)
+        if !on {
+            guard gs.shadow.tacticStances.remove(key) != nil else { return false }
+            gs.shadow.post("The United States lifts its \(t.name.lowercased()).", date: gs.currentDate, severity: 1)
+            logPlayEvent("tactic_stance", detail: ["tactic": id, "target": target ?? "", "on": false,
+                                                   "game_date": PlayHistory.day(gs.currentDate)])
+            self.gameState = gs
+            return true
+        }
+        guard gs.actionsRemaining > 0, tacticProblem(id, target: target) == nil, !gs.shadow.tacticStances.contains(key) else { return false }
+        gs.shadow.tacticStances.insert(key)
+        gs.shadow.post(DirtyTactics.headline(t, target: gs.getCountry(id: target ?? "")?.name), date: gs.currentDate, severity: 3)
+        gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(t.name) in force (\(t.status(in: gs.currentYear).label.lowercased())).")
+        logPlayEvent("tactic_stance", detail: ["tactic": id, "target": target ?? "", "on": true,
+                                               "legal_status": t.status(in: gs.currentYear).rawValue,
+                                               "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        applyTacticCost(t, target: target, coverUp: false)
+        completePlayerAction()
+        return true
+    }
+
+    /// Each turn: a stance in force does its work, and goes on costing while it lasts. A stance whose conditions
+    /// have gone (the blockade lifted, the war over) lapses by itself.
+    func processTacticStances() {
+        guard let gs = gameState else { return }
+        for key in gs.shadow.tacticStances.sorted() {
+            let (id, target) = DirtyTactics.splitStance(key)
+            guard let t = DirtyTactics.tactic(id) else { gs.shadow.tacticStances.remove(key); continue }
+            if let problem = stanceLapsed(t, target: target) {
+                gs.shadow.tacticStances.remove(key)
+                gs.shadow.post("The \(t.name.lowercased()) ends: \(problem)", date: gs.currentDate, severity: 1)
+                continue
+            }
+            applyStanceTick(t, target: target)
+            // A standing policy is nobody's secret: a share of its price every year it runs.
+            let c = DirtyTactics.cost(t, year: gs.currentYear)
+            gs.shadow.ruthlessness += c.ruthlessness * DirtyTactics.stanceYearlyShare * gs.turnLength.yearFraction
+            let hit = gs.scale.integer(annual: Double(c.world) * DirtyTactics.stanceYearlyShare)
+            if hit > 0 {
+                for o in gs.countries where o.id != gs.playerCountryID && !o.isTerritory && !o.isDestroyed {
+                    modifyDiplomaticRelation(from: o.id, to: gs.playerCountryID, by: -hit)
+                }
+            }
+        }
+        self.gameState = gs
+    }
+
+    /// Why a stance can no longer stand, or nil.
+    private func stanceLapsed(_ t: DirtyTactic, target: String?) -> String? {
+        guard let gs = gameState else { return "the game is over" }
+        guard let target, let c = gs.getCountry(id: target), !c.isDestroyed else { return nil }
+        switch t.id {
+        case "starve_blockade":
+            let blockading = gs.shadow.fleetDeployments.contains { $0.target == target && $0.mission == .blockade }
+            return blockading ? nil : "the blockade of \(c.name) has been lifted"
+        default:
+            return c.atWarWith.contains(gs.playerCountryID) ? nil : "the war with \(c.name) is over"
+        }
+    }
+
+
+    /// What a stance does to the world each turn it stays in force. Game stats only, scaled to the turn length.
+    private func applyStanceTick(_ t: DirtyTactic, target: String?) {
+        guard let gs = gameState else { return }
+        let yf = gs.turnLength.yearFraction
+        switch t.id {
+        case "starve_blockade":
+            // The 1914-19 blockade worked slowly and did not stop at the docks.
+            guard let target, let i = gs.countries.firstIndex(where: { $0.id == target }) else { return }
+            gs.countries[i].gdp *= 1 - 0.10 * yf
+            gs.countries[i].stability = max(0, gs.countries[i].stability - Int((14 * yf).rounded()))
+            gs.countries[i].profile.anxieties.social += 20 * yf
+            gs.totalCasualties += Int(Double(max(1, gs.countries[i].population)) * 1500 * yf)
+            frontBlow(target, will: 0.18 * yf, troops: 0.05 * yf)
+        default:
+            break
+        }
+        self.gameState = gs
+    }
+
     /// Each turn: secret programmes come in or leak, and costs that were always coming land.
     func processDirtyTactics() {
         guard let gs = gameState else { return }
@@ -494,6 +678,7 @@ extension GameEngine {
             self.gameState = gs
             applyTacticCost(t, target: nil, coverUp: true)
         }
+        processTacticStances()
         processTacticAftermath()
     }
 
@@ -588,6 +773,12 @@ extension DirtyTactics {
                  + "fuel far enough to matter."
         case "napalm_wp":
             return "Napalm came out of Louis Fieser's Harvard laboratory in 1942 and went into combat in 1944."
+        case "buffalo_slaughter":
+            return "The commercial hide trade that destroyed the herds ran from about 1868; before that there was "
+                 + "no market, and after 1884 there were no herds."
+        case "profiteer_contracts":
+            return "Contracts on this scale need a war department buying for a mass army, which the United States "
+                 + "first had in 1861."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -623,6 +814,11 @@ extension DirtyTactics {
         case "burn_towns": return "American troops burn the towns and farms of\(at.isEmpty ? " the valley" : at)."
         case "flamethrowers": return "American flamethrower teams burn out the defences of\(at.isEmpty ? " the position" : at)."
         case "napalm_wp": return "American aircraft put napalm and phosphorus over\(at.isEmpty ? " the city" : at)."
+        case "scorched_earth": return "American columns strip and burn the country ahead of them\(at)."
+        case "starve_blockade": return "The United States closes\(at.isEmpty ? " the enemy's" : at + "'s") ports to food and fertiliser as well as to war material."
+        case "buffalo_slaughter": return "The Army protects the hide hunters\(at). The herds are going."
+        case "requisition_harvest": return "The harvest of\(at.isEmpty ? " the territory" : at) is requisitioned for the United States."
+        case "profiteer_contracts": return "The Army's ration contracts go to friends of the administration."
         default: return "The United States orders \(t.name.lowercased())\(at)."
         }
     }
@@ -635,6 +831,7 @@ extension DirtyTactics {
         case "gas_resistance": return "Photographs of gassed villages\(at) reach the newspapers."
         case "human_subject_program": return "A defector's testimony exposes an American programme that experimented on prisoners."
         case "incendiary_shells": return "An agent is taken with a carpet bag of incendiary compound\(at); the papers have the rest."
+        case "profiteer_contracts": return "The ration contracts are published in full. So are the names on the cheques."
         default: return "The press exposes an American \(t.name.lowercased())\(at)."
         }
     }
@@ -718,6 +915,53 @@ extension GameEngine {
         case "napalm_wp":
             if let target = use.target { burnTarget(target, gdp: 0.05 * m, stability: 15 * m, dead: 900 * m) }
             frontBlow(use.target, will: 0.15 * m, troops: 0.05 * m)
+        // --- 3.17.2: hunger ---
+        case "scorched_earth":
+            if let target = use.target { burnTarget(target, gdp: 0.05 * m, stability: 12 * m, dead: 300 * m) }
+            frontBlow(use.target, will: 0.12 * m, troops: 0.08 * m)
+        case "buffalo_slaughter":
+            // The herds a people lives on: the resistance goes with them, and it does not come back.
+            if let target = use.target { resistanceHit(target, by: 45 * m) }
+        case "requisition_harvest":
+            // Cash now out of an occupied territory, hunger and hatred after.
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                let take = ExpansionModel.levyAmount(gs.countries[i], in: gs) * 1.5 * m
+                gs.shadow.aidRemaining += take
+                gs.shadow.resourceEarnings += take
+                gs.countries[i].stability = max(0, gs.countries[i].stability - Int(25 * m))
+                gs.countries[i].profile.outcry = min(100, gs.countries[i].profile.outcry + 30 * m)
+                gs.shadow.post(String(format: "The harvest of %@ is requisitioned: $%.1fB.", gs.countries[i].name, take),
+                               date: gs.currentDate, severity: 2)
+                scheduleAftermath(TacticAftermath(tactic: t.id,
+                                                  due: GameCalendar.calendar.date(byAdding: .year, value: 1, to: gs.currentDate) ?? gs.currentDate,
+                                                  text: "Famine in \(gs.countries[i].name). The relief appeals name the United States.",
+                                                  ruthlessness: 10 * m, popularity: 4 * m, world: 3))
+            }
+        case "profiteer_contracts":
+            // Cash and kickbacks now; your own soldiers sick; a scandal after that.
+            let take = 3.0 * m
+            gs.shadow.aidRemaining += take
+            gs.shadow.resourceEarnings += take
+            let me = gs.playerCountryID
+            for i in gs.shadow.fronts.indices where gs.shadow.fronts[i].status == .fighting {
+                let f = gs.shadow.fronts[i]
+                // The front the United States is on, as attacker, as defender, or as somebody's ally.
+                guard f.attacker == me || f.defender == me || f.usSide != nil else { continue }
+                let ours = f.attacker == me || f.usSide == f.attacker
+                if ours {
+                    gs.shadow.fronts[i].attackerWill = max(0, gs.shadow.fronts[i].attackerWill - 0.08 * m)
+                    gs.shadow.fronts[i].attackerTroops *= 1 - 0.03 * m
+                } else {
+                    gs.shadow.fronts[i].defenderWill = max(0, gs.shadow.fronts[i].defenderWill - 0.08 * m)
+                    gs.shadow.fronts[i].defenderTroops *= 1 - 0.03 * m
+                }
+            }
+            gs.shadow.post("The Army's new ration contracts are signed. The men are already complaining about the beef.",
+                           date: gs.currentDate, severity: 1)
+            scheduleAftermath(TacticAftermath(tactic: t.id,
+                                              due: GameCalendar.calendar.date(byAdding: .month, value: 18, to: gs.currentDate) ?? gs.currentDate,
+                                              text: "A commission of inquiry opens into the ration contracts. The newspapers have a name for the beef.",
+                                              ruthlessness: 6 * m, popularity: 8 * m, world: 0, cash: 0, opensImpeachment: true))
         default:
             break
         }

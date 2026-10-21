@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.2] - 2026-10-21 — Dirty tactics: starvation and supply
+
+### Added
+- **Stances** (`setStance`, `processTacticStances`): a tactic that stays in force until it is lifted instead of
+  being ordered once. It does its work every turn, pays 35% of its full price a year while it runs (a standing
+  policy is nobody's secret), and lapses by itself when its conditions go.
+- **The starvation and supply group** (`DirtyTactics.starvation`):
+  - **Scorched earth** (1789–, legal → Lieber 1863 → Hague 1907 → Geneva 1949 → AP I Art. 54 1977 → Rome 2002):
+    Russia ahead of Napoleon in 1812, Sheridan in the Shenandoah in 1864, British farm burning from 1900. Takes the
+    enemy's supply, his output and his will.
+  - **Starvation blockade** (a stance on a blockade you already have; legal under the Declaration of Paris 1856 →
+    restricted Geneva IV 1949 → banned AP I 1977 → Rome 2002): stop food and fertiliser, not only war material. The
+    Union's Anaconda plan from 1861; the British blockade of Germany from 1914 until the Versailles signature in
+    June 1919, which the German Board of Public Health blamed for 763,000 deaths. It bites 10% of output a year and
+    lapses the moment the blockade is lifted.
+  - **Destroy the herds** (1868–1884, legal — a Texas bill to stop it was vetoed in 1875): the commercial hide hunt
+    that took the southern herd in 1872–74 and the northern by 1883. Resistance on a people's land ends in hunger.
+  - **Requisition the harvest** (1789–, legal → Lieber 1863 → Hague Art. 52 1907 → Geneva IV Art. 55 1949 → Rome
+    2002): one and a half times a levy out of an occupied territory now, famine and the relief appeals a year later.
+  - **War-profiteering contracts** (1861–, legal → Pure Food and Drug Act and Meat Inspection Act 1906): the Army's
+    canned and chemically treated beef of 1898 that Nelson A. Miles called embalmed and the Dodge Commission sat on
+    through the winter of 1898–99. Cash and kickbacks at once, your own men sick on the front, and a commission of
+    inquiry eighteen months later that opens impeachment hearings.
+- `exposureBonus`: federal food inspection after 30 June 1906 multiplies the chance a ration scandal comes out by
+  2.5. The only per-tactic modifier in the model, and it is there because the law really changed.
+
+### Changed
+- The panel shows PUT IN FORCE / LIFT IT for a stance and IN FORCE while one runs; its pickers use a light label
+  colour so the unselected options are legible on the dark panel in both skins.
+- `profiteer_contracts` finds the front the United States is actually on, whether as attacker, defender or ally.
+- 11 tests across all seven categories (625 total, single muted run); snapshots in `Screenshots/3.17.2/`.
+
 ## [3.17.1] - 2026-10-21 — Dirty tactics: incendiaries by era
 
 ### Added

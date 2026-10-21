@@ -1747,11 +1747,14 @@ struct DirtyTacticsSheet: View {
             }
             .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
             if groups.count > 1 {
-                ScaledSegmentedPicker(selection: Binding(get: { pick }, set: { group = $0 }), options: groups.map { ($0, $0.title) })
+                // The panel is dark in both skins, so the unselected labels need a light colour.
+                ScaledSegmentedPicker(selection: Binding(get: { pick }, set: { group = $0 }), options: groups.map { ($0, $0.title) },
+                                      textColor: Theme.isRetro ? EGA.white : .white)
             }
             HStack(spacing: 8) {
                 Text("SCALE").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
-                ScaledSegmentedPicker(selection: $preset, options: AttackPreset.allCases.map { ($0, $0.title) })
+                ScaledSegmentedPicker(selection: $preset, options: AttackPreset.allCases.map { ($0, $0.title) },
+                                      textColor: Theme.isRetro ? EGA.white : .white)
             }
             let shown = DirtyTactics.available(in: year, group: pick)
             if shown.isEmpty {
@@ -1783,6 +1786,7 @@ struct DirtyTacticsSheet: View {
         let status = t.status(in: year)
         let problem = gameEngine.tacticProblem(t.id, target: targetID)
         let program = gameState.shadow.tacticPrograms[t.id]
+        let inForce = gameState.shadow.tacticStances.contains(DirtyTactics.stanceKey(t.id, target: targetID))
         VStack(alignment: .leading, spacing: 3) {
             HStack {
                 Text(verbatim: t.name.uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
@@ -1791,6 +1795,8 @@ struct DirtyTacticsSheet: View {
                 Spacer()
                 if let p = program {
                     Text(verbatim: "UNDER WAY · READY \(GameCalendar.format(p.ready))").font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.neonCyan)
+                } else if inForce {
+                    Text("IN FORCE").font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.terminalRed)
                 } else if t.canBeCovert {
                     Text(String(format: "COVERT RISK %.0f%%", DirtyTactics.discoveryChance(t, year: year, scale: preset.multiplier) * 100))
                         .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.neonCyan)
@@ -1800,8 +1806,21 @@ struct DirtyTacticsSheet: View {
             if let note = t.note(in: year) {
                 Text(verbatim: note).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalAmber)
             }
-            if let problem {
+            if inForce {
+                HStack {
+                    Button("LIFT IT") { gameEngine.setStance(t.id, target: targetID, on: false) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+                    Spacer()
+                }
+            } else if let problem {
                 Text(verbatim: problem).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+            } else if t.isStance {
+                HStack {
+                    Button("PUT IN FORCE") { gameEngine.setStance(t.id, target: targetID, on: true) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
+                        .disabled(gameState.actionsRemaining == 0)
+                    Spacer()
+                }
             } else {
                 HStack {
                     Button(DirtyTactics.programYears(t) != nil ? "AUTHORISE" : "OPENLY") {
