@@ -347,11 +347,13 @@ enum PersonalityAI {
             .max { (c.diplomaticRelations[$0.id] ?? 0) < (c.diplomaticRelations[$1.id] ?? 0) }
         let neutral = others.filter { abs(c.diplomaticRelations[$0.id] ?? 0) < 40 }
             .min { CountryProfile.stableUnit($0.id + c.id) < CountryProfile.stableUnit($1.id + c.id) }
-        let weakEnemy = others.filter { (c.diplomaticRelations[$0.id] ?? 0) < -40 && !c.alliances.contains($0.id)
-                                         && $0.militaryStrength < c.militaryStrength }
+        // 3.14.0: harder AIs pick fights sooner and against closer matches (Nightmare: relations < −20, up to 1.2×).
+        let hostile = -40 + (difficulty - 1) * 20
+        let weakEnemy = others.filter { Double(c.diplomaticRelations[$0.id] ?? 0) < hostile && !c.alliances.contains($0.id) && !$0.isTerritory
+                                         && Double($0.militaryStrength) < Double(c.militaryStrength) * (0.8 + 0.2 * difficulty) }
             .min { $0.militaryStrength < $1.militaryStrength }
 
-        var options: [(WorldMove, Double)] = [(.wait, 6)]
+        var options: [(WorldMove, Double)] = [(.wait, 6 / max(0.5, difficulty))]
         if let n = neutral { options.append((.improveRelations(n.id), 2 + ethic * 0.8)) }
         if let n = neutral { options.append((.tradeTies(n.id), 1 + a.economic / 20 + ethic * 0.3)) }
         options.append((.internalReform, a.social / 18 + (ethic >= 4 ? 1 : 0)))
@@ -372,7 +374,8 @@ enum PersonalityAI {
         }
         if let w = weakEnemy, c.atWarWith.isEmpty {
             // War is the rare, ambition-driven option: ~0 for restrained leaders, real for ruthless ones.
-            options.append((.attack(w.id), pow(max(0, ambition - 2), 1.6) * 0.35 * difficulty))
+            // 3.14.0: a floor of 0.4 so cautious monarchies still go to war sometimes.
+            options.append((.attack(w.id), (pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty))
         }
 
         let total = options.reduce(0) { $0 + max(0, $1.1) }

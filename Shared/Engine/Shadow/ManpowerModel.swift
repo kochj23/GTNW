@@ -54,8 +54,19 @@ enum ManpowerModel {
 
     /// What a called draft or mobilization adds at full strength: a draft doubles the standing force (at least
     /// 500K), a mobilization adds 30%.
+    /// 3.14.0: before 1861 a "mobilization" is a militia call (the Whiskey Rebellion call was ~13K; War of 1812
+    /// and Mexican War calls ~50K), and there is no federal draft before the Enrollment Act of 1863.
     static func callUpSize(_ kind: ManpowerKind, year: Int) -> Double {
-        kind == .draft ? max(500, standing(year: year)) : standing(year: year) * 0.3
+        if kind == .draft { return max(500, standing(year: year)) }
+        return max(standing(year: year) * 0.3, year < 1812 ? 13 : (year < 1861 ? 50 : 0))
+    }
+
+    static let firstDraftYear = 1863
+    static func militiaEra(_ year: Int) -> Bool { year < 1861 }
+
+    /// "CALL OUT THE MILITIA" before 1861, "MOBILIZE THE RESERVES" after.
+    static func title(_ kind: ManpowerKind, year: Int) -> String {
+        kind == .draft ? "Call a draft" : (militiaEra(year) ? "Call out the militia" : "Mobilize the reserves")
     }
 
     /// Political cost of calling one (design choice): a draft −8 approval and −5 Congress (−3 / −2 at war),
@@ -99,6 +110,7 @@ extension GameEngine {
         if gs.actionsRemaining == 0 { return "No actions left this \(gs.turnLength.displayName.lowercased())." }
         if gs.shadow.mobilizations.contains(where: { $0.kind == kind }) { return "Already called." }
         if kind == .draft, let h = ManpowerModel.historicalDraft(on: gs.currentDate) { return "The \(h.name) is already in force." }
+        if kind == .draft && gs.currentYear < ManpowerModel.firstDraftYear { return "No federal draft before the Enrollment Act of 1863: call out the militia instead." }
         return nil
     }
 
@@ -111,9 +123,10 @@ extension GameEngine {
         gs.shadow.mobilizations.append(Mobilization(kind: kind, started: gs.currentDate))
         gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + cost.popularity)
         gs.countries[pi].congressionalSupport = max(0, gs.countries[pi].congressionalSupport + cost.congress)
-        let size = Int(ManpowerModel.callUpSize(kind, year: gs.currentYear))
+        let size = max(1, Int(ManpowerModel.callUpSize(kind, year: gs.currentYear).rounded()))
         gs.shadow.post(kind == .draft ? "The President orders a military draft: \(size)K men to be trained over six months."
-                                      : "The President mobilizes the reserves: \(size)K troops within a month.", date: gs.currentDate, severity: 2)
+                       : (ManpowerModel.militiaEra(gs.currentYear) ? "The President calls out the militia: \(size)K men within a month."
+                          : "The President mobilizes the reserves: \(size)K troops within a month."), date: gs.currentDate, severity: 2)
         logPlayEvent(kind == .draft ? "draft_called" : "mobilization_called", detail: ["thousands": size, "game_date": PlayHistory.day(gs.currentDate)])
         self.gameState = gs
         completePlayerAction()

@@ -142,6 +142,12 @@ struct ShadowState: Codable {
     var extraction: [String: String] = [:]
     var lastLevy: [String: Date] = [:]
     var lastTurnCash: Double = 0
+    /// The living world (3.14.0): AI activity counters ("wars", "claims", "diplomacy"), the era wars already begun,
+    /// treaties other nations have offered the player, and the last reaction to U.S. expansion.
+    var worldStats: [String: Int] = [:]
+    var firedRivalries: Set<String> = []
+    var treatyOffers: [TreatyOffer] = []
+    var lastReaction: Date?
 
     // Scenario
     var scenarioID: String?
@@ -180,7 +186,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction
     }
 
     init() {}
@@ -239,6 +245,10 @@ struct ShadowState: Codable {
         extraction = try c.decodeIfPresent([String: String].self, forKey: .extraction) ?? [:]
         lastLevy = try c.decodeIfPresent([String: Date].self, forKey: .lastLevy) ?? [:]
         lastTurnCash = try c.decodeIfPresent(Double.self, forKey: .lastTurnCash) ?? 0
+        worldStats = try c.decodeIfPresent([String: Int].self, forKey: .worldStats) ?? [:]
+        firedRivalries = try c.decodeIfPresent(Set<String>.self, forKey: .firedRivalries) ?? []
+        treatyOffers = try c.decodeIfPresent([TreatyOffer].self, forKey: .treatyOffers) ?? []
+        lastReaction = try c.decodeIfPresent(Date.self, forKey: .lastReaction)
     }
 }
 

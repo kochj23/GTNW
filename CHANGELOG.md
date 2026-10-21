@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.0] - 2026-10-20 — A living world
+
+### Added
+- **`WorldPolitics`** (`WorldPolitics.swift`), run each turn from `processShadowTurn`:
+  - Era rivalries and wars (`rivalries`): relations of −60 or worse while a rivalry lasts; wars declared on their
+    real dates between computer-run powers (never forcing the player), peace when the era ends.
+  - The race for land (`aiTakeLand`): colonial powers claim unclaimed and peoples' land (rate by era, highest
+    1880–1914), others only within 25° of home; powers at war seize enemy colonies.
+  - Reactions to U.S. expansion over the difficulty's threshold: protests, proxy revolts, seizing weakly
+    garrisoned territories, a coalition, and on Hard/Nightmare a declaration of war.
+  - Alliances break when allies fall out; nations offer the player treaties (`TreatyOffer`, top-bar **Treaty**
+    button, `TreatyOffersSheet`, `answerTreaty`).
+  - `ShadowState.worldStats` counts AI wars, claims and diplomacy; play events `world_war`, `world_claim`,
+    `territory_seized`, `treaty_answered`.
+- `startNewGame(year:)` starts on Inauguration Day of any year with the administration then in office.
+
+### Changed
+- **AI activity scales with difficulty** (`WorldPolitics.activity`: 0.6 / 1 / 1.6 / 2.6): act rate, the wait weight,
+  the hostility and strength gates for war, and a 0.4 floor on the war weight so monarchies fight too.
+- AI wars between other nations no longer raise DEFCON unless a nuclear power is involved.
+- Post-1945 special relations (U.S.–Russia, NATO, the EU and so on) apply only from their eras.
+
+### Fixed
+- **Passive AI**: starting relations bottomed out at exactly −40 while war needed less than −40, and pre-modern
+  monarchies had a war weight of 0, so 1789 games were nearly still.
+- **Anachronistic nations**: states founded later are off early boards (`WorldCountriesDatabase.founded`;
+  Yugoslavia and Czechoslovakia from 1918); the Qing aren't renamed "Republic of China" before 1912 (nor Vietnam,
+  Egypt, Sudan or Burma given later names early); crises, news, AI War Room, intel and advice pick only from
+  `GameState.liveCountries`; the LLM crisis prompt lists the era's nations and drops any others; relations are never
+  set toward nations off the board; U.S. marshals catch spies before 1908.
+- **Map selection**: every outline resolves in every era (`WorldMapData.selection`, era `dependencies`, and any other
+  land with a template counts as unclaimed); the card grid shows colonies and peoples' land; Mongolia is the Qing's
+  until 1921. A sweep test clicks every outline in 1789, 1850, 1913, 1950 and 2025.
+- **"Mobilizes the reserves: 0K"** in 1792: before 1861 it's a militia call (13K, 50K from 1812), there's no
+  federal draft before 1863, and sizes round instead of truncating.
+- The Resources panel shows "first income next month" instead of $0.00B/yr in a territory's first month.
+- 14 tests across all seven categories, including 200-turn simulations from five eras on every difficulty
+  (540 total, single muted run); snapshots in `Screenshots/3.14.0/`.
+
 ## [3.13.2] - 2026-10-20 — Territory money fixes
 
 ### Fixed

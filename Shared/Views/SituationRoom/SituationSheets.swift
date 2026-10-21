@@ -1022,8 +1022,9 @@ struct ResourcesSheet: View {
                         Text(verbatim: r.country.name.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                         Text(verbatim: r.resources.map(\.title).joined(separator: ", ")).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
                         Spacer()
-                        Text(wait > 0 ? "PRODUCING IN \(wait) MONTH\(wait == 1 ? "" : "S")" : String(format: "$%.2fB/yr", r.income))
-                            .font(ThemeFont.mono(10, .bold)).foregroundColor(wait > 0 ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
+                        let starting = wait == 0 && r.income < 0.005   // the ramp-up's first month rounds to $0.00B
+                        Text(wait > 0 ? "PRODUCING IN \(wait) MONTH\(wait == 1 ? "" : "S")" : (starting ? "FIRST INCOME NEXT MONTH" : String(format: "$%.2fB/yr", r.income)))
+                            .font(ThemeFont.mono(10, .bold)).foregroundColor(wait > 0 || starting ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
                     }
                     HStack(spacing: 4) {
                         ForEach(ExtractionRate.allCases) { rate in
@@ -1263,8 +1264,8 @@ struct ManpowerSheet: View {
                 let called = gameState.shadow.mobilizations.first { $0.kind == kind }
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(kind == .draft ? "CALL A DRAFT" : "MOBILIZE THE RESERVES").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
-                        Text(String(format: "+%dK over %.0f month%@ · approval %+.0f · Congress %+d", Int(ManpowerModel.callUpSize(kind, year: year)),
+                        Text(ManpowerModel.title(kind, year: year).uppercased()).font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                        Text(String(format: "+%dK over %.0f month%@ · approval %+.0f · Congress %+d", Int(ManpowerModel.callUpSize(kind, year: year).rounded()),
                                     ManpowerModel.trainingMonths(kind), ManpowerModel.trainingMonths(kind) == 1 ? "" : "s", cost.popularity, cost.congress))
                             .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                         if let c = called {
@@ -1577,6 +1578,39 @@ struct AcquisitionSheet: View {
         }
         .padding(16)
         .frame(width: FontScale.w(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+
+// MARK: - Treaty offers (3.14.0)
+
+/// Treaties other nations have proposed: accept or decline each (they lapse after three months).
+struct TreatyOffersSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TREATY OFFERS").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if gameState.shadow.treatyOffers.isEmpty {
+                Text("No offers on the table.").font(ThemeFont.mono(11)).foregroundColor(GTNWColors.neonCyan)
+            }
+            ForEach(gameState.shadow.treatyOffers) { o in
+                HStack {
+                    Text(verbatim: "\(gameState.getCountry(id: o.from)?.name ?? o.from): \(o.type.rawValue)")
+                        .font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Spacer()
+                    Button("ACCEPT") { gameEngine.answerTreaty(o.id, accept: true) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                    Button("DECLINE") { gameEngine.answerTreaty(o.id, accept: false) }.buttonStyle(ThemedButtonStyle())
+                }
+                .padding(4).themedPanel(retroFill: EGA.black)
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(560))
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }

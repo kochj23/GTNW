@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-526%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.13.2-blue)
+![Tests](https://img.shields.io/badge/tests-540%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.14.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,45 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **A living world (new in 3.14.0)**: the other nations no longer sit still, in any era. Scaled by difficulty
+  (Easy calm, Nightmare relentless: about ten moves a year per nation and wars at the slightest excuse):
+  - **The era's wars break out** between the powers on their real dates (`WorldPolitics.rivalries`): the French
+    Revolutionary and Napoleonic wars from 1792, the Russo-Turkish wars, the Crimean War, the wars of Italian and
+    German unification, the Scramble-era colonial wars, both world wars, the Arab–Israeli and Indo-Pakistani wars,
+    and so on, each ending in a peace when its era is over. Cold rivalries (Britain and Russia's Great Game, India
+    and Pakistan) set the enmities without forcing war. Computer-run nations also start wars of their own.
+  - **The race for land**: the colonial powers (Britain, France, Spain, Portugal and the Netherlands, then Germany,
+    Italy and Belgium from the 1880s and Japan from 1895) claim unclaimed and peoples' land anywhere, others only near
+    home, fastest in the Scramble for Africa (1880–1914). Powers at war seize each other's colonies. The land you
+    wanted may be gone.
+  - **Answers to U.S. expansion**: claim too much in a year and the powers protest, arm rebels in your
+    territories, seize lightly garrisoned ones, and form a coalition against you (on Hard and Nightmare its leader
+    declares war). The U.S. grabbing land also spurs their own claims.
+  - **Alliances form and break** (allies who fall out part ways), and **nations offer you treaties** (trade,
+    non-aggression, alliance) from a top-bar **Treaty** button; they lapse after three months.
+  - **Era-true nations**: the 1789 board no longer includes states founded later (Czechoslovakia, Yugoslavia,
+    Sri Lanka, the Pacific states and others; `WorldCountriesDatabase.founded`), the Qing are no longer renamed
+    "Republic of China" before 1912, and every crisis, spy story, news item and AI pick draws only from nations on
+    the board (`GameState.liveCountries`). U.S. marshals, not the FBI, catch spies before 1908.
+  - **Every land selectable in every era**: dependencies and not-yet-independent lands map to their owner by year
+    (`WorldMapData.dependencies`: Puerto Rico under Spain until 1898, Mongolia under the Qing, the Balkans under the
+    Ottomans and Habsburgs…), anything else is unclaimed land, and the card grid gains colonies and peoples' land.
+  - **The 1790s draft**: before 1861 "mobilization" is a militia call (13K, then 50K from 1812), and there is no
+    federal draft before 1863.
+
+  ```mermaid
+  flowchart TD
+      T[Each turn] --> R[Era rivalries<br/>enmities + wars on their dates]
+      T --> E[Race for land<br/>colonial powers overseas, others nearby]
+      T --> X{U.S. claims this year<br/>above the difficulty threshold?}
+      X -- yes --> P[Protests, proxy revolts,<br/>seize weak garrisons, coalition]
+      T --> A[Alliances break when allies fall out]
+      T --> O[Treaty offers to the player]
+      T --> AI[Each nation's own move<br/>× difficulty activity]
+      R --> W[Fronts and battles]
+      AI --> W
+      E --> M[Map: their colour, no longer claimable]
   ```
 - **Territory money (new in 3.13.1)**: what your territories earn now lands in your **spendable funds** (the same
   pot as aid, group actions and colony purchases) every turn, with a "Territories paid $X B this month." ticker line;
@@ -920,6 +959,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Living world (3.14.0) | Events `world_war`, `world_claim`, `territory_seized`, `treaty_answered` |
 | Levies (3.13.1) | Event `territory_levy` (`land`, `name`, `amount_b`) |
 | Land (3.13.0) | Events `colony_seized`, `land_purchased`, `independence_backed`, and `claimed_land` with `indigenous` |
 | Coalitions (3.12.0) | Event `coalition_request` (`target`, `joined`, `refused`) |
@@ -946,18 +986,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **526 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **540 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 184 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 105 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 66 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 36 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 33 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 58 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 39 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 187 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 110 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 67 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 37 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 34 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 59 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 41 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -985,6 +1025,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.14.0 | Oct 2026 | A living world in every era (scaled by difficulty), era-true nations in every event, every land selectable on the map and card grid, militia calls in the 1790s |
 | 3.13.2 | Oct 2026 | Levy cooldown is exactly six months; well-run new territories recover to 60 stability in their first year |
 | 3.13.1 | Oct 2026 | Territory money: cash into your funds every turn, extraction rates, levies, a Resources panel that says what's holding each land back |
 | 3.13.0 | Oct 2026 | Takeable land on every continent: colonies to seize, buy or free, peoples' land to take at a cost, historical U.S. purchases |

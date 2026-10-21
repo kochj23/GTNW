@@ -111,8 +111,25 @@ class GameState: ObservableObject, Codable {
     /// President has since claimed (a claimed land becomes a country with the same id). Derived, so it survives
     /// save / load with no new fields and older saves get it too.
     var unclaimedLandIDs: Set<String> {
+        // 3.14.0: cached; it only changes when countries come or go, the year turns, or Alaska is bought.
+        let key = [countries.count, currentYear, eraStartYear, shadow.acquired.count, countries.filter(\.isDestroyed).count]
+        if let c = unclaimedCache, c.key == key { return c.ids }
+        let ids = computeUnclaimed()
+        unclaimedCache = (key, ids)
+        return ids
+    }
+    private var unclaimedCache: (key: [Int], ids: Set<String>)?
+
+    private func computeUnclaimed() -> Set<String> {
         // Antarctica (3.10.0) is claimable in every era until someone takes it.
-        WorldCountriesDatabase.unclaimedLandIDs(year: eraStartYear).union([Antarctica.id]).subtracting(countries.map(\.id))
+        let present = Set(countries.map(\.id))
+        // 3.14.0: any outline with a template that no country, owner or pre-state record covers is unclaimed too,
+        // so every land on the map can be selected (and claimed) in every era.
+        let orphans = WorldMapData.shared.shapes.lazy.map(\.id).filter { id in
+            !present.contains(id) && WorldCountriesDatabase.template(id: id) != nil
+                && WorldMapData.owner(of: id, in: present, year: self.currentYear) == nil && self.preState(id) == nil
+        }
+        return WorldCountriesDatabase.unclaimedLandIDs(year: eraStartYear).union([Antarctica.id]).union(orphans).subtracting(present)
     }
 
     // MARK: - Era-aware delivery system labels
@@ -322,6 +339,8 @@ class GameState: ObservableObject, Codable {
         }
         initializeDiplomaticRelations()
         applyFactbookModifiers()
+        WorldPolitics.applyRivalries(self)   // 3.14.0: the era's real enmities
+
     }
 
     // MARK: - Codable
@@ -446,6 +465,8 @@ class GameState: ObservableObject, Codable {
 
     /// Set special diplomatic relations (rivals, allies, etc.)
     private func setSpecialRelations() {
+        // 3.14.0: these are post-1945 rivalries and blocs; earlier eras get theirs from WorldPolitics.rivalries.
+        guard currentYear >= 1945 else { return }
         // USA-Russia rivalry
         setRelation(from: "USA", to: "RUS", value: -60)
         setRelation(from: "RUS", to: "USA", value: -60)
@@ -468,6 +489,7 @@ class GameState: ObservableObject, Codable {
         setRelation(from: "PRK", to: "JPN", value: -80)
 
         // NATO allies
+        guard currentYear >= 1949 else { return }
         let natoMembers = ["USA", "GBR", "FRA", "DEU", "ITA", "ESP", "POL", "CAN", "TUR", "NLD", "BEL", "NOR"]
         for member1 in natoMembers {
             for member2 in natoMembers where member1 != member2 {
@@ -476,6 +498,7 @@ class GameState: ObservableObject, Codable {
         }
 
         // EU cooperation
+        guard currentYear >= 1957 else { return }
         let euMembers = ["FRA", "DEU", "ITA", "ESP", "POL", "NLD", "BEL", "AUT", "SWE", "FIN"]
         for member1 in euMembers {
             for member2 in euMembers where member1 != member2 {
@@ -486,7 +509,8 @@ class GameState: ObservableObject, Codable {
 
     /// Set diplomatic relation between two countries
     func setRelation(from: String, to: String, value: Int) {
-        guard let index = countries.firstIndex(where: { $0.id == from }) else { return }
+        // 3.14.0: both sides must be on the board (no relations with nations of another era).
+        guard let index = countries.firstIndex(where: { $0.id == from }), countries.contains(where: { $0.id == to }) else { return }
         countries[index].diplomaticRelations[to] = max(-100, min(100, value))
     }
 
@@ -624,7 +648,9 @@ class GameState: ObservableObject, Codable {
 
             // ── China ───────────────────────────────────────────────────────
             case "CHN":
-                if year < 1949 {
+                if year < 1912 {
+                    // 3.14.0: the Qing Empire's own template values
+                } else if year < 1949 {
                     // Civil War — Nationalist government
                     country = adjustedCountry(country,
                         name: "Republic of China",
@@ -956,13 +982,15 @@ class GameState: ObservableObject, Codable {
             // ── Myanmar ──────────────────────────────────────────────────────
             case "MMR":
                 // "Burma" until 1989 when military junta renamed it Myanmar
-                if year < 1989 {
+                if year >= 1948 && year < 1989 {   // 3.14.0: British Burma before independence
                     country = renamedCountry(country, name: "Burma")
                 }
 
             // ── Vietnam (unified) ─────────────────────────────────────────────
             case "VNM":
-                if year < 1954 {
+                if year < 1887 {
+                    country = renamedCountry(country, name: year < 1804 ? "Đại Việt" : "Đại Nam")   // 3.14.0
+                } else if year < 1954 {
                     country = adjustedCountry(country,
                         name: "French Indochina",
                         nukes: 0, icbm: 0, slbm: 0, bombers: 5,
@@ -973,7 +1001,9 @@ class GameState: ObservableObject, Codable {
 
             // ── Egypt ─────────────────────────────────────────────────────────
             case "EGY":
-                if year < 1922 {
+                if year < 1882 {
+                    country = renamedCountry(country, name: "Egypt Eyalet")   // 3.14.0: Ottoman Egypt
+                } else if year < 1922 {
                     country = adjustedCountry(country,
                         name: "British Egypt",
                         nukes: 0, icbm: 0, slbm: 0, bombers: 0,
@@ -1007,7 +1037,9 @@ class GameState: ObservableObject, Codable {
 
             // ── Sudan ─────────────────────────────────────────────────────────
             case "SDN":
-                if year < 1956 {
+                if year < 1899 {
+                    country = renamedCountry(country, name: year < 1821 ? "Sennar Sultanate" : (year < 1885 ? "Turco-Egyptian Sudan" : "Mahdist Sudan"))   // 3.14.0
+                } else if year < 1956 {
                     country = adjustedCountry(country,
                         name: "Anglo-Egyptian Sudan",
                         nukes: 0, icbm: 0, slbm: 0, bombers: 0,
@@ -1327,4 +1359,15 @@ struct TurnEvent: Identifiable, Codable {
         self.event = event
         self.timestamp = Date()
     }
+}
+
+// MARK: - Era-true picks (3.14.0)
+
+extension GameState {
+    /// The nations actually on the board: not destroyed, not someone's territory. Every random pick draws from these.
+    var liveCountries: [Country] { countries.filter { !$0.isDestroyed && !$0.isTerritory } }
+
+    /// Who catches foreign agents in the United States: the FBI from 1908 (Bureau of Investigation), U.S. marshals
+    /// before.
+    static func counterspies(_ year: Int) -> String { year >= 1908 ? "The FBI" : "U.S. marshals" }
 }

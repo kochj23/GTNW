@@ -102,6 +102,13 @@ struct WorldCountriesDatabase {
              + territories
     }
 
+    /// Founding years of modern states the era lists above don't otherwise remove (3.14.0).
+    static let founded: [String: Int] = [
+        "SUR": 1975, "LKA": 1948, "MDV": 1965, "DZA": 1962, "MRT": 1960, "GNQ": 1968, "TWN": 1949, "PSE": 1988,
+        "CYP": 1960, "MLT": 1964, "HKG": 1997, "FJI": 1970, "SLB": 1978, "VUT": 1980, "WSM": 1962, "KIR": 1979,
+        "FSM": 1986, "MHL": 1986, "PLW": 1994, "NRU": 1968, "TUV": 1978,
+    ]
+
     // MARK: - Unclaimed lands (3.3.0)
 
     /// African lands removed before ~1960 (see `countriesForYear`). No era entity covers this ground.
@@ -189,17 +196,17 @@ struct WorldCountriesDatabase {
         }
         // 1990+: unified Germany (DEU) stays from allCountries()
 
-        // Yugoslavia: unified until 1992
+        // Yugoslavia: unified 1918-1992 (3.14.0: not before 1918; its lands are Ottoman / Habsburg then)
         if year < 1992 {
             let removeYugo = ["SRB","HRV","BIH","SVN","MKD","MNE","XKX"]
             countries.removeAll { removeYugo.contains($0.id) }
-            countries.append(yugoslavia())
+            if year >= 1918 { countries.append(yugoslavia()) }
         }
 
-        // Czechoslovakia: unified until 1993
+        // Czechoslovakia: unified 1918-1993
         if year < 1993 {
             countries.removeAll { ["CZE","SVK"].contains($0.id) }
-            countries.append(czechoslovakia())
+            if year >= 1918 { countries.append(czechoslovakia()) }
         }
 
         // Vietnam: only split during the actual North/South period (1954-1975)
@@ -603,6 +610,9 @@ struct WorldCountriesDatabase {
 
         // NOTE: Nuclear status cleanup is handled in GameState.adjustCountriesForEra()
         // after conversion to Country objects, where direct mutation is safe.
+
+        // 3.14.0: modern states that didn't exist yet (their land is a colony or unclaimed; see WorldMapData.dependencies)
+        countries.removeAll { (founded[$0.id] ?? 0) > year }
 
         // Remove countries whose yearEnd has passed
         countries = countries.filter { c in

@@ -117,7 +117,7 @@ class NaturalLanguageIntel: ObservableObject {
 
         // Add country data
         context += "\n\nCOUNTRIES:\n"
-        for country in gameState.countries.prefix(20) {
+        for country in gameState.liveCountries.prefix(20) {
             let relations = country.diplomaticRelations[gameState.playerCountryID] ?? 0
             let hasNukes = country.nuclearWarheads > 0
             context += "- \(country.name): Relations=\(relations), Military=\(country.militaryStrength), Nuclear=\(hasNukes)\n"

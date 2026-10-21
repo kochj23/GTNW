@@ -132,8 +132,8 @@ class NewsManager: ObservableObject {
             "Summit scheduled between {country1} and {country2} leaders"
         ]
 
-        guard let c1 = gameState.countries.randomElement(),
-              let c2 = gameState.countries.filter({ $0.id != c1.id }).randomElement() else { return }
+        guard let c1 = gameState.liveCountries.randomElement(),
+              let c2 = gameState.liveCountries.filter({ $0.id != c1.id }).randomElement() else { return }
 
         let template = templates.randomElement()!
         let headline = template

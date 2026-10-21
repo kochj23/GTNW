@@ -246,7 +246,7 @@ class PredictiveIntelligence: ObservableObject {
         let c2Enemies = c2.diplomaticRelations.filter { $0.value < -50 }.keys
         let shared = Set(c1Enemies).intersection(Set(c2Enemies))
 
-        return gameState.countries.filter { shared.contains($0.id) }
+        return gameState.liveCountries.filter { shared.contains($0.id) }
     }
 
     private func analyzeAllianceReasons(_ c1: Country, _ c2: Country) -> [String] {

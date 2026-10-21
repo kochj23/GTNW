@@ -32,8 +32,9 @@ struct SimpleModernWorldMap: View {
                         ForEach(gameState.countries.filter { !$0.isDestroyed }) { country in
                             countryMapCard(country)
                         }
-                        // Unclaimed land of the era (3.3.0), claimable from here too (3.9.0).
-                        ForEach(gameState.unclaimedLandIDs.sorted(), id: \.self) { id in
+                        // Unclaimed land of the era (3.3.0), claimable from here too (3.9.0); colonies and peoples'
+                        // land (3.14.0).
+                        ForEach(Self.landCardIDs(gameState), id: \.self) { id in
                             landCard(id)
                         }
                     }
@@ -48,7 +49,15 @@ struct SimpleModernWorldMap: View {
             CountryDetailSheet(country: country, gameState: gameState).environmentObject(gameEngine)
         }
         .sheet(item: $selectedLand) { pick in
-            UnclaimedLandSheet(gameState: gameState, landID: pick.id).environmentObject(gameEngine)
+            if gameState.preState(pick.id) != nil {
+                VStack {
+                    CountryDossier(gameState: gameState, country: nil, onSheet: { _ in }, unclaimedID: pick.id).environmentObject(gameEngine)
+                    Button("CLOSE") { selectedLand = nil }.buttonStyle(ThemedButtonStyle())
+                }
+                .padding().frame(width: FontScale.w(360), height: FontScale.h(620)).background(Theme.isRetro ? EGA.blue : Color.black)
+            } else {
+                UnclaimedLandSheet(gameState: gameState, landID: pick.id).environmentObject(gameEngine)
+            }
         }
     }
 
@@ -136,15 +145,21 @@ struct SimpleModernWorldMap: View {
     }
 
     /// A card for unclaimed land: grey, tagged UNCLAIMED, opens the expedition sheet.
+    /// Cards for land that isn't a country: unclaimed land, then colonies and peoples' land (3.14.0).
+    static func landCardIDs(_ gs: GameState) -> [String] {
+        gs.unclaimedLandIDs.sorted() + PreStateModel.lands.filter { gs.preState($0) != nil }.sorted()
+    }
+
     private func landCard(_ id: String) -> some View {
-        Button(action: { selectedLand = LandPick(id: id) }) {
+        let pre = gameState.preState(id)
+        return Button(action: { selectedLand = LandPick(id: id) }) {
             VStack(spacing: 12) {
-                Text("🏳").font(.scaled(size: 56))
-                Text(verbatim: WorldCountriesDatabase.template(id: id)?.name ?? id)
+                Text(pre?.era.kind == .colony ? "🏴" : "🏳").font(.scaled(size: 56))
+                Text(verbatim: pre?.label ?? WorldCountriesDatabase.template(id: id)?.name ?? id)
                     .font(GTNWFonts.terminal(size: 14, weight: .bold))
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
-                Text("UNCLAIMED")
+                Text(pre == nil ? "UNCLAIMED" : (pre?.era.kind == .colony ? "COLONY" : "PEOPLES' LAND"))
                     .font(GTNWFonts.terminal(size: 9, weight: .semibold))
                     .foregroundColor(.black)
                     .padding(.horizontal, 8).padding(.vertical, 4)

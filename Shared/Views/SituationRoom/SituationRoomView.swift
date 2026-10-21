@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties
         var id: String { rawValue }
     }
 
@@ -64,6 +64,7 @@ struct SituationRoomView: View {
             case .coalition: CoalitionSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .scorecard: ScorecardSheet(gameState: gameState)
             case .offers: AcquisitionSheet(gameState: gameState).environmentObject(gameEngine)
+            case .treaties: TreatyOffersSheet(gameState: gameState).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -240,6 +241,10 @@ struct SituationTopBar: View {
             Button("GROUP") { onSheet(.group) }.buttonStyle(ThemedButtonStyle())
             if let offer = gameEngine.openAcquisitions().first {   // 3.13.0: a historical purchase in its window
                 Button("OFFER: \(offer.name.uppercased())") { onSheet(.offers) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+            }
+            if let t = gameState.shadow.treatyOffers.first {   // 3.14.0: a nation offers a treaty
+                Button("TREATY: \((gameState.getCountry(id: t.from)?.name ?? t.from).uppercased())") { onSheet(.treaties) }
+                    .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
             }
             if gameState.shadow.scenarioID != nil {
                 Button("SCORECARD") { onSheet(.scorecard) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))

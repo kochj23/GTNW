@@ -28,7 +28,7 @@ class DynamicCrisisGenerator: ObservableObject {
         defer { isGenerating = false }
 
         let prompt = """
-        Generate a realistic geopolitical crisis for a Cold War strategy game.
+        Generate a realistic geopolitical crisis for a grand-strategy game set in \(gameState.currentYear).
 
         CURRENT GAME STATE:
         - Turn: \(gameState.turn)
@@ -38,6 +38,7 @@ class DynamicCrisisGenerator: ObservableObject {
         - Player Country: \(gameState.playerCountryID)
         - Unstable Countries: \(findUnstableCountries(gameState).map { $0.name }.joined(separator: ", "))
         - Recent Events: \(gameState.recentEvents.suffix(5).joined(separator: "; "))
+        - Nations that exist now (use ONLY these): \(gameState.liveCountries.map(\.name).joined(separator: ", "))
 
         GENERATE:
         1. **Crisis Title** (15-20 words, dramatic)
@@ -67,7 +68,7 @@ class DynamicCrisisGenerator: ObservableObject {
             title: crisis.title,
             description: crisis.description,
             year: gameState.currentYear,
-            countries: crisis.countries,
+            countries: Self.onBoard(crisis.countries, gameState),
             options: crisis.options,
             severity: crisis.severity,
             imageData: nil,
@@ -115,6 +116,12 @@ class DynamicCrisisGenerator: ObservableObject {
         } catch {
             return parseFallback(json)
         }
+    }
+
+    /// 3.14.0: keep only nations on this board (matched by id or exact name); the model may invent others.
+    static func onBoard(_ names: [String], _ gs: GameState) -> [String] {
+        let live = gs.liveCountries
+        return names.filter { n in live.contains { $0.id == n || $0.name.caseInsensitiveCompare(n) == .orderedSame } }
     }
 
     private func parseFallback(_ text: String) -> ParsedCrisis {

@@ -84,8 +84,8 @@ class EconomicWarfareSimulator: ObservableObject {
         var connections: [TradeConnection] = []
 
         // Simplified trade network
-        for country in gameState.countries {
-            let partners = gameState.countries.filter { other in
+        for country in gameState.liveCountries {
+            let partners = gameState.liveCountries.filter { other in
                 let relations = country.diplomaticRelations[other.id] ?? 0
                 return relations > 20 && other.id != country.id
             }

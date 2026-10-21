@@ -27,7 +27,7 @@ class AIWarRoom: ObservableObject {
         defer { isAnalyzing = false }
 
         let playerCountry = gameState.getPlayerCountry()!
-        let threats = gameState.countries.filter { $0.id != gameState.playerCountry }
+        let threats = gameState.liveCountries.filter { $0.id != gameState.playerCountry }
 
         let prompt = """
         Analyze this nuclear war strategic situation:
@@ -119,7 +119,7 @@ class AIWarRoom: ObservableObject {
 
     private func generateBasicAnalysis(gameState: GameState) -> ThreatAnalysis {
         let playerCountry = gameState.getPlayerCountry()!
-        let threats = gameState.countries
+        let threats = gameState.liveCountries
             .filter { $0.id != gameState.playerCountry }
             .sorted { ($0.militaryStrength + $0.nuclearWarheads) > ($1.militaryStrength + $1.nuclearWarheads) }
             .prefix(3)

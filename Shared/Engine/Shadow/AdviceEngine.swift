@@ -207,7 +207,7 @@ enum AdviceEngine {
     /// What the world looks like to the cabinet right now, in the terms Advisor.generateAdvice understands.
     static func situation(in gs: GameState) -> GameSituation {
         let player = gs.getPlayerCountry()
-        if gs.defconLevel.rawValue <= 2, let rival = player.flatMap({ p in gs.countries.filter { $0.nuclearWarheads > 0 && $0.id != p.id }.min { (p.diplomaticRelations[$0.id] ?? 0) < (p.diplomaticRelations[$1.id] ?? 0) } }) {
+        if gs.defconLevel.rawValue <= 2, let rival = player.flatMap({ p in gs.liveCountries.filter { $0.nuclearWarheads > 0 && $0.id != p.id }.min { (p.diplomaticRelations[$0.id] ?? 0) < (p.diplomaticRelations[$1.id] ?? 0) } }) {
             return .nuclearThreat(country: rival.id)
         }
         if gs.shadow.popularity < 35 || (player?.profile.outcry ?? 0) > 50 { return .domesticCrisis }

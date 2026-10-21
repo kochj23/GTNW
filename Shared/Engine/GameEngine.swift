@@ -109,9 +109,11 @@ class GameEngine: ObservableObject {
 
     /// Start a new game
     func startNewGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal, administration: Administration? = nil,
-                      turnLength: TurnLength = TurnLength.defaultForNewGames()) {
+                      turnLength: TurnLength = TurnLength.defaultForNewGames(), year: Int? = nil) {
+        // `year` (3.14.0): start on Inauguration Day of that year with its board (tests sweep eras with it).
+        let administration = administration ?? year.flatMap { y in Advisor.allAdministrations().last { $0.startYear <= y } }
         gameState = GameState(playerCountryID: playerCountryID, difficultyLevel: difficulty, administration: administration,
-                              turnLength: turnLength)
+                              turnLength: turnLength, startDate: year.map { GameCalendar.date(year: $0, month: 1, day: 20) }, boardYear: year)
         logMessages = []
         showingGameOver = false
         // 3.11.0: another nation's leader gets that nation's real cabinet for the date, and no U.S. presidential elections.
@@ -789,8 +791,12 @@ class GameEngine: ObservableObject {
         // Check NATO Article 5 / Warsaw Pact collective defense
         checkAndInvokeCollectiveDefense(aggressor: aggressor, target: defender)
 
-        // Raise DEFCON
-        raiseDEFCON()
+        // Raise DEFCON (3.14.0: only for wars that touch the player or a nuclear power; the living world's wars
+        // between other nations don't ratchet the U.S. alert level)
+        if aggressor == gameState.playerCountryID || defender == gameState.playerCountryID
+            || aggressorCountry.nuclearWarheads > 0 || defenderCountry.nuclearWarheads > 0 {
+            raiseDEFCON()
+        }
     }
 
     /// Form alliance between two countries

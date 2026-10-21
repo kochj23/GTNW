@@ -68,10 +68,49 @@ final class WorldMapData {
         "USA": [PreStateModel.alaska],
     ]
 
+    /// 3.14.0: who held small dependencies and not-yet-independent lands, by year (first row whose `until` is later
+    /// than the year and whose owner is in the game). Lands with no row and no country are colonies (PreStateModel)
+    /// or unclaimed land.
+    static let dependencies: [String: [(until: Int, owner: String)]] = {
+        let gbr = [(9999, "GBR")], fra = [(9999, "FRA")], nld = [(9999, "NLD")]
+        let pacificUS = [(1899, "ESP"), (1914, "DEU"), (1945, "JPN"), (9999, "USA")]
+        return [
+            "PRI": [(1898, "ESP"), (9999, "USA")], "GUM": [(1898, "ESP"), (9999, "USA")], "MNP": pacificUS,
+            "FSM": pacificUS, "PLW": pacificUS, "MHL": [(1885, "ESP"), (1914, "DEU"), (1945, "JPN"), (9999, "USA")],
+            "ASM": [(1900, "GBR"), (9999, "USA")], "VIR": [(1917, "DNK"), (9999, "USA")],
+            "FLK": [(1833, "ESP"), (9999, "GBR")], "SGS": gbr, "BMU": gbr, "CYM": gbr, "TCA": gbr, "VGB": gbr, "AIA": gbr,
+            "MSR": gbr, "PCN": gbr, "SHN": gbr, "JEY": gbr, "GGY": gbr, "IMN": gbr, "IOT": [(1814, "FRA"), (9999, "GBR")],
+            "ABW": nld, "CUW": nld, "SXM": nld, "SUR": nld, "MAF": fra, "BLM": fra, "SPM": fra, "NCL": fra, "PYF": fra,
+            "WLF": fra, "ATF": fra, "FRO": [(9999, "DNK")], "ALA": [(1809, "SWE"), (1917, "RUS"), (9999, "FIN")],
+            "NIU": [(1901, "GBR"), (9999, "NZL")], "COK": [(1901, "GBR"), (9999, "NZL")],
+            "NFK": [(1914, "GBR"), (9999, "AUS")], "HMD": [(1947, "GBR"), (9999, "AUS")], "IOA": [(1955, "GBR"), (9999, "AUS")],
+            "NRU": [(1914, "DEU"), (9999, "AUS")], "WSM": [(1914, "DEU"), (9999, "NZL")],
+            "FJI": [(9999, "GBR")], "SLB": gbr, "VUT": gbr, "KIR": gbr, "TUV": gbr, "MLT": gbr, "MDV": gbr,
+            "ESH": [(1976, "ESP"), (9999, "MAR")], "CYN": [(1878, "TUR"), (1960, "GBR"), (9999, "CYP")],
+            "SOL": [(1960, "GBR"), (9999, "SOM")], "MAC": [(1999, "PRT"), (9999, "CHN")], "KAS": [(1947, "IND"), (9999, "IND")],
+            "HKG": [(1841, "CHN"), (9999, "GBR")], "TWN": [(1895, "CHN"), (1945, "JPN"), (9999, "CHN")],
+            "CYP": [(1878, "TUR"), (9999, "GBR")], "PSE": [(1917, "TUR"), (1948, "GBR"), (9999, "JOR")],
+            "LKA": [(1796, "NLD"), (9999, "GBR")], "DZA": [(1830, "TUR"), (9999, "FRA")], "MRT": [(9999, "FRA")],
+            "GNQ": [(9999, "ESP")], "TLS": [(1975, "PRT"), (9999, "IDN")], "PRK": [(1910, "KOR"), (1945, "JPN"), (9999, "KOR")],
+            "SRB": [(1918, "TUR")], "MNE": [(1918, "TUR")], "MKD": [(1918, "TUR")], "KOS": [(1918, "TUR")],
+            "HRV": [(1918, "AUT")], "SVN": [(1918, "AUT")], "BIH": [(1878, "TUR"), (1918, "AUT")],
+            "CZE": [(1918, "AUT")], "SVK": [(1918, "AUT")],
+        ]
+    }()
+
+    /// 3.14.0: what clicking an outline selects in this game: the pre-state land, the owning country, or the
+    /// unclaimed land (nil = nothing, which the map sweep test forbids).
+    static func selection(for shapeID: String, in gs: GameState, present: Set<String>, unclaimed: Set<String>) -> String? {
+        if gs.preState(shapeID) != nil { return shapeID }
+        if let o = owner(of: shapeID, in: present, year: gs.currentYear) { return o }
+        return unclaimed.contains(shapeID) ? shapeID : nil
+    }
+
     /// Which game country owns a map outline in this game (nil = not a player in this era).
-    static func owner(of shapeID: String, in present: Set<String>) -> String? {
+    static func owner(of shapeID: String, in present: Set<String>, year: Int = 2025) -> String? {
         if present.contains(shapeID) { return shapeID }
         for (owner, parts) in historicalOwners where parts.contains(shapeID) && present.contains(owner) { return owner }
+        if let rows = dependencies[shapeID], let row = rows.first(where: { year < $0.until && present.contains($0.owner) }) { return row.owner }
         return nil
     }
 }
@@ -210,7 +249,7 @@ struct VectorWorldMap: View {
                     for s in data.shapes {
                         let path = s.path.applying(t)
                         guard path.boundingRect.intersects(CGRect(origin: .zero, size: size)) else { continue }
-                        let ownerID = pre[s.id] == nil ? WorldMapData.owner(of: s.id, in: present) : nil
+                        let ownerID = pre[s.id] == nil ? WorldMapData.owner(of: s.id, in: present, year: gameState.currentYear) : nil
                         var fill = unclaimedColor
                         var territory = false
                         var colonyOwner: Country?
@@ -452,7 +491,7 @@ struct VectorWorldMap: View {
         let present = Set(gameState.countries.map(\.id))
         var out: CGRect?
         for s in data.shapes {
-            let o = WorldMapData.owner(of: s.id, in: present) ?? s.id   // unowned outlines: unclaimed land (3.3.0)
+            let o = WorldMapData.owner(of: s.id, in: present, year: gameState.currentYear) ?? s.id   // unowned outlines: unclaimed land (3.3.0)
             guard ids.contains(o) else { continue }
             // Ignore far-flung overseas territories when framing (e.g. French Guiana for France).
             out = out.map { $0.union(s.bounds) } ?? s.bounds
@@ -472,9 +511,7 @@ struct VectorWorldMap: View {
     private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>, pre: Set<String> = []) -> String? {
         let p = location.applying(t.inverted())
         for s in data.shapes where s.bounds.contains(p) && s.path.contains(p) {
-            if pre.contains(s.id) { return s.id }   // 3.13.0
-            if let o = WorldMapData.owner(of: s.id, in: present) { return o }
-            if unclaimed.contains(s.id) { return s.id }
+            if let id = WorldMapData.selection(for: s.id, in: gameState, present: present, unclaimed: unclaimed) { return id }
         }
         // Dots for shapeless countries.
         let near = gameState.countries.filter { !hasShape($0.id) }.min {

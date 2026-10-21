@@ -79,6 +79,7 @@ extension GameEngine {
         syncFronts()
         processCombat(from: from, to: to)
         processWarPowers()
+        processWorldPolitics()   // 3.14.0: the living world
         processOccupation()
         processAntarctica()
         processPreState()
@@ -209,7 +210,8 @@ extension GameEngine {
     // MARK: Personality-driven AI
 
     /// Chance a computer-run country acts this turn: about four moves a game year, at most one per turn.
-    func aiActionProbability(_ gs: GameState) -> Double { min(1, 4 * gs.turnLength.yearFraction) }
+    /// 3.14.0: scaled by difficulty (Nightmare ≈ ten moves a year).
+    func aiActionProbability(_ gs: GameState) -> Double { min(1, 4 * gs.turnLength.yearFraction * WorldPolitics.activity(gs.difficultyLevel)) }
 
     func executeWorldMove(_ move: WorldMove, for country: Country) {
         guard let gs = gameState, let i = gs.countries.firstIndex(where: { $0.id == country.id }) else { return }
@@ -223,11 +225,13 @@ extension GameEngine {
             modifyDiplomaticRelation(from: country.id, to: t, by: 8)
             modifyDiplomaticRelation(from: t, to: country.id, by: 5)
             gs.aiActionSummary.append("\(flag) \(name) 🤝 courts \(tname(t))")
+            gs.shadow.worldStats["diplomacy", default: 0] += 1
         case .tradeTies(let t):
             modifyDiplomaticRelation(from: country.id, to: t, by: 5)
             gs.countries[i].economicStrength = min(100, gs.countries[i].economicStrength + 1)
             if let j = gs.countries.firstIndex(where: { $0.id == t }) { gs.countries[j].economicStrength = min(100, gs.countries[j].economicStrength + 1) }
             gs.aiActionSummary.append("\(flag) \(name) 💱 signs a trade deal with \(tname(t))")
+            gs.shadow.worldStats["diplomacy", default: 0] += 1
         case .condemn(let t):
             modifyDiplomaticRelation(from: t, to: country.id, by: -8)
             bumpAnxiety(t, .political, 6)
@@ -243,7 +247,11 @@ extension GameEngine {
             if gs.countries[i].nuclearStatus == .none { gs.countries[i].nuclearStatus = .developing }
             gs.aiActionSummary.append("\(flag) \(name) ☢️ expands its nuclear program")
         case .seekAlliance(let t):
-            if !country.alliances.contains(t) { formAlliance(country1: country.id, country2: t) }
+            if !country.alliances.contains(t) {
+                formAlliance(country1: country.id, country2: t)
+                gs.shadow.worldStats["diplomacy", default: 0] += 1
+                gs.shadow.post("\(name) and \(tname(t)) sign an alliance.", date: gs.currentDate, severity: 1)
+            }
         case .covertAction(let t):
             if let j = gs.countries.firstIndex(where: { $0.id == t }) {
                 gs.countries[j].stability = max(0, gs.countries[j].stability - 3)
@@ -252,7 +260,7 @@ extension GameEngine {
             if Double.random(in: 0..<1) < 0.35 {
                 modifyDiplomaticRelation(from: t, to: country.id, by: -20)
                 gs.aiActionSummary.append("\(flag) \(name) 🕵️ caught running agents in \(tname(t))")
-                if againstUS(t) { gs.shadow.post("FBI arrests agents working for \(name).", date: gs.currentDate, severity: 2) }
+                if againstUS(t) { gs.shadow.post("\(GameState.counterspies(gs.currentYear)) arrest agents working for \(name).", date: gs.currentDate, severity: 2) }
             }
         case .supportRebels(let t):
             if let j = gs.countries.firstIndex(where: { $0.id == t }) {
@@ -265,6 +273,7 @@ extension GameEngine {
             if againstUS(t) { gs.shadow.post("\(name) threatens the United States with nuclear retaliation.", date: gs.currentDate, severity: 3) }
         case .attack(let t):
             executeAIAction(.declareWar(target: t), for: country)
+            gs.shadow.worldStats["wars", default: 0] += 1
             gs.shadow.post("\(name) attacks \(tname(t)).", date: gs.currentDate, severity: 3)
         case .internalReform:
             gs.countries[i].profile.qualityOfLife = min(100, gs.countries[i].profile.qualityOfLife + 1)
