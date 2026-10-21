@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.2] - 2026-10-20 — Territory money fixes
+
+### Fixed
+- The levy cooldown, "producing in N months" and recovery countdowns use calendar months: a levy is ready again
+  after exactly six monthly turns (it sometimes took seven).
+- The low-stability warning no longer shows on nearly every new territory. In its first year a territory with an
+  adequate garrison under Light or Normal extraction recovers to 60 stability by its anniversary
+  (`ExpansionModel.stabilityRecoveryMonths`, applied in `processOccupation`); the Resources panel shows
+  "Stability 45 → 60 in ~N months at this garrison." The 60 threshold is unchanged.
+- 8 tests across all seven categories (526 total, single muted run); snapshots in `Screenshots/3.13.2/`.
+
 ## [3.13.1] - 2026-10-20 — Territory money
 
 ### Added

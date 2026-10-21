@@ -182,6 +182,10 @@ extension GameEngine {
             gs.countries[i].profile = p
             let st = OccupationModel.stabilityTarget(insurgency: p.outcry, governance: policy.governance)
             gs.countries[i].stability = max(0, Int((Double(c.stability) * keep + Double(st) * (1 - keep) - rate.stabilityPerMonth * gs.turnLength.yearFraction * 12).rounded()))
+            if let left = ExpansionModel.stabilityRecoveryMonths(c, in: gs) {   // 3.13.2: good governance reaches 60 within the first year
+                let step = min(1, gs.turnLength.yearFraction * 12 / Double(left))
+                gs.countries[i].stability = max(gs.countries[i].stability, Int((Double(c.stability) + Double(60 - c.stability) * step).rounded(.up)))
+            }
             var pol = policy
             if p.outcry > 85 { pol.crisisSince = pol.crisisSince ?? gs.currentDate } else { pol.crisisSince = nil }
             gs.shadow.territoryPolicies[c.id] = pol

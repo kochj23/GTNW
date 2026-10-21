@@ -298,14 +298,15 @@ extension ExpansionModel {
 
     /// Months until a new territory starts producing (0 once it does).
     static func monthsUntilProducing(_ id: String, in gs: GameState) -> Int {
-        let held = gs.shadow.claimDates[id].map { GameCalendar.years(from: $0, to: gs.currentDate) } ?? 10
-        return max(0, Int(((0.5 - held) * 12).rounded(.up)))
+        guard let claimed = gs.shadow.claimDates[id] else { return 0 }
+        return max(0, 6 - (GameCalendar.calendar.dateComponents([.month], from: claimed, to: gs.currentDate).month ?? 0))
     }
 
     /// What holds a territory's income back, with a one-line fix (nil when nothing does).
     static func limit(_ c: Country, in gs: GameState) -> String? {
         let g = gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard
         if g < AttackSizing.expeditionStandard { return "Low garrison (\(Int(g))K): raise it to \(Int(AttackSizing.expeditionStandard))K in Govern." }
+        if let m = stabilityRecoveryMonths(c, in: gs) { return "Stability \(c.stability) → 60 in ~\(m) month\(m == 1 ? "" : "s") at this garrison." }
         if c.stability < 60 { return "Low stability (\(c.stability)): try local elections or a lighter extraction rate." }
         return nil
     }
@@ -317,11 +318,21 @@ extension ExpansionModel {
         return max(0.2, base * 0.5)
     }
 
-    /// Months left before a territory can be levied again (0 = now).
+    /// Months left before a territory can be levied again (0 = now). Calendar months, so six turns of a monthly
+    /// game is exactly six.
     static func levyCooldown(_ id: String, in gs: GameState) -> Int {
         guard let last = gs.shadow.lastLevy[id] else { return 0 }
-        let months = Double(GameCalendar.days(from: last, to: gs.currentDate)) / 30.4
-        return max(0, Int((levyCooldownMonths - months).rounded(.up)))
+        let months = GameCalendar.calendar.dateComponents([.month], from: last, to: gs.currentDate).month ?? 0
+        return max(0, Int(levyCooldownMonths) - months)
+    }
+
+    /// 3.13.2: in its first year, a well-garrisoned territory under Light or Normal extraction recovers to 60
+    /// stability (full output) by its first anniversary. Months left, or nil when it isn't recovering.
+    static func stabilityRecoveryMonths(_ c: Country, in gs: GameState) -> Int? {
+        guard c.stability < 60, let claimed = gs.shadow.claimDates[c.id], rate(c.id, in: gs).insurgencyShift == 0,
+              (gs.shadow.garrisons[c.id] ?? OccupationModel.neededGarrison(c)) >= OccupationModel.neededGarrison(c) else { return nil }
+        let left = 12 - (GameCalendar.calendar.dateComponents([.month], from: claimed, to: gs.currentDate).month ?? 0)
+        return left > 0 ? left : nil
     }
 }
 
