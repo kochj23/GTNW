@@ -1638,6 +1638,14 @@ struct RecordsSheet: View {
                 }
                 .padding(3).themedPanel(retroFill: EGA.black)
             }
+            // 3.17.6: what the other powers did, on their real dates. Never anything the President could order.
+            if !gameState.shadow.worldAtrocities.isEmpty {
+                Text("THE RECORD OF THE AGE").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
+                ForEach(gameState.shadow.worldAtrocities.suffix(5).reversed()) { a in
+                    Text(verbatim: "\(GameCalendar.format(a.date)): \(a.text)")
+                        .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(3)
+                }
+            }
             Text("NOVA SAYS").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
             if gameState.shadow.novaLines.isEmpty {
                 Text("Nothing yet. Give her something to talk about.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)

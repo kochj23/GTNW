@@ -54,9 +54,9 @@ Written by Jordan Koch.
 | **Land and empire** | Unclaimed land, colonies and peoples' land on every continent, resources and income by era, occupation and statehood, Antarctica, group actions, territory money (extraction rates, levies) | 3.3–3.13 |
 | **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy | 3.11–3.16 |
 | **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard | 3.12 |
-| **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries, starvation and supply, civilians and land, deception, the sea | 3.17 |
+| **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries, starvation and supply, civilians and land, deception, the sea; the other powers use them too | 3.17 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
-| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 657 tests in seven categories | 3.1–3.17 |
+| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 668 tests in seven categories | 3.1–3.17 |
 
 The sections below are grouped by theme; each feature notes the version that introduced it.
 
@@ -315,7 +315,7 @@ Everything happens on one screen:
   drive allies away. Members send a tenth of their forces to the front and **share the world's reaction**; those who
   refuse cool a little. The sheet shows each nation's odds from the same formula.
 
-### Fighting dirty (new in 3.17.0)
+### Fighting dirty (new in 3.17)
 
 Jordan's rule for this part of the game: **it's only illegal if you get caught.** The **TACTICS** panel lists what
 the President could do that he is not supposed to, in the era he is actually in. Every tactic carries four things:
@@ -337,7 +337,12 @@ The bill lands mainly on discovery: relations with the target and with the world
 sanctions and impeachment hearings, a quarter again on top for the cover-up, and from 1945 a chance of a war-crimes
 tribunal (10% to 1993, 20% to 2002, 35% under the Rome Statute). A covert use always costs a fifth of its
 ruthlessness anyway, because the men who carried it out know what they did. Everything is recorded in the Hall of
-Infamy and Nova has something to say about all of it.
+Infamy and Nova has something to say about all of it. **Stances** (3.17.2) are tactics that stay in force instead of
+being ordered once: they do their work every turn, pay about a third of their price a year while they run, and lapse
+by themselves when their conditions go.
+
+The six groups below arrived one release at a time, 3.17.0 to 3.17.5; 3.17.6 gave the same catalog to the other
+powers and added the record of the age.
 
 **Early chemical and biological (3.17.0)**
 
@@ -365,9 +370,6 @@ is older than this game and its recipe was lost; the nineteenth-century shells o
 says so.
 
 **Starvation and supply (3.17.2)**
-
-Some tactics are **stances**: they stay in force until lifted, do their work every turn, pay a third of their price
-a year while they run, and lapse by themselves when their conditions go.
 
 | Tactic | Era | Legal status over time |
 |--------|-----|------------------------|
@@ -423,8 +425,28 @@ Pressed crews and hired regiments are the only men in the game that sit **on top
 Hired regiments are also the only troops a foreign government can take back: fall below −20 with their sovereign, or
 end up at war with him, and they go home.
 
+**The other powers (3.17.6)**
+
+The President is not the only one who fights dirty. A computer-run power at war may reach for the same catalog,
+limited to what its era allows, at about a third of the effect of the President's own order — and the world's
+opinion of it falls by the same treaty cost he would have paid.
+
+Beside that runs **the record of the age**: twenty-seven dated entries for what other powers really did, fired on
+their real dates when the power is on the board and still following history. The two Opium Wars; the Congo Free
+State and Casement's report of 1904; the Boer War camps; the Herero and Nama, 1904–08; the Armenian deportations
+from 24 April 1915; unrestricted submarine warfare in 1917; the Rif; Mukden 1931; the Holodomor; Unit 731; Ethiopia
+1935–36; Guernica; Nanjing; Gleiwitz; the Blitz; the Holocaust; Operation Bernhard; Operation Greif; the Khmer
+Rouge; Rwanda. And, as the context of the early eras and as the end of it: the slave economy of the cotton South
+and the sugar islands, Britain's Slave Trade Act of 1807, the U.S. import ban of 1808, abolition across the British
+Empire in 1833, the Emancipation Proclamation of 1 January 1863 and the Thirteenth Amendment of 6 December 1865.
+An atrocity costs its actor the world's opinion; abolition blames nobody. The Records screen keeps the list under
+**THE RECORD OF THE AGE**.
+
 **Not in the game, deliberately.** There is no player action for chattel slavery or slave labour, and none for
-genocide or ethnic cleansing. Both stay in GTNW as history and as things other powers do.
+genocide or ethnic cleansing — and there never will be. Both are in GTNW only as history and as what other powers
+do: the slave economy as early-era context, abolition in 1865 as a real event, and the historical genocides as
+entries in the record of the age. A test enforces it: no tactic is named for them, and none of the recorded
+genocides has a matching tactic id.
 
 ### Land and empire
 
@@ -1174,7 +1196,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
-| Dirty tactics (3.17.0) | Events `tactic_used` (`tactic`, `target`, `covert`, `scale`, `legal_status`), `tactic_exposed`, `tactic_tribunal`, `tactic_program_started` / `_ready` / `_discovered`, `tactic_aftermath`, `tactic_stance` (3.17.2), `drug_operations` (3.17.4), `hired_troops_recalled` (3.17.5) |
+| Dirty tactics (3.17.0) | Events `tactic_used` (`tactic`, `target`, `covert`, `scale`, `legal_status`), `tactic_exposed`, `tactic_tribunal`, `tactic_program_started` / `_ready` / `_discovered`, `tactic_aftermath`, `tactic_stance` (3.17.2), `drug_operations` (3.17.4), `hired_troops_recalled` (3.17.5), `world_atrocity` and `ai_tactic` (3.17.6) |
 | Absorptions (3.16.2) | Events `nation_absorbed` (`land`, `by`), `annexation_crisis` (`land`, `by`) |
 | Foundings (3.16.1) | Events `nation_founded` (`country`, `name`), `independence_movement` (`land`, `owner`) |
 | Peace (3.16.0) | Event `peace_brokered` (`a`, `b`, `success`) |
@@ -1206,19 +1228,19 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **657 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **668 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 205 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden, the starvation windows and the 1906 food laws, the civilian-tactic eras and the maximum extraction rate, the deception eras, the sea eras and the treaties the United States never joined |
-| **Functional** | 146 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open, burning towns, the scale a President orders, flamethrowers on a front, a starvation stance that bites and lapses, the embalmed-beef bargain, camps ending an insurgency, removal, internment and its redress, a pretext Congress accepts until it is exposed, counterfeiting, enemy uniforms, press gangs and hired regiments on top of the cap, the submarine and firebombing stances |
-| **Security** | 80 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire |
-| **Integration** | 52 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal |
-| **Performance** | 46 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 under one second (profiled at about 0.25 s, 0.5 s at worst, in Debug) |
-| **Retry** | 72 | `RetryPolicy` and `Retry.run`; LLM clients, Ollama, MLX and Games DB sync all retry; every new save field decodes from older saves; a failed commentary backend leaves the template line |
-| **Frame** | 53 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/` |
+| **Unit** | 207 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden, the starvation windows and the 1906 food laws, the civilian-tactic eras and the maximum extraction rate, the deception eras, the sea eras and the treaties the United States never joined, the record of the age |
+| **Functional** | 149 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open, burning towns, the scale a President orders, flamethrowers on a front, a starvation stance that bites and lapses, the embalmed-beef bargain, camps ending an insurgency, removal, internment and its redress, a pretext Congress accepts until it is exposed, counterfeiting, enemy uniforms, press gangs and hired regiments on top of the cap, the submarine and firebombing stances, the record firing on its real dates, abolition on the record |
+| **Security** | 83 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire, no player action for slavery or genocide, computer-run powers kept to their era |
+| **Integration** | 53 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal, mines that keep killing, computer-run powers using the era's tactics |
+| **Performance** | 47 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 and in 1789 under one second with the whole 3.17 series in the loop (profiled at about 0.25 s and 0.02 s in Debug) |
+| **Retry** | 73 | `RetryPolicy` and `Retry.run`; LLM clients, Ollama, MLX and Games DB sync all retry; every new save field decodes from older saves; a failed commentary backend leaves the template line |
+| **Frame** | 54 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/` |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -1246,6 +1268,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.17.6 | Oct 2026 | Dirty tactics, part seven: computer-run powers use the same catalog, and the record of the age — twenty-seven dated entries for what other powers did, and for abolition |
 | 3.17.5 | Oct 2026 | Dirty tactics, part six: the sea and what is left on the ground — press gangs, unrestricted submarine warfare, hired foreign regiments whose sovereign can recall them, mines that keep killing, and a firebombing stance |
 | 3.17.4 | Oct 2026 | Dirty tactics, part five: deception — a manufactured pretext Congress accepts, yellow journalism, enemy uniforms, counterfeiting, and the opium trade as state policy |
 | 3.17.3 | Oct 2026 | Dirty tactics, part four: civilians and land — reconcentration camps, forced removal, internment with its 1988 redress, a maximum-extraction quota, and coercive interrogation |

@@ -126,6 +126,7 @@ extension GameEngine {
         processAllianceChurn()
         processTreatyOffers()
         processAITerritories()
+        processAITactics()   // 3.17.6: the other powers fight dirty too
         _ = gs
     }
 
@@ -381,6 +382,7 @@ extension GameEngine {
             return
         }
         let lastBoard = gs.shadow.eraBoardIDs
+        processWorldAtrocities()   // 3.17.6
         processFoundings(board)
         processAbsorptions(board, lastBoard: lastBoard)
         for i in gs.countries.indices {
@@ -538,3 +540,132 @@ extension GameEngine {
     }
 }
 
+// MARK: - The record of the age (3.17.6)
+
+/// Something another power did, on its real date. The player can never order any of these: GTNW has no action for
+/// slavery or slave labour and none for genocide or ethnic cleansing, and it never will. They are here as history —
+/// the world the President is playing in — and the Hall of Infamy keeps the record.
+struct WorldAtrocity: Hashable {
+    let id: String
+    /// Board id of the power that did it; empty when it is the age itself rather than one state.
+    let actor: String
+    let from: Int
+    let to: Int
+    let text: String
+    /// How far the rest of the world's opinion of the actor falls once it is known (0 = nobody is blamed).
+    let worldCost: Int
+    /// Abolition and the like: recorded, but not in the Hall of Infamy.
+    let isAtrocity: Bool
+}
+
+extension WorldPolitics {
+    private static func a(_ id: String, _ actor: String, _ from: Int, _ to: Int, _ cost: Int, _ text: String) -> WorldAtrocity {
+        WorldAtrocity(id: id, actor: actor, from: from, to: to, text: text, worldCost: cost, isAtrocity: true)
+    }
+    private static func note(_ id: String, _ actor: String, _ from: Int, _ text: String) -> WorldAtrocity {
+        WorldAtrocity(id: id, actor: actor, from: from, to: from, text: text, worldCost: 0, isAtrocity: false)
+    }
+
+    /// The age's own record, in order. Board ids: TUR is the Ottoman Empire, RUS the Russian Empire and then the
+    /// Soviet Union, DEU the German states and then Germany, CHN the Qing and then China.
+    static let atrocities: [WorldAtrocity] = [
+        note("slave_economy", "", 1789, "Slave labour underpins the cotton economy of the American South, the sugar islands of the Caribbean and the plantations of Brazil."),
+        note("slave_trade_act", "GBR", 1807, "Britain's Slave Trade Act abolishes the Atlantic slave trade for British ships."),
+        note("us_import_ban", "USA", 1808, "The United States prohibits the importation of slaves from 1 January 1808."),
+        note("abolition_1833", "GBR", 1833, "The Slavery Abolition Act ends slavery across most of the British Empire."),
+        a("opium_war_1", "GBR", 1839, 1842, 8, "Britain goes to war to keep the opium trade into China open. The Treaty of Nanking follows in 1842."),
+        a("opium_war_2", "GBR", 1856, 1860, 8, "A second war over the opium trade ends with the Convention of Peking, which legalises it."),
+        note("emancipation", "USA", 1863, "The Emancipation Proclamation takes effect on 1 January 1863."),
+        note("thirteenth", "USA", 1865, "The Thirteenth Amendment is ratified on 6 December 1865. Slavery is abolished in the United States."),
+        a("congo_free_state", "BEL", 1885, 1908, 14, "Rubber quotas and the Force Publique in the Congo Free State. Roger Casement reports on it in 1904; Belgium annexes the colony in 1908."),
+        a("boer_camps", "GBR", 1900, 1902, 12, "British camps in South Africa hold Boer and Black African families. Some 28,000 Boers and at least 14,000 Black Africans die in them."),
+        a("herero", "DEU", 1904, 1908, 18, "German forces drive the Herero and Nama into the Omaheke. Lothar von Trotha's extermination order is dated 2 October 1904."),
+        a("armenian", "TUR", 1915, 1917, 18, "The Ottoman government begins mass deportations of its Armenian population on 24 April 1915."),
+        a("unrestricted_1917", "DEU", 1917, 1918, 12, "Germany resumes unrestricted submarine warfare on 1 February 1917, sinking neutral shipping without warning."),
+        a("rif_gas", "ESP", 1921, 1927, 10, "Spain drops chemical bombs on villages in the Rif."),
+        a("mukden", "JPN", 1931, 1931, 10, "Japanese officers blow up a length of their own railway outside Mukden on 18 September 1931 and take Manchuria for it."),
+        a("holodomor", "RUS", 1932, 1933, 16, "Grain requisitions in Soviet Ukraine turn into a famine that kills millions."),
+        a("unit731", "JPN", 1932, 1945, 18, "A Japanese army unit at Pingfang begins weapons experiments on prisoners."),
+        a("ethiopia_gas", "ITA", 1935, 1936, 12, "Italy uses mustard gas in Ethiopia while a party to the 1925 Geneva Protocol."),
+        a("guernica", "DEU", 1937, 1937, 10, "German aircraft burn Guernica on 26 April 1937."),
+        a("nanjing", "JPN", 1937, 1938, 16, "Japanese forces take Nanjing on 13 December 1937 and massacre its population."),
+        a("gleiwitz", "DEU", 1939, 1939, 10, "An attack on a German radio station at Gleiwitz on 31 August 1939 turns out to have been staged by the SS."),
+        a("blitz", "DEU", 1940, 1941, 10, "German bombers turn from airfields to cities. London is bombed for fifty-seven nights."),
+        a("holocaust", "DEU", 1941, 1945, 25, "Germany begins the systematic extermination of Europe's Jews."),
+        a("bernhard", "DEU", 1942, 1945, 6, "Forged Bank of England notes printed by prisoners at Sachsenhausen reach the neutral markets."),
+        a("greif", "DEU", 1944, 1944, 6, "German commandos in American uniform are taken behind the Ardennes front."),
+        a("khmer", "KHM", 1975, 1979, 20, "The Khmer Rouge empty Cambodia's cities. A quarter of the country will not survive it."),
+        a("rwanda", "RWA", 1994, 1994, 18, "Rwanda's Hutu Power government organises the massacre of the Tutsi population."),
+    ]
+
+    /// The era's dirty tactics a computer-run power might use in a war it is already fighting.
+    static func aiTacticIDs(year: Int) -> [String] {
+        DirtyTactics.available(in: year).filter { $0.target == .nation && !$0.isStance }.map(\.id)
+    }
+}
+
+extension GameEngine {
+    /// Once a game year, with the era sync: the age's own record. A power still following history does what it did,
+    /// on the real date; the world's opinion of it falls, and the Hall of Infamy keeps the line.
+    func processWorldAtrocities() {
+        guard let gs = gameState, !gs.isMultiplayer else { return }
+        let y = gs.currentYear
+        for a in WorldPolitics.atrocities where a.from <= y && y <= a.to && !gs.shadow.firedRivalries.contains("atrocity-\(a.id)") {
+            if !a.actor.isEmpty {
+                guard let actor = gs.getCountry(id: a.actor), !actor.isDestroyed, !actor.isTerritory,
+                      !gs.shadow.eraDiverged.contains(a.actor) else { continue }
+                if a.actor == gs.playerCountryID && a.isAtrocity { continue }   // the player's own record is his own
+            }
+            gs.shadow.firedRivalries.insert("atrocity-\(a.id)")
+            let item = TickerItem(date: gs.currentDate, text: a.text, severity: a.isAtrocity ? 3 : 1)
+            gs.shadow.ticker.append(item)
+            gs.shadow.worldAtrocities.append(item)
+            if gs.shadow.worldAtrocities.count > 40 { gs.shadow.worldAtrocities.removeFirst() }
+            gs.shadow.worldStats["atrocities", default: 0] += a.isAtrocity ? 1 : 0
+            if a.worldCost > 0 && !a.actor.isEmpty {
+                for o in gs.countries where o.id != a.actor && !o.isDestroyed && !o.isTerritory {
+                    modifyDiplomaticRelation(from: o.id, to: a.actor, by: -a.worldCost)
+                }
+            }
+            logPlayEvent("world_atrocity", detail: ["id": a.id, "actor": a.actor, "game_date": PlayHistory.day(gs.currentDate)])
+        }
+        self.gameState = gs
+    }
+
+    /// Each turn: a computer-run power at war may reach for the same dirty tactics the President can. It uses what
+    /// its era allows, the world hears about it (there is no covert option for a power the player cannot see
+    /// inside), and the Hall of Infamy keeps the line.
+    func processAITactics() {
+        guard let gs = gameState, !gs.isMultiplayer else { return }
+        let ids = WorldPolitics.aiTacticIDs(year: gs.currentYear)
+        guard !ids.isEmpty else { return }
+        let rate = 0.25 * WorldPolitics.activity(gs.difficultyLevel)
+        for w in gs.activeWars where w.aggressor != gs.playerCountryID {
+            guard Double.random(in: 0..<1) < gs.scale.probability(annual: rate),
+                  let a = gs.getCountry(id: w.aggressor), !a.isDestroyed, !a.isTerritory,
+                  let di = gs.countries.firstIndex(where: { $0.id == w.defender }), !gs.countries[di].isDestroyed,
+                  let t = ids.randomElement().flatMap(DirtyTactics.tactic) else { continue }
+            let d = gs.countries[di]
+            // Effects on game stats only, a third of what the President's own order would do.
+            gs.countries[di].gdp *= 0.985
+            gs.countries[di].stability = max(0, d.stability - 5)
+            gs.countries[di].profile.anxieties.military += 12
+            gs.totalCasualties += Int(Double(max(1, d.population)) * 300)
+            frontBlow(d.id, will: 0.05, troops: 0.02)
+            let status = t.status(in: gs.currentYear)
+            let line = "\(a.name) uses \(t.name.lowercased()) against \(d.name)." + (status == .treatyBanned ? " It is banned by treaty." : "")
+            let item = TickerItem(date: gs.currentDate, text: line, severity: status == .legal ? 2 : 3)
+            gs.shadow.ticker.append(item)
+            gs.shadow.worldAtrocities.append(item)
+            if gs.shadow.worldAtrocities.count > 40 { gs.shadow.worldAtrocities.removeFirst() }
+            gs.shadow.worldStats["aiTactics", default: 0] += 1
+            let cost = ArsenalCatalog.cost(status)
+            for o in gs.countries where o.id != a.id && !o.isDestroyed && !o.isTerritory {
+                modifyDiplomaticRelation(from: o.id, to: a.id, by: -cost.world)
+            }
+            logPlayEvent("ai_tactic", detail: ["actor": a.id, "target": d.id, "tactic": t.id,
+                                               "legal_status": status.rawValue, "game_date": PlayHistory.day(gs.currentDate)])
+        }
+        self.gameState = gs
+    }
+}

@@ -176,6 +176,8 @@ struct ShadowState: Codable {
     /// lender, so their sovereign can recall them). Both count on top of the pool.
     var pressedTroops: Double = 0
     var hiredContingents: [String: Double] = [:]
+    /// The record of the age (3.17.6): what other powers did, newest last, capped at 40.
+    var worldAtrocities: [TickerItem] = []
 
     // Scenario
     var scenarioID: String?
@@ -215,7 +217,7 @@ struct ShadowState: Codable {
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
         case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare
-        case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents
+        case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
     }
 
     init() {}
@@ -294,6 +296,7 @@ struct ShadowState: Codable {
         resistanceBroken = try c.decodeIfPresent([String: Double].self, forKey: .resistanceBroken) ?? [:]
         pressedTroops = try c.decodeIfPresent(Double.self, forKey: .pressedTroops) ?? 0
         hiredContingents = try c.decodeIfPresent([String: Double].self, forKey: .hiredContingents) ?? [:]
+        worldAtrocities = try c.decodeIfPresent([TickerItem].self, forKey: .worldAtrocities) ?? []
     }
 }
 

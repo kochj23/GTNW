@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.6] - 2026-10-21 — Dirty tactics: the AI villains, and the record of the age
+
+The last release of the 3.17 series. The President is not the only one who fights dirty, and the game keeps the
+record.
+
+### Added
+- **The record of the age** (`WorldPolitics.atrocities`, `processWorldAtrocities`, run once a game year with the era
+  sync): twenty-seven dated entries for what other powers did and what the age was built on, each firing on its real
+  date when the power is on the board and still following history. The two Opium Wars, the Congo Free State and
+  Casement's report of 1904, the Boer War camps, the Herero and Nama 1904–08, the Armenian deportations from
+  24 April 1915, unrestricted submarine warfare in 1917, the Rif, Mukden 1931, the Holodomor, Unit 731, Ethiopia
+  1935–36, Guernica, Nanjing, Gleiwitz, the Blitz, the Holocaust, Operation Bernhard, Operation Greif, the Khmer
+  Rouge, and Rwanda — and, as context and as the end of it, the slave economy of the early eras, Britain's Slave
+  Trade Act 1807, the U.S. import ban of 1808, abolition in the British Empire in 1833, the Emancipation
+  Proclamation of 1 January 1863 and the Thirteenth Amendment of 6 December 1865. An atrocity costs its actor
+  world opinion; abolition blames nobody. Play event `world_atrocity`; `worldStats` gains `atrocities`.
+- **Computer-run powers fight dirty** (`processAITactics`, in `processWorldPolitics`): a power at war may reach for
+  the same catalog the President uses, restricted to what its era allows and to tactics aimed at a nation. The rate
+  scales with difficulty (`WorldPolitics.activity`); the effect is about a third of the President's own order; the
+  world's opinion of the actor falls by the same treaty cost the President would pay. Play event `ai_tactic`;
+  `worldStats` gains `aiTactics`.
+- **THE RECORD OF THE AGE** on the Records screen, above Nova's lines.
+
+### Changed
+- **Profiling**: with the whole 3.17 series in the turn loop — the dirty-tactics pass, the stances, the aftermath
+  queue, the hired contingents, the AI tactics and the yearly record — a full 2025 Nightmare end-turn measures
+  0.20–0.46 s (the high one is the year's era sync) and a 1789 Nightmare end-turn 0.014–0.040 s in a Debug build on
+  the Studio, inside the 1 s budget measured in 3.16.2 and no slower than it. A performance test holds the line
+  from both ends with twenty queued aftermath costs.
+- **README and CHANGELOG**: the 3.17 series is written up as one feature, grouped by theme, with every era window
+  and treaty in one place.
+- 11 tests across all seven categories (668 total, single muted run); snapshots in `Screenshots/3.17.6/`.
+
+### Deliberately not in the game
+- There is still no player action for chattel slavery or slave labour, and none for genocide or ethnic cleansing.
+  Both are in GTNW only as history and as what other powers do, and a test enforces it: no tactic is named for
+  them, and none of the recorded genocides has a matching tactic id.
+
 ## [3.17.5] - 2026-10-21 — Dirty tactics: the sea, and what is left on the ground
 
 ### Added
