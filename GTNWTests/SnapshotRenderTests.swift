@@ -655,5 +655,20 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(DirtyTacticsSheet(gameState: gs, targetID: land, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(620)), name: "tactics-chemical-1930-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.1: the incendiary tactics of 1864, the year of Atlanta and the Shenandoah.
+    @MainActor
+    func testRenderDirtyTacticsIncendiary() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1864)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.declareWar(aggressor: gs.playerCountryID, defender: "GBR")
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let sheet = DirtyTacticsSheet(gameState: gs, targetID: "GBR", scrolls: false, startGroup: .incendiary)
+            print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(700)), name: "tactics-incendiary-1864-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

@@ -4426,7 +4426,7 @@ final class DirtyTacticsChemicalTests: XCTestCase {
         XCTAssertEqual(DirtyTactics.tactic("defoliants")!.status(in: 1965), .legal)
         XCTAssertEqual(DirtyTactics.tactic("defoliants")!.status(in: 1980), .restricted, "EO 11850, 1975")
         XCTAssertEqual(DirtyTactics.tactic("defoliants")!.status(in: 2000), .treatyBanned, "CWC 1997")
-        XCTAssertEqual(DirtyTactics.available(in: 1850).count, 1, "only contaminated goods in 1850")
+        XCTAssertEqual(DirtyTactics.available(in: 1850, group: .chemical).count, 1, "only contaminated goods in 1850")
         XCTAssertTrue(DirtyTactics.available(in: 1970, group: .chemical).count >= 4)
     }
 
@@ -4588,5 +4588,155 @@ final class DirtyTacticsChemicalTests: XCTestCase {
             }
         }
         XCTAssertTrue(gs.shadow.aftermath.isEmpty)
+    }
+}
+
+// MARK: - 3.17.1: dirty tactics — incendiaries by era
+
+@MainActor
+final class DirtyTacticsIncendiaryTests: XCTestCase {
+
+    /// A game in `year` already at war with `foe`, with a front open.
+    private func war(_ year: Int, with foe: String) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.declareWar(aggressor: gs.playerCountryID, defender: foe)
+        e.syncFronts()
+        return (e, gs)
+    }
+
+    // Unit: the era windows are the real ones, and fire gets harder to use lawfully
+    func testIncendiaryErasAndTreaties() {
+        let hot = DirtyTactics.tactic("hot_shot")!
+        XCTAssertTrue(hot.exists(in: 1812))
+        XCTAssertFalse(hot.exists(in: 1900), "iron hulls and explosive shell ended it")
+        let congreve = DirtyTactics.tactic("congreve_rockets")!
+        XCTAssertFalse(congreve.exists(in: 1804), "Congreve's rockets enter service in 1805")
+        XCTAssertTrue(congreve.exists(in: 1814))
+        let shells = DirtyTactics.tactic("incendiary_shells")!
+        XCTAssertFalse(shells.exists(in: 1860))
+        XCTAssertEqual(shells.status(in: 1862), .legal)
+        XCTAssertEqual(shells.status(in: 1864), .restricted, "the Lieber Code of 1863")
+        let burn = DirtyTactics.tactic("burn_towns")!
+        XCTAssertEqual(burn.status(in: 1814), .legal, "Washington burns under no treaty at all")
+        XCTAssertEqual(burn.status(in: 1864), .restricted)
+        XCTAssertEqual(burn.status(in: 1950), .treatyBanned, "Geneva IV Art. 53")
+        let flame = DirtyTactics.tactic("flamethrowers")!
+        XCTAssertFalse(flame.exists(in: 1914))
+        XCTAssertEqual(flame.status(in: 1944), .legal)
+        XCTAssertEqual(flame.status(in: 1990), .restricted, "CCW Protocol III")
+        let napalm = DirtyTactics.tactic("napalm_wp")!
+        XCTAssertFalse(napalm.exists(in: 1941))
+        XCTAssertEqual(napalm.status(in: 1945), .legal)
+        XCTAssertEqual(napalm.status(in: 2010), .treatyBanned)
+        XCTAssertTrue(shells.blurb.contains("672"), "Byzantine Greek fire predates the game")
+        XCTAssertTrue(shells.blurb.contains("recipe was lost"))
+    }
+
+    // Unit: an army burning towns cannot do it quietly; one arsonist can
+    func testWhatCanBeHiddenAndWhatCannot() {
+        XCTAssertFalse(DirtyTactics.tactic("burn_towns")!.canBeCovert)
+        XCTAssertFalse(DirtyTactics.tactic("napalm_wp")!.canBeCovert)
+        XCTAssertTrue(DirtyTactics.tactic("incendiary_shells")!.canBeCovert)
+        XCTAssertGreaterThan(DirtyTactics.tactic("burn_towns")!.people, DirtyTactics.tactic("incendiary_shells")!.people)
+    }
+
+    // Functional: Sherman's year — burning towns breaks the enemy's will and his output
+    func testBurningTownsBreaksTheEnemy() throws {
+        let (e, gs) = try war(1864, with: "GBR")
+        let before = try XCTUnwrap(gs.getCountry(id: "GBR"))
+        let will = try XCTUnwrap(gs.shadow.fronts.first).defenderWill
+        XCTAssertNotNil(e.useTactic("burn_towns", target: "GBR", preset: .overwhelming))
+        let after = try XCTUnwrap(gs.getCountry(id: "GBR"))
+        XCTAssertLessThan(after.gdp, before.gdp)
+        XCTAssertLessThan(after.stability, before.stability)
+        XCTAssertLessThan(try XCTUnwrap(gs.shadow.fronts.first).defenderWill, will)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("burn the towns") })
+        XCTAssertGreaterThan(gs.shadow.ruthlessness, 0)
+    }
+
+    // Functional: a bigger order buys more and risks more
+    func testScaleBuysMoreAndRisksMore() throws {
+        let (probe, g1) = try war(1864, with: "GBR")
+        probe.useTactic("incendiary_shells", target: "GBR", covert: true, preset: .probe, discoveryRoll: 0.99)
+        let (big, g2) = try war(1864, with: "GBR")
+        big.useTactic("incendiary_shells", target: "GBR", covert: true, preset: .overwhelming, discoveryRoll: 0.99)
+        XCTAssertLessThan(try XCTUnwrap(g2.getCountry(id: "GBR")).stability,
+                          try XCTUnwrap(g1.getCountry(id: "GBR")).stability, "Overwhelming burns more")
+        let t = DirtyTactics.tactic("incendiary_shells")!
+        XCTAssertLessThan(DirtyTactics.discoveryChance(t, year: 1864, scale: AttackPreset.probe.multiplier),
+                          DirtyTactics.discoveryChance(t, year: 1864, scale: AttackPreset.overwhelming.multiplier))
+    }
+
+    // Functional: flamethrowers help the side the U.S. is fighting on
+    func testFlamethrowersPushTheAssault() throws {
+        let (e, gs) = try war(1944, with: "DEU")
+        let momentum = try XCTUnwrap(gs.shadow.fronts.first).attackerMomentum
+        XCTAssertNotNil(e.useTactic("flamethrowers", target: "DEU"))
+        XCTAssertGreaterThan(try XCTUnwrap(gs.shadow.fronts.first).attackerMomentum, momentum)
+        XCTAssertEqual(DirtyTactics.tactic("flamethrowers")!.status(in: 1944), .legal, "no treaty in 1944")
+        XCTAssertEqual(gs.shadow.impeachmentStage, 0, "a lawful weapon opens no hearings")
+    }
+
+    // Security: nothing from a later era, and the panel says why
+    func testNoAnachronisticFire() throws {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1814)
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertNil(e.useTactic("napalm_wp", target: "GBR"))
+        XCTAssertNil(e.useTactic("flamethrowers", target: "GBR"))
+        let why = try XCTUnwrap(e.tacticProblem("napalm_wp", target: "GBR"))
+        XCTAssertTrue(why.contains("Fieser") || why.contains("1942"), why)
+        XCTAssertTrue(gs.shadow.tacticUses.isEmpty)
+        // And nothing from an era that has passed.
+        let e2 = GameEngine()
+        e2.startNewGame(turnLength: .month, year: 1944)
+        XCTAssertNotNil(e2.tacticProblem("hot_shot", target: "DEU"), "heated shot belongs to the age of sail")
+        XCTAssertTrue(DirtyTactics.available(in: 1944, group: .incendiary).allSatisfy { $0.exists(in: 1944) })
+    }
+
+    // Integration: a treaty-banned burning in 1950 costs the world, Congress and the tribunals
+    func testATreatyBannedBurningCostsEverything() throws {
+        let (e, gs) = try war(1950, with: "PRK")
+        let friend = try XCTUnwrap(gs.liveCountries.first { $0.id != gs.playerCountryID && $0.id != "PRK" })
+        let before = friend.diplomaticRelations[gs.playerCountryID] ?? 0
+        e.applyTacticCost(DirtyTactics.tactic("burn_towns")!, target: "PRK", coverUp: false, tribunalRoll: 0.0)
+        XCTAssertLessThan(try XCTUnwrap(gs.getCountry(id: friend.id)).diplomaticRelations[gs.playerCountryID] ?? 0, before)
+        XCTAssertGreaterThanOrEqual(gs.shadow.impeachmentStage, 2, "the tribunal brings articles of impeachment")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("tribunal") })
+    }
+
+    // Integration: fire runs through the whole turn and Nova has something to say
+    func testFireReachesNovaAndTheTurnLoop() throws {
+        let (e, gs) = try war(1864, with: "GBR")
+        let seen = Set(gs.shadow.ticker.map(\.id))
+        e.useTactic("burn_towns", target: "GBR")
+        e.processCommentary(seen: seen)
+        XCTAssertTrue(gs.shadow.novaLines.last?.text.hasPrefix("Nova: ") ?? false)
+        gs.turn += 1
+        e.processShadowTurn()
+        XCTAssertEqual(gs.shadow.tacticUses.count, 1, "no duplicate records from the turn loop")
+    }
+
+    // Retry: incendiary records survive a save and reload
+    func testIncendiaryUsesSurviveSave() throws {
+        let (e, gs) = try war(1864, with: "GBR")
+        e.useTactic("incendiary_shells", target: "GBR", covert: true, discoveryRoll: 0.0)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.tacticUses.first?.tactic, "incendiary_shells")
+        XCTAssertTrue(try XCTUnwrap(loaded.shadow.tacticUses.first).discovered)
+        XCTAssertTrue(try XCTUnwrap(loaded.shadow.tacticUses.first).covert)
+    }
+
+    // Performance: the catalog stays cheap with two groups in it
+    func testCatalogStaysCheap() {
+        measure {
+            for _ in 0..<500 {
+                for y in [1800, 1814, 1864, 1915, 1945, 2025] {
+                    for g in TacticGroup.allCases { _ = DirtyTactics.available(in: y, group: g) }
+                }
+            }
+        }
     }
 }
