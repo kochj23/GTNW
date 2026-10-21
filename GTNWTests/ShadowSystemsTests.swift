@@ -4316,3 +4316,75 @@ final class AIPhaseCommentaryTests: XCTestCase {
         XCTAssertFalse(b.subtracting(a).contains("USA"))
     }
 }
+
+
+// MARK: - 3.16.2: historical absorptions
+
+final class AbsorptionTests: XCTestCase {
+    private func play(from year: Int, years: Int, before: ((GameEngine, GameState) -> Void)? = nil) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.processEraTransitions()
+        before?(e, gs)
+        for _ in 0..<years { gs.turn += 12; e.processEraTransitions() }
+        return (e, gs)
+    }
+
+    // Unit: the table is sane
+    func testAbsorptionTable() {
+        for a in WorldPolitics.absorptions { XCTAssertLessThan(a.from, a.until, a.land); XCTAssertNotEqual(a.land, a.by) }
+    }
+
+    // Functional: Korea into Japan in 1910
+    func testKoreaIsAnnexedByJapan() throws {
+        let (_, gs) = try play(from: 1905, years: 6)
+        XCTAssertEqual(gs.getCountry(id: "KOR")?.territoryOf, "JPN")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("is annexed by") })
+    }
+
+    // Functional: the Anschluss, and Austria restored in 1945
+    func testAnschlussAndRestoration() throws {
+        let (e, gs) = try play(from: 1936, years: 3)
+        XCTAssertEqual(gs.getCountry(id: "AUT")?.territoryOf, "DEU")
+        for _ in 0..<7 { gs.turn += 12; e.processEraTransitions() }
+        XCTAssertNil(gs.getCountry(id: "AUT")?.territoryOf, "restored in 1945")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("regains its independence") })
+    }
+
+    // Integration: a U.S. ally isn't quietly absorbed; it's a crisis
+    func testAnAllyBecomesACrisis() throws {
+        let (_, gs) = try play(from: 1936, years: 3) { e, gs in e.formAlliance(country1: gs.playerCountryID, country2: "AUT") }
+        XCTAssertNil(gs.getCountry(id: "AUT")?.territoryOf)
+        XCTAssertTrue(gs.getCountry(id: "DEU")!.atWarWith.contains("AUT"))
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("appeals to Washington") })
+    }
+
+    // Security: a nation whose story diverged keeps its independence
+    func testDivergedNationsAreLeftAlone() throws {
+        let (_, gs) = try play(from: 1936, years: 3) { _, gs in gs.shadow.eraDiverged.insert("AUT") }
+        XCTAssertNil(gs.getCountry(id: "AUT")?.territoryOf)
+        let (_, g2) = try play(from: 1936, years: 3) { _, gs in gs.shadow.eraDiverged.insert("DEU") }
+        XCTAssertNil(g2.getCountry(id: "AUT")?.territoryOf, "nor does a diverged absorber follow the script")
+    }
+
+    // Retry: absorption records survive save and load
+    func testAbsorptionsSurviveSave() throws {
+        let (_, gs) = try play(from: 1936, years: 3)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.historicalAbsorptions["AUT"], "DEU")
+    }
+
+    // Performance: a full 2025 Nightmare end-turn stays under a second (profiled at ~0.25 s, worst 0.5 s in Debug)
+    @MainActor
+    func testANightmareTurnStaysUnderASecond() async throws {
+        let e = GameEngine()
+        e.startNewGame(difficulty: .nightmare, turnLength: .month, year: 2025)
+        for _ in 0..<3 {
+            let t0 = Date()
+            e.endTurn()
+            while e.turnPhase != .playerInput { try await Task.sleep(nanoseconds: 1_000_000) }
+            XCTAssertLessThan(Date().timeIntervalSince(t0), 1.0)
+        }
+    }
+}

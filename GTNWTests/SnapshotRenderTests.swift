@@ -625,5 +625,21 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "founded-1831-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.16.2: Europe in 1939 after the Anschluss and the occupation of Czechoslovakia.
+    @MainActor
+    func testRenderAbsorptions() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1936)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.processEraTransitions()
+        for _ in 0..<3 { gs.turn += 12; engine.processEraTransitions() }
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let map = VectorWorldMap(gameState: gs, selectedCountryID: .constant("AUT"), zoom: .constant(.region), filter: .constant(.alignment))
+            print("SNAPSHOT \(try render(VStack { map; MapLegend(filter: .alignment, showUnclaimed: true) }.background(Color.black), size: CGSize(width: 1100, height: 620), name: "europe-1939-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif
