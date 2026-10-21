@@ -1027,7 +1027,7 @@ struct ResourcesSheet: View {
                             .font(ThemeFont.mono(10, .bold)).foregroundColor(wait > 0 || starting ? GTNWColors.terminalAmber : GTNWColors.terminalGreen)
                     }
                     HStack(spacing: 4) {
-                        ForEach(ExtractionRate.allCases) { rate in
+                        ForEach(ExtractionRate.ordinary) { rate in
                             Button(rate.title.uppercased()) { gameEngine.setExtraction(id, rate) }
                                 .buttonStyle(ThemedButtonStyle(color: rate.insurgencyShift > 0 ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: current == rate))
                         }
@@ -1395,7 +1395,7 @@ struct GroupActionSheet: View {
             }
             if kind == .extraction {
                 HStack(spacing: 6) {
-                    ForEach(ExtractionRate.allCases, id: \.self) { r in
+                    ForEach(ExtractionRate.ordinary, id: \.self) { r in
                         Button(r.title.uppercased()) { rate = r }.buttonStyle(ThemedButtonStyle(color: r.insurgencyShift > 0 ? GTNWColors.terminalRed : GTNWColors.neonCyan, prominent: rate == r))
                     }
                 }

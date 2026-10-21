@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.3] - 2026-10-21 — Dirty tactics: civilians and land
+
+### Added
+- **The civilians and land group** (`DirtyTactics.civilians`):
+  - **Reconcentration camps** (1896–, legal → Hague 1907 → Geneva IV Art. 49 1949 → Rome 2002): Weyler's order in
+    Cuba of February 1896, J. Franklin Bell in Batangas from December 1901, and the British camps of 1900–02 in
+    which some 28,000 Boers and at least 14,000 Black Africans died. The insurgency in a territory collapses; the
+    death rates are published two years later.
+  - **Forced removal** (1830–, lawful under the Indian Removal Act of 28 May 1830 and against *Worcester v.
+    Georgia* 1832 → Hague 1907 → Geneva IV Art. 49 1949 → Rome 2002): the Cherokee removal of 1838–39, about 16,000
+    people moved and some 4,000 dead on the way. The land goes quiet because the people are no longer on it.
+  - **Internment** (1942–, lawful under Executive Order 9066 and *Korematsu* 1944 → the Non-Detention Act 1971 →
+    Rome 2002): war support and calm at home now; the Civil Liberties Act of 10 August 1988 — an apology and
+    $20,000 a survivor, about $1.6B — forty-six years later.
+  - **Maximum extraction** (1789–, legal → Hague IV Art. 52 1907 → Geneva IV Art. 55 1949 → Rome 2002): the Congo
+    Free State's rubber quota under Leopold II, 1885–1908, and Roger Casement's report of 1904.
+  - **Coercive interrogation** (1789–, legal → Lieber Code Art. 16 1863 → Geneva 1949 and the Convention against
+    Torture → Rome 2002): the water cure in the Philippines in 1900–02 and Major Edwin Glenn's court-martial in
+    1902, France in Algiers in 1957, enhanced interrogation after 2001 and the Senate's findings of December 2014.
+    Half the time the prisoner's answer checks out; half the time it is worth nothing.
+- **`ExtractionRate.maximum`**: a fifth rate, ×4 income, +50 insurgency, −6 stability a month, −10 world relations
+  a year, and the same revolt risk as Plunder. It is reached only through the DIRTY TACTICS panel, so `setExtraction`
+  refuses it and the ordinary rate buttons (`ExtractionRate.ordinary`) do not offer it.
+
+### Changed
+- A territory revolts under any rate with an insurgency shift of 30 or more, not only Plunder.
+- 11 tests across all seven categories (636 total, single muted run); snapshots in `Screenshots/3.17.3/`.
+
+### Deliberately not in the game
+- Forced removal here is the historical removal policy and nothing more. There is still no player action for
+  genocide or ethnic cleansing, and none for slavery or slave labour.
+
 ## [3.17.2] - 2026-10-21 — Dirty tactics: starvation and supply
 
 ### Added

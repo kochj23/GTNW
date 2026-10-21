@@ -191,7 +191,7 @@ extension GameEngine {
             gs.shadow.territoryPolicies[c.id] = pol
             let boiling = ((pol.crisisSince.map { GameCalendar.years(from: $0, to: gs.currentDate) >= 1 } ?? false)
                 && garrison < OccupationModel.neededGarrison(c) / 2)
-                || (rate == .plunder && p.outcry > 60 && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.25))   // plunder breeds revolt
+                || (rate.insurgencyShift >= 30 && p.outcry > 60 && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.25))   // plunder and the quota breed revolt
             if boiling || (garrison < 0.5 && gs.countries[i].stability < 10) {
                 var lost = gs.countries[i]
                 lost.territoryOf = nil

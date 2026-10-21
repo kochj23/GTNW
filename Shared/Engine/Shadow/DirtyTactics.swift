@@ -135,7 +135,7 @@ enum DirtyTactics {
     // MARK: Catalog
 
     /// Every tactic in the game. Groups are added one release at a time (3.17.0 … 3.17.5).
-    static let all: [DirtyTactic] = chemical + incendiary + starvation
+    static let all: [DirtyTactic] = chemical + incendiary + starvation + civilians
 
     static func tactic(_ id: String) -> DirtyTactic? { all.first { $0.id == id } }
 
@@ -442,6 +442,74 @@ extension DirtyTactics {
                  + "and the Dodge Commission sat on it through the winter of 1898–99. Cash and kickbacks now; sick "
                  + "soldiers soon; a scandal after that.",
             target: .none, canBeCovert: true, people: 2),
+    ]
+}
+
+// MARK: - The civilians and land group (3.17.3)
+
+extension DirtyTactics {
+    static let geneva1949TransferNote = "Banned: Geneva Convention IV Art. 49 (1949) forbids forcible transfers and deportations from occupied territory."
+    static let tortureBanNote = "Banned: common Article 3 and Geneva Convention III Art. 17 (1949); the Convention against Torture (U.S. ratified 1994); the Detainee Treatment Act 2005."
+
+    static let civilians: [DirtyTactic] = [
+        DirtyTactic(
+            id: "reconcentration", group: .civilians, name: "Reconcentration camps",
+            from: 1896,
+            periods: [p(1896, .legal, "No treaty covers it; the newspapers do."),
+                      p(1907, .restricted, hague1907DestructionNote),
+                      p(1949, .treatyBanned, geneva1949TransferNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Empty the countryside into guarded camps so the guerrillas have nobody to hide among. Valeriano "
+                 + "Weyler ordered reconcentración in Cuba in February 1896; J. Franklin Bell did the same in "
+                 + "Batangas from December 1901; Britain held Boer and Black African families in camps from 1900 to "
+                 + "1902, where some 28,000 Boers and at least 14,000 Black Africans died. The insurgency dies with "
+                 + "them.",
+            target: .territory, canBeCovert: false, people: 25),
+        DirtyTactic(
+            id: "forced_removal", group: .civilians, name: "Forced removal",
+            from: 1830,
+            periods: [p(1830, .legal, "Lawful under the Indian Removal Act of 28 May 1830; the Supreme Court held otherwise in Worcester v. Georgia (1832) and was ignored."),
+                      p(1907, .restricted, hague1907DestructionNote),
+                      p(1949, .treatyBanned, geneva1949TransferNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Move a people off the land by treaty, statute and escort. The Cherokee removal of 1838–39 took "
+                 + "about 16,000 people west and killed some 4,000 on the way. The land is then quiet and it pays; "
+                 + "the removal is remembered for ever.",
+            target: .territory, canBeCovert: false, people: 15),
+        DirtyTactic(
+            id: "internment", group: .civilians, name: "Internment",
+            from: 1942,
+            periods: [p(1942, .legal, "Lawful under Executive Order 9066 (19 February 1942) and upheld in Korematsu v. United States (1944)."),
+                      p(1971, .restricted, "Restricted at home: the Non-Detention Act of 1971 (18 U.S.C. 4001(a))."),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Intern a population at home on suspicion of where its grandparents came from. Executive Order "
+                 + "9066 moved about 120,000 Japanese Americans into camps from 1942. Sabotage and espionage fears "
+                 + "fall and war support rises — and the Civil Liberties Act of 10 August 1988 paid $20,000 to each "
+                 + "surviving internee, about $1.6B in all.",
+            target: .none, canBeCovert: false, people: 20),
+        DirtyTactic(
+            id: "max_extraction", group: .civilians, name: "Maximum extraction",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule covers how hard a colony may be worked."),
+                      p(1907, .restricted, "Restricted: Hague IV Art. 52 (1907) — requisitions in proportion to the resources of the country."),
+                      p(1949, .treatyBanned, geneva1949OccupierNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Set a quota and let the garrison collect it. The Congo Free State under Leopold II ran on rubber "
+                 + "quotas and the Force Publique from 1885 until Belgium took it over in 1908, after Roger "
+                 + "Casement's report of 1904. It is the richest extraction rate in the game and the worst to hold.",
+            target: .territory, canBeCovert: false, people: 10),
+        DirtyTactic(
+            id: "torture", group: .civilians, name: "Coercive interrogation",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule of war covers it."),
+                      p(1863, .restricted, "Restricted: the Lieber Code (1863) Art. 16 — military necessity does not admit of cruelty."),
+                      p(1949, .treatyBanned, tortureBanNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Get the answer out of the prisoner. American troops used the water cure in the Philippines in "
+                 + "1900–02, and Major Edwin Glenn was court-martialled for it in 1902; France used torture "
+                 + "systematically in Algiers in 1957; the United States ran enhanced interrogation after 2001 and "
+                 + "the Senate published its findings in December 2014. It yields intelligence, some of it true.",
+            target: .nation, canBeCovert: true, people: 3),
     ]
 }
 
@@ -779,6 +847,12 @@ extension DirtyTactics {
         case "profiteer_contracts":
             return "Contracts on this scale need a war department buying for a mass army, which the United States "
                  + "first had in 1861."
+        case "reconcentration":
+            return "Reconcentration as a policy begins with Weyler's order in Cuba in February 1896."
+        case "forced_removal":
+            return "Removal on this scale needs the Indian Removal Act of 28 May 1830 behind it."
+        case "internment":
+            return "Interning a population at home begins with Executive Order 9066 on 19 February 1942."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -819,6 +893,11 @@ extension DirtyTactics {
         case "buffalo_slaughter": return "The Army protects the hide hunters\(at). The herds are going."
         case "requisition_harvest": return "The harvest of\(at.isEmpty ? " the territory" : at) is requisitioned for the United States."
         case "profiteer_contracts": return "The Army's ration contracts go to friends of the administration."
+        case "reconcentration": return "The countryside of\(at.isEmpty ? " the territory" : at) is cleared into guarded camps."
+        case "forced_removal": return "The people of\(at.isEmpty ? " the territory" : at) are marched off their land under escort."
+        case "internment": return "The President orders the internment of a population at home."
+        case "max_extraction": return "A collection quota is set on\(at.isEmpty ? " the territory" : at)."
+        case "torture": return "American interrogators are told the gloves are off\(at)."
         default: return "The United States orders \(t.name.lowercased())\(at)."
         }
     }
@@ -832,6 +911,7 @@ extension DirtyTactics {
         case "human_subject_program": return "A defector's testimony exposes an American programme that experimented on prisoners."
         case "incendiary_shells": return "An agent is taken with a carpet bag of incendiary compound\(at); the papers have the rest."
         case "profiteer_contracts": return "The ration contracts are published in full. So are the names on the cheques."
+        case "torture": return "Photographs from the interrogation rooms\(at) are published. There is no explaining them."
         default: return "The press exposes an American \(t.name.lowercased())\(at)."
         }
     }
@@ -962,6 +1042,66 @@ extension GameEngine {
                                               due: GameCalendar.calendar.date(byAdding: .month, value: 18, to: gs.currentDate) ?? gs.currentDate,
                                               text: "A commission of inquiry opens into the ration contracts. The newspapers have a name for the beef.",
                                               ruthlessness: 6 * m, popularity: 8 * m, world: 0, cash: 0, opensImpeachment: true))
+        // --- 3.17.3: civilians and land ---
+        case "reconcentration":
+            // Empty the countryside and the guerrillas have nobody to hide among. The camps do the rest.
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].profile.outcry = max(0, gs.countries[i].profile.outcry - 45 * m)
+                gs.countries[i].stability = min(100, gs.countries[i].stability + Int(20 * m))
+                gs.totalCasualties += Int(Double(max(1, gs.countries[i].population)) * 2500 * m)
+                var pol = gs.shadow.territoryPolicies[target] ?? TerritoryPolicy(since: gs.currentDate)
+                pol.crisisSince = nil
+                gs.shadow.territoryPolicies[target] = pol
+                scheduleAftermath(TacticAftermath(tactic: t.id,
+                                                  due: GameCalendar.calendar.date(byAdding: .year, value: 2, to: gs.currentDate) ?? gs.currentDate,
+                                                  text: "The death rates in the \(gs.countries[i].name) camps are published. They are worse than anyone admitted.",
+                                                  ruthlessness: 12 * m, popularity: 6 * m, world: 4))
+            }
+        case "forced_removal":
+            // The land goes quiet because the people are no longer on it.
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].profile.outcry = 0
+                gs.countries[i].stability = min(100, max(gs.countries[i].stability, 80))
+                gs.countries[i].population = max(1, Int(Double(gs.countries[i].population) * 0.7))
+                gs.totalCasualties += Int(Double(max(1, gs.countries[i].population)) * 4000 * m)
+                gs.shadow.resistanceBroken[target] = 100
+            }
+        case "internment":
+            // Fear of sabotage falls and the country closes ranks — for forty-six years.
+            if let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
+                gs.countries[pi].warSupport = min(100, gs.countries[pi].warSupport + Int(10 * m))
+                gs.countries[pi].stability = min(100, gs.countries[pi].stability + Int(4 * m))
+                gs.countries[pi].profile.anxieties.military = max(0, gs.countries[pi].profile.anxieties.military - 20 * m)
+            }
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 2)
+            scheduleAftermath(TacticAftermath(tactic: t.id,
+                                              due: GameCalendar.calendar.date(byAdding: .year, value: 46, to: gs.currentDate) ?? gs.currentDate,
+                                              text: "Congress votes redress for the internment: a formal apology and $20,000 to each survivor.",
+                                              ruthlessness: 5, popularity: 6, world: 2, cash: 1.6))
+        case "max_extraction":
+            // The richest rate in the game, and the worst to hold (ExtractionRate.maximum).
+            if let target = use.target {
+                gs.shadow.extraction[target] = ExtractionRate.maximum.rawValue
+                if let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                    gs.countries[i].profile.outcry = min(100, gs.countries[i].profile.outcry + 25)
+                    gs.shadow.post("\(gs.countries[i].name) is put on a quota. The garrison will collect it.", date: gs.currentDate, severity: 2)
+                }
+            }
+        case "torture":
+            // Intelligence, some of it true: half the time the prisoner tells you what you want to hear.
+            let sound = Double.random(in: 0..<1) < 0.5
+            if sound, let target = use.target {
+                if let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) {
+                    let we = gs.shadow.fronts[fi].defender == target
+                    gs.shadow.fronts[fi].attackerMomentum = min(1, max(-1, gs.shadow.fronts[fi].attackerMomentum + (we ? 0.12 : -0.12) * m))
+                }
+                if let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
+                    gs.countries[pi].warSupport = min(100, gs.countries[pi].warSupport + Int(4 * m))
+                }
+                gs.shadow.post("Interrogation produces a name and a place. Both check out.", date: gs.currentDate, severity: 1)
+            } else {
+                gs.shadow.post("The prisoner confesses to everything put to him. None of it is worth anything.", date: gs.currentDate, severity: 1)
+            }
         default:
             break
         }

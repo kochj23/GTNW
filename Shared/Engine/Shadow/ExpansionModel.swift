@@ -274,17 +274,21 @@ extension GameEngine {
 // MARK: - Territory money (3.13.1)
 
 /// How hard a territory is squeezed. Game balance only (design choices):
-/// income ×0.6 / ×1 / ×1.5 / ×2.5; insurgency target +0 / +0 / +12 / +30; stability −0 / −0 / −1 / −3 a month;
-/// world relations −0 / −0 / −1 / −4 a year per territory; Plunder also risks revolt (25% a year while unrest is
-/// over 60).
+/// income ×0.6 / ×1 / ×1.5 / ×2.5 / ×4; insurgency target +0 / +0 / +12 / +30 / +50; stability −0 / −0 / −1 / −3 / −6
+/// a month; world relations −0 / −0 / −1 / −4 / −10 a year per territory; Plunder and Maximum also risk revolt
+/// (25% a year while unrest is over 60).
+/// Maximum (3.17.3) is a dirty tactic, not an ordinary setting: it is the Congo Free State's rubber quota, and
+/// `DirtyTactics` prices it by era. It is reached through the DIRTY TACTICS panel, never from the rate buttons.
 enum ExtractionRate: String, Codable, CaseIterable, Identifiable {
-    case light, normal, heavy, plunder
+    case light, normal, heavy, plunder, maximum
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
-    var incomeMultiplier: Double { [0.6, 1, 1.5, 2.5][index] }
-    var insurgencyShift: Double { [0, 0, 12, 30][index] }
-    var stabilityPerMonth: Double { [0, 0, 1, 3][index] }
-    var worldHitPerYear: Double { [0, 0, 1, 4][index] }
+    var incomeMultiplier: Double { [0.6, 1, 1.5, 2.5, 4][index] }
+    var insurgencyShift: Double { [0, 0, 12, 30, 50][index] }
+    var stabilityPerMonth: Double { [0, 0, 1, 3, 6][index] }
+    var worldHitPerYear: Double { [0, 0, 1, 4, 10][index] }
+    /// The rates the Resources panel and group actions offer; Maximum is not one of them.
+    static var ordinary: [ExtractionRate] { allCases.filter { $0 != .maximum } }
     private var index: Int { ExtractionRate.allCases.firstIndex(of: self)! }
 }
 
@@ -337,10 +341,11 @@ extension ExpansionModel {
 }
 
 extension GameEngine {
-    /// Set a territory's extraction rate (free).
+    /// Set a territory's extraction rate (free). Maximum is not one of these: it is a dirty tactic (3.17.3) and
+    /// goes through `useTactic`, which prices it by era.
     @discardableResult
     func setExtraction(_ id: String, _ rate: ExtractionRate) -> Bool {
-        guard let gs = gameState, gs.getCountry(id: id)?.territoryOf == gs.playerCountryID else { return false }
+        guard let gs = gameState, rate != .maximum, gs.getCountry(id: id)?.territoryOf == gs.playerCountryID else { return false }
         gs.shadow.extraction[id] = rate.rawValue
         self.gameState = gs
         return true
