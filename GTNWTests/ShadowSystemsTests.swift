@@ -3174,10 +3174,10 @@ final class PreStateLandTests: XCTestCase {
         let (engine, gs) = try game(Advisor.monroeAdministration())
         let gbr = try XCTUnwrap(gs.countries.firstIndex { $0.id == "GBR" })
         gs.countries[gbr].diplomaticRelations["USA"] = 80
-        let gdp = gs.getPlayerCountry()!.gdp
+        let wealth = gs.getPlayerCountry()!.gdp * 1000 + gs.shadow.aidRemaining
         XCTAssertEqual(engine.purchaseColony("CAN", roll: 0), true)
         XCTAssertEqual(gs.getCountry(id: "CAN")?.territoryOf, "USA")
-        XCTAssertLessThan(gs.getPlayerCountry()!.gdp, gdp, "the price is paid")
+        XCTAssertLessThan(gs.getPlayerCountry()!.gdp * 1000 + gs.shadow.aidRemaining, wealth, "the price is paid (3.13.1: from funds first)")
         gs.actionsUsedThisTurn = 0
         let esp0 = gs.getCountry(id: "ESP")!.diplomaticRelations["USA"] ?? 0
         XCTAssertEqual(engine.supportIndependence("ARG", roll: 0), true)
@@ -3277,5 +3277,169 @@ final class PreStatePlayHistoryTests: XCTestCase {
         XCTAssertTrue(synced)
         let kinds = await remote.events(id).map(\.kind)
         XCTAssertTrue(kinds.contains("colony_seized")); XCTAssertTrue(kinds.contains("independence_backed"))
+    }
+}
+
+// MARK: - 3.13.1: territory money
+
+final class TerritoryMoneyTests: XCTestCase {
+
+    private func game() throws -> (GameEngine, GameState) {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.mckinleyAdministration(), turnLength: .month)
+        return (engine, try XCTUnwrap(engine.gameState))
+    }
+
+    /// Claim South Africa's gold and hold it a few years so it is producing.
+    private func goldFields() throws -> (GameEngine, GameState) {
+        let (engine, gs) = try game()
+        XCTAssertTrue(engine.claimLand("ZAF"))
+        gs.turn += 36
+        return (engine, gs)
+    }
+
+    // Unit: the rates and the helpers
+
+    func testRatesScaleIncomeAndCost() throws {
+        let m = ExtractionRate.allCases.map(\.incomeMultiplier)
+        XCTAssertEqual(m, m.sorted(), "heavier rates pay more")
+        XCTAssertEqual(ExtractionRate.normal.incomeMultiplier, 1)
+        XCTAssertEqual(ExtractionRate.light.insurgencyShift, 0)
+        XCTAssertGreaterThan(ExtractionRate.plunder.insurgencyShift, ExtractionRate.heavy.insurgencyShift)
+        let (engine, gs) = try goldFields()
+        let zaf = try XCTUnwrap(gs.getCountry(id: "ZAF"))
+        let normal = ExpansionModel.annualIncome(zaf, in: gs)
+        XCTAssertTrue(engine.setExtraction("ZAF", .plunder))
+        XCTAssertEqual(ExpansionModel.annualIncome(zaf, in: gs), normal * 2.5, accuracy: 1e-9)
+        XCTAssertGreaterThanOrEqual(ExpansionModel.levyAmount(zaf, in: gs), 0.2)
+    }
+
+    func testRampUpCountdown() throws {
+        let (engine, gs) = try game()
+        XCTAssertTrue(engine.claimLand("ZAF"))
+        XCTAssertEqual(ExpansionModel.monthsUntilProducing("ZAF", in: gs), 6, "new land produces after six months")
+        gs.turn += 12
+        XCTAssertEqual(ExpansionModel.monthsUntilProducing("ZAF", in: gs), 0)
+    }
+
+    // Functional: cash into the funds, levies, group actions
+
+    func testTerritoryCashLandsInFunds() throws {
+        let (engine, gs) = try goldFields()
+        gs.shadow.aidRemaining = 0
+        engine.processTerritoryEconomy()
+        XCTAssertGreaterThan(gs.shadow.lastTurnCash, 0)
+        XCTAssertEqual(gs.shadow.aidRemaining, gs.shadow.lastTurnCash, accuracy: 1e-9, "spendable right away")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasPrefix("Territories paid $") })
+    }
+
+    func testLevyPaysThenCoolsDown() throws {
+        let (engine, gs) = try goldFields()
+        let funds = gs.shadow.aidRemaining
+        let st = gs.getCountry(id: "ZAF")!.stability
+        let paid = try XCTUnwrap(engine.collectLevy("ZAF"))
+        XCTAssertEqual(gs.shadow.aidRemaining, funds + paid, accuracy: 1e-9)
+        XCTAssertEqual(gs.getCountry(id: "ZAF")!.stability, max(0, st - 10))
+        XCTAssertEqual(ExpansionModel.levyCooldown("ZAF", in: gs), 6)
+        XCTAssertNil(engine.collectLevy("ZAF"), "cooling down")
+        gs.turn += 7
+        XCTAssertNotNil(engine.collectLevy("ZAF"), "ready again after the cooldown")
+    }
+
+    func testGroupExtractionAndLevy() throws {
+        let (engine, gs) = try goldFields()
+        gs.actionsUsedThisTurn = 0
+        XCTAssertTrue(engine.claimLand("NAM"))
+        let members = engine.groupMembers(.territories)
+        XCTAssertTrue(Set(members).isSuperset(of: ["ZAF", "NAM"]))
+        let used = gs.actionsUsedThisTurn
+        XCTAssertNotNil(engine.executeGroupAction(.extraction, members: members, rate: .heavy))
+        XCTAssertEqual(ExpansionModel.rate("NAM", in: gs), .heavy)
+        XCTAssertEqual(gs.actionsUsedThisTurn, used, "territory money is free")
+        let plan = engine.planGroupAction(.levy, members: members)
+        XCTAssertNil(plan.problem)
+        XCTAssertNotNil(engine.executeGroupAction(.levy, members: members))
+        XCTAssertNotNil(engine.planGroupAction(.levy, members: members).problem, "all cooling down")
+    }
+
+    // Security: only your own land, and bad saves fall back safely
+
+    func testOnlyYourTerritories() throws {
+        let (engine, gs) = try goldFields()
+        XCTAssertFalse(engine.setExtraction("FRA", .plunder))
+        XCTAssertNil(engine.collectLevy("FRA"))
+        XCTAssertNil(engine.collectLevy("ZZZ"))
+        XCTAssertNotNil(engine.planGroupAction(.levy, members: ["ZAF", "FRA"]).problem)
+        gs.shadow.extraction["ZAF"] = "<script>plunder</script>\u{0}"
+        XCTAssertEqual(ExpansionModel.rate("ZAF", in: gs), .normal, "unknown rates read as normal")
+    }
+
+    // Integration: plunder stirs the insurgency and costs friends
+
+    func testPlunderStirsInsurgencyAndCostsGoodwill() throws {
+        let (engine, gs) = try goldFields()
+        let (calm, g2) = try goldFields()
+        XCTAssertTrue(engine.setExtraction("ZAF", .plunder))
+        let fra0 = gs.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0
+        for _ in 0..<12 { gs.turn += 1; g2.turn += 1; engine.processOccupation(); calm.processOccupation(); engine.processTerritoryEconomy() }
+        if let p = gs.getCountry(id: "ZAF"), p.territoryOf == "USA" {
+            XCTAssertGreaterThan(p.profile.outcry, g2.getCountry(id: "ZAF")!.profile.outcry)
+        }   // else it already revolted, which plunder allows
+        XCTAssertLessThan(gs.getCountry(id: "FRA")!.diplomaticRelations["USA"] ?? 0, fra0)
+    }
+
+    // Retry: persistence and old saves
+
+    func testMoneyStateSurvivesSaveAndOldSavesLoad() throws {
+        let (engine, gs) = try goldFields()
+        engine.setExtraction("ZAF", .heavy)
+        engine.collectLevy("ZAF")
+        engine.processTerritoryEconomy()
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.extraction, ["ZAF": "heavy"])
+        XCTAssertNotNil(loaded.shadow.lastLevy["ZAF"])
+        XCTAssertEqual(loaded.shadow.lastTurnCash, gs.shadow.lastTurnCash, accuracy: 1e-9)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["extraction", "lastLevy", "lastTurnCash"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        let old = try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(old.shadow.extraction.isEmpty)
+        XCTAssertEqual(ExpansionModel.levyCooldown("ZAF", in: old), 0)
+    }
+
+    // Performance
+
+    func testResourceSheetMathIsCheap() throws {
+        let (_, gs) = try goldFields()
+        measure {
+            for _ in 0..<50 {
+                for r in ExpansionModel.ledger(gs) {
+                    _ = ExpansionModel.limit(r.country, in: gs); _ = ExpansionModel.levyCooldown(r.country.id, in: gs)
+                    _ = ExpansionModel.monthsUntilProducing(r.country.id, in: gs)
+                }
+            }
+        }
+    }
+}
+
+final class TerritoryMoneyPlayHistoryTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testLevyIsLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", administration: Advisor.mckinleyAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let id = try XCTUnwrap(gs.shadow.playSessionID)
+        XCTAssertTrue(e.claimLand("ZAF"))
+        XCTAssertNotNil(e.collectLevy("ZAF"))
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let kinds = await remote.events(id).map(\.kind)
+        XCTAssertTrue(kinds.contains("territory_levy"))
     }
 }

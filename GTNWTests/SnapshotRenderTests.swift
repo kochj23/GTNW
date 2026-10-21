@@ -298,7 +298,7 @@ final class SnapshotRenderTests: XCTestCase {
         for theme in GameTheme.allCases {
             Theme.forced = theme
             let t = theme.rawValue
-            print("SNAPSHOT \(try render(ResourcesSheet(gameState: gs, scrolls: false), size: CGSize(width: FontScale.w(640), height: FontScale.h(560)), name: "resources-\(t)").path)")
+            print("SNAPSHOT \(try render(ResourcesSheet(gameState: gs, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(560)), name: "resources-\(t)").path)")
             gs.shadow.ruthlessness = 30.5; gs.shadow.popularity = 31
             let log = gs.shadow.expansionLog
             gs.shadow.expansionLog = Array(repeating: gs.currentDate, count: 20)   // mid-spree: the next claim tips it
@@ -480,6 +480,32 @@ final class SnapshotRenderTests: XCTestCase {
             }
             print("SNAPSHOT \(try render(dossiers, size: CGSize(width: FontScale.w(620), height: FontScale.h(560)), name: "colony-dossiers-\(t)").path)")
             print("SNAPSHOT \(try render(AcquisitionSheet(gameState: g2).environmentObject(later), size: CGSize(width: FontScale.w(620), height: FontScale.h(240)), name: "louisiana-offer-\(t)").path)")
+        }
+    }
+
+    /// 3.13.1: the Resources sheet with this turn's cash, extraction rates, a levy cooling down, and the group
+    /// extraction action.
+    @MainActor
+    func testRenderTerritoryMoney() throws {
+        let engine = GameEngine()
+        engine.startNewGame(administration: Advisor.mckinleyAdministration(), turnLength: .month)
+        let gs = try XCTUnwrap(engine.gameState)
+        XCTAssertTrue(engine.claimLand("ZAF"))
+        gs.actionsUsedThisTurn = 0
+        XCTAssertTrue(engine.claimLand("NAM"))
+        gs.turn += 36
+        gs.actionsUsedThisTurn = 0
+        XCTAssertTrue(engine.claimLand("BWA"))
+        engine.setExtraction("ZAF", .heavy)
+        engine.collectLevy("ZAF")
+        engine.processTerritoryEconomy()
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let t = theme.rawValue
+            print("SNAPSHOT \(try render(ResourcesSheet(gameState: gs, scrolls: false).environmentObject(engine), size: CGSize(width: FontScale.w(640), height: FontScale.h(560)), name: "territory-money-\(t)").path)")
+            let sheet = GroupActionSheet(gameState: gs, live: false, pick: .territories, kind: .extraction, rate: .plunder).environmentObject(engine)
+            print("SNAPSHOT \(try render(sheet, size: CGSize(width: FontScale.w(820), height: FontScale.h(560)), name: "group-extraction-\(t)").path)")
         }
     }
 }
