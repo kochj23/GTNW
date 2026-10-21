@@ -737,5 +737,28 @@ final class SnapshotRenderTests: XCTestCase {
             print("SNAPSHOT \(try render(sheet.environmentObject(engine), size: CGSize(width: FontScale.w(700), height: FontScale.h(760)), name: "tactics-sea-1945-\(theme.rawValue)").path)")
         }
     }
+
+    /// 3.17.6: the Records screen with the record of the age, played from 1900 into the 1940s.
+    @MainActor
+    func testRenderRecordOfTheAge() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1900)
+        let gs = try XCTUnwrap(engine.gameState)
+        engine.processEraTransitions()
+        for _ in 0..<45 { gs.turn += 12; engine.processEraTransitions() }
+        for (i, t) in ["Empire is mostly paperwork and resentment.", "It was only illegal because somebody wrote it down."].enumerated() {
+            gs.shadow.novaLines.append(TickerItem(date: GameCalendar.date(year: 1944, month: 2 + i, day: 1), text: "Nova: " + t, severity: 0))
+        }
+        let hall: [InfamyRecord: InfamyEntry] = [
+            .dirtyTactics: InfamyEntry(value: 14, who: "United States, 1918", gameDate: Date(), setAt: Date()),
+            .tacticsExposed: InfamyEntry(value: 3, who: "United States, 1919", gameDate: Date(), setAt: Date()),
+            .ruthlessness: InfamyEntry(value: 188, who: "United States, 1945", gameDate: Date(), setAt: Date()),
+        ]
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            print("SNAPSHOT \(try render(RecordsSheet(gameState: gs, hall: hall), size: CGSize(width: FontScale.w(620), height: FontScale.h(680)), name: "record-of-the-age-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

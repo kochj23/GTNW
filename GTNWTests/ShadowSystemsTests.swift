@@ -3746,8 +3746,11 @@ final class LivingWorldTests: XCTestCase {
                 gs.turn += 1; e.processShadowTurn()
                 for c in gs.liveCountries where c.id != gs.playerCountryID { e.applyRuleBasedAction(for: c.id) }
             }
-            // Land is named for its geography ("France claims Gambia"); every other line must name only nations of the era.
-            text += gs.shadow.ticker.map(\.text).filter { !$0.contains(" claims ") && !$0.contains(" seizes ") }
+            // Land is named for its geography ("France claims Gambia") and the record of the age (3.17.6) names
+            // peoples and places rather than states ("its Armenian population"); every other line must name only
+            // nations of the era.
+            let record = Set(gs.shadow.worldAtrocities.map(\.text))
+            text += gs.shadow.ticker.map(\.text).filter { !$0.contains(" claims ") && !$0.contains(" seizes ") && !record.contains($0) }
             // Nations born during play (a territory that revolts into independence) are of the era too.
             let born = gs.countries.map(\.name)
             for t in text { for n in absent where t.contains(n) && !born.contains(where: { $0.contains(n) }) { XCTFail("\(year): \(n) named in \(t.prefix(120))") } }
@@ -5373,6 +5376,153 @@ final class DirtyTacticsSeaTests: XCTestCase {
                         for t in DirtyTactics.available(in: y, group: g) { _ = DirtyTactics.discoveryChance(t, year: y) }
                     }
                 }
+            }
+        }
+    }
+}
+
+// MARK: - 3.17.6: AI villains, the record of the age, and the end-turn budget
+
+@MainActor
+final class WorldAtrocityTests: XCTestCase {
+
+    private func play(from year: Int, years: Int, before: ((GameEngine, GameState) -> Void)? = nil) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.processEraTransitions()
+        before?(e, gs)
+        for _ in 0..<years { gs.turn += 12; e.processEraTransitions() }
+        return (e, gs)
+    }
+
+    // Unit: the table is sane, and nothing in it is a player action
+    func testTheRecordOfTheAgeIsSane() {
+        for a in WorldPolitics.atrocities {
+            XCTAssertLessThanOrEqual(a.from, a.to, a.id)
+            XCTAssertGreaterThanOrEqual(a.from, 1789, a.id)
+            XCTAssertFalse(a.text.isEmpty, a.id)
+            XCTAssertEqual(a.isAtrocity, a.worldCost > 0, a.id)
+        }
+        XCTAssertEqual(Set(WorldPolitics.atrocities.map(\.id)).count, WorldPolitics.atrocities.count, "no duplicate ids")
+        // Abolition is on the record too, and costs nobody anything.
+        XCTAssertTrue(WorldPolitics.atrocities.contains { $0.id == "thirteenth" && !$0.isAtrocity })
+        XCTAssertTrue(WorldPolitics.atrocities.contains { $0.id == "abolition_1833" && !$0.isAtrocity })
+    }
+
+    // Security: nothing in the record is something the President can order
+    func testNoPlayerActionForSlaveryOrGenocide() {
+        let forbidden = ["slave", "slaver", "genocid", "ethnic cleansing", "exterminat"]
+        for t in DirtyTactics.all {
+            let text = (t.id + " " + t.name + " " + t.blurb).lowercased()
+            for word in forbidden where word != "exterminat" {
+                XCTAssertFalse(t.id.lowercased().contains(word), "\(t.id): no tactic is named for it")
+            }
+            XCTAssertFalse(text.contains("enslave"), t.id)
+        }
+        // And none of the recorded genocides has a matching tactic id.
+        for a in WorldPolitics.atrocities where ["herero", "armenian", "holocaust", "khmer", "rwanda", "holodomor"].contains(a.id) {
+            XCTAssertNil(DirtyTactics.tactic(a.id), "\(a.id) is history, never an order")
+        }
+    }
+
+    // Functional: the Herero and Nama, and the Armenian deportations, on their real dates
+    func testTheRecordFiresOnItsRealDates() throws {
+        let (_, gs) = try play(from: 1900, years: 6)
+        XCTAssertTrue(gs.shadow.worldAtrocities.contains { $0.text.contains("Omaheke") }, "1904")
+        XCTAssertFalse(gs.shadow.worldAtrocities.contains { $0.text.contains("Armenian") }, "not yet")
+        let (_, g2) = try play(from: 1913, years: 4)
+        XCTAssertTrue(g2.shadow.worldAtrocities.contains { $0.text.contains("Armenian") }, "1915")
+        XCTAssertGreaterThan(g2.shadow.worldStats["atrocities"] ?? 0, 0)
+    }
+
+    // Functional: abolition is on the record and blames nobody
+    func testAbolitionIsOnTheRecord() throws {
+        let (_, gs) = try play(from: 1862, years: 5)
+        XCTAssertTrue(gs.shadow.worldAtrocities.contains { $0.text.contains("Thirteenth Amendment") })
+        XCTAssertTrue(gs.shadow.worldAtrocities.contains { $0.text.contains("Emancipation Proclamation") })
+    }
+
+    // Functional: the world turns on a power that does it
+    func testTheWorldTurnsOnTheActor() throws {
+        let (_, gs) = try play(from: 1930, years: 3) { _, gs in
+            gs.setRelation(from: "GBR", to: "JPN", value: 40)
+        }
+        XCTAssertTrue(gs.shadow.worldAtrocities.contains { $0.text.contains("Mukden") })
+        XCTAssertLessThan(gs.getCountry(id: "GBR")?.diplomaticRelations["JPN"] ?? 0, 40)
+    }
+
+    // Security: a nation whose story has diverged does not follow the script, and nothing fires twice
+    func testDivergedActorsAndNoRepeats() throws {
+        let (_, gs) = try play(from: 1930, years: 3) { _, gs in gs.shadow.eraDiverged.insert("JPN") }
+        XCTAssertFalse(gs.shadow.worldAtrocities.contains { $0.text.contains("Mukden") })
+        let (e2, g2) = try play(from: 1913, years: 4)
+        let count = g2.shadow.worldAtrocities.count
+        for _ in 0..<5 { e2.processWorldAtrocities() }
+        XCTAssertEqual(g2.shadow.worldAtrocities.count, count, "each line fires once")
+    }
+
+    // Integration: a computer-run power at war reaches for the era's tactics
+    func testComputerRunPowersUseTheEraTactics() throws {
+        var used = 0
+        for _ in 0..<12 where used == 0 {
+            let e = GameEngine()
+            e.startNewGame(difficulty: .nightmare, turnLength: .month, year: 1944)
+            let gs = try XCTUnwrap(e.gameState)
+            e.declareWar(aggressor: "DEU", defender: "FRA")
+            e.syncFronts()
+            for _ in 0..<36 { gs.turn += 1; e.processAITactics() }
+            used = gs.shadow.worldStats["aiTactics"] ?? 0
+        }
+        XCTAssertGreaterThan(used, 0, "the other powers fight dirty too")
+    }
+
+    // Security: the AI never uses a tactic its era does not have, and never against the player's own country by
+    // a war the player started
+    func testAITacticsRespectTheEra() throws {
+        let e = GameEngine()
+        e.startNewGame(difficulty: .nightmare, turnLength: .month, year: 1800)
+        let gs = try XCTUnwrap(e.gameState)
+        e.declareWar(aggressor: "FRA", defender: "GBR")
+        e.syncFronts()
+        for _ in 0..<60 { gs.turn += 1; e.processAITactics() }
+        for line in gs.shadow.worldAtrocities {
+            XCTAssertFalse(line.text.lowercased().contains("napalm"), line.text)
+            XCTAssertFalse(line.text.lowercased().contains("defoliant"), line.text)
+        }
+        XCTAssertTrue(WorldPolitics.aiTacticIDs(year: 1800).allSatisfy { DirtyTactics.tactic($0)!.exists(in: 1800) })
+        XCTAssertTrue(WorldPolitics.aiTacticIDs(year: 1800).allSatisfy { !DirtyTactics.tactic($0)!.isStance })
+    }
+
+    // Retry: the record survives a save, and an old save has none
+    func testTheRecordSurvivesSave() throws {
+        let legacy = try JSONDecoder().decode(ShadowState.self, from: Data("{\"popularity\":50}".utf8))
+        XCTAssertTrue(legacy.worldAtrocities.isEmpty)
+        let (_, gs) = try play(from: 1913, years: 4)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertFalse(loaded.shadow.worldAtrocities.isEmpty)
+        XCTAssertTrue(loaded.shadow.firedRivalries.contains { $0.hasPrefix("atrocity-") })
+    }
+
+    // Performance: the end-turn budget measured in 3.16.2 still holds with the whole 3.17 series in the loop
+    @MainActor
+    func testTheEndTurnBudgetStillHolds() async throws {
+        for (year, difficulty) in [(2025, DifficultyLevel.nightmare), (1789, DifficultyLevel.nightmare)] {
+            let e = GameEngine()
+            e.startNewGame(difficulty: difficulty, turnLength: .month, year: year)
+            let gs = try XCTUnwrap(e.gameState)
+            // The dirty tactics the President can run at once, so the per-turn passes have real work to do.
+            gs.shadow.aftermath = (0..<20).map {
+                TacticAftermath(tactic: "landmines", due: GameCalendar.calendar.date(byAdding: .year, value: $0, to: gs.currentDate)!,
+                                text: "A mine goes off.", ruthlessness: 1, until: nil)
+            }
+            for _ in 0..<3 {
+                let t0 = Date()
+                e.endTurn()
+                while e.turnPhase != .playerInput { try await Task.sleep(nanoseconds: 1_000_000) }
+                // Measured in a Debug build on the Studio: 2025 Nightmare 0.20-0.46 s (the high one is the year's
+                // era sync), 1789 Nightmare 0.014-0.040 s. The budget is 1 s.
+                XCTAssertLessThan(Date().timeIntervalSince(t0), 1.0, "\(year) \(difficulty)")
             }
         }
     }
