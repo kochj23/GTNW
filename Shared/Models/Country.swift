@@ -47,7 +47,7 @@ struct Country: Identifiable, Codable, Hashable {
     let id: String
     var name: String        // var to allow era-based renaming (e.g. Soviet Union)
     let code: String        // ISO 3166-1 alpha-3
-    let flag: String        // Emoji flag
+    var flag: String        // Emoji flag (var since 3.15.0: era transitions)
 
     // Geographic
     var capital: String

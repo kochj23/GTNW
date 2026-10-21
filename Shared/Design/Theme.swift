@@ -173,6 +173,7 @@ struct ThemeSettingsView: View {
     @AppStorage(GameCalendar.turnLengthDefaultsKey) private var turnLength: String = TurnLength.month.rawValue
     @AppStorage(ShadowSettings.electionsKey) private var elections: Bool = true
     @AppStorage(AdvisorWarnings.defaultsKey) private var warnings: Bool = true
+    @AppStorage(NovaCommentary.defaultsKey, store: NovaCommentary.defaults) private var nova: Bool = true
 
     var body: some View {
         Form {
@@ -201,6 +202,9 @@ struct ThemeSettingsView: View {
                 }
                 ScaledLabeledRow("") {
                     Toggle("Advisor warnings before major actions", isOn: $warnings).toggleStyle(.scaledCheckbox)
+                }
+                ScaledLabeledRow("") {
+                    Toggle("Nova's live commentary (uses your local AI when one is running)", isOn: $nova).toggleStyle(.scaledCheckbox)
                 }
             }
         }

@@ -1614,3 +1614,43 @@ struct TreatyOffersSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Hall of Infamy and Nova's commentary (3.15.0)
+
+/// Personal records across every sitting on this Mac, and what Nova has said this game.
+struct RecordsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    var hall: [InfamyRecord: InfamyEntry] = HallOfInfamy.load()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("HALL OF INFAMY").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            ForEach(InfamyRecord.allCases) { r in
+                HStack {
+                    Text(r.title.uppercased()).font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Spacer()
+                    if let e = hall[r] {
+                        Text(verbatim: "\(r.format(e.value)) · \(e.who)").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen)
+                    } else {
+                        Text("—").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+                    }
+                }
+                .padding(3).themedPanel(retroFill: EGA.black)
+            }
+            Text("NOVA SAYS").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
+            if gameState.shadow.novaLines.isEmpty {
+                Text("Nothing yet. Give her something to talk about.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            }
+            ForEach(gameState.shadow.novaLines.suffix(8).reversed()) { l in
+                Text(verbatim: "\(GameCalendar.format(l.date)): \(l.text.replacingOccurrences(of: "Nova: ", with: ""))")
+                    .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(2)
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+

@@ -148,6 +148,13 @@ struct ShadowState: Codable {
     var firedRivalries: Set<String> = []
     var treatyOffers: [TreatyOffer] = []
     var lastReaction: Date?
+    /// Nova's commentary this game (3.15.0), newest last, capped at 30.
+    var novaLines: [TickerItem] = []
+    /// Era transitions (3.15.0): the last game year synced, each nation's government as history left it, and the
+    /// nations whose story has diverged (they no longer follow history).
+    var eraSyncYear = 0
+    var eraGovernment: [String: String] = [:]
+    var eraDiverged: Set<String> = []
 
     // Scenario
     var scenarioID: String?
@@ -186,7 +193,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged
     }
 
     init() {}
@@ -249,6 +256,10 @@ struct ShadowState: Codable {
         firedRivalries = try c.decodeIfPresent(Set<String>.self, forKey: .firedRivalries) ?? []
         treatyOffers = try c.decodeIfPresent([TreatyOffer].self, forKey: .treatyOffers) ?? []
         lastReaction = try c.decodeIfPresent(Date.self, forKey: .lastReaction)
+        novaLines = try c.decodeIfPresent([TickerItem].self, forKey: .novaLines) ?? []
+        eraSyncYear = try c.decodeIfPresent(Int.self, forKey: .eraSyncYear) ?? 0
+        eraGovernment = try c.decodeIfPresent([String: String].self, forKey: .eraGovernment) ?? [:]
+        eraDiverged = try c.decodeIfPresent(Set<String>.self, forKey: .eraDiverged) ?? []
     }
 }
 

@@ -351,3 +351,54 @@ extension GameEngine {
         return true
     }
 }
+
+// MARK: - Era transitions (3.15.0)
+
+extension GameState {
+    /// The board a new game in `year` would have (names, governments, flags), for era transitions.
+    static func eraBoard(year: Int) -> [Country] {
+        let admin = Advisor.allAdministrations().last { $0.startYear <= year }
+        return GameState(playerCountryID: "USA", administration: admin, startDate: GameCalendar.date(year: year, month: 1, day: 20),
+                         boardYear: year).countries
+    }
+}
+
+extension GameEngine {
+    /// Once a game year: nations whose story still follows history take their era's name, government and flag
+    /// (Principality → Kingdom of Serbia in 1882, the Qing → the Republic of China in 1912, the Russian Empire → the
+    /// Soviet Union). Like evolving cabinets, this stops for a nation once its story diverges: it was conquered or
+    /// made a territory, or its government was changed by anything other than history.
+    func processEraTransitions() {
+        guard let gs = gameState, gs.currentYear != gs.shadow.eraSyncYear else { return }
+        let first = gs.shadow.eraSyncYear == 0
+        gs.shadow.eraSyncYear = gs.currentYear
+        if first {   // remember each nation's starting government; nothing to change yet
+            for c in gs.countries { gs.shadow.eraGovernment[c.id] = c.government.rawValue }
+            self.gameState = gs
+            return
+        }
+        let board = Dictionary(GameState.eraBoard(year: gs.currentYear).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        for i in gs.countries.indices {
+            let c = gs.countries[i]
+            guard c.id != gs.playerCountryID, !c.isDestroyed, !c.isTerritory, !gs.shadow.eraDiverged.contains(c.id),
+                  let h = board[c.id] else { continue }
+            if let was = gs.shadow.eraGovernment[c.id], was != c.government.rawValue {
+                gs.shadow.eraDiverged.insert(c.id)   // someone other than history changed its government
+                continue
+            }
+            guard h.name != c.name || h.government != c.government || h.flag != c.flag else { continue }
+            gs.countries[i].name = h.name
+            gs.countries[i].government = h.government
+            gs.countries[i].flag = h.flag
+            gs.countries[i].alignment = h.alignment
+            gs.shadow.eraGovernment[c.id] = h.government.rawValue
+            if h.name != c.name {
+                gs.shadow.post("\(c.name) becomes \(h.name).", date: gs.currentDate, severity: 1)
+                logPlayEvent("era_transition", detail: ["country": c.id, "from": PlayHistory.text(c.name), "to": PlayHistory.text(h.name),
+                                                        "game_date": PlayHistory.day(gs.currentDate)])
+            }
+        }
+        self.gameState = gs
+    }
+}
+

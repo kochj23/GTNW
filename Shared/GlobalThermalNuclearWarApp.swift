@@ -26,6 +26,7 @@ struct GlobalThermalNuclearWarApp: App {
             LaunchSmoke.arm()
             return
         }
+        NovaCommentary.wireLiveBackends()
         #endif
         NovaAPIServer.shared.start()
     }

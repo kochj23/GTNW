@@ -1,8 +1,8 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-549%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-3.14.1-blue)
+![Tests](https://img.shields.io/badge/tests-564%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.15.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -142,6 +142,33 @@ Everything happens on one screen:
       P -. still open at next turn .-> V
       A --> M[Map: U.S. colour + hatching + U.S. TERRITORY tag<br/>arsenal seized, insurgency, world reaction]
       G --> N[Government, ideology, camp,<br/>stability and relations set]
+  ```
+- **Nova's commentary, the Hall of Infamy and era transitions (new in 3.15.0)**:
+  - **Nova comments** on the turn's biggest news (at most one line a turn, plus one per flash event, up to two, and
+    one when you break a record). A deterministic line goes on the ticker at once; when the setting is on and a local
+    AI backend (Ollama, MLX, TinyLLM, OpenWebUI) answers, her own line replaces it (two attempts, then the template
+    stands). The prompt carries only the date, your country and the headline; replies are cut to one plain line, and
+    anything with a link, an address or markup is dropped. Settings → "Nova's live commentary" turns it off.
+  - **The Hall of Infamy** keeps your personal records across sittings on this Mac: most territories held, most
+    territory cash, most nuclear strikes, most ruthless, most wars at once, longest in office, lowest approval
+    survived. Beating a record from an earlier sitting is announced on the ticker (and Nova notices). The
+    **RECORDS** button shows the hall and what Nova has said this game. Records also go to play history.
+  - **Era transitions**: once a game year, nations whose story still follows history take their era's name,
+    government and flag on the real date (Serbia's Principality becomes a Kingdom in 1882, the Qing the Republic of
+    China in 1912, the Russian Empire the Soviet Union). As with evolving cabinets, a nation stops following history
+    once its story diverges: conquered, made a territory, or its government changed by anything but history.
+
+  ```mermaid
+  flowchart LR
+      T[End of turn] --> P{New notable headlines?}
+      P -- yes --> L[Template line now<br/>ticker + Records]
+      L --> G{Live commentary on<br/>and a local AI answers?}
+      G -- yes, clean --> R[Nova's own line replaces it]
+      G -- no / failed / hostile --> K[Template stands]
+      T --> H[Hall of Infamy: records beaten?]
+      H -- earlier sitting's record --> A[Ticker + Nova remark]
+      T --> E{New game year?}
+      E -- yes --> N[Nations still following history<br/>take the era's name, government, flag]
   ```
 - **A living world (new in 3.14.0)**: the other nations no longer sit still, in any era. Scaled by difficulty
   (Easy calm, Nightmare relentless: about ten moves a year per nation and wars at the slightest excuse):
@@ -969,6 +996,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Nova and records (3.15.0) | Events `nova_commentary` (`text`, `source`: `nova` or `template`), `record_set` (`record`, `value`, `previous`), `era_transition` (`country`, `from`, `to`) |
 | Living world (3.14.0) | Events `world_war`, `world_claim`, `territory_seized`, `treaty_answered` |
 | Levies (3.13.1) | Event `territory_levy` (`land`, `name`, `amount_b`) |
 | Land (3.13.0) | Events `colony_seized`, `land_purchased`, `independence_backed`, and `claimed_land` with `indigenous` |
@@ -996,18 +1024,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **549 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **564 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 188 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
-| **Functional** | 112 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
-| **Security** | 68 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
-| **Integration** | 38 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
-| **Performance** | 35 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
-| **Retry** | 60 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
-| **Frame** | 43 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
+| **Unit** | 190 | Countries, GameState, DEFCON, eras, scoring, victory, Codable, brains and move parsing, calendar, popularity, budget and aid, combat, scenarios, profiles, Shadow Pack loader, themes, Games DB records, font scale maths, persistence and clamping, **play-session id round trip, play.sql-mirroring validation, summary keys and caps** |
+| **Functional** | 115 | Game lifecycle, war and treaties, nuclear strikes, AI opponents (offline, declaring war), save then load, Games DB flows, every font path doubles at 2× and the Text size setting persists and applies live, **new game / scenario / load each start a play session; game_history id = session id** |
+| **Security** | 70 | Input bounds, state integrity, serialization, resource abuse, API keys sent only in headers, hostile LLM output, the loopback API, Games DB TLS, parameters and payload caps, source guard that rejects any unscaled `.font(`, `Font.system`, `Font.custom`, `NSFont` or `UIFont`, **hostile ticker text and NaN in play history, oversized events never queued, test host writes no play rows** |
+| **Integration** | 40 | Engine to brain to HTTP to state; live-session post and poll; persistence; Games DB end to end with an in-memory remote; **a played turn's ticker/strike events and actions reach `play`, upserts stay ahead of their events, ended sessions are frozen** |
+| **Performance** | 37 | Turn throughput, concurrent brains, timeouts, save/load, bounded logs, a 200-record leaderboard, a 50-item sync, **a big game's summary under 64 KB, a full queue sheds play events first** |
+| **Retry** | 63 | `RetryPolicy` maths and `Retry.run`, `.optional` and `.http`; LLM clients, Ollama, MLX and Games DB sync all retry; **play history waits offline, rejected rows are dropped, a missing `play` schema never blocks game writes** |
+| **Frame** | 44 | The real app as test host, offscreen renders in both skins, launch smoke, store badge; at 2×: the top bar, Situation Room, leaderboard columns, DB badge, Settings, scaled controls and game tab bar all fit without truncating; **badge counts queued play history, a game runs with no store** |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
 launched with `-GTNWMute YES`, or whenever it is an XCTest host, and under XCTest it never activates or shows a
@@ -1035,6 +1063,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.15.0 | Oct 2026 | Nova's live commentary, the Hall of Infamy (Records screen), nations that rename and change government on their real dates |
 | 3.14.1 | Oct 2026 | Independent Africa (Ethiopia, Liberia, Madagascar; Ashanti, Sokoto, Zanzibar), the Balkan states from their real dates, AI territories that pay and revolt |
 | 3.14.0 | Oct 2026 | A living world in every era (scaled by difficulty), era-true nations in every event, every land selectable on the map and card grid, militia calls in the 1790s |
 | 3.13.2 | Oct 2026 | Levy cooldown is exactly six months; well-run new territories recover to 60 stability in their first year |

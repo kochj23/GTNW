@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.15.0] - 2026-10-20 — Nova's commentary, the Hall of Infamy, era transitions
+
+### Added
+- **Nova's live commentary** (`NovaCommentary.swift`): `processCommentary` after each Shadow turn picks the turn's
+  biggest notable headline (or up to two flash events) and posts a deterministic template line to the ticker and
+  `shadow.novaLines`; a live generator wired to `AIBackendManager` (two attempts via `Retry`) replaces it with
+  Nova's own line when it answers cleanly. Prompts carry only the date, the player's country and the headline;
+  `clean` keeps one plain line and drops links, addresses and markup. Setting: "Nova's live commentary"
+  (`GTNW.novaCommentary`). Play event `nova_commentary` with the source.
+- **The Hall of Infamy** (`HallOfInfamy`, `InfamyRecord`): seven personal records kept across sittings in local
+  defaults (a throwaway suite under XCTest) and as `record_set` play events; beating an earlier sitting's record is
+  announced. **RECORDS** button and `RecordsSheet`.
+- **Era transitions** (`processEraTransitions`): once a game year, nations still following history take the era's
+  name, government, flag and alignment (from `GameState.eraBoard(year:)`); a nation whose government something else
+  changed, or that was conquered, stops following history (`shadow.eraDiverged`). Play event `era_transition`.
+  `Country.flag` is now mutable.
+- 15 tests across all seven categories (564 total, single muted run); snapshots in `Screenshots/3.15.0/`.
+
 ## [3.14.1] - 2026-10-20 — Independent Africa, the Balkan states, AI territories with stakes
 
 ### Fixed
