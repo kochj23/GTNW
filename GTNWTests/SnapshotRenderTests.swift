@@ -567,5 +567,28 @@ final class SnapshotRenderTests: XCTestCase {
             }
         }
     }
+
+    /// 3.15.0: the Records screen (Hall of Infamy + Nova's lines).
+    @MainActor
+    func testRenderRecords() throws {
+        let engine = GameEngine()
+        engine.startNewGame(turnLength: .month, year: 1913)
+        let gs = try XCTUnwrap(engine.gameState)
+        for (i, t) in ["Somebody should have read the treaty.", "The map gets redder; the accountants get happier.",
+                       "Kingdom of Serbia. Very grand. Very small."].enumerated() {
+            gs.shadow.novaLines.append(TickerItem(date: GameCalendar.date(year: 1913, month: 2 + i, day: 1), text: "Nova: " + t, severity: 0))
+        }
+        let hall: [InfamyRecord: InfamyEntry] = [
+            .territories: InfamyEntry(value: 31, who: "United States, 1914", gameDate: Date(), setAt: Date()),
+            .territoryCash: InfamyEntry(value: 212.4, who: "United States, 1921", gameDate: Date(), setAt: Date()),
+            .ruthlessness: InfamyEntry(value: 74, who: "United States, 1798", gameDate: Date(), setAt: Date()),
+            .lowestApproval: InfamyEntry(value: 19, who: "United States, 1942", gameDate: Date(), setAt: Date()),
+        ]
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            print("SNAPSHOT \(try render(RecordsSheet(gameState: gs, hall: hall), size: CGSize(width: FontScale.w(620), height: FontScale.h(460)), name: "records-\(theme.rawValue)").path)")
+        }
+    }
 }
 #endif

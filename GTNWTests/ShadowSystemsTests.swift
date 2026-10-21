@@ -3747,7 +3747,9 @@ final class LivingWorldTests: XCTestCase {
             }
             // Land is named for its geography ("France claims Gambia"); every other line must name only nations of the era.
             text += gs.shadow.ticker.map(\.text).filter { !$0.contains(" claims ") && !$0.contains(" seizes ") }
-            for t in text { for n in absent where t.contains(n) { XCTFail("\(year): \(n) named in \(t.prefix(120))") } }
+            // Nations born during play (a territory that revolts into independence) are of the era too.
+            let born = gs.countries.map(\.name)
+            for t in text { for n in absent where t.contains(n) && !born.contains(where: { $0.contains(n) }) { XCTFail("\(year): \(n) named in \(t.prefix(120))") } }
             for c in gs.countries { for k in c.diplomaticRelations.keys { XCTAssertNotNil(gs.getCountry(id: k), "\(year): relation with \(k)") } }
         }
     }
@@ -3903,5 +3905,201 @@ final class EraStatesTests: XCTestCase {
         let e2 = GameEngine(); e2.gameState = loaded
         e2.processAITerritories()
         XCTAssertEqual(loaded.getCountry(id: land)?.territoryOf ?? "FRA", "FRA")
+    }
+}
+
+// MARK: - 3.15.0: Nova's commentary, the Hall of Infamy, era transitions
+
+final class NovaCommentaryTests: XCTestCase {
+    override func tearDown() {
+        NovaCommentary.generator = nil
+        NovaCommentary.defaults.removeObject(forKey: NovaCommentary.defaultsKey)
+        super.tearDown()
+    }
+
+    private func game(_ year: Int = 1913) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        return (e, try XCTUnwrap(e.gameState))
+    }
+
+    // Unit: templates are deterministic; picks follow the rules; replies are cleaned
+    func testTemplatesPicksAndCleaning() {
+        let war = TickerItem(date: Date(), text: "France declares war on Austria.", severity: 2)
+        XCTAssertEqual(NovaCommentary.template(war, turn: 3), NovaCommentary.template(war, turn: 3))
+        let flash = (0..<4).map { TickerItem(date: Date(), text: "Flash \($0)", severity: 3) }
+        XCTAssertEqual(NovaCommentary.picks(flash + [war]).count, 2, "at most two flash lines")
+        XCTAssertEqual(NovaCommentary.picks([war, TickerItem(date: Date(), text: "x", severity: 1)]).map(\.text), [war.text], "one line a turn")
+        XCTAssertTrue(NovaCommentary.picks([TickerItem(date: Date(), text: "Nova: hi", severity: 2)]).isEmpty, "never comments on herself")
+        XCTAssertEqual(NovaCommentary.clean("\"Nova: Well, that escalated.\"\nSecond line"), "Well, that escalated.")
+        XCTAssertNil(NovaCommentary.clean("see http://example.com"))
+        XCTAssertNil(NovaCommentary.clean("<script>alert(1)</script>"))
+        XCTAssertNil(NovaCommentary.clean("  "))
+    }
+
+    // Functional: a notable turn gets one line on the ticker and in the record; the setting turns it off
+    func testANotableTurnGetsALine() throws {
+        let (e, gs) = try game()
+        gs.shadow.post("Britain declares war on Germany.", date: gs.currentDate, severity: 2)
+        e.processCommentary(seen: [])
+        XCTAssertEqual(gs.shadow.novaLines.count, 1)
+        XCTAssertTrue(gs.shadow.ticker.last?.text.hasPrefix("Nova: ") ?? false)
+        NovaCommentary.defaults.set(false, forKey: NovaCommentary.defaultsKey)
+        gs.shadow.post("Another war.", date: gs.currentDate, severity: 2)
+        e.processCommentary(seen: [])
+        XCTAssertEqual(gs.shadow.novaLines.count, 1, "off means off")
+    }
+
+    // Integration: the live backend's line replaces the template and is logged as Nova's
+    @MainActor
+    func testLiveLineReplacesTheTemplate() async throws {
+        let (e, gs) = try game()
+        var prompts: [String] = []
+        NovaCommentary.generator = { p in prompts.append(p); return "\"Somebody should have read the treaty.\"" }
+        let item = TickerItem(date: gs.currentDate, text: "Germany invades Belgium.", severity: 3)
+        e.comment(NovaCommentary.template(item, turn: gs.turn), about: item)
+        for _ in 0..<100 where !(gs.shadow.novaLines.last?.text.contains("treaty") ?? false) { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(gs.shadow.novaLines.last?.text, "Nova: Somebody should have read the treaty.")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text == "Nova: Somebody should have read the treaty." })
+        XCTAssertTrue(prompts.first?.contains("Germany invades Belgium.") ?? false)
+    }
+
+    // Retry: a backend that fails leaves the template line standing
+    @MainActor
+    func testFailedBackendKeepsTheTemplate() async throws {
+        let (e, gs) = try game()
+        NovaCommentary.generator = { _ in nil }
+        let item = TickerItem(date: gs.currentDate, text: "Russia mobilizes.", severity: 2)
+        let template = NovaCommentary.template(item, turn: gs.turn)
+        e.comment(template, about: item)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(gs.shadow.novaLines.last?.text, "Nova: " + template)
+    }
+
+    // Security: hostile replies are dropped; the prompt carries game facts only
+    @MainActor
+    func testHostileRepliesAndPrivacy() async throws {
+        let (e, gs) = try game()
+        NovaCommentary.generator = { _ in "Click https://evil.example <img>" }
+        let item = TickerItem(date: gs.currentDate, text: "A coup in Persia.", severity: 2)
+        let template = NovaCommentary.template(item, turn: gs.turn)
+        e.comment(template, about: item)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(gs.shadow.novaLines.last?.text, "Nova: " + template)
+        let prompt = NovaCommentary.prompt(item, gs: gs)
+        XCTAssertFalse(prompt.contains(NSUserName()))
+        XCTAssertFalse(prompt.contains(NSFullUserName()))
+        XCTAssertFalse(prompt.contains("@"))
+    }
+
+    // Performance
+    func testPickingIsCheap() {
+        let items = (0..<120).map { TickerItem(date: Date(), text: "Headline \($0) war nuclear", severity: $0 % 4) }
+        measure { for _ in 0..<50 { for i in NovaCommentary.picks(items) { _ = NovaCommentary.template(i, turn: 1) } } }
+    }
+}
+
+final class HallOfInfamyTests: XCTestCase {
+    override func setUp() { super.setUp(); HallOfInfamy.defaults.removeObject(forKey: HallOfInfamy.defaultsKey) }
+    override func tearDown() { HallOfInfamy.defaults.removeObject(forKey: HallOfInfamy.defaultsKey); super.tearDown() }
+
+    private func game() throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: 1890)
+        return (e, try XCTUnwrap(e.gameState))
+    }
+
+    // Unit
+    func testWhatCountsAsARecord() throws {
+        let (_, gs) = try game()
+        gs.shadow.ruthlessness = 40
+        gs.shadow.popularity = 20
+        let broken = Dictionary(uniqueKeysWithValues: HallOfInfamy.broken(gs, hall: [:]).map { ($0.0, $0.1) })
+        XCTAssertEqual(broken[.ruthlessness], 40)
+        XCTAssertEqual(broken[.lowestApproval], 20)
+        XCTAssertNil(broken[.nukes], "zero isn't a record")
+        let hall: [InfamyRecord: InfamyEntry] = [.lowestApproval: InfamyEntry(value: 10, who: "x", gameDate: Date(), setAt: Date())]
+        XCTAssertFalse(HallOfInfamy.broken(gs, hall: hall).contains { $0.0 == .lowestApproval }, "20% doesn't beat 10%")
+    }
+
+    // Functional: records persist across sittings; beating an earlier sitting's record is announced
+    func testRecordsPersistAndBeatingOneIsAnnounced() throws {
+        let (e, gs) = try game()
+        HallOfInfamy.save([.ruthlessness: InfamyEntry(value: 10, who: "United States, 1850", gameDate: Date(), setAt: .distantPast)])
+        gs.shadow.ruthlessness = 55
+        e.processHallOfInfamy()
+        XCTAssertEqual(HallOfInfamy.load()[.ruthlessness]?.value, 55)
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasPrefix("Hall of Infamy: new record, most ruthless (55)") })
+        let n = gs.shadow.ticker.count
+        gs.shadow.ruthlessness = 60
+        e.processHallOfInfamy()
+        XCTAssertEqual(HallOfInfamy.load()[.ruthlessness]?.value, 60)
+        XCTAssertFalse(gs.shadow.ticker.dropFirst(n).contains { $0.text.hasPrefix("Hall of Infamy") }, "pushing this sitting's own record is quiet")
+    }
+
+    // Retry: damaged storage reads as an empty hall
+    func testDamagedStorageIsEmpty() {
+        HallOfInfamy.defaults.set(Data("not json".utf8), forKey: HallOfInfamy.defaultsKey)
+        XCTAssertTrue(HallOfInfamy.load().isEmpty)
+        let raw = ["nukes": InfamyEntry(value: .nan, who: "x", gameDate: Date(), setAt: Date())]
+        HallOfInfamy.defaults.set(try? JSONEncoder().encode(raw), forKey: HallOfInfamy.defaultsKey)
+        XCTAssertTrue(HallOfInfamy.load().isEmpty, "NaN never loads")
+    }
+
+    // Security: the test host never writes the real defaults
+    func testTestsUseAThrowawaySuite() {
+        XCTAssertFalse(HallOfInfamy.defaults === UserDefaults.standard)
+        XCTAssertFalse(NovaCommentary.defaults === UserDefaults.standard)
+    }
+}
+
+final class EraTransitionTests: XCTestCase {
+    private func run(from year: Int, years: Int, before: ((GameEngine, GameState) -> Void)? = nil) throws -> (GameEngine, GameState) {
+        let e = GameEngine()
+        e.startNewGame(turnLength: .month, year: year)
+        let gs = try XCTUnwrap(e.gameState)
+        e.processEraTransitions()   // remembers the starting governments
+        before?(e, gs)
+        for _ in 0..<years { gs.turn += 12; e.processEraTransitions() }
+        return (e, gs)
+    }
+
+    // Functional: nations follow history through a long game
+    func testNationsRenameOnTheirDates() throws {
+        let (_, g1) = try run(from: 1881, years: 1)
+        XCTAssertEqual(g1.getCountry(id: "SRB")?.name, "Kingdom of Serbia")
+        XCTAssertTrue(g1.shadow.ticker.contains { $0.text == "Principality of Serbia becomes Kingdom of Serbia." })
+        let (_, g2) = try run(from: 1911, years: 1)
+        XCTAssertEqual(g2.getCountry(id: "CHN")?.name, "Republic of China")
+        let (_, g3) = try run(from: 1916, years: 7)
+        XCTAssertEqual(g3.getCountry(id: "RUS")?.name, "Soviet Union")
+    }
+
+    // Integration: once a nation's story diverges it stops following history
+    func testADivergedNationKeepsItsStory() throws {
+        let (_, gs) = try run(from: 1881, years: 1) { _, gs in
+            let i = gs.countries.firstIndex { $0.id == "SRB" }!
+            gs.countries[i].government = gs.countries[i].government == .democracy ? .military : .democracy
+        }
+        XCTAssertEqual(gs.getCountry(id: "SRB")?.name, "Principality of Serbia")
+        XCTAssertTrue(gs.shadow.eraDiverged.contains("SRB"))
+    }
+
+    // Retry: the era state survives save and load; old saves start syncing afresh
+    func testEraStateSurvivesSave() throws {
+        let (_, gs) = try run(from: 1881, years: 1)
+        let loaded = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(gs))
+        XCTAssertEqual(loaded.shadow.eraSyncYear, gs.shadow.eraSyncYear)
+        XCTAssertEqual(loaded.shadow.eraGovernment, gs.shadow.eraGovernment)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(gs)) as? [String: Any])
+        var shadow = try XCTUnwrap(json["shadow"] as? [String: Any])
+        for k in ["eraSyncYear", "eraGovernment", "eraDiverged", "novaLines"] { shadow.removeValue(forKey: k) }
+        json["shadow"] = shadow
+        XCTAssertEqual(try JSONDecoder().decode(GameState.self, from: JSONSerialization.data(withJSONObject: json)).shadow.eraSyncYear, 0)
+    }
+
+    // Performance: building an era board once a game year
+    func testEraBoardIsQuickEnough() {
+        measure { _ = GameState.eraBoard(year: 1913) }
     }
 }
