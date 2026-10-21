@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.4] - 2026-10-21 — Dirty tactics: deception
+
+### Added
+- **The deception group** (`DirtyTactics.deception`):
+  - **Manufactured pretext** (1789–, legal → UN Charter Art. 2(4) 1945 → Rome Statute 2002): the Mukden incident of
+    18 September 1931, the Gleiwitz raid of 31 August 1939, Operation Northwoods — proposed by the Joint Chiefs in
+    March 1962 and refused — and the Gulf of Tonkin attack of 4 August 1964 that never happened, three days before
+    the resolution. **It counts as a casus belli Congress accepts** (`pretextBonus`, added to
+    `CongressModel.casusBelli` in `authorizationOdds`) until it is exposed; exposure annuls the authorization it
+    bought, takes 20 congressional support and 30 war support, and brings articles of impeachment.
+  - **Yellow journalism** (1895–, legal): Hearst's *Journal* and Pulitzer's *World* from 1895, the de Lôme letter
+    and the *Maine* of 15 February 1898. War support and approval now; an exposé takes both back.
+  - **Enemy uniforms** (1789–, legal → Hague IV Art. 23(f) 1907 → perfidy under AP I 1977 → Rome 2002): Operation
+    Greif in the Ardennes, December 1944. Momentum on a front, and men shot when it comes out.
+  - **Counterfeit the enemy's currency** (1789–, legal → the 1929 counterfeiting convention, in force 1931): the
+    forged Continental dollars printed in New York in 1776–79 and Operation Bernhard's £132 million from
+    Sachsenhausen, 1942–45. Cash for the President, output and stability out of the enemy.
+  - **The opium trade as state policy** (1789–, legal → the Hague Opium Convention 1912 → the Single Convention
+    1961): the two wars of 1839–42 and 1856–60, after which the Convention of Peking legalised the trade.
+- **Drug operations are a real verb now** (`runDrugOperations`): the existing `drugOps` covert action pays into the
+  President's funds and costs the target stability and goodwill — and while the opium trade is state policy against
+  that country it runs at three times the scale. Play event `drug_operations`.
+- **`applyExposureExtra`**: the particular ruin a particular lie brings, beyond the treaty price.
+
+### Changed
+- 10 tests across all seven categories (646 total, single muted run); snapshots in `Screenshots/3.17.4/`.
+
 ## [3.17.3] - 2026-10-21 — Dirty tactics: civilians and land
 
 ### Added

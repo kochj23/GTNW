@@ -1878,6 +1878,11 @@ extension GameEngine {
         case .chemicalAttack, .biologicalAttack, .restartChemical, .restartBiological:
             if playerID == gameState.playerCountryID { executeWMD(action, target: targetID) }
             return
+        case .drugOps:
+            // 3.17.4: money in, stability out. Where the opium trade is state policy (DirtyTactics `opium_policy`)
+            // the same operation runs on another scale entirely.
+            if playerID == gameState.playerCountryID { runDrugOperations(target: targetID) }
+            return
         case .proposeTreaty, .signTreaty, .nonAggression:
             // 3.16.0: these now put a treaty on record (the relations change still follows below).
             let type: TreatyType = action == .nonAggression ? .nonAggression : .tradeAgreement

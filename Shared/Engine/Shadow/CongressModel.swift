@@ -94,7 +94,8 @@ extension GameEngine {
     /// Odds both chambers pass a request against `target`, and the expected yes shares.
     func authorizationOdds(target: String, kind: WarAuthorizationKind) -> (odds: Double, house: Double, senate: Double, casusBelli: Double)? {
         guard let gs = gameState, let p = gs.getPlayerCountry(), let t = gs.getCountry(id: target), t.id != p.id else { return nil }
-        let cb = CongressModel.casusBelli(target: t, player: p, gs: gs)
+        // 3.17.4: a manufactured pretext Congress has not seen through counts too.
+        let cb = min(1, CongressModel.casusBelli(target: t, player: p, gs: gs) + pretextBonus(target))
         let h = CongressModel.expectedYes(support: CongressModel.house(congress: p.congressionalSupport, popularity: gs.shadow.popularity),
                                           warSupport: p.warSupport, casusBelli: cb, kind: kind)
         let s = CongressModel.expectedYes(support: CongressModel.senate(congress: p.congressionalSupport, popularity: gs.shadow.popularity),

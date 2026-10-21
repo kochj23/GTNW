@@ -135,7 +135,7 @@ enum DirtyTactics {
     // MARK: Catalog
 
     /// Every tactic in the game. Groups are added one release at a time (3.17.0 … 3.17.5).
-    static let all: [DirtyTactic] = chemical + incendiary + starvation + civilians
+    static let all: [DirtyTactic] = chemical + incendiary + starvation + civilians + deception
 
     static func tactic(_ id: String) -> DirtyTactic? { all.first { $0.id == id } }
 
@@ -513,6 +513,69 @@ extension DirtyTactics {
     ]
 }
 
+// MARK: - The deception group (3.17.4)
+
+extension DirtyTactics {
+    static let unCharterNote = "Banned: the UN Charter Art. 2(4) (1945) forbids the use of force; the Rome Statute's crime of aggression took effect in 2018."
+    static let perfidyNote = "Banned: Additional Protocol I Art. 37 and 39 (1977) — perfidy, and the improper use of enemy uniforms and emblems."
+
+    static let deception: [DirtyTactic] = [
+        DirtyTactic(
+            id: "false_flag", group: .deception, name: "Manufactured pretext",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule of war covers how a war begins."),
+                      p(1945, .treatyBanned, unCharterNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Stage the incident that makes the war necessary. Japanese officers blew up their own railway "
+                 + "outside Mukden on 18 September 1931; the SS staged the Gleiwitz raid on 31 August 1939; the "
+                 + "Joint Chiefs proposed Operation Northwoods in March 1962 and were refused; the second Gulf of "
+                 + "Tonkin attack of 4 August 1964 never happened, and Congress passed the resolution on the 7th. "
+                 + "Congress accepts the casus belli — unless it is exposed.",
+            target: .nation, canBeCovert: true, people: 4),
+        DirtyTactic(
+            id: "yellow_press", group: .deception, name: "Yellow journalism",
+            from: 1895,
+            periods: [p(1895, .legal, "Nothing forbids a newspaper from printing what sells.")],
+            blurb: "Feed the papers the story you need. Hearst's Journal and Pulitzer's World fought each other over "
+                 + "Cuba from 1895; the de Lôme letter and the loss of the Maine on 15 February 1898 did the rest. "
+                 + "War support and approval rise; an exposé costs you both.",
+            target: .none, canBeCovert: true, people: 2),
+        DirtyTactic(
+            id: "enemy_uniforms", group: .deception, name: "Enemy uniforms",
+            from: 1789,
+            periods: [p(1789, .legal, "No rule of war covers it."),
+                      p(1899, .restricted, "Restricted: Hague IV Art. 23(f) (1907) — improper use of enemy flags, insignia and uniforms."),
+                      p(1977, .treatyBanned, perfidyNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Put your men in the enemy's uniform and send them through his lines. Otto Skorzeny's Panzer "
+                 + "Brigade 150 did it in the Ardennes in December 1944, and the confusion behind the American "
+                 + "front outlasted the brigade. Surprise on one front, and a firing squad for anyone caught.",
+            target: .nation, canBeCovert: true, people: 2),
+        DirtyTactic(
+            id: "counterfeit_currency", group: .deception, name: "Counterfeit the enemy's currency",
+            from: 1789,
+            periods: [p(1789, .legal, "No treaty covers it."),
+                      p(1931, .restricted, "Restricted: the International Convention for the Suppression of Counterfeiting Currency (Geneva 1929, in force 1931)."),
+                      p(1949, .restricted, "Restricted: the Geneva Conventions (1949) protect an occupied economy.")],
+            blurb: "Print his banknotes by the crate and spend them. The British flooded the colonies with forged "
+                 + "Continental dollars from New York in 1776–79, and a Rivington press advertisement offered them "
+                 + "openly; Operation Bernhard forged some £132 million in Sachsenhausen between 1942 and 1945. His "
+                 + "economy and his stability fall; yours gains the cash.",
+            target: .nation, canBeCovert: true, people: 3),
+        DirtyTactic(
+            id: "opium_policy", group: .deception, name: "The opium trade as state policy",
+            from: 1789,
+            periods: [p(1789, .legal, "No treaty covers the trade."),
+                      p(1912, .restricted, "Restricted: the Shanghai Opium Commission (1909) and the International Opium Convention (The Hague, 1912)."),
+                      p(1961, .treatyBanned, "Banned: the Single Convention on Narcotic Drugs (1961).")],
+            blurb: "Run the drug into another country's ports and make him take it. Britain fought two wars over it "
+                 + "— 1839–42, ended by the Treaty of Nanking, and 1856–60, after which the Convention of Peking "
+                 + "legalised the trade. It pays enormously and it hollows out the buyer. Builds on the existing "
+                 + "drug-operations covert action.",
+            target: .nation, canBeCovert: true, people: 6),
+    ]
+}
+
 // MARK: - Engine
 
 extension GameEngine {
@@ -640,6 +703,7 @@ extension GameEngine {
         logPlayEvent("tactic_exposed", detail: ["tactic": t.id, "target": target ?? "", "game_date": PlayHistory.day(gs.currentDate)])
         self.gameState = gs
         applyTacticCost(t, target: target, coverUp: true)
+        applyExposureExtra(t, target: target)
     }
 
 
@@ -853,6 +917,8 @@ extension DirtyTactics {
             return "Removal on this scale needs the Indian Removal Act of 28 May 1830 behind it."
         case "internment":
             return "Interning a population at home begins with Executive Order 9066 on 19 February 1942."
+        case "yellow_press":
+            return "A mass-circulation press able to make a war begins with the Hearst and Pulitzer papers of 1895."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -898,6 +964,11 @@ extension DirtyTactics {
         case "internment": return "The President orders the internment of a population at home."
         case "max_extraction": return "A collection quota is set on\(at.isEmpty ? " the territory" : at)."
         case "torture": return "American interrogators are told the gloves are off\(at)."
+        case "false_flag": return "An incident\(at) leaves American dead. The country wants a war."
+        case "yellow_press": return "The papers run the story the administration gave them, and then run it again."
+        case "enemy_uniforms": return "American troops go through the enemy's lines in his own uniform\(at)."
+        case "counterfeit_currency": return "Forged\(at.isEmpty ? " enemy" : at) banknotes are spent into\(at.isEmpty ? " the enemy's" : at + "'s") economy by the crate."
+        case "opium_policy": return "The opium trade into\(at.isEmpty ? " the enemy" : at) becomes American state policy."
         default: return "The United States orders \(t.name.lowercased())\(at)."
         }
     }
@@ -912,6 +983,10 @@ extension DirtyTactics {
         case "incendiary_shells": return "An agent is taken with a carpet bag of incendiary compound\(at); the papers have the rest."
         case "profiteer_contracts": return "The ration contracts are published in full. So are the names on the cheques."
         case "torture": return "Photographs from the interrogation rooms\(at) are published. There is no explaining them."
+        case "false_flag": return "A naval board reports what really happened\(at). Nothing attacked anybody."
+        case "yellow_press": return "An editor publishes the administration's instructions to him, word for word."
+        case "enemy_uniforms": return "Men in the enemy's uniform are taken and shot. The newspapers have their names."
+        case "counterfeit_currency": return "A plate is captured with the Treasury's seal on it."
         default: return "The press exposes an American \(t.name.lowercased())\(at)."
         }
     }
@@ -1101,6 +1176,112 @@ extension GameEngine {
                 gs.shadow.post("Interrogation produces a name and a place. Both check out.", date: gs.currentDate, severity: 1)
             } else {
                 gs.shadow.post("The prisoner confesses to everything put to him. None of it is worth anything.", date: gs.currentDate, severity: 1)
+            }
+        // --- 3.17.4: deception ---
+        case "false_flag":
+            // The incident Congress needs. It counts as a casus belli until somebody proves it was staged.
+            if let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
+                gs.countries[pi].warSupport = min(100, gs.countries[pi].warSupport + Int(20 * m))
+                gs.countries[pi].congressionalSupport = min(100, gs.countries[pi].congressionalSupport + Int(5 * m))
+            }
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 3 * m)
+            if let target = use.target, let c = gs.getCountry(id: target) {
+                gs.shadow.post("An American ship and crew are lost off \(c.name). The country wants an answer.",
+                               date: gs.currentDate, severity: 3)
+                modifyDiplomaticRelation(from: gs.playerCountryID, to: target, by: -30)
+            }
+        case "yellow_press":
+            if let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
+                gs.countries[pi].warSupport = min(100, gs.countries[pi].warSupport + Int(15 * m))
+            }
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 4 * m)
+        case "enemy_uniforms":
+            // Surprise on one front, for as long as it lasts.
+            if let target = use.target, let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) {
+                let we = gs.shadow.fronts[fi].defender == target
+                gs.shadow.fronts[fi].attackerMomentum = min(1, max(-1, gs.shadow.fronts[fi].attackerMomentum + (we ? 0.2 : -0.2) * m))
+            }
+            frontBlow(use.target, will: 0.1 * m, troops: 0.02 * m)
+        case "counterfeit_currency":
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].gdp *= 1 - 0.06 * m
+                gs.countries[i].stability = max(0, gs.countries[i].stability - Int(8 * m))
+                gs.countries[i].profile.anxieties.economic += 20 * m
+            }
+            let printed = 4.0 * m
+            gs.shadow.aidRemaining += printed
+            gs.shadow.resourceEarnings += printed
+            gs.shadow.post(String(format: "The presses run. $%.1fB of the enemy's money is spent into his own economy.", printed),
+                           date: gs.currentDate, severity: 1)
+        case "opium_policy":
+            // The trade itself, which the existing drug-operations action then works through.
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].stability = max(0, gs.countries[i].stability - Int(12 * m))
+                gs.countries[i].gdp *= 1 - 0.03 * m
+                gs.countries[i].profile.anxieties.social += 25 * m
+            }
+            let takings = 6.0 * m
+            gs.shadow.aidRemaining += takings
+            gs.shadow.resourceEarnings += takings
+        default:
+            break
+        }
+        self.gameState = gs
+    }
+
+
+    /// 3.17.4: a manufactured pretext Congress has not been shown through counts as a casus belli, until it is
+    /// exposed. `authorizationOdds` adds it to the real one.
+    func pretextBonus(_ target: String) -> Double {
+        gameState?.shadow.tacticUses.contains { $0.tactic == "false_flag" && $0.target == target && !$0.discovered } == true ? 0.6 : 0
+    }
+
+    /// 3.17.4: is the opium trade state policy against this country?
+    func opiumPolicyActive(against target: String) -> Bool {
+        gameState?.shadow.tacticUses.contains { $0.tactic == "opium_policy" && $0.target == target } == true
+    }
+
+    /// Drug operations against a country: money in, stability out. Where the opium trade is state policy
+    /// (`opium_policy`, 3.17.4) the operation runs on a different scale entirely.
+    func runDrugOperations(target: String) {
+        guard let gs = gameState, let i = gs.countries.firstIndex(where: { $0.id == target }), target != gs.playerCountryID else { return }
+        let state = opiumPolicyActive(against: target)
+        let boost = state ? 3.0 : 1.0
+        let takings = 1.5 * boost
+        gs.shadow.aidRemaining += takings
+        gs.shadow.resourceEarnings += takings
+        gs.countries[i].stability = max(0, gs.countries[i].stability - Int(4 * boost))
+        gs.countries[i].profile.anxieties.social += 8 * boost
+        modifyDiplomaticRelation(from: target, to: gs.playerCountryID, by: -8)
+        gs.shadow.ruthlessness += 3 * boost
+        gs.shadow.post(String(format: state ? "The chests go ashore in %@ under the flag. $%.1fB." : "A smuggling ring moves product through %@. $%.1fB.",
+                              gs.countries[i].name, takings), date: gs.currentDate, severity: state ? 2 : 1)
+        logPlayEvent("drug_operations", detail: ["target": target, "state_policy": state, "amount_b": PlayHistory.num(takings),
+                                                 "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+    }
+
+    /// What exposure costs beyond the treaty price: the particular ruin a particular lie brings.
+    func applyExposureExtra(_ t: DirtyTactic, target: String?) {
+        guard let gs = gameState, let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
+        switch t.id {
+        case "false_flag":
+            // The war Congress voted for turns out to have been bought with a lie.
+            gs.shadow.authorizations.removeAll { $0.target == target && $0.passed }
+            gs.countries[pi].congressionalSupport = max(0, gs.countries[pi].congressionalSupport - 20)
+            gs.countries[pi].warSupport = max(0, gs.countries[pi].warSupport - 30)
+            gs.shadow.impeachmentStage = max(gs.shadow.impeachmentStage, 2)
+            gs.shadow.post("Congress annuls its authorization: the incident that bought it never happened.",
+                           date: gs.currentDate, severity: 3)
+        case "yellow_press":
+            gs.countries[pi].warSupport = max(0, gs.countries[pi].warSupport - 20)
+            gs.countries[pi].congressionalSupport = max(0, gs.countries[pi].congressionalSupport - 8)
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 6)
+        case "enemy_uniforms":
+            // Men taken out of uniform are shot, and the enemy does the same to yours.
+            if let target, let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) {
+                if gs.shadow.fronts[fi].defender == target { gs.shadow.fronts[fi].attackerTroops *= 0.97 }
+                else { gs.shadow.fronts[fi].defenderTroops *= 0.97 }
             }
         default:
             break
