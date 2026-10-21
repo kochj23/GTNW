@@ -17,7 +17,8 @@ class VoiceUnified: ObservableObject {
     @Published var lastError: String?
     @Published var voiceModels: [VoiceModel] = []
 
-    private let synthesizer = AVSpeechSynthesizer()
+    /// Created on first use, never when muted (AudioGate): a synthesizer can start audio by existing.
+    private lazy var synthesizer = AVSpeechSynthesizer()
     private var audioOutputURL: URL?
     private var audioData: Data?
 
@@ -59,6 +60,7 @@ class VoiceUnified: ObservableObject {
     // MARK: - System TTS
 
     func synthesizeSpeech(text: String, voice: String? = nil) -> Data? {
+        guard AudioGate.allow() else { return nil }
         let utterance = AVSpeechUtterance(string: text)
 
         if let voiceName = voice {

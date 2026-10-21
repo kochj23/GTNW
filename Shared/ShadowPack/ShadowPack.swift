@@ -157,7 +157,7 @@ final class ShadowPack: ObservableObject {
     /// Play a pack sound (e.g. "sfx.nuke_strike"). Returns false when sound is off or the pack lacks it.
     @discardableResult
     func play(_ id: String, volume: Float = 1) -> Bool {
-        guard soundEnabled, let u = url(id), let p = try? AVAudioPlayer(contentsOf: u) else { return false }
+        guard AudioGate.allow(), soundEnabled, let u = url(id), let p = try? AVAudioPlayer(contentsOf: u) else { return false }
         p.volume = volume
         p.play()
         lock.lock()

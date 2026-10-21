@@ -258,7 +258,7 @@ class TheLivingRoom: ObservableObject {
     // MARK: - Audio Playback
 
     private func playAudio(_ url: URL) async {
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        guard AudioGate.allow(), FileManager.default.fileExists(atPath: url.path) else { return }
 
         isPlayingAudio = true
 

@@ -24,6 +24,7 @@
 		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
 		1133AF3FACD6B76AFF6F8365 /* GameEngineBrains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */; };
 		128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
+		1423DF6B0861CDEC638BCAF2 /* AudioGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1423DF6B0861CDEC638BCAF1 /* AudioGate.swift */; };
 		0CD5072A8BED2D2318681AF2 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
 		9951D0B5068363882F271AF2 /* NationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D0B5068363882F271AF1 /* NationModel.swift */; };
 		C70374C153C1243812D4FAF2 /* GroupActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70374C153C1243812D4FAF1 /* GroupActions.swift */; };
@@ -84,6 +85,7 @@
 		471CAF9CFF65EE7E4D0EB572 /* ShadowPackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */; };
 		4964D75AAE78229C8DE429D7 /* AIBrainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1204760B8883BA6B8FB377CD /* AIBrainTests.swift */; };
 		49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
+		1423DF6B0861CDEC638BCAF3 /* AudioGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1423DF6B0861CDEC638BCAF1 /* AudioGate.swift */; };
 		0CD5072A8BED2D2318681AF3 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
 		9951D0B5068363882F271AF3 /* NationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D0B5068363882F271AF1 /* NationModel.swift */; };
 		C70374C153C1243812D4FAF3 /* GroupActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70374C153C1243812D4FAF1 /* GroupActions.swift */; };
@@ -292,6 +294,7 @@
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1204760B8883BA6B8FB377CD /* AIBrainTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIBrainTests.swift; sourceTree = "<group>"; };
 		15C61B45692E5ECBC414422A /* CombatModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CombatModel.swift; sourceTree = "<group>"; };
+		1423DF6B0861CDEC638BCAF1 /* AudioGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioGate.swift; sourceTree = "<group>"; };
 		0CD5072A8BED2D2318681AF1 /* Coalitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Coalitions.swift; sourceTree = "<group>"; };
 		9951D0B5068363882F271AF1 /* NationModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NationModel.swift; sourceTree = "<group>"; };
 		C70374C153C1243812D4FAF1 /* GroupActions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GroupActions.swift; sourceTree = "<group>"; };
@@ -575,6 +578,7 @@
 				0D4F29FFBC9C4273E5CAE7FF /* PopularityModel.swift */,
 				A6C1C6823465A248C2FB6EB4 /* AdviceEngine.swift */,
 				15C61B45692E5ECBC414422A /* CombatModel.swift */,
+				1423DF6B0861CDEC638BCAF1 /* AudioGate.swift */,
 				0CD5072A8BED2D2318681AF1 /* Coalitions.swift */,
 				9951D0B5068363882F271AF1 /* NationModel.swift */,
 				C70374C153C1243812D4FAF1 /* GroupActions.swift */,
@@ -1076,6 +1080,7 @@
 				76CFBAB28A3F87BD527F4F8F /* PopularityModel.swift in Sources */,
 				90B31D41F89299D7F17E4E12 /* AdviceEngine.swift in Sources */,
 				128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */,
+				1423DF6B0861CDEC638BCAF2 /* AudioGate.swift in Sources */,
 				0CD5072A8BED2D2318681AF2 /* Coalitions.swift in Sources */,
 				9951D0B5068363882F271AF2 /* NationModel.swift in Sources */,
 				C70374C153C1243812D4FAF2 /* GroupActions.swift in Sources */,
@@ -1218,6 +1223,7 @@
 				ACC11E4790145ECDFE5FA822 /* PopularityModel.swift in Sources */,
 				F8E99855968309BF030115A3 /* AdviceEngine.swift in Sources */,
 				49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */,
+				1423DF6B0861CDEC638BCAF3 /* AudioGate.swift in Sources */,
 				0CD5072A8BED2D2318681AF3 /* Coalitions.swift in Sources */,
 				9951D0B5068363882F271AF3 /* NationModel.swift in Sources */,
 				C70374C153C1243812D4FAF3 /* GroupActions.swift in Sources */,
@@ -1413,7 +1419,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 34;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
@@ -1426,7 +1432,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.12.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1495,7 +1501,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 34;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1514,7 +1520,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.12.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1533,7 +1539,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 34;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1545,7 +1551,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.12.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1563,7 +1569,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 34;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1575,7 +1581,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.12.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

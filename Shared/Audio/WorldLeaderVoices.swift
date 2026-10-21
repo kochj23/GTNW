@@ -182,7 +182,7 @@ class WorldLeaderVoices: ObservableObject {
     // MARK: - Play Audio
 
     func playVoicedMessage(_ message: VoicedDiplomaticMessage) {
-        guard let audioURL = message.audioURL,
+        guard AudioGate.allow(), let audioURL = message.audioURL,
               FileManager.default.fileExists(atPath: audioURL.path) else {
             print("Audio file not available")
             return

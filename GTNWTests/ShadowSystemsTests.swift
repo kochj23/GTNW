@@ -8,6 +8,9 @@
 //
 
 import XCTest
+#if os(macOS)
+import AppKit
+#endif
 @testable import GTNW
 
 // MARK: - Calendar
@@ -2922,5 +2925,45 @@ final class CoalitionPlayHistoryTests: XCTestCase {
         XCTAssertEqual(PlayFixtures.detail(ev)["target"] as? String, "PRK")
         XCTAssertEqual((PlayFixtures.detail(ev)["joined"] as? [String])?.count, cands.count)
         XCTAssertEqual(PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "game_start" }))["scenario"] as? String, "korea1950")
+    }
+}
+
+// MARK: - Mute switch: tests never make a sound or take the desktop
+
+final class AudioGateTests: XCTestCase {
+    override func tearDown() { AudioGate.environmentOverride = nil; AudioGate.defaultsOverride = nil; super.tearDown() }
+
+    func testTheTestHostIsMutedAndHidden() {
+        XCTAssertTrue(AudioGate.underXCTest, "running as an XCTest host")
+        XCTAssertTrue(AudioGate.muted)
+        XCTAssertEqual(ProcessInfo.processInfo.environment["GTNW_MUTE"], "1", "the test scheme passes GTNW_MUTE=1")
+        #if os(macOS)
+        XCTAssertEqual(NSApplication.shared.activationPolicy(), .prohibited, "the test host never activates")
+        XCTAssertFalse(NSApplication.shared.isActive)
+        #endif
+    }
+
+    func testEveryAudioPathIsANoOpWhenMuted() {
+        let before = AudioGate.suppressed
+        XCTAssertFalse(ShadowPack.shared.play("sfx.nuke_strike"), "no player is created")
+        XCTAssertFalse(ShadowPack.shared.play("sfx.hail_to_chief", volume: 1))
+        XCTAssertGreaterThanOrEqual(AudioGate.suppressed, before + 2)
+        XCTAssertFalse(AudioGate.allow())
+    }
+
+    func testTheSwitchesTheAppHonours() {
+        let empty = UserDefaults(suiteName: "GTNWTests.mute.\(UUID().uuidString)")!
+        AudioGate.defaultsOverride = empty
+        AudioGate.environmentOverride = [:]
+        XCTAssertFalse(AudioGate.muted, "an ordinary launch plays sound")
+        AudioGate.environmentOverride = ["GTNW_MUTE": "1"]
+        XCTAssertTrue(AudioGate.muted)
+        AudioGate.environmentOverride = ["GTNW_MUTE": "0"]
+        XCTAssertFalse(AudioGate.muted)
+        AudioGate.environmentOverride = ["XCTestConfigurationFilePath": "/tmp/x.xctestconfiguration"]
+        XCTAssertTrue(AudioGate.muted)
+        AudioGate.environmentOverride = [:]
+        empty.set(true, forKey: "GTNWMute")   // what `-GTNWMute YES` puts in the argument domain
+        XCTAssertTrue(AudioGate.muted)
     }
 }

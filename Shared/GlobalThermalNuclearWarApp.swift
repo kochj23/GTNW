@@ -17,6 +17,8 @@ struct GlobalThermalNuclearWarApp: App {
 
     init() {
         #if os(macOS)
+        // Under XCTest the app never activates and keeps its windows out of sight (and AudioGate mutes it).
+        AudioGate.hideUnderTest()
         if StoreMigrationCLI.isRequested { StoreMigrationCLI.runAndExit() }
         if LaunchSmoke.isRequested {
             // Frame smoke test: boot the full app hidden (never activates, never takes

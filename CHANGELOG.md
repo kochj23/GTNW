@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.1] - 2026-10-20 — Mute switch
+
+### Fixed
+- **Test runs no longer make noise or take over the desktop.** New `AudioGate` (`Shared/Engine/Shadow/AudioGate.swift`):
+  - The app is muted when the environment has `GTNW_MUTE=1`, the launch arguments have `-GTNWMute YES`, or it runs
+    as an XCTest host (`XCTestConfigurationFilePath`).
+  - Every audio path checks the gate first: Shadow Pack sounds, cinematic audio, Living Room and world-leader voice
+    playback, and speech synthesis. The synthesizer is now created on first use, so a muted run never creates an
+    audio player, synthesizer or engine.
+  - Under XCTest the app sets a prohibited activation policy at launch and keeps its windows ordered out.
+  - The scheme's test action sets `GTNW_MUTE=1`.
+- 3 tests (484 total): the host is muted, never active and has `GTNW_MUTE`; playback is suppressed; each switch is
+  honoured.
+
 ## [3.12.0] - 2026-10-20 — Coalitions and historical scenarios
 
 ### Added

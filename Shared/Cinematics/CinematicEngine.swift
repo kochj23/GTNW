@@ -297,7 +297,7 @@ struct CinematicPlayerView: View {
         let scene = sequence.scenes[currentSceneIndex]
 
         // Play scene audio: the scene's own clip, else a Shadow President sound from the local pack
-        if let url = scene.audioURL, let player = try? AVAudioPlayer(contentsOf: url) {
+        if !AudioGate.muted, let url = scene.audioURL, let player = try? AVAudioPlayer(contentsOf: url) {
             player.play()
             Self.activePlayer = player
         } else if let sound = Self.packSound(for: sequence.type, sceneIndex: currentSceneIndex) {
