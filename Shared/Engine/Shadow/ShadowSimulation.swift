@@ -78,6 +78,7 @@ extension GameEngine {
         syncFronts()
         processCombat(from: from, to: to)
         processWarPowers()
+        processOccupation()
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
@@ -275,7 +276,16 @@ extension GameEngine {
         guard let gs = gameState else { return }
         for w in gs.activeWars where !gs.shadow.fronts.contains(where: { $0.status == .fighting && $0.attacker == w.aggressor && $0.defender == w.defender }) {
             guard let a = gs.getCountry(id: w.aggressor), let d = gs.getCountry(id: w.defender) else { continue }
-            gs.shadow.fronts.append(CombatModel.makeFront(attacker: a, defender: d, date: gs.currentDate))
+            var f = CombatModel.makeFront(attacker: a, defender: d, date: gs.currentDate)
+            if a.id == gs.playerCountryID {
+                // 3.9.0: the President can only send the troops he has.
+                f.attackerTroops = min(f.attackerTroops, max(1, AttackSizing.freeTroops(gs)))
+            } else {
+                // 3.9.0: computer-run countries size their own offensives (AttackSizing.aiPreset).
+                f.attackerTroops = AttackSizing.aiTroops(attacker: a, defender: d)
+            }
+            f.attackerInitial = f.attackerTroops
+            gs.shadow.fronts.append(f)
         }
         for i in gs.shadow.fronts.indices where gs.shadow.fronts[i].status == .fighting {
             let f = gs.shadow.fronts[i]
@@ -385,6 +395,8 @@ extension GameEngine {
             gs.shadow.ruthlessness += 15
             gs.shadow.expansionLog.append(gs.currentDate)
             gs.shadow.claimDates[loser.id] = gs.currentDate
+            // 3.9.0: an occupation garrison, as much as is needed and free.
+            gs.shadow.garrisons[loser.id] = max(1, min(OccupationModel.neededGarrison(loser), AttackSizing.freeTroops(gs)).rounded())
             let title = CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)
             let owned = owner.id == "USA" ? "U.S." : owner.name
             gs.shadow.post("\(name) is annexed as a \(owned) territory. \(seized > 0 ? "\(seized) warheads seized. " : "")Occupation begins.",
@@ -525,6 +537,7 @@ extension GameEngine {
               gs.shadow.fronts[i].status == .fighting else { return false }
         var f = gs.shadow.fronts[i]
         if f.usSide != nil && f.usSide != side { return false }
+        if thousands > 0 && thousands > AttackSizing.freeTroops(gs) { return false }   // 3.9.0: only troops the U.S. has
         f.usSide = side
         f.usTroops = max(0, f.usTroops + thousands)
         if f.usTroops == 0 { f.usSide = nil }

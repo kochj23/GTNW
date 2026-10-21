@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower
         var id: String { rawValue }
     }
 
@@ -58,6 +58,8 @@ struct SituationRoomView: View {
             case .warRoom: WarRoomView(gameState: gameState).environmentObject(gameEngine)
             case .saves: SaveLoadView().environmentObject(gameEngine)
             case .resources: ResourcesSheet(gameState: gameState)
+            case .govern: GovernSheet(gameState: gameState, countryID: selectedCountryID ?? "").environmentObject(gameEngine)
+            case .manpower: ManpowerSheet(gameState: gameState).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -228,6 +230,7 @@ struct SituationTopBar: View {
             if gameState.countries.contains(where: { $0.territoryOf == gameState.playerCountryID }) {
                 Button("RESOURCES") { onSheet(.resources) }.buttonStyle(ThemedButtonStyle())
             }
+            Button("TROOPS \(Int(AttackSizing.freeTroops(gameState)))K") { onSheet(.manpower) }.buttonStyle(ThemedButtonStyle())
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
                 gameEngine.endTurn()
@@ -442,12 +445,13 @@ struct CountryDossier: View {
                     }
                     if let o = c.territoryOf {
                         HStack {
-                            Text(CombatModel.territoryTitle(ownerID: o, ownerName: gameState.getCountry(id: o)?.name ?? ""))
+                            Text(gameState.territoryLabel(c))
                                 .font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Theme.isRetro ? EGA.lightBlue : Color.blue.opacity(0.7))
                             Spacer()
                             if o == gameState.playerCountryID {
+                                Button("GOVERN") { onSheet(.govern) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
                                 Button("RENAME") { onSheet(.rename) }.buttonStyle(ThemedButtonStyle())
                                     .accessibilityLabel("Rename \(c.name)")
                             }

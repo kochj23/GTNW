@@ -9,8 +9,11 @@
 import SwiftUI
 
 struct SimpleModernWorldMap: View {
-    let gameState: GameState
+    @EnvironmentObject var gameEngine: GameEngine
+    @ObservedObject var gameState: GameState
     @State private var selectedCountry: Country?
+    /// Unclaimed land picked on the grid (3.9.0).
+    @State private var selectedLand: LandPick?
 
     var body: some View {
         ZStack {
@@ -29,6 +32,10 @@ struct SimpleModernWorldMap: View {
                         ForEach(gameState.countries.filter { !$0.isDestroyed }) { country in
                             countryMapCard(country)
                         }
+                        // Unclaimed land of the era (3.3.0), claimable from here too (3.9.0).
+                        ForEach(gameState.unclaimedLandIDs.sorted(), id: \.self) { id in
+                            landCard(id)
+                        }
                     }
                     .padding()
                 }
@@ -38,7 +45,10 @@ struct SimpleModernWorldMap: View {
             }
         }
         .sheet(item: $selectedCountry) { country in
-            CountryDetailSheet(country: country, gameState: gameState)
+            CountryDetailSheet(country: country, gameState: gameState).environmentObject(gameEngine)
+        }
+        .sheet(item: $selectedLand) { pick in
+            UnclaimedLandSheet(gameState: gameState, landID: pick.id).environmentObject(gameEngine)
         }
     }
 
@@ -93,9 +103,7 @@ struct SimpleModernWorldMap: View {
                 }
 
                 // Status badge
-                Text(country.isTerritory ? CombatModel.territoryTitle(ownerID: country.territoryOf ?? "",
-                                                                      ownerName: gameState.getCountry(id: country.territoryOf ?? "")?.name ?? "")
-                                         : country.alignment.rawValue.uppercased())
+                Text(country.isTerritory ? gameState.territoryLabel(country) : country.alignment.rawValue.uppercased())
                     .font(GTNWFonts.terminal(size: 9, weight: .semibold))
                     .foregroundColor(alignmentColor(country.alignment))
                     .padding(.horizontal, 8)
@@ -127,6 +135,30 @@ struct SimpleModernWorldMap: View {
         }
     }
 
+    /// A card for unclaimed land: grey, tagged UNCLAIMED, opens the expedition sheet.
+    private func landCard(_ id: String) -> some View {
+        Button(action: { selectedLand = LandPick(id: id) }) {
+            VStack(spacing: 12) {
+                Text("🏳").font(.scaled(size: 56))
+                Text(verbatim: WorldCountriesDatabase.template(id: id)?.name ?? id)
+                    .font(GTNWFonts.terminal(size: 14, weight: .bold))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                Text("UNCLAIMED")
+                    .font(GTNWFonts.terminal(size: 9, weight: .semibold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Capsule().fill(VectorWorldMap.claimableColor))
+            }
+            .frame(height: FontScale.h(180))
+            .frame(maxWidth: .infinity)
+            .padding()
+            .modernCard(glowColor: .gray)
+        }
+        .buttonStyle(.plain)
+        .hoverScale()
+    }
+
     private var legend: some View {
         HStack(spacing: 24) {
             legendItem(icon: "star.fill", color: GTNWColors.terminalAmber, label: "Your Nation")
@@ -151,9 +183,11 @@ struct SimpleModernWorldMap: View {
 }
 
 struct CountryDetailSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
     let country: Country
-    let gameState: GameState
+    @ObservedObject var gameState: GameState
     @Environment(\.dismiss) var dismiss
+    @State private var renaming = false
 
     private var relationWithPlayer: Int {
         guard let player = gameState.getPlayerCountry() else { return 0 }
@@ -171,9 +205,16 @@ struct CountryDetailSheet: View {
                         .font(.scaled(size: 72))
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(country.name)
+                        // The live name, so a rename shows at once (3.9.0).
+                        Text(verbatim: gameState.getCountry(id: country.id)?.name ?? country.name)
                             .font(GTNWFonts.heading())
                             .foregroundColor(GTNWColors.neonCyan)
+                        if country.territoryOf == gameState.playerCountryID {
+                            HStack(spacing: 8) {
+                                badge(gameState.territoryLabel(country), color: GTNWColors.neonBlue)
+                                Button("RENAME") { renaming = true }.buttonStyle(ThemedButtonStyle())
+                            }
+                        }
 
                         HStack(spacing: 12) {
                             badge(country.alignment.rawValue, color: alignmentColor(country.alignment))
@@ -236,6 +277,9 @@ struct CountryDetailSheet: View {
             }
         }
         .frame(minWidth: FontScale.w(800), minHeight: FontScale.h(700))
+        .sheet(isPresented: $renaming) {
+            TerritoryNameSheet(gameState: gameState, countryID: country.id).environmentObject(gameEngine)
+        }
     }
 
     private func alignmentColor(_ alignment: PoliticalAlignment) -> Color {
@@ -285,6 +329,49 @@ struct CountryDetailSheet: View {
     }
 }
 
+/// Identifies an unclaimed land picked on the grid.
+struct LandPick: Identifiable { let id: String }
+
+/// Unclaimed land from the World Map grid (3.9.0): the same expedition as the Situation Room dossier, then naming.
+struct UnclaimedLandSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let landID: String
+    @State private var troops = AttackSizing.expeditionStandard
+    @State private var claimed = false
+
+    var body: some View {
+        if claimed {
+            TerritoryNameSheet(gameState: gameState, countryID: landID, newlyClaimed: true)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(verbatim: "🏳 \((WorldCountriesDatabase.template(id: landID)?.name ?? landID).uppercased()) — UNCLAIMED")
+                    .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                Text("Unclaimed land — no government, no army.").font(ThemeFont.mono(12)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                CabinetWarningsView(warnings: gameEngine.advisorWarnings(for: .claim(land: landID, troops: troops)))
+                HStack(spacing: 6) {
+                    Text("TROOPS").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+                    Button("−") { troops = max(1, troops - 1) }.buttonStyle(ThemedButtonStyle())
+                    Text("\(Int(troops))K").font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Button("+") { troops = min(max(1, AttackSizing.freeTroops(gameState)), troops + 1) }.buttonStyle(ThemedButtonStyle())
+                    Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+                HStack {
+                    Button("CANCEL") { dismiss() }.buttonStyle(ThemedButtonStyle())
+                    Spacer()
+                    Button("SEND EXPEDITION") { if gameEngine.claimLand(landID, troops: troops) { claimed = true } }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                        .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn)
+                }
+            }
+            .padding(16)
+            .frame(width: FontScale.w(560))
+            .background(Theme.isRetro ? EGA.blue : Color.black)
+        }
+    }
+}
+
 #Preview {
-    SimpleModernWorldMap(gameState: GameState(playerCountryID: "USA"))
+    SimpleModernWorldMap(gameState: GameState(playerCountryID: "USA")).environmentObject(GameEngine())
 }

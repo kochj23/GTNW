@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.0] - 2026-10-20 — Occupation, statehood, draft and mobilization
+
+### Added
+- **`OccupationModel`** (`Shared/Engine/Shadow/OccupationModel.swift`):
+  - Per-territory policy (`ShadowState.territoryPolicies`): military governor, local elections or self-rule.
+  - Garrisons (`setGarrison`, from the free troop pool; needed ≈ 2K × √population). Insurgency and stability drift
+    toward targets set by garrison and government.
+  - Breakaway when a territory boils over for a year with under half its needed garrison.
+  - Statehood (`petitionStatehood`): five years held, stability 60+, insurgency ≤ 30 and two years of elected
+    government, then a congressional vote. The state is numbered from the real admissions of its era
+    (`ShadowState.statesAdmitted`), keeps its name, is shown as "U.S. STATE ★N" (`GameState.territoryLabel`) and
+    scores +1000.
+  - Annexations get an occupation garrison. `GovernSheet` is opened from the territory dossier.
+- **`ManpowerModel`** (`ManpowerModel.swift`):
+  - The U.S. troop pool is the era's standing force plus historical drafts in force. Called drafts and reserve
+    mobilizations (`callUp`, `standDown`) carry a political cost and a training ramp of six months or one month.
+  - `AttackSizing.troopPool` / `freeTroops` use it for the U.S. Standard troops, new player fronts and War Room
+    commitments are capped by what is free.
+  - `ManpowerSheet` (top-bar **Troops**).
+- **AI attack sizing**: `AttackSizing.aiPreset` (aggression and relative strength) sizes computer-run countries' new
+  fronts and nuclear salvos with the 3.4.0 multipliers.
+- **World Map card grid**: unclaimed-land cards with an expedition sheet (then naming), and Rename on U.S. territory
+  detail sheets.
+- Play history: `draft_called`, `mobilization_called`, `statehood`, `territory_lost`.
+- 12 tests across all seven categories (444 total); snapshots in `Screenshots/3.9.0/`.
+
+### Fixed
+- Two 3.8.0 Congress tests depended on the random starting congressional and war support and could fail
+  occasionally; they now fix those values.
+
 ## [3.8.0] - 2026-10-20 — Congress, the war powers, and advisor warnings
 
 ### Added

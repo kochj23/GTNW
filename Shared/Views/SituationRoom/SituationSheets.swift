@@ -1126,3 +1126,133 @@ struct CongressBadge: View {
         }
     }
 }
+
+// MARK: - Governing territories and manpower (3.9.0)
+
+/// One territory's government: garrison, insurgency, governance, income, and the road to statehood.
+struct GovernSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let countryID: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let c = gameState.getCountry(id: countryID) {
+                let policy = gameState.shadow.territoryPolicies[c.id]
+                let garrison = gameState.shadow.garrisons[c.id] ?? OccupationModel.neededGarrison(c)
+                let needed = OccupationModel.neededGarrison(c)
+                let state = gameState.shadow.statesAdmitted.first { $0.id == c.id }
+                HStack {
+                    Image(systemName: "building.2.fill")
+                    Text(verbatim: "GOVERN — \(c.name.uppercased())")
+                    Spacer()
+                    Text(gameState.territoryLabel(c)).font(ThemeFont.mono(11, .bold))
+                }
+                .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                if let s = state {
+                    Text(verbatim: "Admitted \(GameCalendar.format(s.date)) as the \(OccupationModel.ordinal(s.number)) state.")
+                        .font(ThemeFont.mono(12)).foregroundColor(GTNWColors.terminalGreen)
+                } else {
+                    Text(String(format: "INSURGENCY %.0f · STABILITY %d · INCOME $%.2fB/yr", c.profile.outcry, c.stability,
+                                ExpansionModel.annualIncome(c, in: gameState) * (policy?.governance.incomeShare ?? 1)))
+                        .font(ThemeFont.mono(11, .bold)).foregroundColor(c.profile.outcry > 60 ? GTNWColors.terminalRed : GTNWColors.neonCyan)
+                    HStack(spacing: 6) {
+                        Text("GARRISON").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+                        Button("−") { gameEngine.setGarrison(c.id, thousands: max(0.5, garrison - 1)) }.buttonStyle(ThemedButtonStyle())
+                        Text("\(Int(garrison))K of \(Int(needed.rounded()))K needed").font(ThemeFont.mono(11, .bold))
+                            .foregroundColor(garrison >= needed ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
+                        Button("+") { gameEngine.setGarrison(c.id, thousands: garrison + 1) }.buttonStyle(ThemedButtonStyle())
+                        Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                    }
+                    Text("GOVERNMENT").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                    HStack(spacing: 6) {
+                        ForEach(TerritoryGovernance.allCases) { g in
+                            Button(g.title.uppercased()) { gameEngine.setGovernance(c.id, g) }
+                                .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan, prominent: (policy?.governance ?? .militaryGovernor) == g))
+                        }
+                    }
+                    Text("A military governor provokes insurgency; elections calm it; self-rule calms it most but keeps 40% of the wealth at home. A territory left boiling for a year without enough troops will break away.")
+                        .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+                    Text("STATEHOOD").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                    let problems = OccupationModel.statehoodProblems(c: c, policy: policy, heldSince: gameState.shadow.claimDates[c.id], now: gameState.currentDate)
+                    let yes = OccupationModel.statehoodYes(congress: gameState.getPlayerCountry()?.congressionalSupport ?? 50, stability: c.stability)
+                    Text(problems.isEmpty ? String(format: "Ready. Congress's odds %.0f%%. It would be the %@ state.", CongressModel.passOdds(expectedYes: yes) * 100,
+                                                   OccupationModel.ordinal(OccupationModel.historicalStates(year: gameState.currentYear) + gameState.shadow.statesAdmitted.count + 1))
+                         : "Not yet: " + problems.joined(separator: "; ") + ".")
+                        .font(ThemeFont.mono(10)).foregroundColor(problems.isEmpty ? GTNWColors.terminalGreen : (Theme.isRetro ? EGA.white : .white))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("PETITION CONGRESS FOR STATEHOOD") { if gameEngine.petitionStatehood(c.id) != nil { dismiss() } }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                        .disabled(!problems.isEmpty || gameState.actionsRemaining == 0)
+                }
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(640))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+
+/// U.S. troops: the era's standing force, any draft in force, what's committed, and calling up more.
+struct ManpowerSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let date = gameState.currentDate, year = gameState.currentYear
+        let total = AttackSizing.troopPool(gameState), free = AttackSizing.freeTroops(gameState)
+        let atWar = !(gameState.getPlayerCountry()?.atWarWith.isEmpty ?? true)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "person.3.fill")
+                Text("MANPOWER")
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Text("TROOPS \(Int(total))K · FREE \(Int(free))K · GARRISONS \(Int(gameState.shadow.garrisons.values.reduce(0, +)))K")
+                .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            Text("Standing force \(Int(ManpowerModel.standing(year: year)))K (regulars and Guard of the era).")
+                .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            if let h = ManpowerModel.historicalDraft(on: date) {
+                Text(verbatim: "In force: \(h.name), \(GameCalendar.format(h.from))–\(GameCalendar.format(h.to)).")
+                    .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            } else if date >= ManpowerModel.allVolunteer {
+                Text("All-volunteer force since 27 Jan 1973.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            }
+            ForEach([ManpowerKind.draft, .mobilization], id: \.self) { kind in
+                let cost = ManpowerModel.callCost(kind, atWar: atWar)
+                let called = gameState.shadow.mobilizations.first { $0.kind == kind }
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(kind == .draft ? "CALL A DRAFT" : "MOBILIZE THE RESERVES").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                        Text(String(format: "+%dK over %.0f month%@ · approval %+.0f · Congress %+d", Int(ManpowerModel.callUpSize(kind, year: year)),
+                                    ManpowerModel.trainingMonths(kind), ManpowerModel.trainingMonths(kind) == 1 ? "" : "s", cost.popularity, cost.congress))
+                            .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        if let c = called {
+                            Text(String(format: "Called %@; %.0f%% trained.", GameCalendar.format(c.started), ManpowerModel.trained(since: c.started, now: date, kind: kind) * 100))
+                                .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen)
+                        } else if let problem = gameEngine.callUpProblem(kind) {
+                            Text(verbatim: problem).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+                        }
+                    }
+                    Spacer()
+                    if called != nil {
+                        Button("STAND DOWN") { gameEngine.standDown(kind) }.buttonStyle(ThemedButtonStyle())
+                    } else {
+                        Button("CALL") { gameEngine.callUp(kind) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
+                            .disabled(gameEngine.callUpProblem(kind) != nil)
+                    }
+                }
+                .padding(6).themedPanel()
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}

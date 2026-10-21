@@ -406,6 +406,13 @@ enum AttackSizing {
         return max(0, max(1, c.militaryStrength) * perPoint - lost)
     }
 
+    /// All the President's ground troops (thousands): the U.S. manpower of the era (3.9.0), or the force pool for
+    /// other countries.
+    static func troopPool(_ gs: GameState) -> Double {
+        guard let p = gs.getPlayerCountry() else { return 0 }
+        return p.id == "USA" ? ManpowerModel.total(on: gs.currentDate, called: gs.shadow.mobilizations) : CombatModel.forcePool(p)
+    }
+
     /// Troops (thousands) not already in a fight or garrisoning a territory.
     static func freeTroops(_ gs: GameState) -> Double {
         guard let p = gs.getPlayerCountry() else { return 0 }
@@ -414,7 +421,7 @@ enum AttackSizing {
         }
         // 3.7.0: territory rubber keeps a wartime army moving (1914–18, 1939–45).
         let rubber = ExpansionModel.strategic(gs).contains(.rubber) ? 1.1 : 1
-        return max(0, CombatModel.forcePool(p) * rubber - fighting - gs.shadow.garrisons.values.reduce(0, +))
+        return max(0, troopPool(gs) * rubber - fighting - gs.shadow.garrisons.values.reduce(0, +))
     }
 
     /// What the U.S. can send of one kind right now.
@@ -439,7 +446,8 @@ enum AttackSizing {
         case .strategicNuke, .firstStrike, .preemptive: warheads = 10
         default: warheads = 5
         }
-        return AttackSize(troops: (CombatModel.forcePool(p) * 0.35).rounded(),
+        // Troops: the War Room's opening force, but never more than are free (3.9.0, you can't send what you don't have).
+        return AttackSize(troops: min((CombatModel.forcePool(p) * 0.35).rounded(), freeTroops(gs).rounded()),
                           aircraft: max(1, aircraftPool(p, year: gs.currentYear) / 5),
                           warheads: min(warheads, p.nuclearWarheads))
     }
@@ -494,6 +502,24 @@ enum AttackSizing {
     }
 
     /// "12 warheads", "40K troops, 200 aircraft": for the log, the ticker and play history.
+    /// How a computer-run country sizes its own attack (3.9.0): aggressive ones (70+) go in overwhelming, cautious ones
+    /// (under 30) probe, the rest standard; one step smaller when already three times the target's strength.
+    static func aiPreset(attacker a: Country, defender d: Country) -> AttackPreset {
+        var p: AttackPreset = a.aggressionLevel >= 70 ? .overwhelming : (a.aggressionLevel < 30 ? .probe : .standard)
+        if CombatModel.forcePool(a) > 3 * CombatModel.forcePool(d) {
+            p = p == .overwhelming ? .standard : .probe
+        }
+        return p
+    }
+
+    /// A computer's sized troop commitment (thousands) and warhead salvo, capped by what it has.
+    static func aiTroops(attacker a: Country, defender d: Country) -> Double {
+        min(CombatModel.forcePool(a) * 0.9, CombatModel.forcePool(a) * 0.35 * aiPreset(attacker: a, defender: d).multiplier)
+    }
+    static func aiWarheads(_ base: Int, attacker a: Country, defender d: Country) -> Int {
+        max(1, min(a.nuclearWarheads, Int((Double(base) * aiPreset(attacker: a, defender: d).multiplier).rounded())))
+    }
+
     /// An expedition to unclaimed land (3.3.0) needs troops only; 5K is the standard (pre-3.4) garrison.
     static let expeditionStandard: Double = 5
 

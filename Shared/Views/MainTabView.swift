@@ -96,7 +96,7 @@ struct MainTabView: View {
         case 0: SituationRoomView(gameState: gameState).environmentObject(gameEngine)
         // Unified Command Center (Commands + Terminal + Event Log)
         case 5: UnifiedCommandCenter().environmentObject(gameEngine)
-        case 1: SimpleModernWorldMap(gameState: gameState)
+        case 1: SimpleModernWorldMap(gameState: gameState).environmentObject(gameEngine)
         case 2: SystemsView(gameEngine: gameEngine)
         case 3: AdvisorGridView(advisors: gameState.advisors).environmentObject(gameEngine)
         default: IntelligenceView().environmentObject(gameEngine)

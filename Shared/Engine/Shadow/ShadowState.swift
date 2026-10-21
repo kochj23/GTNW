@@ -110,6 +110,10 @@ struct ShadowState: Codable {
     /// Congress (3.8.0): every vote on a war request, and War Powers clocks by enemy.
     var authorizations: [WarAuthorization] = []
     var warPowersClocks: [String: WarPowersClock] = [:]
+    /// Manpower and territories (3.9.0): drafts / mobilizations called, territory governance, states admitted.
+    var mobilizations: [Mobilization] = []
+    var territoryPolicies: [String: TerritoryPolicy] = [:]
+    var statesAdmitted: [StatehoodRecord] = []
 
     // Scenario
     var scenarioID: String?
@@ -146,6 +150,7 @@ struct ShadowState: Codable {
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
+        case mobilizations, territoryPolicies, statesAdmitted
     }
 
     init() {}
@@ -188,6 +193,9 @@ struct ShadowState: Codable {
         impeachmentWarned = try c.decodeIfPresent(Bool.self, forKey: .impeachmentWarned) ?? false
         authorizations = try c.decodeIfPresent([WarAuthorization].self, forKey: .authorizations) ?? []
         warPowersClocks = try c.decodeIfPresent([String: WarPowersClock].self, forKey: .warPowersClocks) ?? [:]
+        mobilizations = try c.decodeIfPresent([Mobilization].self, forKey: .mobilizations) ?? []
+        territoryPolicies = try c.decodeIfPresent([String: TerritoryPolicy].self, forKey: .territoryPolicies) ?? [:]
+        statesAdmitted = try c.decodeIfPresent([StatehoodRecord].self, forKey: .statesAdmitted) ?? []
     }
 }
 

@@ -235,7 +235,8 @@ extension GameEngine {
             return .applied(verb)
 
         case .launchNuke:
-            let requested = response.params?["warheads"].map { Int($0) } ?? min(3, country.nuclearWarheads)
+            let requested = response.params?["warheads"].map { Int($0) }
+                ?? getCountry(targetID!).map { AttackSizing.aiWarheads(3, attacker: country, defender: $0) } ?? min(3, country.nuclearWarheads)
             let warheads = max(1, min(requested, country.nuclearWarheads))
             launchNuclearStrike(from: countryID, to: targetID!, warheads: warheads)
             return .applied(verb)

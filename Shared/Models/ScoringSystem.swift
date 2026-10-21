@@ -97,7 +97,7 @@ struct GameScore: Codable {
         // Land and resources held (3.7.0)
         score.expansionBonus = ExpansionModel.scoreBonus(
             territories: gameState.countries.filter { $0.territoryOf == gameState.playerCountryID && !$0.isDestroyed }.count,
-            earned: gameState.shadow.resourceEarnings, statehoods: 0)
+            earned: gameState.shadow.resourceEarnings, statehoods: gameState.shadow.statesAdmitted.count)
 
         // Difficulty multiplier
         switch gameState.difficultyLevel {

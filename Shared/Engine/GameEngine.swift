@@ -556,7 +556,9 @@ class GameEngine: ObservableObject {
                 gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(target.flag) \(target.name)")
             }
 
-        case .launchNuclearStrike(let targetID, let warheads):
+        case .launchNuclearStrike(let targetID, let base):
+            // 3.9.0: the computer sizes its own salvo (AttackSizing.aiPreset).
+            let warheads = getCountry(targetID).map { AttackSizing.aiWarheads(base, attacker: country, defender: $0) } ?? base
             launchNuclearStrike(from: country.id, to: targetID, warheads: warheads)
             if let target = getCountry(targetID) {
                 eventLogger.log("Launched \(warheads) nuclear warheads at \(target.name)", type: .nuclear, country: country.name, turn: gameState.turn)

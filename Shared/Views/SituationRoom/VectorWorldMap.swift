@@ -316,8 +316,7 @@ struct VectorWorldMap: View {
                 .allowsHitTesting(false)
         }
         ForEach(gameState.countries.filter { $0.isTerritory && !$0.isDestroyed }, id: \.id) { c in
-            let owner = c.territoryOf.flatMap { byID[$0] }
-            Text(CombatModel.territoryTitle(ownerID: c.territoryOf ?? "", ownerName: owner?.name ?? ""))
+            Text(gameState.territoryLabel(c))
                 .font(ThemeFont.mono(zoom == .world ? 7 : 9, .bold))
                 .foregroundColor(Theme.isRetro ? EGA.white : .white)
                 .padding(.horizontal, 2)
@@ -355,7 +354,7 @@ struct VectorWorldMap: View {
             guard let id, let c = byID[id] else { return "Click a country" }
             if let o = c.territoryOf {
                 let owner = byID[o]
-                return "\(owner?.flag ?? "") \(CombatModel.territoryTitle(ownerID: o, ownerName: owner?.name ?? "")) — \(c.name)"
+                return "\(owner?.flag ?? "") \(gameState.territoryLabel(c)) — \(c.name)"
             }
             return "\(c.flag) \(c.name) / \(c.region.rawValue)"
         }()
