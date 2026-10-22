@@ -1721,6 +1721,7 @@ class GameEngine: ObservableObject {
         let id = finishPlaySession(score: score, victory: victory) ?? UUID()
         store?.recordGameOver(result: .make(from: gameState, score: score, victory: victory, id: id),
                               leaderboard: LeaderboardRecord(entry: entry))
+        generateEndGameRoast(gameState, score: score, victory: victory)
     }
 
     /// Show game over screen
@@ -1889,6 +1890,23 @@ extension GameEngine {
             if !gameState.treaties.contains(where: { $0.type == type && Set($0.signatories) == [playerID, targetID] }) {
                 gameState.treaties.append(Treaty(type: type, signatories: [playerID, targetID], turn: gameState.turn))
             }
+        case .makeCaseForWar:
+            // Rally the public and Congress to back a war with `target`, raising the odds a declaration/AUMF
+            // passes (CongressModel.expectedYes reads warSupport + congressionalSupport). Diminishing returns
+            // and a relations hit keep it from being a free "win Congress" button.
+            guard let pi = gameState.countries.firstIndex(where: { $0.id == playerID }) else { return }
+            let tName = getCountry(targetID)?.name ?? targetID
+            let w0 = gameState.countries[pi].warSupport, c0 = gameState.countries[pi].congressionalSupport
+            gameState.countries[pi].warSupport = CongressModel.rally(w0, share: 4, floor: 3)
+            gameState.countries[pi].congressionalSupport = CongressModel.rally(c0, share: 6, floor: 2)
+            gameState.shadow.ruthlessness = min(100, gameState.shadow.ruthlessness + 1)
+            let dw = gameState.countries[pi].warSupport - w0, dc = gameState.countries[pi].congressionalSupport - c0
+            gameState.shadow.ticker.append(TickerItem(date: gameState.currentDate,
+                text: "The President makes the case for war against \(tName): war support +\(dw), Congress +\(dc)", severity: 2))
+            self.gameState = gameState
+            modifyDiplomaticRelation(from: playerID, to: targetID, by: -10)   // beating the war drum sours relations
+            addLog("🎙️ Case for war against \(tName) made to Congress. War support +\(dw), congressional support +\(dc).", type: .info)
+            return
         default:
             break
         }

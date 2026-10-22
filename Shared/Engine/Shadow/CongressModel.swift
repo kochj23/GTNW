@@ -76,6 +76,13 @@ enum CongressModel {
 
     static func clamp(_ v: Double) -> Double { min(100, max(0, v)) }
 
+    /// A rally bump toward 100 with diminishing returns: closes 1/`share` of the gap left to 100, at least
+    /// `floor`, capped at 100. So making the case repeatedly helps less each time and never manufactures a
+    /// unanimous Congress. Pure, so the self-check covers it.
+    static func rally(_ current: Int, share: Int, floor: Int) -> Int {
+        min(100, current + max(floor, (100 - current) / share))
+    }
+
     /// Stage names for the visible impeachment process.
     static func impeachmentStageName(_ stage: Int) -> String {
         switch stage {

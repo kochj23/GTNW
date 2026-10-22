@@ -49,7 +49,7 @@ enum ActionCategory: String, CaseIterable {
     }
 }
 
-// MARK: - Presidential Actions (132 total)
+// MARK: - Presidential Actions (134 total)
 
 enum PresidentialAction: String, CaseIterable, Identifiable {
     var id: String { rawValue }
@@ -71,8 +71,9 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
     case extradite = "Extradite Dissident"
     case jointStatement = "Joint Statement"
 
-    // MILITARY (20)
+    // MILITARY (21)
     case deployTroops = "Deploy Troops"
+    case makeCaseForWar = "Make Case for War"
     case withdrawTroops = "Withdraw Troops"
     case militaryExercise = "Military Exercise"
     case jointExercise = "Joint Exercise"
@@ -176,13 +177,14 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
     case firstStrike = "First Strike Policy"
     case noFirstUse = "No First Use"
 
-    // TREATIES (15)
+    // TREATIES (16)
     case proposeTreaty = "Propose Treaty"
     case signTreaty = "Sign Treaty"
     case breakTreaty = "Break Treaty"
     case nonAggression = "Non-Aggression"
     case mutualDefense = "Mutual Defense"
     case freeTrade = "Free Trade"
+    case mostFavoredNation = "Give Most Favored Nation"
     case nonProliferation = "Non-Proliferation"
     case armsControl = "Arms Control"
     case ceasefire = "Ceasefire"
@@ -289,7 +291,7 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
         }
         
         // Military
-        if ["deployTroops", "withdrawTroops", "militaryExercise", "jointExercise", "sellWeapons",
+        if ["deployTroops", "makeCaseForWar", "withdrawTroops", "militaryExercise", "jointExercise", "sellWeapons",
             "provideTraining", "establishBase", "closeBase", "navalBlockade", "airPatrol",
             "bombardment", "airStrike", "groundInvasion", "amphAssault", "specialForces",
             "peacekeeping", "militaryAid", "defensivePact", "noFlyZone", "dmz",
@@ -330,7 +332,7 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
         
         // Treaties
         if ["proposeTreaty", "signTreaty", "breakTreaty", "nonAggression", "mutualDefense",
-            "freeTrade", "nonProliferation", "armsControl", "ceasefire", "peace",
+            "freeTrade", "mostFavoredNation", "nonProliferation", "armsControl", "ceasefire", "peace",
             "extradition", "joinNATO", "leaveNATO", "neutrality", "hostages"].contains(name) {
             return .treaties
         }
@@ -341,6 +343,8 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
+        case .mostFavoredNation: return "Grant most-favored-nation trade status (+25 relations, trade grows on both sides)"
+        case .makeCaseForWar: return "Make the case for war to Congress — rallies public war support and congressional backing against the target"
         case .sendAmbassador: return "Establish diplomatic presence (+10 relations)"
         case .stateVisit: return "Official visit (+20 relations, +5 approval)"
         case .expelDiplomats: return "Expel diplomatic staff (-30 relations)"
@@ -560,6 +564,7 @@ class ShadowPresidentActionManager {
         
         case .propaganda: result.relationChange = -20
         case .unCondemn: result.relationChange = -25; result.approvalChange = 5
+        case .mostFavoredNation: result.relationChange = 25; result.approvalChange = 2; result.economicImpact = 1_000_000_000
         
         default: break
         }

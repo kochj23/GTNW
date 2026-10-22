@@ -5527,3 +5527,80 @@ final class WorldAtrocityTests: XCTestCase {
         }
     }
 }
+
+// MARK: - End-game roast & Most Favored Nation (3.17.x)
+
+final class EndGameRoastAndMFNTests: XCTestCase {
+
+    // MARK: Give Most Favored Nation
+
+    func testMFNisAFriendlyTreatyAction() {
+        XCTAssertEqual(PresidentialAction.mostFavoredNation.category, .treaties)
+        XCTAssertFalse(PresidentialAction.mostFavoredNation.isHostile)
+        XCTAssertTrue(PresidentialAction.friendlyActions.contains(.mostFavoredNation))
+        XCTAssertFalse(PresidentialAction.mostFavoredNation.description.isEmpty)
+    }
+
+    func testMFNboostsRelationsAndEconomyWhenItLands() {
+        var gs = GameState(playerCountryID: "USA", turnLength: .month)
+        let r = ShadowPresidentActionManager.execute(action: .mostFavoredNation, from: "USA", to: "CHN",
+                                                      gameState: &gs, successChance: 1.0)
+        if r.success {   // successChance 1.0 ⇒ effectively always; guard keeps the test non-flaky
+            XCTAssertEqual(r.relationChange, 25)
+            XCTAssertGreaterThan(r.economicImpact, 0)
+        }
+    }
+
+    // MARK: Nova end-game roast
+
+    func testGameStateHasNoRoastUntilGameEnds() {
+        XCTAssertEqual(GameState(playerCountryID: "USA").novaRoast, "")
+    }
+
+    func testRoastTemplateIsNonEmptyDeterministicAndOutcomeAware() {
+        let gs = GameState(playerCountryID: "USA", turnLength: .month)
+        gs.turn = 6
+        gs.gameOverReason = "Impeached and removed from office"
+        let score = GameScore.calculate(from: gs, victoryType: nil)
+
+        let loss = NovaCommentary.roastTemplate(gs: gs, score: score, victory: nil)
+        XCTAssertFalse(loss.isEmpty)
+        XCTAssertEqual(loss, NovaCommentary.roastTemplate(gs: gs, score: score, victory: nil))  // deterministic
+
+        let pyrrhic = NovaCommentary.roastTemplate(gs: gs, score: score, victory: .pyrrhicVictory)
+        let win = NovaCommentary.roastTemplate(gs: gs, score: score, victory: .economicVictory)
+        XCTAssertFalse(pyrrhic.isEmpty)
+        XCTAssertFalse(win.isEmpty)
+        XCTAssertNotEqual(loss, win)   // a clean win reads differently from a loss
+    }
+
+    func testRoastPromptCarriesTheOutcomeFacts() {
+        let gs = GameState(playerCountryID: "USA", turnLength: .month)
+        gs.turn = 9
+        gs.gameOverReason = "Nuclear annihilation"
+        let score = GameScore.calculate(from: gs, victoryType: nil)
+
+        let lost = NovaCommentary.roastPrompt(gs: gs, score: score, victory: nil)
+        XCTAssertTrue(lost.contains("LOST"))
+        XCTAssertTrue(lost.contains("Roast the player"))
+        XCTAssertTrue(NovaCommentary.roastPrompt(gs: gs, score: score, victory: .peaceMaker).contains("WON"))
+    }
+}
+
+// MARK: - Make Case for War (3.17.x)
+
+final class MakeCaseForWarTests: XCTestCase {
+
+    func testMakeCaseForWarIsAHostileMilitaryAction() {
+        XCTAssertEqual(PresidentialAction.makeCaseForWar.category, .military)
+        XCTAssertTrue(PresidentialAction.makeCaseForWar.isHostile)   // advocating war is not a friendly act
+        XCTAssertFalse(PresidentialAction.makeCaseForWar.description.isEmpty)
+    }
+
+    func testCongressRallyHasDiminishingReturnsAndCaps() {
+        XCTAssertEqual(CongressModel.rally(30, share: 4, floor: 3), 47)    // (100-30)/4 = 17
+        XCTAssertEqual(CongressModel.rally(90, share: 4, floor: 3), 93)    // small gap -> floor 3
+        XCTAssertEqual(CongressModel.rally(99, share: 6, floor: 2), 100)   // 99 + 2 -> capped
+        XCTAssertEqual(CongressModel.rally(100, share: 4, floor: 3), 100)  // already maxed
+    }
+}

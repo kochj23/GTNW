@@ -18,6 +18,8 @@ class GameState: ObservableObject, Codable {
     @Published var nuclearStrikes: [NuclearStrike]
     @Published var globalRadiation: Int = 0
     @Published var totalCasualties: Int = 0
+    /// Nova's snarky end-game post-mortem (3.17.x). Ephemeral: not in CodingKeys, so it never touches saves.
+    @Published var novaRoast: String = ""
     @Published var playerCountryID: String
     @Published var gameOver: Bool = false
     @Published var gameOverReason: String = ""

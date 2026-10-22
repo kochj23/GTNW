@@ -163,7 +163,7 @@ extension PresidentialAction {
         .jointStatement, .jointExercise, .sellWeapons, .provideTraining, .peacekeeping, .militaryAid, .defensivePact,
         .economicAid, .loanMoney, .forgiveDebt, .tradeDeal, .removeTariffs, .liftSanctions, .unfreezeAssets, .foodAid,
         .techAssist, .investment, .jointVenture, .proposeTreaty, .signTreaty, .nonAggression, .mutualDefense,
-        .freeTrade, .nonProliferation, .armsControl, .ceasefire, .peace, .extradition, .joinNATO, .neutrality,
+        .freeTrade, .mostFavoredNation, .nonProliferation, .armsControl, .ceasefire, .peace, .extradition, .joinNATO, .neutrality,
         .hostages, .cultural, .noFirstUse, .withdrawTroops, .closeBase,
     ]
 

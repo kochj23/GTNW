@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.0] - 2026-10-22 — Nova's verdict, favored nations, and the case for war
+
+### Added
+- **Nova's end-game roast** (`NovaCommentary.roast*`, `GameEngine.generateEndGameRoast`, shown on `VictoryScreen`):
+  when a game ends Nova delivers one sardonic, fact-specific post-mortem of how you lost or scraped a win — outcome,
+  turns survived, strikes launched and casualties feed the line. A deterministic template shows at once; the local AI
+  backend (Ollama/MLX) replaces it with its own when available. Ephemeral (`GameState.novaRoast`, never saved).
+- **Give Most Favored Nation** (`PresidentialAction.mostFavoredNation`): a Treaties action targetable at any country
+  that grants MFN trade status — +25 relations and a two-sided trade boost; a cooperative act.
+- **Make Case for War** (`PresidentialAction.makeCaseForWar`, `CongressModel.rally`): a Military action that rallies
+  public war support and congressional backing against a target, raising the odds a declaration or AUMF passes.
+  Diminishing returns (each speech closes a fraction of the gap to 100) and a relations hit keep it honest.
+
 ## [3.17.6] - 2026-10-21 — Dirty tactics: the AI villains, and the record of the age
 
 The last release of the 3.17 series. The President is not the only one who fights dirty, and the game keeps the

@@ -274,7 +274,7 @@ extension ShadowPack {
         case "nonProliferation", "haltNukes", "noFirstUse", "demandInspect":
             return ("anim.negnuke", "sfx.negotiation")
         case "ceasefire", "peace", "mediateConflict", "summit", "nonAggression", "proposeTreaty", "signTreaty",
-             "mutualDefense", "freeTrade", "extradition":
+             "mutualDefense", "freeTrade", "mostFavoredNation", "extradition":
             return ("anim.negpeace", "sfx.negotiation")
         case "foodAid", "economicAid", "techAssist", "forgiveDebt":
             return ("anim.socreform", "sfx.social_reform")
@@ -284,7 +284,7 @@ extension ShadowPack {
             return (nil, "sfx.warning")
         case "launchNukes", "tacticalNuke", "strategicNuke", "preemptive", "retaliate", "firstStrike":
             return (nil, "sfx.nuke_strike")
-        case "demandApology", "expelDiplomats", "severRelations", "sanctions", "oilEmbargo", "freezeAssets":
+        case "makeCaseForWar", "demandApology", "expelDiplomats", "severRelations", "sanctions", "oilEmbargo", "freezeAssets":
             return (nil, "sfx.condemnation")
         default:
             return (nil, "sfx.popup")

@@ -31,6 +31,16 @@ enum NovaCommentary {
         25 words reacting to the headline. No hashtags, no emoji, no quotation marks, no advice.
         """
 
+    /// End-game roast generator (separate from `generator` so it can use the roast system prompt). Nil = template only.
+    static var roastGenerator: ((String) async -> String?)?
+
+    static let roastSystemPrompt = """
+        You are Nova, the merciless post-game commentator on a Cold War strategy game. The game just ended. In ONE \
+        or TWO sentences on a single line (at most 45 words), roast the player for how they lost or scraped a win — \
+        be specific to the facts given, sardonic, a little mean, like a friend who warned them. No hashtags, no \
+        emoji, no quotation marks, no advice.
+        """
+
     #if os(macOS)
     /// Wire the live generator to the local AI backends (Ollama, MLX, …): two attempts, then the template stands.
     /// Never under XCTest.
@@ -40,6 +50,12 @@ enum NovaCommentary {
             await MainActor.run { AIBackendManager.shared.activeBackend } == nil ? nil
                 : try? await Retry.run("nova-commentary", policy: .subprocess) {
                     try await AIBackendManager.shared.generate(prompt: prompt, systemPrompt: systemPrompt, temperature: 0.9, maxTokens: 60)
+                }
+        }
+        roastGenerator = { prompt in
+            await MainActor.run { AIBackendManager.shared.activeBackend } == nil ? nil
+                : try? await Retry.run("nova-roast", policy: .subprocess) {
+                    try await AIBackendManager.shared.generate(prompt: prompt, systemPrompt: roastSystemPrompt, temperature: 0.95, maxTokens: 90)
                 }
         }
     }
@@ -106,6 +122,40 @@ enum NovaCommentary {
         s = PlayHistory.text(String(s.prefix(200)))
         return s.count >= 3 ? s : nil
     }
+
+    /// The facts for the end-game roast: who, outcome, how long, how bloody, the score.
+    static func roastPrompt(gs: GameState, score: GameScore, victory: VictoryType?) -> String {
+        let who = gs.getPlayerCountry()?.name ?? gs.playerCountryID
+        let outcome = victory.map { "WON as \($0.rawValue) — \($0.description)" } ?? "LOST — \(gs.gameOverReason)"
+        return "Playing as \(who). Outcome: \(outcome). Lasted \(gs.turn) turns. "
+            + "\(gs.nuclearStrikes.count) nuclear strikes launched, \(gs.totalCasualties) casualties. "
+            + "Final score: \(score.finalScore). Roast the player."
+    }
+
+    /// Deterministic roast used until (or unless) a local AI answers.
+    static func roastTemplate(gs: GameState, score: GameScore, victory: VictoryType?) -> String {
+        let pool: [String]
+        if victory == nil {
+            if gs.nuclearStrikes.count > 0 {
+                pool = ["You answered every problem with a warhead and the problems answered back. Diplomacy was right there, and free.",
+                        "A glowing legacy, briefly: \(gs.nuclearStrikes.count) strikes and still a loss. That takes a special kind of talent.",
+                        "You had the whole arsenal and still lost the plot. The silos worked; your judgement did not."]
+            } else {
+                pool = ["You lost the slow, boring way — no nukes, no wins, no clue. Even the advisers stopped taking notes.",
+                        "\(gs.turn) turns of careful mediocrity, undone. History will not remember you, which is for the best.",
+                        "Defeated without pressing a single interesting button. A masterclass in doing not-quite-enough."]
+            }
+        } else if victory == .pyrrhicVictory || gs.totalCasualties > 0 {
+            pool = ["A win measured in graves — \(gs.totalCasualties) dead so you could plant a flag. Bravo, I suppose.",
+                    "You 'won.' The survivors send their regards. Both of them.",
+                    "Victory, technically. The casualty list runs longer than the victory speech."]
+        } else {
+            pool = ["Clean hands and a high score — show-off. The game was more fun when you were losing.",
+                    "\(score.finalScore) points and no mushroom clouds. Who are you and what did you do with the President?",
+                    "You won without burning the place down. Suspicious. Do it again and I might believe it."]
+        }
+        return pool[stableHash(gs.gameOverReason + "\(gs.turn)\(score.finalScore)") % pool.count]
+    }
 }
 
 extension GameEngine {
@@ -144,6 +194,23 @@ extension GameEngine {
     private func logCommentary(_ line: TickerItem, source: String) {
         logPlayEvent("nova_commentary", detail: ["text": PlayHistory.text(line.text), "source": source,
                                                  "game_date": PlayHistory.day(line.date)])
+    }
+
+    /// After a game ends: a snarky Nova post-mortem for the end screen. The template shows at once; the live
+    /// generator replaces it if a local AI answers. Mirrors `comment` but uses the roast backend.
+    func generateEndGameRoast(_ gs: GameState, score: GameScore, victory: VictoryType?) {
+        guard NovaCommentary.enabled() else { gs.novaRoast = ""; return }
+        gs.novaRoast = NovaCommentary.roastTemplate(gs: gs, score: score, victory: victory)
+        self.gameState = gs
+        logPlayEvent("nova_roast", detail: ["text": PlayHistory.text(gs.novaRoast), "source": "template"])
+        guard let generate = NovaCommentary.roastGenerator else { return }
+        let prompt = NovaCommentary.roastPrompt(gs: gs, score: score, victory: victory)
+        Task { @MainActor in
+            guard let reply = await generate(prompt).flatMap(NovaCommentary.clean), let g = self.gameState, g === gs else { return }
+            g.novaRoast = reply
+            self.gameState = g
+            self.logPlayEvent("nova_roast", detail: ["text": PlayHistory.text(reply), "source": "nova"])
+        }
     }
 }
 

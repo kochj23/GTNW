@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct VictoryScreen: View {
-    let gameState: GameState
+    @ObservedObject var gameState: GameState
     let victoryType: VictoryType?
     let score: GameScore
     let onNewGame: () -> Void
@@ -72,6 +72,9 @@ struct VictoryScreen: View {
                 .padding(.horizontal, 40)
 
                 Spacer()
+
+                // Nova's post-mortem roast
+                if !gameState.novaRoast.isEmpty { novaRoastView() }
 
                 // WOPR Quote
                 woprQuote()
@@ -199,6 +202,20 @@ struct VictoryScreen: View {
         .padding()
         .background(Color.black.opacity(0.3))
         .border(AppSettings.terminalAmber, width: 1)
+    }
+
+    private func novaRoastView() -> some View {
+        VStack(spacing: 6) {
+            Text("NOVA'S VERDICT")
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
+                .foregroundColor(AppSettings.terminalAmber)
+            Text(gameState.novaRoast)
+                .font(.scaled(size: 16, design: .monospaced))
+                .foregroundColor(AppSettings.terminalGreen)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 40)
     }
 
     private func woprQuote() -> some View {
