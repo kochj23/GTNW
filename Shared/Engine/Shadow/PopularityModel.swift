@@ -169,3 +169,28 @@ extension PresidentialAction {
 
     var isHostile: Bool { !Self.friendlyActions.contains(self) }
 }
+
+// MARK: - Era public mood (3.18.x)
+
+/// The public's era-specific appetite for the hard tools of statecraft — the mood of the decade. These scale the
+/// approval/world-opinion COST of an action: ~0 = the era shrugs it off, 1 = neutral, >1 = the era recoils.
+/// Territorial expansion's own era reaction already lives in `ExpansionModel.politics`; this adds the nuclear taboo —
+/// the thread from Truman's bomb (little taboo, 1945) to the entrenched post-Cold-War horror.
+enum EraMood {
+    /// The nuclear taboo as a cost multiplier on *using* nuclear weapons, rising across the decades.
+    static func nuclearTaboo(year: Int) -> Double {
+        switch year {
+        case ..<1950: return 0.3   // 1945–49 monopoly: the bomb just won a war; the taboo hasn't set
+        case ..<1963: return 1.0   // Korea, the H-bomb, the near-misses — the taboo forms
+        case ..<1992: return 2.5   // high Cold War: first use is near-unthinkable
+        default:      return 4.0   // post-Cold-War: using one ends your presidency
+        }
+    }
+
+    /// How the public reads the *use* of nukes by situation: cheapest once you've already been hit, dearest as an
+    /// unprovoked peacetime first strike (even in 1945). `atWar` = already fighting the target;
+    /// `retaliating` = the target has already nuked you.
+    static func useContext(atWar: Bool, retaliating: Bool) -> Double {
+        retaliating ? 0.3 : (atWar ? 0.7 : 1.5)
+    }
+}

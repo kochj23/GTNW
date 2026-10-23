@@ -728,6 +728,15 @@ class GameEngine: ObservableObject {
         // Set DEFCON 1
         gameState.defconLevel = .defcon1
 
+        // Public reaction to using the bomb, by era and context — the nuclear taboo (3.18.x). Truman in '45 pays
+        // little; a peacetime first strike in the 2000s is ruinous; retaliation after being hit is cheapest.
+        if attackerID == gameState.playerCountryID {
+            let retaliating = gameState.nuclearStrikes.contains { $0.attacker == targetID && $0.target == attackerID }
+            let context = EraMood.useContext(atWar: attacker.atWarWith.contains(targetID), retaliating: retaliating)
+            let hit = EraMood.nuclearTaboo(year: gameState.currentYear) * context * Double(penetratingWarheads) * 2
+            gameState.shadow.popularity = PopularityModel.clamp(gameState.shadow.popularity - hit)
+        }
+
         // Domestic fallout and casualties among the cabinet
         if attackerID == gameState.playerCountryID {
             recordPlayerAction(rung: .nuclear, hostile: true, detected: true)

@@ -5687,3 +5687,31 @@ final class WarheadTypeTests: XCTestCase {
         XCTAssertLessThan(neut.damage, fis.damage)              // ...but leaves the buildings standing
     }
 }
+
+// MARK: - Era public mood: the nuclear taboo (3.18.x)
+
+final class EraMoodTests: XCTestCase {
+    func testNuclearTabooRisesAcrossTheDecades() {
+        XCTAssertLessThan(EraMood.nuclearTaboo(year: 1947), EraMood.nuclearTaboo(year: 1955))  // monopoly cheap
+        XCTAssertLessThan(EraMood.nuclearTaboo(year: 1955), EraMood.nuclearTaboo(year: 1985))
+        XCTAssertLessThan(EraMood.nuclearTaboo(year: 1985), EraMood.nuclearTaboo(year: 2025))  // entrenched horror
+    }
+    func testUseContextVictimIsCheapestAndFirstStrikeDearest() {
+        XCTAssertLessThan(EraMood.useContext(atWar: false, retaliating: true), EraMood.useContext(atWar: true, retaliating: false))
+        XCTAssertLessThan(EraMood.useContext(atWar: true, retaliating: false), EraMood.useContext(atWar: false, retaliating: false))
+    }
+    func testFirstStrikeCostsMorePopularityThanRetaliation() {
+        func popDrop(makeVictim: Bool) -> Double {
+            let e = GameEngine(); e.startNewGame(playerCountryID: "USA")
+            guard let gs = e.gameState, let ai = gs.countries.firstIndex(where: { $0.id == "USA" }) else { return 0 }
+            gs.countries[ai].nuclearWarheads = 50
+            if makeVictim {   // the target already nuked us -> retaliation, not first use
+                gs.nuclearStrikes.append(NuclearStrike(attacker: "CHN", target: "USA", warheadsUsed: 1, turn: 0, casualties: 0, radiationSpread: 0))
+            }
+            let before = gs.shadow.popularity
+            e.launchNuclearStrike(from: "USA", to: "CHN", warheads: 3, type: .fission)
+            return before - (e.gameState?.shadow.popularity ?? before)
+        }
+        XCTAssertGreaterThan(popDrop(makeVictim: false), popDrop(makeVictim: true))  // unprovoked first strike hurts more
+    }
+}

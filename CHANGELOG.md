@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.3] - 2026-10-22 — The nuclear taboo
+
+### Added
+- **Era public mood: the nuclear taboo** (`EraMood`, applied in `launchNuclearStrike`): using the bomb now costs
+  the President approval scaled by *when* and *how*. The taboo rises across the decades — cheap in the 1945–49
+  monopoly (×0.3), forming through Korea and the H-bomb (×1.0), near-unthinkable at the Cold War peak (×2.5),
+  ruinous after (×4.0) — and the context matters: retaliation after being hit is cheapest (×0.3), a war you're
+  already in is moderate (×0.7), an unprovoked peacetime first strike is dearest (×1.5, even in 1945). So Truman
+  ending a war pays little, a MacArthur-style first use is costly, and a 2025 first strike ends a presidency.
+  (Territorial-expansion opinion by era already lives in `ExpansionModel.politics`.)
 ## [3.18.2] - 2026-10-22 — Nuclear realism: fission, fusion, neutron
 
 ### Added
