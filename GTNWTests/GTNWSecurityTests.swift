@@ -226,7 +226,7 @@ final class EnumCompletenessTests: XCTestCase {
     }
 
     func testAllVictoryTypes() {
-        XCTAssertEqual(VictoryType.allCases.count, 9)   // 3.16.0: Leader of the Free World, Nobel Laureate
+        XCTAssertEqual(VictoryType.allCases.count, 10)  // 3.16.0: Leader of the Free World, Nobel Laureate; 3.18.12: The Good Life
     }
 
     func testAllWorldRegions() {
