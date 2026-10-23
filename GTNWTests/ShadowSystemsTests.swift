@@ -5633,3 +5633,19 @@ final class DomesticStatehoodTests: XCTestCase {
         XCTAssertNil(engine.petitionDomesticStatehood("US-ZZ", roll: 0.0))
     }
 }
+
+// MARK: - Region zoom framing (3.18.x bugfix)
+
+final class RegionZoomTests: XCTestCase {
+    func testRegionRectsAreAntimeridianSafeAndWithinTheWorld() {
+        let world = CGRect(x: -180, y: -84, width: 360, height: 158)
+        for region in WorldRegion.allCases {
+            let r = VectorWorldMap.regionRect(region)
+            XCTAssertTrue(r.width > 0 && r.height > 0, "\(region) empty box")
+            XCTAssertLessThan(r.width, 200, "\(region) too wide — would trip the whole-world fallback")
+            XCTAssertTrue(world.contains(r), "\(region) frames outside the world rect")
+        }
+        // North America must actually frame the continental U.S. (lon ~-98, lat ~39 → y = -lat)
+        XCTAssertTrue(VectorWorldMap.regionRect(.northAmerica).contains(CGPoint(x: -98, y: -39)))
+    }
+}

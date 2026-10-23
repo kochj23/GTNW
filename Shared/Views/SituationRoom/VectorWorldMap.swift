@@ -470,11 +470,10 @@ struct VectorWorldMap: View {
         switch zoom {
         case .world: break
         case .region:
-            if let region = selected?.region ?? land?.region {
-                let ids = Set(gameState.countries.filter { $0.region == region }.map(\.id))
-                    .union(unclaimed.filter { WorldCountriesDatabase.template(id: $0)?.region == region })
-                r = bounds(for: ids) ?? r
-            }
+            // 3.18.x: a curated box per region. The old code unioned raw shape bounds, but regions crossing the
+            // ±180° antimeridian (North America's Aleutians, Asia's Russia, Oceania's Pacific islands) made a
+            // ~300°-wide box that tripped bounds()'s "width > 200 -> whole world" guard, so Region never zoomed.
+            if let region = selected?.region ?? land?.region { r = Self.regionRect(region) }
         case .country:
             if let id = selected?.id ?? land?.id { r = bounds(for: [id])?.insetBy(dx: -4, dy: -4) ?? r }
         }
@@ -485,6 +484,21 @@ struct VectorWorldMap: View {
         if want < aspect { let w = r.height * aspect; r = r.insetBy(dx: -(w - r.width) / 2, dy: 0) }
         else { let h = r.width / aspect; r = r.insetBy(dx: 0, dy: -(h - r.height) / 2) }
         return r
+    }
+
+    /// A framing box (lon, −lat) per world region, antimeridian-safe (far-Pacific tails are intentionally
+    /// cropped so the box stays tight and never trips the whole-world fallback).
+    /// ponytail: hand-tuned rects; nudge the framing here if a region sits awkwardly.
+    static func regionRect(_ region: WorldRegion) -> CGRect {
+        switch region {
+        case .northAmerica: return CGRect(x: -170, y: -72, width: 122, height: 65)   // Alaska → Panama (Aleutians cropped)
+        case .southAmerica: return CGRect(x: -82,  y: -13, width: 48,  height: 69)
+        case .europe:       return CGRect(x: -25,  y: -71, width: 70,  height: 37)
+        case .asia:         return CGRect(x: 40,   y: -76, width: 110, height: 72)    // Russia's far-east tail cropped
+        case .middleEast:   return CGRect(x: 25,   y: -42, width: 40,  height: 31)
+        case .africa:       return CGRect(x: -20,  y: -38, width: 72,  height: 74)
+        case .oceania:      return CGRect(x: 110,  y: 8,   width: 70,  height: 42)    // Australia + NZ (far Pacific cropped)
+        }
     }
 
     private func bounds(for ids: Set<String>) -> CGRect? {

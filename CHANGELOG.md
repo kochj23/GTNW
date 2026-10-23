@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ones); success adds a star to the flag via the existing `statesAdmitted` ledger. The domestic counterpart to the
   conquered-territory statehood vote.
 
+### Fixed
+- **Region map zoom** (`VectorWorldMap.regionRect`): switching the map to **Region** did nothing — the old code
+  built a min/max longitude box from the region's countries, but regions crossing the ±180° antimeridian (North
+  America's Aleutians, Asia's Russia, Oceania's Pacific islands) produced a ~300°-wide box that tripped the
+  "width > 200 → show the whole world" guard, so Region view never zoomed. Now each of the 7 regions has a curated,
+  antimeridian-safe framing box.
+
 ## [3.18.0] - 2026-10-22 — Nova's verdict, favored nations, and the case for war
 
 ### Added
