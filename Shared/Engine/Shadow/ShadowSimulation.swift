@@ -238,6 +238,13 @@ extension GameEngine {
                 addLog("🚨 ANXIETY SPIKE → CRISIS: \(crisis.title)", type: .critical)
             }
         }
+        // Natural disasters (3.18.14): an era-agnostic shock, independent of anxiety — a modest annual chance
+        // scaled to the turn length, only when the President isn't already handling a crisis.
+        if crisisManager.activeCrisis == nil, Double.random(in: 0..<1) < gs.scale.probability(annual: 0.04),
+           let disaster = crisisManager.createCrisis(type: .naturalDisaster, gameState: gs) {
+            crisisManager.presentCrisis(disaster)
+            addLog("🌀 DISASTER: \(disaster.title)", type: .critical)
+        }
     }
 
     // MARK: Personality-driven AI

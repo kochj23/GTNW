@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.14] - 2026-10-23 — Natural disasters
+
+### Added
+- **Natural disasters** (`CrisisEventType.naturalDisaster`): hurricanes, earthquakes, pandemics, wildfires and
+  floods now strike at home as crisis events, rolled each turn in the shadow loop (≈4%/yr, scaled to turn length).
+  Each offers a choice — mobilize full federal relief (−$8B, +approval), a measured state-led response, or downplay
+  it (−approval) — reusing the whole crisis UI and resolution path.
+
+### Fixed
+- **Crisis consequences now actually apply.** `CrisisConsequences.approvalChange`, `economicImpact` and
+  `militaryImpact` were declared on every crisis option but silently ignored by `applyConsequences`, so a crisis's
+  stated approval/economic cost never happened. They now land (approval → popularity, economicImpact → spendable
+  funds, militaryImpact → military strength), which also makes the existing false-alarm/coup/etc. crises bite as
+  their text always claimed.
+
 ## [3.18.13] - 2026-10-23 — Factbook
 
 ### Added

@@ -381,3 +381,31 @@ final class ProsperityVictoryTests: XCTestCase {
         XCTAssertTrue(VictoryType.prosperity.baseScore > VictoryType.economicVictory.baseScore)
     }
 }
+
+// MARK: - 3.18.14 Disaster consequences self-check (approval + funds now actually apply)
+final class DisasterConsequenceTests: XCTestCase {
+    func testApprovalAndFundsApplied() {
+        let manager = CrisisManager()
+        let crisis = CrisisEvent(type: .naturalDisaster, severity: .serious, title: "Quake", description: "d",
+            affectedCountries: [], turn: 0, timeLimit: nil,
+            options: [CrisisOption(title: "relief", description: "", consequences:
+                CrisisConsequences(approvalChange: 10, economicImpact: -8, message: "m"), successChance: 2.0)])
+        manager.presentCrisis(crisis)
+        var gs = GameState(playerCountryID: "USA")
+        gs.shadow.popularity = 50
+        gs.shadow.aidRemaining = 20
+        manager.resolveCrisis(optionIndex: 0, gameState: &gs)
+        XCTAssertEqual(gs.shadow.popularity, 60, accuracy: 0.001, "FEMA relief must raise approval")
+        XCTAssertEqual(gs.shadow.aidRemaining, 12, accuracy: 0.001, "relief must cost the treasury")
+    }
+
+    func testNaturalDisasterFactoryProducesChoices() {
+        let manager = CrisisManager()
+        let gs = GameState(playerCountryID: "USA")
+        guard let c = manager.createCrisis(type: .naturalDisaster, gameState: gs) else {
+            return XCTFail("disaster factory returned nil")
+        }
+        XCTAssertEqual(c.type, .naturalDisaster)
+        XCTAssertGreaterThanOrEqual(c.options.count, 3, "relief / measured / downplay")
+    }
+}

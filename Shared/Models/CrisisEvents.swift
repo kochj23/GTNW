@@ -26,6 +26,7 @@ enum CrisisEventType: String, Codable, CaseIterable {
     case radiationLeak = "Radiation Leak"
     case spyRingUncovered = "Spy Ring Uncovered"
     case assassinationAttempt = "Assassination Attempt"
+    case naturalDisaster = "Natural Disaster"
 }
 
 /// Severity levels for crisis events
@@ -158,7 +159,7 @@ class CrisisManager: ObservableObject {
             .falseAlarm, .nuclearAccident, .terroristThreat, .espionageDiscovered,
             .militaryCoup, .cyberAttack, .diplomaticIncident, .economicCollapse,
             .rogueCommander, .satelliteFailure, .civilUnrest, .weaponsMalfunction,
-            .radiationLeak, .spyRingUncovered, .assassinationAttempt
+            .radiationLeak, .spyRingUncovered, .assassinationAttempt, .naturalDisaster
         ]
 
         let type = crisisTypes.randomElement()!
@@ -199,7 +200,55 @@ class CrisisManager: ObservableObject {
             return createSpyRingCrisis(gameState: gameState)
         case .assassinationAttempt:
             return createAssassinationCrisis(gameState: gameState)
+        case .naturalDisaster:
+            return createNaturalDisasterCrisis(gameState: gameState)
         }
+    }
+
+    /// A natural disaster (3.18.14): an era-agnostic shock at home. How the President responds moves approval and
+    /// costs the treasury — relief is expensive but rallies the country; indifference is cheap and ruinous.
+    private func createNaturalDisasterCrisis(gameState: GameState) -> CrisisEvent? {
+        let disasters: [(String, String, Int)] = [
+            ("🌀 HURRICANE MAKES LANDFALL", "A catastrophic hurricane has struck the coast", 3),
+            ("🌎 MAJOR EARTHQUAKE", "A magnitude-7.8 earthquake has levelled a major city", 4),
+            ("🦠 PANDEMIC OUTBREAK", "A fast-spreading new pathogen is overwhelming the hospitals", 4),
+            ("🔥 WILDFIRES OUT OF CONTROL", "Record wildfires are burning across several states", 3),
+            ("🌊 CATASTROPHIC FLOODING", "A hundred-year flood has swamped the river basin", 3),
+        ]
+        let d = disasters.randomElement()!
+        return CrisisEvent(
+            type: .naturalDisaster,
+            severity: CrisisSeverity(rawValue: d.2) ?? .serious,
+            title: d.0,
+            description: """
+            \(d.1).
+
+            Thousands are displaced and the damage runs into the billions. The nation is watching how its President responds.
+            """,
+            affectedCountries: [gameState.playerCountryID],
+            turn: gameState.turn,
+            timeLimit: nil,
+            options: [
+                CrisisOption(
+                    title: "Mobilize a full federal relief effort",
+                    description: "National Guard, open the treasury, lead from the front",
+                    advisorRecommendation: "Chief of Staff",
+                    consequences: CrisisConsequences(approvalChange: 10, economicImpact: -8,
+                        message: "The relief effort is swift and visible. The country rallies to its President. (−$8B, +10 approval)")
+                ),
+                CrisisOption(
+                    title: "A measured, state-led response",
+                    description: "Let the states lead; keep federal spending modest",
+                    consequences: CrisisConsequences(approvalChange: -2, economicImpact: -2,
+                        message: "The response is adequate but uninspiring. (−$2B, −2 approval)")
+                ),
+                CrisisOption(
+                    title: "Downplay it and move on",
+                    description: "Call it overblown; spend nothing",
+                    consequences: CrisisConsequences(approvalChange: -12, economicImpact: 0,
+                        message: "The images of suffering run for weeks. The President looks heartless. (−12 approval)")
+                ),
+            ])
     }
 
     // MARK: - Crisis Factories
@@ -1252,6 +1301,19 @@ class CrisisManager: ObservableObject {
         if consequences.defconChange != 0 {
             let newLevel = max(1, min(5, gameState.defconLevel.rawValue + consequences.defconChange))
             gameState.defconLevel = DefconLevel(rawValue: newLevel) ?? gameState.defconLevel
+        }
+
+        // 3.18.14: approval, dollars and military toll — previously declared on CrisisConsequences but never
+        // applied, so every crisis's stated approval/economic cost was silently a no-op. Now they land, mapped to
+        // the shadow-president model (approval = popularity; economicImpact = $B of spendable funds).
+        if consequences.approvalChange != 0 {
+            gameState.shadow.popularity = PopularityModel.clamp(gameState.shadow.popularity + Double(consequences.approvalChange))
+        }
+        if consequences.economicImpact != 0 {
+            gameState.shadow.aidRemaining = max(0, gameState.shadow.aidRemaining + Double(consequences.economicImpact))
+        }
+        if consequences.militaryImpact != 0, let pi = gameState.countries.firstIndex(where: { $0.id == gameState.playerCountryID }) {
+            gameState.countries[pi].militaryStrength = max(1, gameState.countries[pi].militaryStrength + consequences.militaryImpact)
         }
 
         // Trigger war if needed
