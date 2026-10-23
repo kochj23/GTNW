@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.12] - 2026-10-23 — "The Good Life" victory (guns vs. butter)
+
+### Added
+- **A domestic victory path** (`VictoryType.prosperity`, 1400 pts): win by holding national quality of life ≥ 75
+  **and** approval ≥ 60 **and** a military budget under 25% of federal spending, unbroken for eight years. The run
+  is tracked each turn (`GameEngine.updateProsperity` → `ShadowState.prosperousSince`, cleared the instant any
+  condition breaks) and `VictoryChecker.isGoodLife` is pure + tested. Military share reads the real
+  `FederalBudget` (defense ÷ total spending), so slashing defense to fund social programs is a genuine strategy.
+
 ## [3.18.11] - 2026-10-23 — Action-result pop-up
 
 ### Added

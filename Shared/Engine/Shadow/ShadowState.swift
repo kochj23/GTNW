@@ -165,6 +165,9 @@ struct ShadowState: Codable {
     var playerWarsStarted = 0
     /// The player's share of world output when the game began (economic dominance is measured from it).
     var startOutputShare = 0.0
+    /// When the current unbroken run of "the good life" began (3.18.12): high quality of life and approval with a
+    /// small military budget. Cleared the moment a condition breaks; eight unbroken years is a victory.
+    var prosperousSince: Date? = nil
     /// Dirty tactics (3.17.0): every use (with whether it came out), stances in force, secret programmes under way,
     /// costs still to land, and how far a resisting people's will has already been broken.
     var tacticUses: [TacticUse] = []
@@ -216,7 +219,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare, prosperousSince
         case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
     }
 
@@ -289,6 +292,7 @@ struct ShadowState: Codable {
         nobelMoments = try c.decodeIfPresent(Int.self, forKey: .nobelMoments) ?? 0
         playerWarsStarted = try c.decodeIfPresent(Int.self, forKey: .playerWarsStarted) ?? 0
         startOutputShare = try c.decodeIfPresent(Double.self, forKey: .startOutputShare) ?? 0
+        prosperousSince = try c.decodeIfPresent(Date.self, forKey: .prosperousSince)
         tacticUses = try c.decodeIfPresent([TacticUse].self, forKey: .tacticUses) ?? []
         tacticStances = try c.decodeIfPresent(Set<String>.self, forKey: .tacticStances) ?? []
         tacticPrograms = try c.decodeIfPresent([String: TacticProgram].self, forKey: .tacticPrograms) ?? [:]

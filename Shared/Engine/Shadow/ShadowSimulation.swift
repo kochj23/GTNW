@@ -80,6 +80,7 @@ extension GameEngine {
         syncFronts()
         processCombat(from: from, to: to)
         processWarPowers()
+        updateProsperity()       // 3.18.12: track the run toward "the good life" victory
         processWorldPolitics()   // 3.14.0: the living world
         processCivilWarRecognition()   // 3.18.x: Britain/France weigh recognizing a side
         processOccupation()

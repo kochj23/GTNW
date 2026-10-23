@@ -366,3 +366,18 @@ final class IntelligenceModelTests: XCTestCase {
         XCTAssertTrue(IntelligenceModel.label(trueValue: 42, year: 1890).text.contains("–"), "early eras show a range")
     }
 }
+
+// MARK: - 3.18.12 The Good Life (butter victory) self-check
+final class ProsperityVictoryTests: XCTestCase {
+    func testGoodLifeThresholds() {
+        // All three conditions must hold.
+        XCTAssertTrue(VictoryChecker.isGoodLife(qol: 80, approval: 65, militaryShare: 0.20))
+        XCTAssertTrue(VictoryChecker.isGoodLife(qol: 75, approval: 60, militaryShare: 0.24), "at the exact bar")
+        XCTAssertFalse(VictoryChecker.isGoodLife(qol: 74, approval: 65, militaryShare: 0.20), "QoL below bar fails")
+        XCTAssertFalse(VictoryChecker.isGoodLife(qol: 80, approval: 59, militaryShare: 0.20), "approval below bar fails")
+        XCTAssertFalse(VictoryChecker.isGoodLife(qol: 80, approval: 65, militaryShare: 0.25), "military share at/above 25% fails")
+        // Eight years, not seven.
+        XCTAssertEqual(VictoryChecker.goodLifeDays, 2922)
+        XCTAssertTrue(VictoryType.prosperity.baseScore > VictoryType.economicVictory.baseScore)
+    }
+}

@@ -19,11 +19,13 @@ enum VictoryType: String, Codable, CaseIterable {
     case pyrrhicVictory = "Pyrrhic Victory"          // 200 pts
     case allianceLeader = "Leader of the Free World" // 1100 pts (3.16.0)
     case nobelPeace = "Nobel Laureate"               // 1300 pts (3.16.0)
+    case prosperity = "The Good Life"                // 1400 pts (3.18.12)
 
     var baseScore: Int {
         switch self {
         case .secretEnding: return 2000
         case .peaceMaker: return 1500
+        case .prosperity: return 1400
         case .diplomaticVictory: return 1200
         case .economicVictory: return 1000
         case .supremacy: return 800
@@ -48,6 +50,8 @@ enum VictoryType: String, Codable, CaseIterable {
             return "Led the largest alliance on Earth, at peace"
         case .nobelPeace:
             return "Brokered peace between warring nations three times"
+        case .prosperity:
+            return "Eight years of the good life — high quality of life and approval on a lean military budget"
         case .supremacy:
             return "Last remaining nuclear power standing"
         case .survival:
@@ -220,8 +224,31 @@ class LeaderboardManager: ObservableObject {
     }
 }
 
+extension GameEngine {
+    /// Each turn: track the unbroken run of "the good life" (3.18.12). `prosperousSince` marks when the current run
+    /// began and is cleared the instant any condition breaks; VictoryChecker turns eight unbroken years into a win.
+    func updateProsperity() {
+        guard let gs = gameState, let p = gs.getPlayerCountry() else { return }
+        let spending = gs.shadow.budget.spending
+        let share = spending > 0 ? gs.shadow.budget.defense / spending : 1
+        if VictoryChecker.isGoodLife(qol: p.profile.qualityOfLife, approval: gs.shadow.popularity, militaryShare: share) {
+            if gs.shadow.prosperousSince == nil { gs.shadow.prosperousSince = gs.currentDate }
+        } else {
+            gs.shadow.prosperousSince = nil
+        }
+        self.gameState = gs
+    }
+}
+
 /// Check victory conditions
 class VictoryChecker {
+    /// "The Good Life" (3.18.12): the conditions that must hold, unbroken, for `goodLifeDays`. Pure, so it is tested.
+    static func isGoodLife(qol: Double, approval: Double, militaryShare: Double) -> Bool {
+        qol >= 75 && approval >= 60 && militaryShare < 0.25
+    }
+    /// Eight years, in days (365.25-based), of unbroken prosperity to win.
+    static let goodLifeDays = 2922
+
     /// Check if player has achieved victory
     static func checkVictory(gameState: GameState) -> VictoryType? {
         guard let player = gameState.getPlayerCountry(), !player.isDestroyed else {
@@ -242,6 +269,13 @@ class VictoryChecker {
         if !playerLaunchedNukes && player.atWarWith.isEmpty && gameState.shadow.playerWarsStarted == 0 &&
            gameState.elapsedYears >= 20 - 1e-6 {
             return .peaceMaker
+        }
+
+        // The Good Life (3.18.12): eight unbroken years of high quality of life and approval on a lean military
+        // budget. The run is tracked each turn in GameEngine.updateProsperity.
+        if let since = gameState.shadow.prosperousSince,
+           GameCalendar.days(from: since, to: gameState.currentDate) >= goodLifeDays {
+            return .prosperity
         }
 
         // Treaty network, alliance leadership, economic dominance, Nobel moments (PeaceModel)
