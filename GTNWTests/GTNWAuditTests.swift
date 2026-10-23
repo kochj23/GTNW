@@ -331,3 +331,17 @@ final class DirtyArsenalExpansionTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.18.9 Era intervention mood self-check (the shape of the decade's appetite for war)
+final class InterventionMoodTests: XCTestCase {
+    func testMoodCurveShape() {
+        let m = EraMood.interventionMood
+        // Jingoist eras are cheaper than neutral; war-weary eras are dearer.
+        XCTAssertLessThan(m(1905), 1.0, "imperial high tide should be below neutral")
+        XCTAssertLessThan(m(1943), 1.0, "WWII total-war unity should be below neutral")
+        XCTAssertGreaterThan(m(1935), 1.0, "isolationist 1930s should be above neutral")
+        XCTAssertGreaterThan(m(1968), m(1943), "Vietnam must cost more than WWII")
+        XCTAssertGreaterThan(m(1968), m(1905), "Vietnam must cost more than the imperial high tide")
+        XCTAssertGreaterThan(m(2015), 1.0, "the forever wars should be above neutral")
+    }
+}

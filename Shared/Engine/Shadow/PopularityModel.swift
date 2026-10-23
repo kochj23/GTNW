@@ -193,4 +193,22 @@ enum EraMood {
     static func useContext(atWar: Bool, retaliating: Bool) -> Double {
         retaliating ? 0.3 : (atWar ? 0.7 : 1.5)
     }
+
+    /// The public's tolerance for the human cost of foreign war — a cost multiplier on war-weariness. Below 1 when
+    /// the decade is jingoist (the Spanish-American high tide, the unity of the Second World War), above 1 when it
+    /// recoils (the isolationist 1930s, Vietnam, the post-9/11 forever-war fatigue). The same casualties cost a
+    /// Vietnam-era President far more approval than a 1898 or 1943 one. DESIGN CHOICES, not published figures.
+    static func interventionMood(year: Int) -> Double {
+        switch year {
+        case ..<1898: return 1.0   // a continental republic, wary of foreign wars but not yet scarred by one
+        case ..<1919: return 0.6   // the imperial high tide: Manila Bay, San Juan Hill, the Great White Fleet
+        case ..<1941: return 1.6   // between the wars: disillusion, the Nye Committee, the Neutrality Acts
+        case ..<1946: return 0.5   // the Second World War: total war, and a casualty tolerance to match
+        case ..<1965: return 1.0   // the early Cold War: Korea drains the country but it holds
+        case ..<1976: return 2.2   // Vietnam: every casualty is on the evening news, and on the President
+        case ..<2002: return 1.6   // the Vietnam syndrome: body-bag aversion, Beirut, Mogadishu
+        case ..<2009: return 1.0   // after 11 September: resolve, and a few years' patience for it
+        default:      return 1.8   // the forever wars: the country is tired of them
+        }
+    }
 }

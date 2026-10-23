@@ -357,7 +357,9 @@ extension GameEngine {
                                            rolls: (Double.random(in: 0..<1), Double.random(in: 0..<1)))
                 let usLoss = CombatModel.apply(o, to: &f, date: to)
                 gs.totalCasualties += Int((o.attackerLosses + o.defenderLosses) * 300 + o.civilianLosses * 1000)
-                if usLoss > 0.5 { gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - usLoss * 0.05) }
+                // War-weariness, scaled by the decade's appetite for foreign blood (3.18.9): Vietnam losses bite
+                // far harder than 1898 or 1943 ones.
+                if usLoss > 0.5 { gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - usLoss * 0.05 * EraMood.interventionMood(year: gs.currentYear)) }
                 let verdict = CombatModel.verdict(f)
                 gs.shadow.fronts[i] = f
                 if verdict != .fighting {

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.9] - 2026-10-23 — Era intervention mood (war-weariness by decade)
+
+### Added
+- **The decade's appetite for foreign war** (`EraMood.interventionMood(year:)`): a cost multiplier on
+  war-weariness, below 1 in jingoist eras (the 1898–1918 imperial high tide, WWII unity) and above 1 when the
+  public recoils (the isolationist 1930s, Vietnam ×2.2, the post-9/11 forever wars). Wired into the per-turn
+  casualty approval drain in `ShadowSimulation`, so identical losses cost a Vietnam-era President far more
+  approval than a 1943 one. Complements `ExpansionModel.politics` (territorial mood) and `EraMood.nuclearTaboo`.
+
 ## [3.18.8] - 2026-10-23 — Warhead-type picker
 
 ### Added
