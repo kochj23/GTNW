@@ -2086,3 +2086,55 @@ struct TutorialSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Space Force (3.18.16)
+
+/// The President's satellite constellation. Launched satellites are durable (they live in the shadow state, not the
+/// ephemeral legacy systems layer). Phase 1 wires reconnaissance → the National Intelligence Estimate.
+struct SpaceSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let reconCount = gameState.shadow.satellites["recon"] ?? 0
+        let spaceAge = gameState.currentYear >= GameEngine.spaceAgeYear
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                Text("SPACE FORCE").font(ThemeFont.mono(16, .bold))
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .foregroundColor(GTNWColors.terminalAmber)
+            Text("Satellites are launched for good and ride in the durable record. The space age opens in \(GameEngine.spaceAgeYear).")
+                .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("RECONNAISSANCE").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                    Spacer()
+                    Text("IN ORBIT: \(reconCount)").font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                }
+                Text("Sharpens your National Intelligence Estimate of every foreign power — a confirmed count where you'd otherwise see only a wide guess.")
+                    .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+                Button(String(format: "LAUNCH RECON SATELLITE ($%.0fB)", GameEngine.satelliteCost(.recon))) {
+                    gameEngine.launchSatellite(.recon)
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: reconCount == 0))
+                .disabled(gameState.actionsRemaining == 0 || !spaceAge || gameState.gameOver)
+            }
+            .padding(8).themedPanel(retroFill: EGA.black)
+            if !spaceAge {
+                Text("Nothing orbits yet — no satellite can launch before \(GameEngine.spaceAgeYear).")
+                    .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed)
+            }
+            Text("More orbital capabilities — early warning, GPS, comms — ride on this framework in later increments.")
+                .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(560), height: FontScale.h(460))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}

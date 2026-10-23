@@ -409,3 +409,31 @@ final class DisasterConsequenceTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(c.options.count, 3, "relief / measured / downplay")
     }
 }
+
+// MARK: - 3.18.16 Space Force phase 1 self-check (recon satellites sharpen the NIE)
+final class SpaceForceReconTests: XCTestCase {
+    func testReconNarrowsTheEstimate() {
+        // A recon satellite must widen confidence and tighten the band in any era.
+        for year in [1960, 1985, 2020] {
+            XCTAssertGreaterThan(IntelligenceModel.confidence(year: year, recon: true),
+                                 IntelligenceModel.confidence(year: year, recon: false),
+                                 "recon must raise confidence in \(year)")
+            let wide = IntelligenceModel.range(trueValue: 50, year: year, recon: false)
+            let tight = IntelligenceModel.range(trueValue: 50, year: year, recon: true)
+            XCTAssertLessThanOrEqual(tight.high - tight.low, wide.high - wide.low, "recon must not widen the band in \(year)")
+        }
+    }
+
+    func testLaunchAddsToConstellationAndGatesByEra() {
+        let engine = GameEngine()
+        engine.gameState = ScenarioLoader.makeGameState(.berlin1948)   // 1948, before the space age
+        XCTAssertFalse(engine.launchSatellite(.recon), "no launch before 1957")
+        engine.gameState?.turn = 0
+        engine.gameState?.shadow.satellites = [:]
+        // Fast-forward past the space age and give an action.
+        engine.gameState = ScenarioLoader.makeGameState(.modern2025)
+        let before = engine.gameState?.shadow.satellites["recon"] ?? 0
+        _ = engine.launchSatellite(.recon)
+        XCTAssertEqual(engine.gameState?.shadow.satellites["recon"] ?? 0, before + 1, "a modern-era launch must add a recon satellite")
+    }
+}

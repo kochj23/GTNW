@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.16] - 2026-10-23 — Space Force (phase 1: reconnaissance)
+
+### Added
+- **A working Space Force** reached from a new **SPACE** top-bar button (from 1957). The President can launch
+  satellites (`GameEngine.launchSatellite`), and the constellation is **durable** — it lives in the Codable shadow
+  state (`ShadowState.satellites`), unlike the legacy `GameSystems` space layer which was never persisted and never
+  actually launched anything.
+- **Reconnaissance satellites sharpen the National Intelligence Estimate**: a recon bird in orbit raises
+  `IntelligenceModel.confidence` (+0.12, capped 0.95), so a foreign power's forces read as a tight/confirmed figure
+  instead of a wide guess. Early-warning, GPS and comms ride on the same framework in later increments.
+
+### Notes
+- Audit finding behind this: the five services are modeled very unevenly — Navy and ground forces are deep, Air
+  Force is a thin combat modifier, National Guard is overseas-manpower only, and space was inert scaffolding. This
+  is the first durable, wired space capability; Air Force and Guard gaps remain on the roadmap.
+
 ## [3.18.15] - 2026-10-23 — First-run tutorial
 
 ### Added

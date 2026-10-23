@@ -168,6 +168,10 @@ struct ShadowState: Codable {
     /// When the current unbroken run of "the good life" began (3.18.12): high quality of life and approval with a
     /// small military budget. Cleared the moment a condition breaks; eight unbroken years is a victory.
     var prosperousSince: Date? = nil
+    /// The player's satellite constellation (3.18.16), keyed by SatType.rawValue → count. Durable here in the
+    /// shadow state (the legacy GameSystems.sats layer is not persisted). Recon satellites sharpen the National
+    /// Intelligence Estimate; more capabilities ride on this framework in later increments.
+    var satellites: [String: Int] = [:]
     /// Dirty tactics (3.17.0): every use (with whether it came out), stances in force, secret programmes under way,
     /// costs still to land, and how far a resisting people's will has already been broken.
     var tacticUses: [TacticUse] = []
@@ -219,7 +223,7 @@ struct ShadowState: Codable {
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
         case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
-        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare, prosperousSince
+        case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare, prosperousSince, satellites
         case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
     }
 
@@ -293,6 +297,7 @@ struct ShadowState: Codable {
         playerWarsStarted = try c.decodeIfPresent(Int.self, forKey: .playerWarsStarted) ?? 0
         startOutputShare = try c.decodeIfPresent(Double.self, forKey: .startOutputShare) ?? 0
         prosperousSince = try c.decodeIfPresent(Date.self, forKey: .prosperousSince)
+        satellites = try c.decodeIfPresent([String: Int].self, forKey: .satellites) ?? [:]
         tacticUses = try c.decodeIfPresent([TacticUse].self, forKey: .tacticUses) ?? []
         tacticStances = try c.decodeIfPresent(Set<String>.self, forKey: .tacticStances) ?? []
         tacticPrograms = try c.decodeIfPresent([String: TacticProgram].self, forKey: .tacticPrograms) ?? [:]

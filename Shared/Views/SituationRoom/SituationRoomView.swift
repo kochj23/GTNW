@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space
         var id: String { rawValue }
     }
 
@@ -75,6 +75,7 @@ struct SituationRoomView: View {
             case .statehood: StatehoodSheet(gameState: gameState).environmentObject(gameEngine)
             case .factbook: FactbookSheet(gameState: gameState)
             case .tutorial: TutorialSheet()
+            case .space: SpaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
@@ -268,6 +269,9 @@ struct SituationTopBar: View {
             Button("TACTICS") { onSheet(.tactics) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))   // 3.17.0: dirty tactics
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy
             Button("FACTBOOK") { onSheet(.factbook) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))   // 3.18.13: reference tab
+            if gameState.currentYear >= GameEngine.spaceAgeYear {   // 3.18.16: Space Force (space age from 1957)
+                Button("SPACE") { onSheet(.space) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))
+            }
             Button("HELP") { onSheet(.tutorial) }.buttonStyle(ThemedButtonStyle())   // 3.18.15: reopen the tutorial
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
@@ -585,10 +589,11 @@ struct CountryDossier: View {
                         // National Intelligence Estimate (3.18.10): the enemy's forces as a range, not a number —
                         // the band narrows as the era's collection improves.
                         Text("NATIONAL INTELLIGENCE ESTIMATE").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 4)
-                        let mil = IntelligenceModel.label(trueValue: c.militaryStrength, year: gameState.currentYear)
+                        let recon = (gameState.shadow.satellites["recon"] ?? 0) > 0   // 3.18.16: orbital eyes sharpen the estimate
+                        let mil = IntelligenceModel.label(trueValue: c.militaryStrength, year: gameState.currentYear, recon: recon)
                         estimateRow("MILITARY", mil.text, mil.tag)
                         if c.nuclearWarheads > 0 && gameState.currentYear >= 1945 {
-                            let nuk = IntelligenceModel.label(trueValue: c.nuclearWarheads, year: gameState.currentYear)
+                            let nuk = IntelligenceModel.label(trueValue: c.nuclearWarheads, year: gameState.currentYear, recon: recon)
                             estimateRow("WARHEADS", nuk.text, nuk.tag)
                         }
                     }

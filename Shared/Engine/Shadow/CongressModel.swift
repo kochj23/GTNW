@@ -218,28 +218,68 @@ extension GameEngine {
 /// ponytail: a deliberately *biased* estimate (off-centre, like the real "bomber gap") would need a per-country
 /// stored seed so it stays stable across view redraws; centred-with-a-band conveys the uncertainty for free.
 enum IntelligenceModel {
-    /// 0…1: how good the collection is in a given year. DESIGN CHOICES, not published figures.
-    static func confidence(year: Int) -> Double {
+    /// 0…1: how good the collection is in a given year. DESIGN CHOICES, not published figures. A reconnaissance
+    /// satellite overhead (3.18.16) lifts it +0.12 (capped 0.95) — your own eyes in orbit beat attachés and guesswork.
+    static func confidence(year: Int, recon: Bool = false) -> Double {
+        let base: Double
         switch year {
-        case ..<1900: return 0.35   // military attachés, consuls, and what the newspapers print
-        case ..<1945: return 0.50   // aerial photography and early signals intelligence
-        case ..<1960: return 0.60   // better SIGINT; the U-2 overflights from 1956
-        case ..<1990: return 0.78   // reconnaissance satellites (Corona, 1960) come of age
-        default:      return 0.90   // modern multi-source intelligence
+        case ..<1900: base = 0.35   // military attachés, consuls, and what the newspapers print
+        case ..<1945: base = 0.50   // aerial photography and early signals intelligence
+        case ..<1960: base = 0.60   // better SIGINT; the U-2 overflights from 1956
+        case ..<1990: base = 0.78   // reconnaissance satellites (Corona, 1960) come of age
+        default:      base = 0.90   // modern multi-source intelligence
         }
+        return recon ? min(0.95, base + 0.12) : base
     }
 
     /// The estimate band around a true value for the year: ±(1 − confidence).
-    static func range(trueValue: Int, year: Int) -> (low: Int, high: Int) {
-        let half = Double(max(0, trueValue)) * (1 - confidence(year: year))
+    static func range(trueValue: Int, year: Int, recon: Bool = false) -> (low: Int, high: Int) {
+        let half = Double(max(0, trueValue)) * (1 - confidence(year: year, recon: recon))
         return (max(0, Int((Double(trueValue) - half).rounded())), Int((Double(trueValue) + half).rounded()))
     }
 
     /// What to show the President: an exact figure once confidence is high, otherwise a range and how sure he is.
-    static func label(trueValue: Int, year: Int) -> (text: String, tag: String) {
-        let c = confidence(year: year)
+    static func label(trueValue: Int, year: Int, recon: Bool = false) -> (text: String, tag: String) {
+        let c = confidence(year: year, recon: recon)
         if c >= 0.85 { return ("\(trueValue)", "CONFIRMED") }
-        let r = range(trueValue: trueValue, year: year)
+        let r = range(trueValue: trueValue, year: year, recon: recon)
         return ("\(r.low)–\(r.high)", c >= 0.6 ? "MODERATE CONFIDENCE" : "LOW CONFIDENCE")
+    }
+}
+
+// MARK: - Space Force / satellites (3.18.16)
+
+extension GameEngine {
+    /// The space age opens with Sputnik (4 Oct 1957); nothing orbits before it.
+    static let spaceAgeYear = 1957
+
+    /// Does the player have at least one operational satellite of this type?
+    func hasSatellite(_ type: SatType) -> Bool { (gameState?.shadow.satellites[type.rawValue] ?? 0) > 0 }
+
+    /// What a satellite program costs the President, in $B. DESIGN CHOICES.
+    static func satelliteCost(_ type: SatType) -> Double {
+        switch type {
+        case .recon:   return 6
+        case .warning: return 10
+        case .gps:     return 8
+        case .comms:   return 4
+        case .weather: return 3
+        }
+    }
+
+    /// Launch a satellite (one action): the space age must have opened, and the President must afford it. The
+    /// constellation lives in the durable shadow state, so it survives save/load.
+    @discardableResult
+    func launchSatellite(_ type: SatType) -> Bool {
+        guard let gs = gameState, gs.actionsRemaining > 0, gs.currentYear >= Self.spaceAgeYear else { return false }
+        let costB = Self.satelliteCost(type)
+        spendFunds(costB)
+        gs.shadow.satellites[type.rawValue, default: 0] += 1
+        gs.shadow.post("A \(type.rawValue) satellite reaches orbit. \(type.bonus).", date: gs.currentDate, severity: 1)
+        logPlayEvent("satellite_launch", detail: ["type": type.rawValue, "cost_b": PlayHistory.num(costB),
+                                                  "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        completePlayerAction()
+        return true
     }
 }
