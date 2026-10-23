@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.4] - 2026-10-22 — Civil War mode (play either side)
+
+### Added
+- **American Civil War, 1861** (`confederacy()` template, 1861–1865 split in `countriesForYear`, the
+  `civilWar1861` scenario, and a `player` side param on `ScenarioLoader.makeGameState` / `GameEngine.startScenario`):
+  a new scenario starting at Fort Sumter (Apr 12, 1861) with the Union (USA) and the Confederacy (CSA) at war from
+  turn one. The CSA secedes only for 1861–1865; the Union remains the continuing state (ahead on industry, the
+  CSA on early morale). Pick your side at launch — **Play the Union (Lincoln)** or **Play the Confederacy (Davis)**
+  — via a picker in the scenario list. Britain and France start leaning toward recognition (the King Cotton gamble),
+  with First Bull Run and the Emancipation Proclamation as scripted beats. (Increment A; foreign-recognition
+  diplomacy and the period WMD gate to follow.)
 ## [3.18.3] - 2026-10-22 — The nuclear taboo
 
 ### Added

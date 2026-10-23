@@ -51,8 +51,8 @@ extension GameEngine {
     }
 
     /// Start a scenario from the scenario list.
-    func startScenario(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal, turnLength: TurnLength? = nil) {
-        gameState = ScenarioLoader.makeGameState(s, difficulty: difficulty, turnLength: turnLength)
+    func startScenario(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal, turnLength: TurnLength? = nil, player: String = "USA") {
+        gameState = ScenarioLoader.makeGameState(s, difficulty: difficulty, turnLength: turnLength, player: player)
         logMessages = []
         showingGameOver = false
         crisisManager.activeCrisis = nil

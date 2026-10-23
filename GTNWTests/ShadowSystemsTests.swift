@@ -2793,7 +2793,7 @@ final class CoalitionAndScenarioTests: XCTestCase {
     }
 
     func testEveryScenarioLoadsItsBoard() throws {
-        XCTAssertEqual(ScenarioDefinition.all.count, 9)
+        XCTAssertEqual(ScenarioDefinition.all.count, 10)
         for s in ScenarioDefinition.all {
             let (_, gs) = try scenario(s.id)
             XCTAssertEqual(gs.currentDate, s.startDate, s.id)
@@ -5713,5 +5713,25 @@ final class EraMoodTests: XCTestCase {
             return before - (e.gameState?.shadow.popularity ?? before)
         }
         XCTAssertGreaterThan(popDrop(makeVictim: false), popDrop(makeVictim: true))  // unprovoked first strike hurts more
+    }
+}
+
+// MARK: - Civil War mode (3.18.x)
+
+final class CivilWarScenarioTests: XCTestCase {
+    func testConfederacyExistsOnlyDuringTheWarYears() {
+        XCTAssertTrue(WorldCountriesDatabase.countriesForYear(1863).contains { $0.id == "CSA" })
+        XCTAssertFalse(WorldCountriesDatabase.countriesForYear(1860).contains { $0.id == "CSA" })
+        XCTAssertFalse(WorldCountriesDatabase.countriesForYear(1866).contains { $0.id == "CSA" })
+    }
+    func testCivilWarScenarioPutsUnionAndConfederacyAtWarFromEitherSide() {
+        for side in ["USA", "CSA"] {
+            let gs = ScenarioLoader.makeGameState(.civilWar1861, player: side)
+            XCTAssertEqual(gs.playerCountryID, side, "player side")
+            XCTAssertNotNil(gs.getCountry(id: "CSA"), "\(side): CSA missing")
+            XCTAssertNotNil(gs.getCountry(id: "USA"), "\(side): USA missing")
+            XCTAssertTrue(gs.getCountry(id: "USA")?.atWarWith.contains("CSA") ?? false, "\(side): Union not at war")
+            XCTAssertTrue(gs.getCountry(id: "CSA")?.atWarWith.contains("USA") ?? false, "\(side): CSA not at war")
+        }
     }
 }

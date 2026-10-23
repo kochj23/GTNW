@@ -230,6 +230,10 @@ struct WorldCountriesDatabase {
             countries.append(northVietnam())
             countries.append(southVietnam())
         }
+        // U.S. Civil War: the Union keeps "USA"; the Confederacy secedes, 1861–1865.
+        if year >= 1861 && year <= 1865 {
+            countries.append(confederacy())
+        }
         // Before 1954 or after 1975: VNM stays as unified Vietnam
 
         // Korea: always split (never unified)
@@ -1595,6 +1599,14 @@ struct WorldCountriesDatabase {
         CountryTemplate("SVN_VN","South Vietnam",flag:"🇻🇳",capital:"Saigon",
             lat:10.8231,lon:106.6297,region:.asia,gov:.military,align:.western,
             gdp:8,pop:20,mil:40,aggr:40,stab:35,yearEnd:1975)
+    }
+
+    /// The Confederacy, 1861–1865 — agrarian, cotton-rich, ~a quarter of the Union's industrial economy but
+    /// strong early morale and generalship. The Union (USA) remains the continuing state.
+    static func confederacy() -> CountryTemplate {
+        CountryTemplate("CSA","Confederate States",flag:"🏴",capital:"Richmond",
+            lat:37.5407,lon:-77.4360,region:.northAmerica,gov:.republic,align:.nonAligned,
+            gdp:30,pop:9,mil:55,aggr:60,stab:55,yearEnd:1865)
     }
 }
 

@@ -58,7 +58,7 @@ struct ScenarioDefinition: Identifiable {
 
     static func d(_ y: Int, _ m: Int, _ day: Int) -> Date { GameCalendar.date(year: y, month: m, day: day) }
 
-    static let all: [ScenarioDefinition] = [pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, gulf1990, sept11_2001, modern2025]
+    static let all: [ScenarioDefinition] = [civilWar1861, pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, gulf1990, sept11_2001, modern2025]
 
     static func find(_ id: String) -> ScenarioDefinition? { all.first { $0.id == id } }
 
@@ -131,6 +131,22 @@ struct ScenarioDefinition: Identifiable {
         suggestedTurnLength: .day)
 
     // MARK: Historical crises (3.12.0). Encyclopedia-level facts only; the scorecard compares the player with history.
+
+    static let civilWar1861 = ScenarioDefinition(
+        id: "civilwar1861",
+        title: "A House Divided, 1861",
+        summary: "April 12, 1861. Confederate guns open on Fort Sumter. Hold the Union together — or break it free. "
+            + "Britain and France weigh recognition, and King Cotton is the Confederacy's gamble.",
+        startDate: d(1861, 4, 12), eraYear: 1861, defcon: .defcon5,
+        wars: [("USA", "CSA")],
+        relations: [("GBR", "CSA", 10), ("FRA", "CSA", 10), ("USA", "CSA", -90), ("CSA", "USA", -90)],
+        events: [
+            ScheduledEvent(date: d(1861, 7, 21), kind: .strike, actor: "CSA", target: "USA",
+                           text: "First Bull Run: the Confederates rout the Union army at Manassas."),
+            ScheduledEvent(date: d(1863, 1, 1), kind: .news, actor: "USA", target: nil,
+                           text: "The Emancipation Proclamation reframes the war — and warns Europe off recognition."),
+        ],
+        suggestedTurnLength: .month)
 
     static let pearlHarbor1941 = ScenarioDefinition(
         id: "pearl1941",
@@ -262,6 +278,10 @@ enum Scorecard {
         let nukes = !gs.nuclearStrikes.isEmpty
         var out: [ScorecardLine] = []
         switch id {
+        case "civilwar1861":
+            out = [line("Union and Confederacy at war", history: true, when: "from Fort Sumter, 12 Apr 1861", game: fought("USA", "CSA", in: gs)),
+                   line("The Confederacy is defeated", history: true, when: "Appomattox, 9 Apr 1865", game: defeated("CSA", in: gs)),
+                   line("Nuclear weapons used", history: false, when: "", game: nukes)]
         case "pearl1941":
             out = [line("The U.S. fights Japan", history: true, when: "declared 8 Dec 1941", game: fought("USA", "JPN", in: gs)),
                    line("The U.S. fights Germany", history: true, when: "11 Dec 1941", game: fought("USA", "DEU", in: gs)),
@@ -323,8 +343,8 @@ enum Scorecard {
 enum ScenarioLoader {
     /// Build a fresh GameState for a scenario.
     static func makeGameState(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal,
-                              turnLength: TurnLength? = nil, packFolder: URL? = ShadowPack.shared.isInstalled ? ShadowPack.shared.folder : nil) -> GameState {
-        let gs = GameState(playerCountryID: "USA", difficultyLevel: difficulty, administration: s.administration,
+                              turnLength: TurnLength? = nil, player: String = "USA", packFolder: URL? = ShadowPack.shared.isInstalled ? ShadowPack.shared.folder : nil) -> GameState {
+        let gs = GameState(playerCountryID: player, difficultyLevel: difficulty, administration: s.administration,
                            turnLength: turnLength ?? s.suggestedTurnLength, startDate: s.startDate, boardYear: s.boardYear)
         apply(s, to: gs, packFolder: packFolder)
         return gs

@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var selectedAdministration: Administration? = nil
     @State private var turnLength: TurnLength = TurnLength.defaultForNewGames()
     @State private var showingScenarios = false
+    @State private var civilWarSide: ScenarioDefinition?
     @AppStorage(ShadowSettings.electionsKey) private var electionsEnabled = true
     @ObservedObject private var themes = ThemeManager.shared
 
@@ -216,12 +217,20 @@ struct ContentView: View {
             ScrollView {
                 ScenarioList { s in
                     showingScenarios = false
-                    gameEngine.startScenario(s, difficulty: selectedDifficulty)
+                    if s.id == "civilwar1861" { civilWarSide = s }
+                    else { gameEngine.startScenario(s, difficulty: selectedDifficulty) }
                 }
                 .padding()
             }
             .frame(width: FontScale.w(640), height: FontScale.h(520))
             .background(Theme.isRetro ? EGA.blue : Color.black)
+        }
+        .confirmationDialog("A House Divided — choose your side",
+                            isPresented: Binding(get: { civilWarSide != nil }, set: { if !$0 { civilWarSide = nil } }),
+                            presenting: civilWarSide) { s in
+            Button("Play the Union (Lincoln)") { gameEngine.startScenario(s, difficulty: selectedDifficulty, player: "USA"); civilWarSide = nil }
+            Button("Play the Confederacy (Davis)") { gameEngine.startScenario(s, difficulty: selectedDifficulty, player: "CSA"); civilWarSide = nil }
+            Button("Cancel", role: .cancel) { civilWarSide = nil }
         }
     }
 
