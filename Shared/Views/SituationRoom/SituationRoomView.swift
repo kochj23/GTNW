@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space, airCampaign
         var id: String { rawValue }
     }
 
@@ -76,6 +76,7 @@ struct SituationRoomView: View {
             case .factbook: FactbookSheet(gameState: gameState)
             case .tutorial: TutorialSheet()
             case .space: SpaceSheet(gameState: gameState).environmentObject(gameEngine)
+            case .airCampaign: AirCampaignSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
@@ -627,6 +628,10 @@ struct CountryDossier: View {
                         if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID {
                             Button("COALITION") { onSheet(.coalition) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
                                 .help("Ask allies to join an operation against \(c.name)")
+                        }
+                        if !c.isPlayerControlled && c.atWarWith.contains(gameState.playerCountryID) && gameState.currentYear >= 1935 {
+                            Button("AIR CAMPAIGN") { onSheet(.airCampaign) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed))
+                                .help("Strategic bombing of \(c.name)'s industry or cities")   // 3.18.19
                         }
                         if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID && gameState.playerCountryID == "USA" {
                             Button("CONGRESS") { onSheet(.congress) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))

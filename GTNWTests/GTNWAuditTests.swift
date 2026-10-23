@@ -471,3 +471,27 @@ final class NationalGuardTests: XCTestCase {
         XCTAssertLessThan(engine.gameState?.shadow.popularity ?? 99, approvalBefore, "suppressing unrest costs approval in the modern era")
     }
 }
+
+// MARK: - 3.18.19 Strategic air campaign self-check
+final class StrategicAirCampaignTests: XCTestCase {
+    func testHeavyBomberEraGateAndWorldCost() {
+        XCTAssertFalse(AirForceModel.heavyBombersAvailable(year: 1934))
+        XCTAssertTrue(AirForceModel.heavyBombersAvailable(year: 1935))
+        XCTAssertGreaterThan(AirForceModel.cityWorldCost(year: 1980), AirForceModel.cityWorldCost(year: 1940),
+                             "area bombing costs more standing after Additional Protocol I (1977)")
+    }
+
+    func testIndustryBombingCutsEnemyGDP() {
+        let engine = GameEngine()
+        engine.gameState = ScenarioLoader.makeGameState(.modern2025)
+        guard let gs = engine.gameState,
+              let ti = gs.countries.firstIndex(where: { $0.id != "USA" && !$0.isTerritory && !$0.isDestroyed }) else { return XCTFail("no enemy") }
+        let targetID = gs.countries[ti].id
+        gs.countries[ti].atWarWith.insert("USA")
+        if let pi = gs.countries.firstIndex(where: { $0.id == "USA" }) { gs.countries[pi].atWarWith.insert(targetID) }
+        let gdpBefore = gs.countries[ti].gdp
+        XCTAssertNil(engine.strategicBombingProblem(targetID), "at war in 2025 with bombers — should be orderable")
+        XCTAssertTrue(engine.conductStrategicBombing(target: targetID, aim: .industry))
+        XCTAssertLessThan(engine.gameState!.countries[ti].gdp, gdpBefore, "industry bombing must cut enemy GDP")
+    }
+}

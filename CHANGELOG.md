@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.19] - 2026-10-23 — Air Force (strategic air campaign)
+
+### Added
+- **Strategic bombing with a target choice** (`AirForceModel`, `GameEngine.conductStrategicBombing`, AIR CAMPAIGN
+  button on an enemy's dossier): once heavy bombers exist (1935), a nation you're at war with can be bombed with a
+  chosen aim — **industry** (wrecks war production: GDP, military strength, few civilian dead) or **cities** (area
+  bombing: shatters stability and will, mass casualties, heavy world-opinion + ruthlessness cost that rises after
+  Additional Protocol I in 1977). Bombers are lost to enemy defences via the existing aircraft pool, and the raid
+  saps will on any front. This is the first real air *capability* beyond the old troop-percentage debuff.
+
 ## [3.18.18] - 2026-10-23 — National Guard (domestic role)
 
 ### Added

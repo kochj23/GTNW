@@ -535,3 +535,80 @@ enum AttackSizing {
         }.joined(separator: ", ")
     }
 }
+
+// MARK: - Strategic air campaign (3.18.19)
+
+/// Strategic bombing of an enemy's homeland — distinct from the tactical air strikes that support a ground front.
+/// Heavy bombers able to reach and wreck a war economy appear in the mid-1930s (the B-17 flew in 1935; Bomber
+/// Command, the Eighth Air Force, later SAC). The President chooses the aim: the enemy's industry, or his cities.
+enum AirForceModel {
+    /// Heavy strategic bombers exist from 1935.
+    static func heavyBombersAvailable(year: Int) -> Bool { year >= 1935 }
+
+    enum StrategicAim: String, CaseIterable, Identifiable {
+        case industry, cities
+        var id: String { rawValue }
+        var title: String { self == .industry ? "The enemy's industry" : "The enemy's cities" }
+        var blurb: String {
+            self == .industry
+            ? "Precision doctrine: wreck factories, rail and oil. Cuts his war production, with comparatively few civilian dead."
+            : "Area bombing: break the enemy's will by burning his cities. Devastating and indiscriminate — the world does not forget it."
+        }
+    }
+
+    /// World-opinion cost of burning cities, rising as the law of war tightens (Additional Protocol I, 1977). DESIGN CHOICE.
+    static func cityWorldCost(year: Int) -> Int { year >= 1977 ? 8 : 4 }
+}
+
+extension GameEngine {
+    /// Why a strategic air campaign can't be ordered against this target now, or nil.
+    func strategicBombingProblem(_ targetID: String) -> String? {
+        guard let gs = gameState else { return "No game." }
+        guard AirForceModel.heavyBombersAvailable(year: gs.currentYear) else {
+            return "No heavy bombers yet: strategic bombing begins in the mid-1930s."
+        }
+        guard let t = gs.getCountry(id: targetID), t.id != gs.playerCountryID, !t.isDestroyed, !t.isTerritory else { return "Pick a nation." }
+        guard t.atWarWith.contains(gs.playerCountryID) else { return "Only against a country you are at war with." }
+        guard let p = gs.getPlayerCountry(), AttackSizing.aircraftPool(p, year: gs.currentYear, lost: gs.shadow.aircraftLost) > 0 else { return "No aircraft available." }
+        return nil
+    }
+
+    /// Conduct a strategic air campaign (one action). Industry hits his war economy; cities break his will at a
+    /// heavy cost in blood and standing. Bombers are lost to his defences.
+    @discardableResult
+    func conductStrategicBombing(target targetID: String, aim: AirForceModel.StrategicAim) -> Bool {
+        guard let gs = gameState, gs.actionsRemaining > 0, strategicBombingProblem(targetID) == nil,
+              let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }),
+              let ti = gs.countries.firstIndex(where: { $0.id == targetID }) else { return false }
+        let sorties = min(AttackSizing.aircraftPool(gs.countries[pi], year: gs.currentYear, lost: gs.shadow.aircraftLost), 200)
+        let lost = AttackSizing.aircraftLost(sorties: sorties, against: gs.countries[ti])
+        gs.shadow.aircraftLost += lost
+        let name = gs.countries[ti].name
+        switch aim {
+        case .industry:
+            gs.countries[ti].gdp *= 0.90
+            gs.countries[ti].militaryStrength = max(1, gs.countries[ti].militaryStrength - 3)
+            gs.countries[ti].stability = max(0, gs.countries[ti].stability - 5)
+            gs.totalCasualties += Int(Double(max(1, gs.countries[ti].population)) * 300)
+            gs.shadow.post("American heavy bombers hit \(name)'s factories, rail and oil. War production falls.", date: gs.currentDate, severity: 2)
+        case .cities:
+            gs.countries[ti].gdp *= 0.94
+            gs.countries[ti].stability = max(0, gs.countries[ti].stability - 18)
+            gs.countries[ti].profile.anxieties.military += 40
+            gs.totalCasualties += Int(Double(max(1, gs.countries[ti].population)) * 3000)
+            gs.shadow.ruthlessness += 10
+            let worldCost = AirForceModel.cityWorldCost(year: gs.currentYear)
+            for o in gs.countries where o.id != gs.playerCountryID && !o.isTerritory && !o.isDestroyed {
+                modifyDiplomaticRelation(from: o.id, to: gs.playerCountryID, by: -worldCost)
+            }
+            gs.shadow.post("American bombers burn \(name)'s cities. The devastation is total, and the world recoils.", date: gs.currentDate, severity: 3)
+        }
+        gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): strategic bombing of \(name) (\(aim.rawValue)); \(lost) aircraft lost.")
+        logPlayEvent("strategic_bombing", detail: ["target": targetID, "aim": aim.rawValue, "sorties": sorties,
+                                                   "aircraft_lost": lost, "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        frontBlow(targetID, will: aim == .cities ? 0.12 : 0.06, troops: 0.02)   // also saps will on any U.S. front
+        completePlayerAction()
+        return true
+    }
+}

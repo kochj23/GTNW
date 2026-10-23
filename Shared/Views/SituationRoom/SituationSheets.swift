@@ -2154,3 +2154,48 @@ struct SpaceSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Strategic air campaign (3.18.19)
+
+/// Order a strategic bombing campaign against an enemy homeland: choose the aim (industry or cities). Distinct from
+/// the tactical air strikes on the escalation ladder; available from 1935, against a country you are at war with.
+struct AirCampaignSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let targetID: String
+    private var targetName: String { gameState.getCountry(id: targetID)?.name ?? targetID }
+
+    var body: some View {
+        let problem = gameEngine.strategicBombingProblem(targetID)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "airplane")
+                Text(verbatim: "STRATEGIC AIR CAMPAIGN — \(targetName.uppercased())").lineLimit(2)
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(15, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if let problem {
+                Text(problem).font(ThemeFont.mono(11)).foregroundColor(GTNWColors.terminalRed).fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(AirForceModel.StrategicAim.allCases) { aim in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(aim.title.uppercased()).font(ThemeFont.mono(12, .bold))
+                        .foregroundColor(aim == .cities ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+                    Text(aim.blurb).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("ORDER THE RAID") { if gameEngine.conductStrategicBombing(target: targetID, aim: aim) { dismiss() } }
+                        .buttonStyle(ThemedButtonStyle(color: aim == .cities ? GTNWColors.terminalRed : GTNWColors.terminalGreen, prominent: true))
+                        .disabled(problem != nil || gameState.actionsRemaining == 0 || gameState.gameOver)
+                }
+                .padding(8).themedPanel(retroFill: EGA.black)
+            }
+            Spacer()
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(560), height: FontScale.h(460))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
