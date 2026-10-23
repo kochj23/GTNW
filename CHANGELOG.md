@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.18] - 2026-10-23 — National Guard (domestic role)
+
+### Added
+- **The National Guard at home** (`GameEngine.callNationalGuard`, button on your own nation's dossier): the Guard
+  can be called out on American soil — during a natural disaster it is **relief** (stability + approval rise), and
+  otherwise it is **restoring order** (stability rises, unrest falls, but at a political cost). `GuardModel`
+  prices that cost by era — routine in the 19th century, explosive in the civil-rights era (Kent State 1970), still
+  heavy today — so putting troops in the streets is a real decision, not a free lever. (Previously the Guard existed
+  only as an overseas manpower top-up.)
+
 ## [3.18.17] - 2026-10-23 — Space Force (phase 2: early warning)
 
 ### Added

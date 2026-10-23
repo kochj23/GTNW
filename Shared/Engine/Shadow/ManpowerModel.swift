@@ -144,3 +144,48 @@ extension GameEngine {
         return true
     }
 }
+
+// MARK: - National Guard at home (3.18.18)
+
+/// The domestic National Guard: troops on American soil for disaster relief or to restore order. Relief is popular;
+/// putting soldiers between the government and its own citizens is not, and the public's tolerance for it collapses
+/// in the civil-rights era (Little Rock 1957, Kent State 1970) and never fully recovers. DESIGN CHOICES.
+enum GuardModel {
+    /// The political cost of calling the Guard out to restore order at home (ruthlessness up, approval down), by era.
+    static func homeFrontCost(year: Int) -> (ruthlessness: Double, popularity: Double) {
+        switch year {
+        case ..<1900: return (2, 1)    // routine; the militia keeping order was unremarkable
+        case ..<1960: return (5, 3)    // the Bonus Army (1932), Little Rock (1957) — it draws notice
+        case ..<1992: return (12, 8)   // Kent State (1970), the civil-rights era — troops on citizens is explosive
+        default:      return (10, 7)   // posse-comitatus norms; heavy, somewhat normalized after 2001
+        }
+    }
+}
+
+extension GameEngine {
+    /// Call out the National Guard on the home front (U.S., one action). During a natural disaster it is relief —
+    /// stability and approval rise. Otherwise it is restoring order — stability rises and unrest falls, but at the
+    /// era's political cost (ruthlessness up, approval down); the post-1960s public recoils at troops in the streets.
+    @discardableResult
+    func callNationalGuard() -> Bool {
+        guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0,
+              let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return false }
+        let disaster = crisisManager.activeCrisis?.type == .naturalDisaster
+        gs.countries[pi].stability = min(100, gs.countries[pi].stability + (disaster ? 12 : 15))
+        gs.countries[pi].profile.anxieties.social = max(0, gs.countries[pi].profile.anxieties.social - 20)
+        gs.countries[pi].profile.outcry = max(0, gs.countries[pi].profile.outcry - (disaster ? 10 : 25))
+        if disaster {
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 6)
+            gs.shadow.post("The National Guard deploys for disaster relief. The country is grateful.", date: gs.currentDate, severity: 2)
+        } else {
+            let cost = GuardModel.homeFrontCost(year: gs.currentYear)
+            gs.shadow.ruthlessness += cost.ruthlessness
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - cost.popularity)
+            gs.shadow.post("The National Guard is called out to restore order. Troops are in American streets.", date: gs.currentDate, severity: 2)
+        }
+        logPlayEvent("national_guard", detail: ["mission": disaster ? "relief" : "order", "game_date": PlayHistory.day(gs.currentDate)])
+        self.gameState = gs
+        completePlayerAction()
+        return true
+    }
+}

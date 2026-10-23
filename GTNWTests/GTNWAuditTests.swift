@@ -449,3 +449,25 @@ final class SpaceDefenseTests: XCTestCase {
         XCTAssertEqual(SpaceDefense.coverage(baseSDI: 90, warningSat: true), 100, accuracy: 0.001, "capped at 100%")
     }
 }
+
+// MARK: - 3.18.18 National Guard home-front self-check
+final class NationalGuardTests: XCTestCase {
+    func testHomeFrontCostRisesInCivilRightsEra() {
+        let c = GuardModel.homeFrontCost
+        XCTAssertLessThan(c(1890).popularity, c(1970).popularity, "19th-c. order costs less approval than Kent-State era")
+        XCTAssertLessThan(c(1950).ruthlessness, c(1970).ruthlessness, "troops on citizens cost more after the civil-rights era")
+        XCTAssertGreaterThan(c(2010).popularity, 0, "still has a cost in the modern era")
+    }
+
+    func testCallGuardRestoresOrderAtACost() {
+        let engine = GameEngine()
+        engine.gameState = ScenarioLoader.makeGameState(.modern2025)   // USA, no active disaster
+        guard let pi = engine.gameState?.countries.firstIndex(where: { $0.id == "USA" }) else { return XCTFail("no USA") }
+        engine.gameState?.countries[pi].stability = 50
+        engine.gameState?.shadow.popularity = 60
+        let approvalBefore = engine.gameState?.shadow.popularity ?? 0
+        XCTAssertTrue(engine.callNationalGuard())
+        XCTAssertGreaterThan(engine.gameState?.countries[pi].stability ?? 0, 50, "order restored raises stability")
+        XCTAssertLessThan(engine.gameState?.shadow.popularity ?? 99, approvalBefore, "suppressing unrest costs approval in the modern era")
+    }
+}

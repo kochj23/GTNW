@@ -618,6 +618,12 @@ struct CountryDossier: View {
                             Button("SEND AID") { onSheet(.aid) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
                         }
                         Button("CITY VIEW") { onSheet(.city) }.buttonStyle(ThemedButtonStyle())
+                        if c.isPlayerControlled && gameState.playerCountryID == "USA" {   // 3.18.18: domestic National Guard
+                            Button("NAT'L GUARD") { gameEngine.callNationalGuard() }
+                                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
+                                .disabled(gameState.actionsRemaining == 0 || gameState.gameOver)
+                                .help("Call out the Guard: disaster relief, or restore order at home")
+                        }
                         if !c.isPlayerControlled && c.territoryOf != gameState.playerCountryID {
                             Button("COALITION") { onSheet(.coalition) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
                                 .help("Ask allies to join an operation against \(c.name)")
