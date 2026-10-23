@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook
         var id: String { rawValue }
     }
 
@@ -68,6 +68,7 @@ struct SituationRoomView: View {
             case .records: RecordsSheet(gameState: gameState)
             case .peace: PeaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .statehood: StatehoodSheet(gameState: gameState).environmentObject(gameEngine)
+            case .factbook: FactbookSheet(gameState: gameState)
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
@@ -260,6 +261,7 @@ struct SituationTopBar: View {
             Button("PEACE") { onSheet(.peace) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))   // 3.16.0
             Button("TACTICS") { onSheet(.tactics) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))   // 3.17.0: dirty tactics
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy
+            Button("FACTBOOK") { onSheet(.factbook) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))   // 3.18.13: reference tab
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
                 gameEngine.endTurn()

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.13] - 2026-10-23 — Factbook
+
+### Added
+- **A FACTBOOK reference tab** (top bar → `FactbookSheet`) with three pages: **Nations** (every live country's flag,
+  region, government and leader), **Warheads** (each `WarheadType`'s era window and tradeoff, live ones highlighted),
+  and **Tactics** (the whole `DirtyTactics` catalog by group, each with its era window and current legal status).
+  All of it is data the game already held; the factbook just surfaces it in one browsable place.
+
 ## [3.18.12] - 2026-10-23 — "The Good Life" victory (guns vs. butter)
 
 ### Added

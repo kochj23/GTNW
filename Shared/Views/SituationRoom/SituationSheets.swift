@@ -1944,3 +1944,95 @@ struct ActionResultSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Factbook (3.18.13)
+
+/// A reference tab: the nations on the board, the warhead generations, and the dirty-tactics catalog with each
+/// tactic's current legal status. All data the game already holds — the factbook just gathers it in one place.
+struct FactbookSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    @State private var tab = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "book.closed.fill")
+                Text("FACTBOOK").font(ThemeFont.mono(16, .bold))
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .foregroundColor(GTNWColors.terminalAmber)
+            ScaledSegmentedPicker(selection: $tab, options: [(0, "Nations"), (1, "Warheads"), (2, "Tactics")])
+            ScrollView {
+                switch tab {
+                case 0: nations
+                case 1: warheads
+                default: tactics
+                }
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(660), height: FontScale.h(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    private var nations: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(gameState.liveCountries.sorted { $0.name < $1.name }) { c in
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack {
+                        Text(c.flag)
+                        Text(c.name.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                        Spacer()
+                        Text(c.region.rawValue).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                    }
+                    Text(verbatim: "\(c.government.rawValue)\(gameState.shadow.leaderNames[c.id].map { " · \($0)" } ?? "")")
+                        .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var warheads: some View {
+        let year = gameState.currentYear
+        return VStack(alignment: .leading, spacing: 8) {
+            ForEach(WarheadType.allCases) { w in
+                let window = "\(w.from)\(w.to.map { "–\($0)" } ?? "+")"
+                let live = w.available(in: year)
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack {
+                        Text(w.title.uppercased()).font(ThemeFont.mono(11, .bold)).foregroundColor(live ? GTNWColors.terminalGreen : GTNWColors.neonCyan)
+                        Spacer()
+                        Text(window).font(ThemeFont.mono(9, .bold)).foregroundColor(live ? GTNWColors.terminalAmber : GTNWColors.terminalRed)
+                    }
+                    Text(w.tradeoff).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private var tactics: some View {
+        let year = gameState.currentYear
+        return VStack(alignment: .leading, spacing: 8) {
+            ForEach(TacticGroup.allCases) { g in
+                let items = DirtyTactics.all.filter { $0.group == g }
+                if !items.isEmpty {
+                    Text(g.title.uppercased()).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 4)
+                    ForEach(items) { t in
+                        let window = "\(t.from)\(t.to.map { "–\($0)" } ?? "+")"
+                        HStack {
+                            Text(t.name).font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            Spacer()
+                            Text(window).font(ThemeFont.mono(8)).foregroundColor(GTNWColors.neonCyan)
+                            Text(t.status(in: year).label.uppercased()).font(ThemeFont.mono(8, .bold))
+                                .foregroundColor(t.exists(in: year) ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
