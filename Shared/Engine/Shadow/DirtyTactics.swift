@@ -297,6 +297,15 @@ extension DirtyTactics {
                  + "put some 20 million gallons of herbicide, Agent Orange among them, over South Vietnam. The enemy "
                  + "loses his cover and his harvest; the dioxin bill arrives twenty years later.",
             target: .nation, canBeCovert: false, people: 10),
+        DirtyTactic(
+            id: "cs_gas", group: .chemical, name: "Riot gas as a weapon of war",
+            from: 1959,
+            periods: [p(1959, .legal, "Lawful for policing; its use in war is not yet forbidden."),
+                      p(1997, .treatyBanned, "Banned as a method of warfare: the Chemical Weapons Convention (in force 1997) forbids riot-control agents as a weapon of war, though not for policing.")],
+            blurb: "Pump CS gas into the tunnels and bunkers to flush the enemy into the open. American forces used "
+                 + "it widely in Vietnam from the mid-1960s, where it was not then unlawful. It clears a position "
+                 + "without levelling it — and it blurs the line between a police tool and poison gas.",
+            target: .nation, canBeCovert: true, people: 6),
     ]
 }
 
@@ -373,6 +382,16 @@ extension DirtyTactics {
                  + "been in service since the First World War. Against a city it is the most destructive thing short "
                  + "of a warhead.",
             target: .nation, canBeCovert: false, people: 10),
+        DirtyTactic(
+            id: "thermobaric", group: .incendiary, name: "Thermobaric (fuel-air) bombs",
+            from: 1969,
+            periods: [p(1969, .legal, "No treaty covers fuel-air explosives."),
+                      p(1977, .restricted, "Restricted: Additional Protocol I Art. 51 (1977) forbids indiscriminate attack. The United States has not ratified it."),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Spray an aerosol of fuel over the target and touch it off: a blast wave that fills every space "
+                 + "and collapses what artillery leaves standing. The United States used fuel-air weapons from "
+                 + "Vietnam in 1969. Against bunkers and caves nothing short of a warhead does more.",
+            target: .nation, canBeCovert: false, people: 8),
     ]
 }
 
@@ -580,6 +599,10 @@ extension DirtyTactics {
 
 extension DirtyTactics {
     static let ottawaNote = "Banned by the Ottawa Convention (signed December 1997, in force 1 March 1999). The United States never joined it."
+    static let hagueExpandingNote = "Banned: Hague Declaration III (1899) on bullets that expand or flatten in the body."
+    static let clusterNote = "Banned by the Convention on Cluster Munitions (adopted 2008, in force 2010). The United States never joined it."
+    static let ccwLaserNote = "Banned: CCW Protocol IV on blinding laser weapons (adopted 1995, in force 1998)."
+    static let duNote = "Contested: UN General Assembly resolutions from 2007 urge caution over depleted-uranium munitions; no treaty bans them."
     static let londonSubmarineNote = "Banned: the London Protocol of 1936 — a submarine must put passengers and crew in a place of safety first."
 
     static let sea: [DirtyTactic] = [
@@ -636,6 +659,45 @@ extension DirtyTactics {
                  + "1945; the Tokyo raid of 9–10 March 1945 burned sixteen square miles and killed about 100,000 "
                  + "people in a night. Enemy output and will collapse; so does anything anyone thinks of you.",
             target: .nation, canBeCovert: false, people: 30, isStance: true),
+        DirtyTactic(
+            id: "dum_dum", group: .sea, name: "Expanding bullets",
+            from: 1897,
+            periods: [p(1897, .legal, "No rule yet: the Dum Dum arsenal near Calcutta began making them in 1897."),
+                      p(1899, .treatyBanned, hagueExpandingNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Issue soft-nosed rounds that mushroom in the body and wound far worse than they kill. The British "
+                 + "Dum Dum arsenal gave the type its name in 1897; the Hague Declaration of 1899 banned them for war "
+                 + "the year after. Issued quietly, they make every hit a casualty that must be carried off the field.",
+            target: .nation, canBeCovert: true, people: 3),
+        DirtyTactic(
+            id: "cluster_munitions", group: .sea, name: "Cluster munitions",
+            from: 1943,
+            periods: [p(1943, .legal, "No treaty covers them; the law of war applies as usual."),
+                      p(1983, .restricted, "Restricted: CCW context on explosive remnants of war — unexploded submunitions left behind."),
+                      p(2010, .treatyBanned, clusterNote)],
+            blurb: "Open the canister and scatter bomblets across acres. German SD-2 \"butterfly\" bombs fell on "
+                 + "Grimsby in 1943; the type has saturated battlefields ever since. They break an attack in the open "
+                 + "— and a tenth fail to go off and wait in the fields for whoever comes back.",
+            target: .nation, canBeCovert: false, people: 8),
+        DirtyTactic(
+            id: "depleted_uranium", group: .sea, name: "Depleted-uranium rounds",
+            from: 1991,
+            periods: [p(1991, .legal, "No treaty covers them."),
+                      p(2007, .restricted, duNote)],
+            blurb: "Fire penetrators of depleted uranium that punch through any armour and burn as they go. American "
+                 + "tanks and A-10s fired them across Kuwait and Iraq in 1991. Enemy armour comes apart — and the "
+                 + "dust left on the ground is argued over for a generation.",
+            target: .nation, canBeCovert: false, people: 6),
+        DirtyTactic(
+            id: "blinding_lasers", group: .sea, name: "Blinding laser weapons",
+            from: 1980,
+            periods: [p(1980, .legal, "No treaty yet covers laser weapons built to blind."),
+                      p(1998, .treatyBanned, ccwLaserNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Field lasers meant to blind the men behind the optics. Several powers built prototypes in the "
+                 + "1980s; the CCW's Protocol IV banned the whole class in 1995 before any reached a battlefield in "
+                 + "quantity. Crews that cannot see cannot fight — and a blinded enemy is a photograph nobody forgets.",
+            target: .nation, canBeCovert: true, people: 4),
     ]
 }
 
@@ -1041,6 +1103,18 @@ extension DirtyTactics {
             return "Bombers able to burn a city appear in the 1930s; Guernica was 26 April 1937."
         case "impressment":
             return "Impressment belongs to the age of sail; it had died out everywhere by the 1830s."
+        case "dum_dum":
+            return "Expanding small-arms rounds date from the Dum Dum arsenal's work of 1897."
+        case "cluster_munitions":
+            return "Submunition weapons that scatter bomblets appear in the Second World War, from about 1943."
+        case "depleted_uranium":
+            return "Depleted-uranium penetrators enter service with modern tank and aircraft guns and were first fired in anger in 1991."
+        case "blinding_lasers":
+            return "Lasers compact and powerful enough to be built as blinding weapons appear only around 1980."
+        case "cs_gas":
+            return "CS was synthesised in 1928 but did not enter military use until about 1959."
+        case "thermobaric":
+            return "Fuel-air explosives reach the battlefield from about 1969."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -1096,6 +1170,12 @@ extension DirtyTactics {
         case "hired_troops": return "The United States hires foreign regiments\(at.isEmpty ? "" : " from" + at)."
         case "landmines": return "American engineers sow mines and booby traps across\(at.isEmpty ? " the front" : at)."
         case "firebomb_cities": return "American bombers are ordered onto\(at.isEmpty ? " the enemy's" : at + "'s") cities, not his factories."
+        case "dum_dum": return "American troops are issued expanding bullets\(at)."
+        case "cluster_munitions": return "American aircraft scatter cluster bomblets across\(at.isEmpty ? " the enemy's lines" : at)."
+        case "depleted_uranium": return "American gunners fire depleted-uranium penetrators into\(at.isEmpty ? " the enemy's armour" : at)."
+        case "blinding_lasers": return "American units field lasers built to blind\(at)."
+        case "cs_gas": return "American troops gas the enemy out of his positions\(at)."
+        case "thermobaric": return "American aircraft put fuel-air bombs onto\(at.isEmpty ? " the enemy's bunkers" : at)."
         default: return "The United States orders \(t.name.lowercased())\(at)."
         }
     }
@@ -1114,6 +1194,9 @@ extension DirtyTactics {
         case "yellow_press": return "An editor publishes the administration's instructions to him, word for word."
         case "enemy_uniforms": return "Men in the enemy's uniform are taken and shot. The newspapers have their names."
         case "counterfeit_currency": return "A plate is captured with the Treasury's seal on it."
+        case "dum_dum": return "A field surgeon's photographs of the wounds\(at) reach the press: the bullets were expanding rounds."
+        case "blinding_lasers": return "Blinded prisoners\(at) are shown to the cameras. The weapon has a treaty against it."
+        case "cs_gas": return "Footage of gas pouring from the tunnels\(at) runs beside the word \"chemical.\""
         default: return "The press exposes an American \(t.name.lowercased())\(at)."
         }
     }
@@ -1386,6 +1469,51 @@ extension GameEngine {
                                                   ruthlessness: 3 * m, popularity: 1.5 * m, world: 1,
                                                   until: GameCalendar.calendar.date(byAdding: .year, value: 30, to: gs.currentDate)))
             }
+        // --- 3.18.7: expanded arsenal ---
+        case "dum_dum":
+            // Every hit a casualty that must be carried off: the enemy's troops in theatre melt faster, at little cost.
+            frontBlow(use.target, will: 0.06 * m, troops: 0.06 * m)
+            if let target = use.target { burnTarget(target, gdp: 0, stability: 3 * m, dead: 120 * m) }
+        case "cluster_munitions":
+            // Breaks an attack in the open; a tenth stays in the ground and keeps killing.
+            frontBlow(use.target, will: 0.1 * m, troops: 0.09 * m)
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].profile.anxieties.military += 12 * m
+                scheduleAftermath(TacticAftermath(tactic: t.id,
+                                                  due: GameCalendar.calendar.date(byAdding: .year, value: 2, to: gs.currentDate) ?? gs.currentDate,
+                                                  text: "Unexploded submunitions in \(gs.countries[i].name) kill farmers and children again this year.",
+                                                  ruthlessness: 3 * m, popularity: 1.5 * m, world: 1,
+                                                  until: GameCalendar.calendar.date(byAdding: .year, value: 20, to: gs.currentDate)))
+            }
+        case "depleted_uranium":
+            // Punches through armour: enemy military strength and his armour in theatre both fall. The dust bill comes later.
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].militaryStrength = max(1, gs.countries[i].militaryStrength - Int(4 * m))
+            }
+            frontBlow(use.target, will: 0.08 * m, troops: 0.1 * m)
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                scheduleAftermath(TacticAftermath(tactic: t.id,
+                                                  due: GameCalendar.calendar.date(byAdding: .year, value: 10, to: gs.currentDate) ?? gs.currentDate,
+                                                  text: "Illness claims and birth-defect studies from the \(gs.countries[i].name) battlefields reach the press.",
+                                                  ruthlessness: 5 * m, popularity: 3 * m, world: 2))
+            }
+        case "blinding_lasers":
+            // Crews that cannot see cannot fight: a sharp blow to will, little to the ground.
+            frontBlow(use.target, will: 0.14 * m, troops: 0.03 * m)
+            if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
+                gs.countries[i].profile.anxieties.military += 15 * m
+            }
+        case "cs_gas":
+            // Flush the enemy out without levelling the ground: momentum, not casualties.
+            if let target = use.target, let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) {
+                let weAttack = gs.shadow.fronts[fi].defender == target
+                gs.shadow.fronts[fi].attackerMomentum = min(1, max(-1, gs.shadow.fronts[fi].attackerMomentum + (weAttack ? 0.12 : -0.12) * m))
+            }
+            frontBlow(use.target, will: 0.05 * m, troops: 0.02 * m)
+        case "thermobaric":
+            // Collapses what artillery leaves standing: like napalm, but it clears bunkers.
+            if let target = use.target { burnTarget(target, gdp: 0.04 * m, stability: 14 * m, dead: 700 * m) }
+            frontBlow(use.target, will: 0.16 * m, troops: 0.07 * m)
         default:
             break
         }

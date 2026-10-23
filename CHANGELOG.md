@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.7] - 2026-10-23 — Dirty-arsenal expansion
+
+### Added
+- **Six new dirty tactics** in `DirtyTactics.swift`, each era-gated with real legal periods and in-game effects:
+  **expanding (dum-dum) bullets** (1897; Hague Declaration III 1899), **cluster munitions** (1943; Convention on
+  Cluster Munitions 2010), **depleted-uranium rounds** (1991), **blinding laser weapons** (1980; CCW Protocol IV
+  1998), **CS riot gas as a weapon of war** (1959; CWC 1997), and **thermobaric / fuel-air bombs** (1969). They
+  surface automatically through the existing dirty-tactics UI. Cluster and DU leave lingering aftermath (unexploded
+  submunitions, contamination claims). Weapons already in the catalog (napalm, flamethrowers, landmines, scorched
+  earth, defoliants, smallpox blankets) were **not** re-added.
+
 ## [3.18.6] - 2026-10-22 — Civil War: period WMD gate
 
 ### Added

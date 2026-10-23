@@ -308,3 +308,26 @@ final class NuclearStrikeMathTests: XCTestCase {
         XCTAssertTrue(gs.nuclearStrikes.isEmpty)
     }
 }
+
+// MARK: - 3.18.7 Dirty-arsenal expansion self-check (six new tactics, era-gated)
+final class DirtyArsenalExpansionTests: XCTestCase {
+    func testNewTacticsEraGating() {
+        // id, first year possible, a year by which it is no longer plainly legal
+        let cases: [(String, Int, Int)] = [
+            ("dum_dum", 1897, 1899),
+            ("cluster_munitions", 1943, 2010),
+            ("depleted_uranium", 1991, 2007),
+            ("blinding_lasers", 1980, 1998),
+            ("cs_gas", 1959, 1997),
+            ("thermobaric", 1969, 2002),
+        ]
+        for (id, from, constrained) in cases {
+            guard let t = DirtyTactics.tactic(id) else { XCTFail("\(id) missing from catalog"); continue }
+            XCTAssertFalse(t.exists(in: from - 1), "\(id) must not exist before \(from)")
+            XCTAssertTrue(t.exists(in: from), "\(id) must exist from \(from)")
+            XCTAssertEqual(t.status(in: from), .legal, "\(id) must start legal")
+            XCTAssertNotEqual(t.status(in: constrained), .legal, "\(id) must be constrained by \(constrained)")
+            XCTAssertTrue(DirtyTactics.available(in: from).contains { $0.id == id }, "\(id) must be available in \(from)")
+        }
+    }
+}
