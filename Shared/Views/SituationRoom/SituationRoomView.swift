@@ -727,6 +727,8 @@ struct ActionLadderSheet: View {
     @State private var playingAnimation: String?
     /// The sizing step (3.4.0): set to Standard when an offensive is picked; nil for actions that aren't sized.
     @State private var size: AttackSize?
+    /// The warhead for a nuclear strike (3.18.8): the era's default unless the President picks another; nil = not nuclear.
+    @State private var warhead: WarheadType?
 
     private var actions: [PresidentialAction] {
         PresidentialAction.allCases.filter { $0.rung == rung && $0.isAvailable(on: gameState.currentDate, in: gameState) }
@@ -750,6 +752,10 @@ struct ActionLadderSheet: View {
                             Button {
                                 action = a
                                 size = AttackSizing.kinds(for: a).isEmpty ? nil : AttackSizing.standard(a, in: gameState)
+                                let y = gameState.currentYear
+                                warhead = AttackSizing.kinds(for: a).contains(.warheads)
+                                    ? ((a == .tacticalNuke && WarheadType.neutron.available(in: y)) ? .neutron : WarheadType.standard(for: y))
+                                    : nil
                             } label: {
                                 HStack {
                                     Circle().fill(a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen).frame(width: FontScale.w(7), height: FontScale.h(7))
@@ -774,6 +780,25 @@ struct ActionLadderSheet: View {
                         if size != nil {
                             AttackSizingPanel(action: a, size: Binding(get: { size ?? AttackSize() }, set: { size = $0 }),
                                               gameState: gameState, target: target)
+                        }
+                        let warheadTypes = AttackSizing.kinds(for: a).contains(.warheads)
+                            ? WarheadType.allCases.filter { $0.available(in: gameState.currentYear) } : []
+                        if warheadTypes.count >= 2 {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("WARHEAD").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                                HStack(spacing: 6) {
+                                    ForEach(warheadTypes) { w in
+                                        Button(w.title.uppercased()) { warhead = w }
+                                            .buttonStyle(ThemedButtonStyle(color: w == .neutron ? GTNWColors.neonCyan : GTNWColors.terminalRed,
+                                                                           prominent: warhead == w))
+                                    }
+                                }
+                                if let w = warhead {
+                                    Text(w.tradeoff).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .padding(8).themedPanel(retroFill: EGA.black)
                         }
                         let advice = AdviceEngine.advise(action: a, player: player, target: target, gameState: gameState)
                         AdvicePanel(advice: advice)
@@ -815,7 +840,7 @@ struct ActionLadderSheet: View {
     }
 
     private func perform(_ a: PresidentialAction, advice: ActionAdvice) {
-        gameEngine.performAdvisedAction(a, targetID: target.id, advice: advice, size: size)
+        gameEngine.performAdvisedAction(a, targetID: target.id, advice: advice, size: size, warhead: warhead)
         let media = ShadowPack.media(forActionCase: String(describing: a))
         if let sound = media.sound { ShadowPack.shared.play(sound) }
         if let anim = media.animation, let clip = ShadowPack.shared.animation(anim) {

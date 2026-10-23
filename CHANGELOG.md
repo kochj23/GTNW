@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.8] - 2026-10-23 — Warhead-type picker
+
+### Added
+- **Choose your warhead** on a nuclear strike (`SituationRoomView` strike sheet): when more than one
+  `WarheadType` exists in the current year, a WARHEAD picker appears beside the force-size step with a one-line
+  tradeoff (`WarheadType.tradeoff`). The choice threads through `performAdvisedAction` →
+  `executeShadowPresidentAction` → `launchNuclearStrike(type:)`. Defaults match the old behaviour (neutron for a
+  tactical strike where it exists, else the era's standard warhead), so nothing changes unless you pick.
+
 ## [3.18.7] - 2026-10-23 — Dirty-arsenal expansion
 
 ### Added

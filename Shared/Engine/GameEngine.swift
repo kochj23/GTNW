@@ -1848,7 +1848,7 @@ extension GameEngine {
 
     // MARK: - Shadow President Actions
 
-    func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String, size: AttackSize? = nil) {
+    func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String, size: AttackSize? = nil, warhead: WarheadType? = nil) {
         guard var gameState = gameState else { return }
         // 3.4.0: the President's sizing step (see AttackSizing). nil = the pre-3.4 attack; Standard is identical.
         let kinds = AttackSizing.kinds(for: action)
@@ -1869,7 +1869,11 @@ extension GameEngine {
                 }
                 if let s = sized, playerID == gameState.playerCountryID { warheads = max(1, min(attacker.nuclearWarheads, s.warheads)) }
                 addLog("☢️ \(action.rawValue.uppercased()) ordered against \(getCountry(targetID)?.name ?? targetID)", type: .critical)
-                let warheadType: WarheadType? = (action == .tacticalNuke && WarheadType.neutron.available(in: gameState.currentYear)) ? .neutron : nil
+                // The President's explicit choice wins if it exists in this year; otherwise the old default
+                // (neutron for a tactical strike where it exists, else the era's standard warhead).
+                let chosen = (warhead?.available(in: gameState.currentYear) == true) ? warhead : nil
+                let warheadType: WarheadType? = chosen
+                    ?? ((action == .tacticalNuke && WarheadType.neutron.available(in: gameState.currentYear)) ? .neutron : nil)
                 launchNuclearStrike(from: playerID, to: targetID, warheads: warheads, type: warheadType)
                 if let s = sized { applySizedFallout(action, target: targetID, size: s, scale: m, kinds: kinds, success: true) }
             } else {

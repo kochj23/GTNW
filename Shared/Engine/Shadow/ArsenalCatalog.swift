@@ -344,4 +344,13 @@ enum WarheadType: String, Codable, CaseIterable, Identifiable {
 
     /// The warhead a year fields by default: thermonuclear once it exists (1952), else fission.
     static func standard(for year: Int) -> WarheadType { year >= 1952 ? .thermonuclear : .fission }
+
+    /// One line on the grim tradeoff, for the strike sheet.
+    var tradeoff: String {
+        switch self {
+        case .fission:       return "The original atomic bomb. The baseline for blast, casualties and fallout."
+        case .thermonuclear: return "Megaton-class: ×8 casualties, twice the blast, triple the lasting fallout."
+        case .neutron:       return "Kills by radiation, leaves the buildings standing: ×1.8 casualties, little blast, little fallout."
+        }
+    }
 }
