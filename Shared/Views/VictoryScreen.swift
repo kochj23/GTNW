@@ -7,11 +7,16 @@
 //
 
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
 
 struct VictoryScreen: View {
     @ObservedObject var gameState: GameState
     let victoryType: VictoryType?
     let score: GameScore
+    @State private var roastVariant = 0
+    @State private var roastCopied = false
     let onNewGame: () -> Void
     let onViewLeaderboard: () -> Void
 
@@ -209,13 +214,34 @@ struct VictoryScreen: View {
             Text("NOVA'S VERDICT")
                 .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
+            // Tap the verdict to copy it; "ANOTHER" asks Nova for a fresh take (cycles the roast pool).
             Text(gameState.novaRoast)
                 .font(.scaled(size: 16, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .onTapGesture { copyRoast() }
+            HStack(spacing: 16) {
+                Button(roastCopied ? "COPIED \u{2713}" : "COPY") { copyRoast() }
+                Button("ANOTHER \u{27F3}") {
+                    roastVariant += 1
+                    roastCopied = false
+                    gameState.novaRoast = NovaCommentary.roastTemplate(gs: gameState, score: score, victory: victoryType, variant: roastVariant)
+                }
+            }
+            .font(.scaled(size: 11, weight: .bold, design: .monospaced))
+            .foregroundColor(AppSettings.terminalAmber)
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 40)
+    }
+
+    private func copyRoast() {
+        #if canImport(AppKit)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(gameState.novaRoast, forType: .string)
+        #endif
+        roastCopied = true
     }
 
     private func woprQuote() -> some View {

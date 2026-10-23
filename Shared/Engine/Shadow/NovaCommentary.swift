@@ -133,7 +133,7 @@ enum NovaCommentary {
     }
 
     /// Deterministic roast used until (or unless) a local AI answers.
-    static func roastTemplate(gs: GameState, score: GameScore, victory: VictoryType?) -> String {
+    static func roastTemplate(gs: GameState, score: GameScore, victory: VictoryType?, variant: Int = 0) -> String {
         let pool: [String]
         if victory == nil {
             if gs.nuclearStrikes.count > 0 {
@@ -154,7 +154,7 @@ enum NovaCommentary {
                     "\(score.finalScore) points and no mushroom clouds. Who are you and what did you do with the President?",
                     "You won without burning the place down. Suspicious. Do it again and I might believe it."]
         }
-        return pool[stableHash(gs.gameOverReason + "\(gs.turn)\(score.finalScore)") % pool.count]
+        return pool[(stableHash(gs.gameOverReason + "\(gs.turn)\(score.finalScore)") + variant) % pool.count]
     }
 }
 

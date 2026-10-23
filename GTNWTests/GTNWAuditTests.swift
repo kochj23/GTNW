@@ -495,3 +495,19 @@ final class StrategicAirCampaignTests: XCTestCase {
         XCTAssertLessThan(engine.gameState!.countries[ti].gdp, gdpBefore, "industry bombing must cut enemy GDP")
     }
 }
+
+// MARK: - Nova roast "ANOTHER" cycling self-check (clickable end-game verdict)
+final class NovaRoastVariantTests: XCTestCase {
+    func testVariantCyclesThroughPoolAndWrapsAround() {
+        let engine = GameEngine()
+        engine.gameState = ScenarioLoader.makeGameState(.modern2025)
+        let gs = engine.gameState!
+        let score = GameScore()
+        // Election-loss shape: no victory. Each ANOTHER click bumps variant.
+        let v0 = NovaCommentary.roastTemplate(gs: gs, score: score, victory: nil, variant: 0)
+        let v1 = NovaCommentary.roastTemplate(gs: gs, score: score, victory: nil, variant: 1)
+        let v3 = NovaCommentary.roastTemplate(gs: gs, score: score, victory: nil, variant: 3)
+        XCTAssertNotEqual(v0, v1, "ANOTHER must give a different verdict")
+        XCTAssertEqual(v0, v3, "pool has 3 lines — variant wraps every 3 clicks")
+    }
+}
