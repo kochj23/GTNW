@@ -50,6 +50,7 @@ struct ScenarioDefinition: Identifiable {
     let suggestedTurnLength: TurnLength
     /// Build the board for this year rather than the administration's first year (3.12.0); nil = as before.
     var boardYear: Int? = nil
+    var allowsEarlyWMD: Bool = false   // lift the WMD era-gate (the Civil War lets you wage bio/chem anachronistically)
 
     var administration: Administration? {
         let all = Advisor.allAdministrations()
@@ -146,7 +147,7 @@ struct ScenarioDefinition: Identifiable {
             ScheduledEvent(date: d(1863, 1, 1), kind: .news, actor: "USA", target: nil,
                            text: "The Emancipation Proclamation reframes the war — and warns Europe off recognition."),
         ],
-        suggestedTurnLength: .month)
+        suggestedTurnLength: .month, allowsEarlyWMD: true)
 
     static let pearlHarbor1941 = ScenarioDefinition(
         id: "pearl1941",

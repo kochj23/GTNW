@@ -199,6 +199,9 @@ extension PresidentialAction {
         default:
             break
         }
+        // 3.18.x: a scenario may lift the WMD era-gate (the Civil War lets you wage bio/chem anachronistically).
+        if wmd != nil, let sid = gs?.shadow.scenarioID,
+           ScenarioDefinition.all.first(where: { $0.id == sid })?.allowsEarlyWMD == true { return true }
         guard eraAvailableYear <= y else { return false }
         if category == .nuclear && eraAvailableYear >= 1945 && date < ArsenalCatalog.trinity { return false }
         switch self {

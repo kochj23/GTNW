@@ -5752,3 +5752,15 @@ final class CivilWarRecognitionTests: XCTestCase {
         XCTAssertNil(CivilWarRecognition.recognizedSide(lean: 10))
     }
 }
+
+// MARK: - Civil War WMD gate (3.18.x)
+
+final class CivilWarWMDGateTests: XCTestCase {
+    func testCivilWarScenarioLiftsTheWMDEraGate() {
+        XCTAssertTrue(ScenarioDefinition.civilWar1861.allowsEarlyWMD)
+        XCTAssertFalse(ScenarioDefinition.modern2025.allowsEarlyWMD)
+        let gs = ScenarioLoader.makeGameState(.civilWar1861, player: "USA")
+        XCTAssertTrue(PresidentialAction.chemicalAttack.isAvailable(on: gs.currentDate, in: gs), "chem usable in 1861 Civil War")
+        XCTAssertTrue(PresidentialAction.biologicalAttack.isAvailable(on: gs.currentDate, in: gs), "bio usable in 1861 Civil War")
+    }
+}

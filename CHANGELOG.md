@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.6] - 2026-10-22 — Civil War: period WMD gate
+
+### Added
+- **Early WMD in the Civil War** (`ScenarioDefinition.allowsEarlyWMD`, honored in `PresidentialAction.isAvailable`):
+  a scenario can lift the WMD era-gate, and the 1861 Civil War does — you can wage **chemical and biological
+  warfare** in-period, anachronistically, as requested. Other scenarios are unaffected (the historical dates still
+  apply). Civil War Increment C — completes the trilogy (split + scenario + side select → foreign recognition → WMD).
 ## [3.18.5] - 2026-10-22 — Civil War: foreign recognition
 
 ### Added
