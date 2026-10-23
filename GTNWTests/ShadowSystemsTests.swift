@@ -5735,3 +5735,20 @@ final class CivilWarScenarioTests: XCTestCase {
         }
     }
 }
+
+// MARK: - Civil War foreign recognition (3.18.x)
+
+final class CivilWarRecognitionTests: XCTestCase {
+    func testLeanFollowsCourtshipCottonAndMomentum() {
+        XCTAssertGreaterThan(CivilWarRecognition.lean(relToUnion: 0, relToCSA: 60, monthsIn: 0, unionStability: 50, csaStability: 50), 0)  // CSA courted -> toward Confederacy
+        XCTAssertLessThan(CivilWarRecognition.lean(relToUnion: 60, relToCSA: 0, monthsIn: 0, unionStability: 50, csaStability: 50), 0)     // Union courted -> toward Union
+        let early = CivilWarRecognition.lean(relToUnion: 0, relToCSA: 0, monthsIn: 0, unionStability: 50, csaStability: 50)
+        let late  = CivilWarRecognition.lean(relToUnion: 0, relToCSA: 0, monthsIn: 40, unionStability: 50, csaStability: 50)
+        XCTAssertGreaterThan(late, early)   // cotton pressure builds toward CSA recognition over time
+    }
+    func testRecognitionThreshold() {
+        XCTAssertEqual(CivilWarRecognition.recognizedSide(lean: 40), .confederacy)
+        XCTAssertEqual(CivilWarRecognition.recognizedSide(lean: -40), .union)
+        XCTAssertNil(CivilWarRecognition.recognizedSide(lean: 10))
+    }
+}

@@ -81,6 +81,7 @@ extension GameEngine {
         processCombat(from: from, to: to)
         processWarPowers()
         processWorldPolitics()   // 3.14.0: the living world
+        processCivilWarRecognition()   // 3.18.x: Britain/France weigh recognizing a side
         processOccupation()
         processAntarctica()
         processPreState()
@@ -97,6 +98,34 @@ extension GameEngine {
         if let p = gs.getPlayerCountry(), p.atWarWith.isEmpty { gs.peaceTurns += 1 } else { gs.peaceTurns = 0 }
         gs.actionsUsedThisTurn = 0
         self.gameState = gs
+    }
+
+    /// Each turn in the Civil War scenario: Britain and France weigh recognizing a side and, once swayed enough,
+    /// throw their weight behind it with arms, credit, and morale. The President sways them with ordinary diplomacy
+    /// (improve relations, aid) and by winning on the battlefield. (3.18.x)
+    private func processCivilWarRecognition() {
+        guard let gs = gameState, gs.shadow.scenarioID == "civilwar1861",
+              let csa = gs.getCountry(id: "CSA"), let union = gs.getCountry(id: "USA") else { return }
+        for power in ["GBR", "FRA"] {
+            guard let p = gs.getCountry(id: power) else { continue }
+            // Already recognized a side? (we set the power's relation to that side very high on recognition.)
+            if max(p.diplomaticRelations["USA"] ?? 0, p.diplomaticRelations["CSA"] ?? 0) >= 80 { continue }
+            let relU = gs.getCountry(id: "USA")?.diplomaticRelations[power] ?? 0
+            let relC = gs.getCountry(id: "CSA")?.diplomaticRelations[power] ?? 0
+            let lean = CivilWarRecognition.lean(relToUnion: relU, relToCSA: relC, monthsIn: gs.turn,
+                                                unionStability: union.stability, csaStability: csa.stability)
+            guard let side = CivilWarRecognition.recognizedSide(lean: lean) else { continue }
+            let friend = side.rawValue, foe = side == .confederacy ? "USA" : "CSA"
+            gs.setRelation(from: power, to: friend, value: 85)
+            gs.setRelation(from: power, to: foe, value: -60)
+            if let fi = gs.countries.firstIndex(where: { $0.id == friend }) {
+                gs.countries[fi].warSupport = min(100, gs.countries[fi].warSupport + 15)
+                gs.countries[fi].militaryStrength = min(100, gs.countries[fi].militaryStrength + 8)
+            }
+            gs.shadow.post("\(p.name) recognizes \(gs.getCountry(id: friend)?.name ?? friend): arms, credit, and ships follow.",
+                           date: gs.currentDate, severity: 3)
+            self.gameState = gs
+        }
     }
 
     private func processScriptedEvents(from: Date, to: Date) {

@@ -498,3 +498,27 @@ struct SaveManager {
 
     func delete(slot: Int) { try? FileManager.default.removeItem(at: url(slot: slot)) }
 }
+
+// MARK: - Civil War: foreign recognition (3.18.x)
+
+/// Whether Britain and France recognize (and back) a side in the 1861 Civil War. A great power leans toward whichever
+/// side has courted it more (relations), under European cotton pressure that builds the longer the war drags (the
+/// Confederacy's "King Cotton" gamble), tilted by who is winning on the battlefield. Recognition brings arms, credit,
+/// and ships to the recognized side — the decisive foreign help the President pleads for.
+enum CivilWarRecognition {
+    enum Side: String { case union = "USA", confederacy = "CSA" }
+
+    /// Lean toward a side. Positive = toward the Confederacy, negative = toward the Union. `relToUnion`/`relToCSA`
+    /// are each side's relations *to the power* — what the player raises by courting it with diplomacy and aid.
+    static func lean(relToUnion: Int, relToCSA: Int, monthsIn: Int, unionStability: Int, csaStability: Int) -> Double {
+        let diplomacy = Double(relToCSA - relToUnion) * 0.4
+        let cotton = Double(max(0, monthsIn)) * 0.3                  // pressure builds over time
+        let momentum = Double(csaStability - unionStability) * 0.3   // a faltering Union invites recognition
+        return diplomacy + cotton + momentum
+    }
+
+    /// A power recognizes a side once its lean passes ±`threshold`.
+    static func recognizedSide(lean: Double, threshold: Double = 35) -> Side? {
+        lean >= threshold ? .confederacy : (lean <= -threshold ? .union : nil)
+    }
+}

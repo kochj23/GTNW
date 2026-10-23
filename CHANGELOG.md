@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.5] - 2026-10-22 — Civil War: foreign recognition
+
+### Added
+- **Pleading for foreign intervention** (`CivilWarRecognition`, `processCivilWarRecognition` each turn in the 1861
+  scenario): Britain and France now weigh recognizing a side and, once swayed enough, back it with arms, credit and
+  ships (relations swing + a war-support and military boost to the recognized side). A power leans toward whichever
+  side has **courted it more** (so you sway it with ordinary diplomacy — improve relations, send aid), under
+  **European cotton pressure that builds the longer the war drags** (the Confederacy's King Cotton gamble), tilted by
+  **who is winning** (a faltering Union invites recognition). The decisive foreign help the President pleads for —
+  Civil War Increment B.
 ## [3.18.4] - 2026-10-22 — Civil War mode (play either side)
 
 ### Added
