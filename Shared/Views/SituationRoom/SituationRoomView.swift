@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood
         var id: String { rawValue }
     }
 
@@ -67,6 +67,7 @@ struct SituationRoomView: View {
             case .treaties: TreatyOffersSheet(gameState: gameState).environmentObject(gameEngine)
             case .records: RecordsSheet(gameState: gameState)
             case .peace: PeaceSheet(gameState: gameState).environmentObject(gameEngine)
+            case .statehood: StatehoodSheet(gameState: gameState).environmentObject(gameEngine)
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
@@ -140,6 +141,7 @@ struct SituationRoomView: View {
             Button { sheet = .warRoom } label: { Label("War Room", systemImage: "shield.lefthalf.filled") }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed))
             Button { sheet = .evaluation } label: { Label("World", systemImage: "globe") }
+            Button { sheet = .statehood } label: { Label("Statehood", systemImage: "flag.fill") }
                 .buttonStyle(ThemedButtonStyle())
         }
         .font(ThemeFont.mono(11))

@@ -51,6 +51,17 @@ struct StatehoodRecord: Codable, Hashable {
     var number: Int
 }
 
+/// A real U.S. possession the President can petition Congress to admit as a state — the domestic counterpart to a
+/// conquered territory's statehood (OccupationModel, 3.9.0). Not a Country entity; it uses a parallel admission path.
+struct DomesticTerritory: Hashable, Identifiable {
+    let id: String
+    let name: String
+    let flag: String
+    let from: Int           // year the U.S. actually held it (DC from the founding)
+    let baseStability: Int  // feeds Congress's odds; the contentious ones (DC, PR) are lower
+    let note: String
+}
+
 enum OccupationModel {
     /// Years the 50 states were admitted (Delaware 1787 … Hawaii 1959), for counting stars.
     static let admissions: [Int] = [1787, 1787, 1787, 1788, 1788, 1788, 1788, 1788, 1788, 1788, 1788, 1789, 1790,
@@ -99,6 +110,27 @@ enum OccupationModel {
     static func ordinal(_ n: Int) -> String {
         let suffix = (11...13).contains(n % 100) ? "th" : (n % 10 == 1 ? "st" : (n % 10 == 2 ? "nd" : (n % 10 == 3 ? "rd" : "th")))
         return "\(n)\(suffix)"
+    }
+
+    /// The real U.S. territories the President can ask Congress to admit (DC + the five inhabited possessions).
+    static let usTerritories: [DomesticTerritory] = [
+        .init(id: "US-DC", name: "District of Columbia", flag: "🏛️", from: 1790, baseStability: 55,
+              note: "A capital city-state; opponents cite the Constitution's district clause."),
+        .init(id: "US-PR", name: "Puerto Rico", flag: "🇵🇷", from: 1898, baseStability: 50,
+              note: "Over 3 million people; statehood has carried local referenda but stalls in Congress."),
+        .init(id: "US-GU", name: "Guam", flag: "🇬🇺", from: 1898, baseStability: 60,
+              note: "A strategic Pacific possession since the Spanish-American War."),
+        .init(id: "US-VI", name: "U.S. Virgin Islands", flag: "🇻🇮", from: 1917, baseStability: 60,
+              note: "Bought from Denmark in 1917."),
+        .init(id: "US-AS", name: "American Samoa", flag: "🇦🇸", from: 1900, baseStability: 55,
+              note: "Its people are U.S. nationals, not birthright citizens — a wrinkle for statehood."),
+        .init(id: "US-MP", name: "Northern Mariana Islands", flag: "🇲🇵", from: 1986, baseStability: 60,
+              note: "A U.S. commonwealth since 1986."),
+    ]
+
+    /// Territories that exist in `year` and are not already admitted, in list order.
+    static func availableTerritories(year: Int, admitted: Set<String>) -> [DomesticTerritory] {
+        usTerritories.filter { $0.from <= year && !admitted.contains($0.id) }
     }
 }
 
@@ -157,6 +189,31 @@ extension GameEngine {
             logPlayEvent("statehood", detail: ["land": id, "name": PlayHistory.text(name), "number": number, "game_date": PlayHistory.day(gs.currentDate)])
         } else {
             gs.shadow.post("Congress votes down statehood for \(name).", date: gs.currentDate, severity: 1)
+        }
+        self.gameState = gs
+        completePlayerAction()
+        return passed
+    }
+
+    /// Ask Congress to admit a real U.S. territory (DC, Puerto Rico, …) as a state (one action). The domestic
+    /// counterpart to petitionStatehood: these are not Country entities, so the odds use the territory's base
+    /// stability and the result goes straight into the statesAdmitted star ledger. Nil if it cannot be petitioned.
+    @discardableResult
+    func petitionDomesticStatehood(_ id: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+        guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0,
+              let t = OccupationModel.usTerritories.first(where: { $0.id == id }),
+              t.from <= gs.currentYear, !gs.shadow.statesAdmitted.contains(where: { $0.id == id }),
+              let p = gs.getPlayerCountry() else { return nil }
+        let yes = OccupationModel.statehoodYes(congress: p.congressionalSupport, stability: t.baseStability)
+        let passed = roll < CongressModel.passOdds(expectedYes: yes)
+        if passed {
+            let number = OccupationModel.historicalStates(year: gs.currentYear) + gs.shadow.statesAdmitted.count + 1
+            gs.shadow.statesAdmitted.append(StatehoodRecord(id: id, name: t.name, date: gs.currentDate, number: number))
+            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 3)
+            gs.shadow.post("\(t.name) is admitted as the \(OccupationModel.ordinal(number)) state. The flag gains a star.", date: gs.currentDate, severity: 2)
+            logPlayEvent("statehood", detail: ["land": id, "name": PlayHistory.text(t.name), "number": number, "game_date": PlayHistory.day(gs.currentDate)])
+        } else {
+            gs.shadow.post("Congress votes down statehood for \(t.name).", date: gs.currentDate, severity: 1)
         }
         self.gameState = gs
         completePlayerAction()

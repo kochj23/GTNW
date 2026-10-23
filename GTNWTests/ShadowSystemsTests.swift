@@ -5604,3 +5604,32 @@ final class MakeCaseForWarTests: XCTestCase {
         XCTAssertEqual(CongressModel.rally(100, share: 4, floor: 3), 100)  // already maxed
     }
 }
+
+// MARK: - Call for Statehood (U.S. territories, 3.18.x)
+
+final class DomesticStatehoodTests: XCTestCase {
+
+    func testUSTerritoriesBecomeAvailableByYearAndDropWhenAdmitted() {
+        // In 1850 only DC (held from 1790) exists; the island possessions come 1898–1986.
+        XCTAssertEqual(OccupationModel.availableTerritories(year: 1850, admitted: []).map(\.id), ["US-DC"])
+        XCTAssertEqual(Set(OccupationModel.availableTerritories(year: 2025, admitted: []).map(\.id)),
+                       Set(["US-DC", "US-PR", "US-GU", "US-VI", "US-AS", "US-MP"]))
+        XCTAssertFalse(OccupationModel.availableTerritories(year: 2025, admitted: ["US-DC"]).contains { $0.id == "US-DC" })
+    }
+
+    func testCallForStatehoodAdmitsAStarAndIsIdempotent() {
+        let engine = GameEngine()
+        engine.startNewGame(playerCountryID: "USA")
+        let before = engine.gameState?.shadow.statesAdmitted.count ?? -1
+
+        // roll 0 passes (odds > 0); DC becomes a state.
+        XCTAssertEqual(engine.petitionDomesticStatehood("US-DC", roll: 0.0), true)
+        XCTAssertEqual(engine.gameState?.shadow.statesAdmitted.count, before + 1)
+        XCTAssertTrue(engine.gameState?.shadow.statesAdmitted.contains { $0.id == "US-DC" } ?? false)
+
+        // already a state -> nil (cannot re-admit)
+        XCTAssertNil(engine.petitionDomesticStatehood("US-DC", roll: 0.0))
+        // unknown territory -> nil
+        XCTAssertNil(engine.petitionDomesticStatehood("US-ZZ", roll: 0.0))
+    }
+}

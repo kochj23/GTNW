@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.1] - 2026-10-22 — Call for statehood
+
+### Added
+- **Call for Statehood** (`OccupationModel.usTerritories` / `availableTerritories`, `GameEngine.petitionDomesticStatehood`,
+  `StatehoodSheet`, Situation Room → Statehood): as the U.S. President you can petition Congress to admit a real U.S.
+  possession — **District of Columbia, Puerto Rico, Guam, U.S. Virgin Islands, American Samoa, Northern Mariana
+  Islands** — as a state. Each becomes available from the year the U.S. actually held it (DC 1790; the islands
+  1898–1986); Congress's odds use its support and the territory's base stability (DC and PR are the contentious
+  ones); success adds a star to the flag via the existing `statesAdmitted` ledger. The domestic counterpart to the
+  conquered-territory statehood vote.
+
 ## [3.18.0] - 2026-10-22 — Nova's verdict, favored nations, and the case for war
 
 ### Added

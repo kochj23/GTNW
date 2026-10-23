@@ -1848,3 +1848,56 @@ struct DirtyTacticsSheet: View {
         .padding(5).themedPanel(retroFill: EGA.black)
     }
 }
+
+// MARK: - Call for Statehood: real U.S. territories (DC, Puerto Rico, …)
+
+/// Petition Congress to admit a real U.S. possession as a state — the domestic counterpart to GovernSheet's
+/// statehood vote for conquered land. USA-only; each petition spends one action.
+struct StatehoodSheet: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+
+    var body: some View {
+        let admitted = Set(gameState.shadow.statesAdmitted.map(\.id))
+        let congress = gameState.getPlayerCountry()?.congressionalSupport ?? 50
+        let available = OccupationModel.availableTerritories(year: gameState.currentYear, admitted: admitted)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "flag.fill")
+                Text("CALL FOR STATEHOOD")
+                Spacer()
+                Text(verbatim: "\(OccupationModel.historicalStates(year: gameState.currentYear) + gameState.shadow.statesAdmitted.count) STARS")
+                    .font(ThemeFont.mono(11, .bold))
+            }
+            .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            if gameState.playerCountryID != "USA" {
+                Text("Statehood is a U.S. process.").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.neonCyan)
+            } else if available.isEmpty {
+                Text("No U.S. territories left to admit.").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.terminalGreen)
+            } else {
+                Text("Ask Congress to admit a U.S. territory as a state. Odds rise with congressional support.")
+                    .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+                ForEach(available) { t in
+                    let yes = OccupationModel.statehoodYes(congress: congress, stability: t.baseStability)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack {
+                            Text(verbatim: "\(t.flag) \(t.name)").font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                            Spacer()
+                            Text(String(format: "Congress %.0f%%", CongressModel.passOdds(expectedYes: yes) * 100)).font(ThemeFont.mono(11, .bold))
+                        }
+                        Text(t.note).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+                        Button("CALL FOR STATEHOOD") { if gameEngine.petitionDomesticStatehood(t.id) != nil { dismiss() } }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                            .disabled(gameState.actionsRemaining == 0)
+                    }
+                    Divider().overlay(GTNWColors.neonCyan.opacity(0.3))
+                }
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(640))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
