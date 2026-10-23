@@ -80,6 +80,9 @@ struct SituationRoomView: View {
         .sheet(item: Binding(get: { briefingRole.map(BriefingRole.init) }, set: { briefingRole = $0?.id })) { role in
             AdvisorBriefingSheet(role: role.id, gameState: gameState, country: selected).environmentObject(gameEngine)
         }
+        .sheet(item: $gameEngine.actionResult) { report in
+            ActionResultSheet(report: report) { gameEngine.actionResult = nil }
+        }
     }
 
     /// Phones and narrow windows: map on top, then a switchable dossier / advisor panel.

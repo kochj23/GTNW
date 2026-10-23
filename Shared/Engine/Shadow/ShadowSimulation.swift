@@ -878,7 +878,10 @@ extension GameEngine {
             addLog("❌ \(action.rawValue) is not available in \(gs.currentYear).", type: .error); return
         }
         if action.wmd != nil, let problem = wmdProblem(action) { addLog("❌ \(action.rawValue): \(problem)", type: .error); return }
+        // Snapshot the log so we can show the President exactly what his order produced (3.18.11).
+        let logStart = logMessages.count
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size, warhead: warhead)
+        reportActionOutcome(action, targetID: targetID, from: logStart)
         // Nuclear launches record their own fallout in launchNuclearStrike.
         if action.rung != .nuclear { recordPlayerAction(rung: action.rung, hostile: action.isHostile, detected: false) }
         if let a = advice, let id = a.advisorID, let i = gs.advisors.firstIndex(where: { $0.id == id }) {
@@ -894,6 +897,20 @@ extension GameEngine {
         }
         self.gameState = gs
         completePlayerAction()
+    }
+
+    /// Build the result pop-up from the log lines an action just wrote (3.18.11). The new lines ARE the outcome
+    /// ("We welcome this meeting of leaders…", "☢️ … ordered", "❌ no warheads available"); an error line means it
+    /// failed. If the order produced no visible line, say so rather than leave the box empty.
+    func reportActionOutcome(_ action: PresidentialAction, targetID: String, from logStart: Int) {
+        let start = min(logStart, logMessages.count)   // the log self-trims at 200; never read past the end
+        let new = logMessages[start...]
+        let lines = new.map(\.message).filter { !$0.isEmpty }
+        let target = getCountry(targetID)?.name ?? targetID
+        let success: Bool? = new.contains { $0.type == .error } ? false : (lines.isEmpty ? nil : true)
+        actionResult = ActionReport(title: "\(action.rawValue) — \(target)",
+                                    lines: lines.isEmpty ? ["The order was carried out. No immediate change was reported."] : lines,
+                                    success: success)
     }
 
     /// ACCEPT on an advisor's standing recommendation: carry it out with that advisor's blessing.

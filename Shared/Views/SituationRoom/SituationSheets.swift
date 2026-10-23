@@ -1901,3 +1901,46 @@ struct StatehoodSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+// MARK: - Action result (3.18.11)
+
+/// The pop-up shown right after the President chooses a course of action: the order, and the outcome lines it
+/// produced (the log it wrote — "We welcome this meeting of leaders…", "☢️ … ordered", an error if it failed).
+struct ActionResultSheet: View {
+    let report: ActionReport
+    let onClose: () -> Void
+
+    private var header: (icon: String, color: Color) {
+        switch report.success {
+        case .some(false): return ("xmark.octagon.fill", GTNWColors.terminalRed)
+        case .some(true):  return ("checkmark.seal.fill", GTNWColors.terminalGreen)
+        case .none:        return ("info.circle.fill", GTNWColors.neonCyan)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: header.icon).foregroundColor(header.color)
+                Text(report.title.uppercased()).font(ThemeFont.mono(15, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
+            }
+            Text(report.success == false ? "RESULT: BLOCKED" : (report.success == true ? "RESULT" : "RESULT: NO CHANGE REPORTED"))
+                .font(ThemeFont.mono(10, .bold)).foregroundColor(header.color)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(report.lines.enumerated()), id: \.offset) { _, line in
+                        Text(verbatim: "> \(line)")
+                            .font(ThemeFont.mono(11)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .frame(maxHeight: FontScale.h(260))
+            HStack { Spacer(); Button("CONTINUE") { onClose() }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true)).keyboardShortcut(.defaultAction) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(560))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}

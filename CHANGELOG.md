@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.11] - 2026-10-23 — Action-result pop-up
+
+### Added
+- **See what your order did.** After the President chooses a course of action (state visit, sanctions, a strike —
+  anything routed through `performAdvisedAction`), a result box (`ActionResultSheet`) shows the order, who it was
+  aimed at, and the outcome lines it produced, with a ✓/✗/ℹ header for success, failure (an error was logged), or
+  no visible change. The engine captures the new log the action wrote (`GameEngine.actionResult`,
+  `reportActionOutcome`), so the box always reflects what actually happened.
+
 ## [3.18.10] - 2026-10-23 — National Intelligence Estimate
 
 ### Added

@@ -27,6 +27,8 @@ class GameEngine: ObservableObject {
     @Published var warRoomOpen = false
     @Published var showingLeaderboard = false
     @Published var victoryType: VictoryType?
+    /// The outcome of the player's last chosen action, for the result pop-up (3.18.11). Transient, not persisted.
+    @Published var actionResult: ActionReport?
     @Published var finalScore: GameScore?
     @Published var isProcessingAITurn = false  // Prevent actions during AI processing
 
@@ -2166,6 +2168,16 @@ struct LogMessage: Identifiable {
     let message: String
     let type: LogType
     let timestamp: Date
+}
+
+/// The result of a chosen action, shown to the President in a pop-up (3.18.11): the order, who it was aimed at,
+/// the outcome lines it produced (the log it wrote), and whether anything went wrong.
+struct ActionReport: Identifiable {
+    let id = UUID()
+    let title: String
+    let lines: [String]
+    /// nil = no clear verdict; false = an error was logged; true = carried out cleanly.
+    let success: Bool?
 }
 
 /// Log message types
