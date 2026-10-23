@@ -634,7 +634,7 @@ class GameEngine: ObservableObject {
     // MARK: - Game Actions
 
     /// Launch nuclear strike
-    func launchNuclearStrike(from attackerID: String, to targetID: String, warheads: Int) {
+    func launchNuclearStrike(from attackerID: String, to targetID: String, warheads: Int, type: WarheadType? = nil) {
         guard let gameState = gameState else { return }
         guard let attackerIndex = gameState.countries.firstIndex(where: { $0.id == attackerID }),
               let targetIndex = gameState.countries.firstIndex(where: { $0.id == targetID }) else { return }
@@ -690,17 +690,20 @@ class GameEngine: ObservableObject {
             }
         }
 
-        // Calculate casualties based on penetrating warheads
-        let casualtiesPerWarhead = 1_000_000 // 1 million per warhead
-        let casualties = penetratingWarheads * casualtiesPerWarhead
-        let radiationSpread = penetratingWarheads * 10
+        // Warhead generation scales the strike (3.18.x): thermonuclear megatons are far deadlier; a neutron bomb
+        // kills people but spares the buildings and leaves little lasting fallout.
+        let warhead = type ?? WarheadType.standard(for: gameState.currentYear)
+        let casualties = Int(Double(penetratingWarheads) * 1_000_000.0 * warhead.casualtyMult)
+        let radiationSpread = Int(Double(penetratingWarheads * 10) * warhead.falloutMult)
+        addLog(warhead == .neutron ? "☢️ NEUTRON strike — lethal radiation, minimal blast, buildings left standing"
+             : warhead == .thermonuclear ? "☢️ THERMONUCLEAR (megaton) strike" : "☢️ FISSION (atomic) strike", type: .critical)
 
         // Update attacker
         attacker.nuclearWarheads -= warheads
         gameState.countries[attackerIndex] = attacker
 
         // Update target
-        target.damageLevel += penetratingWarheads * 10
+        target.damageLevel += Int(Double(penetratingWarheads * 10) * warhead.blastMult)
         target.radiationLevel += radiationSpread
         if target.damageLevel >= 100 {
             target.isDestroyed = true
@@ -1857,7 +1860,8 @@ extension GameEngine {
                 }
                 if let s = sized, playerID == gameState.playerCountryID { warheads = max(1, min(attacker.nuclearWarheads, s.warheads)) }
                 addLog("☢️ \(action.rawValue.uppercased()) ordered against \(getCountry(targetID)?.name ?? targetID)", type: .critical)
-                launchNuclearStrike(from: playerID, to: targetID, warheads: warheads)
+                let warheadType: WarheadType? = (action == .tacticalNuke && WarheadType.neutron.available(in: gameState.currentYear)) ? .neutron : nil
+                launchNuclearStrike(from: playerID, to: targetID, warheads: warheads, type: warheadType)
                 if let s = sized { applySizedFallout(action, target: targetID, size: s, scale: m, kinds: kinds, success: true) }
             } else {
                 addLog("❌ \(action.rawValue): no nuclear warheads available.", type: .error)

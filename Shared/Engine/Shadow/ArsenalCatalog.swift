@@ -312,3 +312,33 @@ extension GameEngine {
         self.gameState = gs
     }
 }
+
+// MARK: - Warhead generation (3.18.x)
+
+/// A nuclear warhead's physics generation — era-gates and scales a strike.
+/// Fission (atomic, kilotons) from Trinity 1945; thermonuclear (fusion / H-bomb, megatons) from Ivy Mike 1952;
+/// neutron (enhanced-radiation, ~1 kt but lethal radiation) 1981–1992. Multipliers are vs the fission baseline:
+/// casualties, blast (damageLevel), fallout (lasting radiation). A neutron bomb kills people, spares the buildings,
+/// and leaves little lasting fallout — the whole grim point of the weapon.
+enum WarheadType: String, Codable, CaseIterable, Identifiable {
+    case fission, thermonuclear, neutron
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .fission:       return "Fission (Atomic)"
+        case .thermonuclear: return "Thermonuclear (H-Bomb)"
+        case .neutron:       return "Neutron (Enhanced Radiation)"
+        }
+    }
+    var from: Int { self == .fission ? 1945 : self == .thermonuclear ? 1952 : 1981 }
+    var to: Int? { self == .neutron ? 1992 : nil }
+    func available(in year: Int) -> Bool { year >= from && year <= (to ?? Int.max) }
+
+    var casualtyMult: Double { self == .thermonuclear ? 8   : self == .neutron ? 1.8  : 1 }
+    var blastMult:    Double { self == .thermonuclear ? 2   : self == .neutron ? 0.15 : 1 }
+    var falloutMult:  Double { self == .thermonuclear ? 3   : self == .neutron ? 0.3  : 1 }
+
+    /// The warhead a year fields by default: thermonuclear once it exists (1952), else fission.
+    static func standard(for year: Int) -> WarheadType { year >= 1952 ? .thermonuclear : .fission }
+}

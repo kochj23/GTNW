@@ -5649,3 +5649,41 @@ final class RegionZoomTests: XCTestCase {
         XCTAssertTrue(VectorWorldMap.regionRect(.northAmerica).contains(CGPoint(x: -98, y: -39)))
     }
 }
+
+// MARK: - Warhead types: fission / thermonuclear / neutron (3.18.x)
+
+final class WarheadTypeTests: XCTestCase {
+    func testEraGatesMatchHistory() {
+        XCTAssertEqual(WarheadType.standard(for: 1948), .fission)        // US monopoly, atomic only
+        XCTAssertEqual(WarheadType.standard(for: 1960), .thermonuclear)  // H-bomb era
+        XCTAssertTrue(WarheadType.fission.available(in: 1945));  XCTAssertFalse(WarheadType.fission.available(in: 1944))
+        XCTAssertFalse(WarheadType.thermonuclear.available(in: 1951)); XCTAssertTrue(WarheadType.thermonuclear.available(in: 1952))
+        XCTAssertTrue(WarheadType.neutron.available(in: 1985))
+        XCTAssertFalse(WarheadType.neutron.available(in: 1975)); XCTAssertFalse(WarheadType.neutron.available(in: 1995))
+    }
+    func testMultipliersEncodeTheRepoManProfile() {
+        // thermonuclear: far deadlier. neutron: kills more than fission but spares buildings + fallout.
+        XCTAssertGreaterThan(WarheadType.thermonuclear.casualtyMult, WarheadType.fission.casualtyMult)
+        XCTAssertGreaterThan(WarheadType.neutron.casualtyMult, WarheadType.fission.casualtyMult)
+        XCTAssertLessThan(WarheadType.neutron.blastMult, WarheadType.fission.blastMult)     // buildings stand
+        XCTAssertLessThan(WarheadType.neutron.falloutMult, WarheadType.fission.falloutMult) // low lasting fallout
+    }
+    func testStrikeAppliesTheWarheadProfile() {
+        func strike(_ t: WarheadType) -> (casualties: Int, damage: Int) {
+            let e = GameEngine(); e.startNewGame(playerCountryID: "USA")
+            guard let gs = e.gameState,
+                  let ai = gs.countries.firstIndex(where: { $0.id == "USA" }),
+                  let ti = gs.countries.firstIndex(where: { $0.id == "CHN" }) else { return (0, 0) }
+            gs.countries[ai].nuclearWarheads = 100
+            gs.countries[ti].hasSDI = false
+            let dmg0 = gs.countries[ti].damageLevel
+            e.launchNuclearStrike(from: "USA", to: "CHN", warheads: 5, type: t)
+            let dmg = (e.gameState?.countries.first { $0.id == "CHN" }?.damageLevel ?? dmg0) - dmg0
+            return (e.gameState?.nuclearStrikes.last?.casualties ?? 0, dmg)
+        }
+        let fis = strike(.fission), ther = strike(.thermonuclear), neut = strike(.neutron)
+        XCTAssertGreaterThan(ther.casualties, fis.casualties)   // megaton kills more
+        XCTAssertGreaterThan(neut.casualties, fis.casualties)   // neutron kills more than fission
+        XCTAssertLessThan(neut.damage, fis.damage)              // ...but leaves the buildings standing
+    }
+}

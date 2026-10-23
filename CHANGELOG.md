@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.2] - 2026-10-22 — Nuclear realism: fission, fusion, neutron
+
+### Added
+- **Warhead generation** (`WarheadType`, applied in `launchNuclearStrike`): a nuclear strike now scales by the
+  warhead's physics, era-gated to history. **Fission** (atomic, kilotons) from 1945; **thermonuclear** (fusion /
+  H-bomb, megatons) from 1952 — ~8× the casualties and far more blast and lasting fallout; **neutron** (enhanced
+  radiation, 1981–1992) — kills people (1.8×), spares the buildings (0.15× blast), leaves little lasting
+  fallout (0.3×). Strikes default to the era's standard warhead (so a 1945–51 exchange is a survivable kiloton
+  affair and a post-1952 one goes apocalyptic), and a tactical nuke in the 1981–92 window is a neutron strike.
+  The Nuclear Tomahawk (W80) and the neutron bomb already existed as developable programs in `ProhibitedWeapons`;
+  this makes the warhead *type* actually change what a strike does.
 ## [3.18.1] - 2026-10-22 — Call for statehood
 
 ### Added

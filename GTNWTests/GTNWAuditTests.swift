@@ -269,12 +269,12 @@ final class NuclearStrikeMathTests: XCTestCase {
         let warheads = 3
         let attackerBefore = gs.getCountry(id: "USA")?.nuclearWarheads ?? 0
 
-        engine.launchNuclearStrike(from: "USA", to: targetID, warheads: warheads)
+        engine.launchNuclearStrike(from: "USA", to: targetID, warheads: warheads, type: .fission)
 
         XCTAssertEqual(gs.totalCasualties, warheads * 1_000_000,
-                       "1,000,000 casualties per penetrating warhead")
+                       "1,000,000 casualties per penetrating warhead (fission baseline)")
         XCTAssertEqual(gs.globalRadiation, warheads * 10,
-                       "10 radiation points per penetrating warhead")
+                       "10 radiation points per penetrating warhead (fission baseline)")
         XCTAssertEqual(gs.getCountry(id: "USA")?.nuclearWarheads, attackerBefore - warheads,
                        "Attacker arsenal is decremented by warheads used")
         XCTAssertEqual(gs.defconLevel, .defcon1, "Any nuclear launch forces DEFCON 1")
