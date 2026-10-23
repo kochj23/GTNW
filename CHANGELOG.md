@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.10] - 2026-10-23 — National Intelligence Estimate
+
+### Added
+- **The enemy's forces as a range, not a number** (`IntelligenceModel`, shown in the `CountryDossier`): a new
+  NATIONAL INTELLIGENCE ESTIMATE block reports a foreign power's military strength (and, from 1945, its warhead
+  count) as an estimate band tagged LOW / MODERATE / CONFIRMED. Confidence rises with the era's collection —
+  attachés and newspapers → aerial photography → the U-2 and reconnaissance satellites (1960) → modern
+  multi-source intelligence — so a 1890 estimate is wide and a modern one is exact. The band is centred on the
+  true value (the game states how sure you are rather than lying to you).
+
 ## [3.18.9] - 2026-10-23 — Era intervention mood (war-weariness by decade)
 
 ### Added

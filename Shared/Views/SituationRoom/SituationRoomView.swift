@@ -569,6 +569,17 @@ struct CountryDossier: View {
                     gauge("QUALITY OF LIFE", p.qualityOfLife / 100, text: "\(Int(p.qualityOfLife))", good: true)
                     gauge("INFLUENCE", Double(c.powerScore) / 100, text: "\(c.powerScore)", good: true)
                     gauge("UNREST", p.outcry / 100, text: "\(Int(p.outcry))", good: false)
+                    if !c.isPlayerControlled {
+                        // National Intelligence Estimate (3.18.10): the enemy's forces as a range, not a number —
+                        // the band narrows as the era's collection improves.
+                        Text("NATIONAL INTELLIGENCE ESTIMATE").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 4)
+                        let mil = IntelligenceModel.label(trueValue: c.militaryStrength, year: gameState.currentYear)
+                        estimateRow("MILITARY", mil.text, mil.tag)
+                        if c.nuclearWarheads > 0 && gameState.currentYear >= 1945 {
+                            let nuk = IntelligenceModel.label(trueValue: c.nuclearWarheads, year: gameState.currentYear)
+                            estimateRow("WARHEADS", nuk.text, nuk.tag)
+                        }
+                    }
                     Text("WHAT WORRIES THEM").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 4)
                     ForEach(ThreatAnxieties.Kind.allCases) { k in
                         gauge(k.label.uppercased(), p.anxieties[k] / 100, text: "\(Int(p.anxieties[k]))", good: false)
@@ -629,6 +640,15 @@ struct CountryDossier: View {
                 }
             }
             .frame(height: FontScale.h(7))
+        }
+    }
+
+    private func estimateRow(_ label: String, _ value: String, _ tag: String) -> some View {
+        HStack {
+            Text(label).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+            Spacer()
+            Text(value).font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+            Text(tag).font(ThemeFont.mono(8)).foregroundColor(tag == "CONFIRMED" ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
         }
     }
 

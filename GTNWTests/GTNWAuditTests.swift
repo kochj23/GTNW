@@ -345,3 +345,24 @@ final class InterventionMoodTests: XCTestCase {
         XCTAssertGreaterThan(m(2015), 1.0, "the forever wars should be above neutral")
     }
 }
+
+// MARK: - 3.18.10 National Intelligence Estimate self-check (uncertainty narrows with the era)
+final class IntelligenceModelTests: XCTestCase {
+    func testEstimateWidensInEarlierEras() {
+        func width(_ year: Int) -> Int {
+            let r = IntelligenceModel.range(trueValue: 50, year: year)
+            return r.high - r.low
+        }
+        XCTAssertGreaterThan(width(1890), width(1950), "pre-satellite estimates must be fuzzier than Cold War ones")
+        XCTAssertGreaterThan(width(1950), width(2000), "Cold War estimates must be fuzzier than modern ones")
+        // The true value always sits inside the band.
+        for year in [1890, 1944, 1958, 1985, 2020] {
+            let r = IntelligenceModel.range(trueValue: 50, year: year)
+            XCTAssertLessThanOrEqual(r.low, 50); XCTAssertGreaterThanOrEqual(r.high, 50)
+        }
+        // Modern confidence is high enough to report an exact, confirmed figure.
+        XCTAssertEqual(IntelligenceModel.label(trueValue: 42, year: 2020).tag, "CONFIRMED")
+        XCTAssertEqual(IntelligenceModel.label(trueValue: 42, year: 2020).text, "42")
+        XCTAssertTrue(IntelligenceModel.label(trueValue: 42, year: 1890).text.contains("–"), "early eras show a range")
+    }
+}

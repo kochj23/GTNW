@@ -208,3 +208,38 @@ extension GameEngine {
         self.gameState = gs
     }
 }
+
+// MARK: - National Intelligence Estimate (3.18.10)
+
+/// What the President's intelligence services can actually tell him about a foreign power's forces: a range, not a
+/// number. Confidence rises with the era's collection — attachés and the newspapers give way to aerial photography,
+/// then the U-2 and reconnaissance satellites (Corona, 1960), then modern multi-source intelligence. The band is
+/// centred on the true value: the game doesn't lie to the player, it tells him how sure he can be.
+/// ponytail: a deliberately *biased* estimate (off-centre, like the real "bomber gap") would need a per-country
+/// stored seed so it stays stable across view redraws; centred-with-a-band conveys the uncertainty for free.
+enum IntelligenceModel {
+    /// 0…1: how good the collection is in a given year. DESIGN CHOICES, not published figures.
+    static func confidence(year: Int) -> Double {
+        switch year {
+        case ..<1900: return 0.35   // military attachés, consuls, and what the newspapers print
+        case ..<1945: return 0.50   // aerial photography and early signals intelligence
+        case ..<1960: return 0.60   // better SIGINT; the U-2 overflights from 1956
+        case ..<1990: return 0.78   // reconnaissance satellites (Corona, 1960) come of age
+        default:      return 0.90   // modern multi-source intelligence
+        }
+    }
+
+    /// The estimate band around a true value for the year: ±(1 − confidence).
+    static func range(trueValue: Int, year: Int) -> (low: Int, high: Int) {
+        let half = Double(max(0, trueValue)) * (1 - confidence(year: year))
+        return (max(0, Int((Double(trueValue) - half).rounded())), Int((Double(trueValue) + half).rounded()))
+    }
+
+    /// What to show the President: an exact figure once confidence is high, otherwise a range and how sure he is.
+    static func label(trueValue: Int, year: Int) -> (text: String, tag: String) {
+        let c = confidence(year: year)
+        if c >= 0.85 { return ("\(trueValue)", "CONFIRMED") }
+        let r = range(trueValue: trueValue, year: year)
+        return ("\(r.low)–\(r.high)", c >= 0.6 ? "MODERATE CONFIDENCE" : "LOW CONFIDENCE")
+    }
+}
