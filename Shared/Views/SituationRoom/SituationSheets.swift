@@ -2036,3 +2036,53 @@ struct FactbookSheet: View {
         }
     }
 }
+
+// MARK: - Tutorial (3.18.15)
+
+/// A first-run walkthrough of the Situation Room (shown once, reopenable from HELP). Plain stepped cards — the
+/// point is to orient a new President, not to script the UI with spotlights.
+struct TutorialSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var step = 0
+
+    private static let steps: [(String, String)] = [
+        ("WELCOME, MR. PRESIDENT",
+         "You hold the most dangerous desk on Earth. The world map is your board; every nation on it is run by its own history, and it never sleeps."),
+        ("READ THE WORLD",
+         "Tap any country to open its dossier — its mood, what worries it, whether it is at war, and the National Intelligence Estimate of its forces. That estimate is a range, not a number: your spies are only so sure, and earlier eras are fuzzier."),
+        ("CHOOSE A COURSE OF ACTION",
+         "Pick a target, then climb the escalation ladder along the bottom — from a state visit to sanctions to the unthinkable. After every order, a result box tells you exactly what it did."),
+        ("MIND THE HOME FRONT",
+         "The top bar tracks your approval, DEFCON, Congress and the budget. BUDGET, TACTICS, FACTBOOK and PEACE all live up there. Disasters and crises will land on your desk — how you answer moves the country."),
+        ("HOW YOU WIN",
+         "By conquest, diplomacy, or the Nobel Peace Prize — or by \u{201C}The Good Life\u{201D}: eight years of high quality of life and approval on a lean military budget. End your turn to let the world move, and good luck."),
+    ]
+
+    var body: some View {
+        let (title, message) = Self.steps[step]
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Image(systemName: "graduationcap.fill")
+                Text(title).font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
+                Spacer()
+                Text("\(step + 1)/\(Self.steps.count)").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.neonCyan)
+            }
+            Text(message).font(ThemeFont.mono(12)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                .fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+            Spacer()
+            HStack {
+                Button("SKIP") { dismiss() }.buttonStyle(ThemedButtonStyle())
+                Spacer()
+                if step > 0 { Button("BACK") { step -= 1 }.buttonStyle(ThemedButtonStyle()) }
+                if step < Self.steps.count - 1 {
+                    Button("NEXT") { step += 1 }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true)).keyboardShortcut(.defaultAction)
+                } else {
+                    Button("TAKE COMMAND") { dismiss() }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true)).keyboardShortcut(.defaultAction)
+                }
+            }
+        }
+        .padding(18)
+        .frame(width: FontScale.w(520), height: FontScale.h(360))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}

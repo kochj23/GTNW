@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial
         var id: String { rawValue }
     }
 
@@ -32,6 +32,8 @@ struct SituationRoomView: View {
     private var selectedLand: String? { selectedCountryID.flatMap { gameState.unclaimedLandIDs.contains($0) || gameState.preState($0) != nil ? $0 : nil } }
 
     @State private var compactPanel = 0
+    /// First-run tutorial (3.18.15): auto-shown once, reopenable from HELP. A per-device UI flag, not game state.
+    @AppStorage("gtnw.tutorialSeen") private var tutorialSeen = false
 
     var body: some View {
         GeometryReader { geo in
@@ -42,7 +44,10 @@ struct SituationRoomView: View {
         .padding(8)
         .background(Theme.isRetro ? EGA.darkGray : Color.clear)
         .background(GTNWColors.spaceBackground.ignoresSafeArea())
-        .onAppear { if selectedCountryID == nil { selectedCountryID = gameState.playerCountryID } }
+        .onAppear {
+            if selectedCountryID == nil { selectedCountryID = gameState.playerCountryID }
+            if !tutorialSeen { tutorialSeen = true; sheet = .tutorial }   // show once; HELP reopens it
+        }
         .sheet(item: $ladderRung) { rung in
             if let target = selected, let player = gameState.getPlayerCountry() {
                 ActionLadderSheet(rung: rung, player: player, target: target, gameState: gameState)
@@ -69,6 +74,7 @@ struct SituationRoomView: View {
             case .peace: PeaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .statehood: StatehoodSheet(gameState: gameState).environmentObject(gameEngine)
             case .factbook: FactbookSheet(gameState: gameState)
+            case .tutorial: TutorialSheet()
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .fleet:
@@ -262,6 +268,7 @@ struct SituationTopBar: View {
             Button("TACTICS") { onSheet(.tactics) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))   // 3.17.0: dirty tactics
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy
             Button("FACTBOOK") { onSheet(.factbook) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))   // 3.18.13: reference tab
+            Button("HELP") { onSheet(.tutorial) }.buttonStyle(ThemedButtonStyle())   // 3.18.15: reopen the tutorial
             Button("SAVE / LOAD") { onSheet(.saves) }.buttonStyle(ThemedButtonStyle())
             Button(gameEngine.isProcessingAITurn ? "WORLD RESOLVING…" : "END \(gameState.turnLength.displayName.uppercased())") {
                 gameEngine.endTurn()

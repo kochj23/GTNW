@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.15] - 2026-10-23 — First-run tutorial
+
+### Added
+- **A first-run tutorial** (`TutorialSheet`): a five-step walkthrough of the Situation Room — the map and dossiers,
+  the National Intelligence Estimate, the escalation ladder and result box, the home-front top bar, and the ways to
+  win (including "The Good Life"). Shown once on first run (`@AppStorage` "seen" flag, a per-device UI preference)
+  and reopenable any time from a new **HELP** button in the top bar.
+
 ## [3.18.14] - 2026-10-23 — Natural disasters
 
 ### Added
