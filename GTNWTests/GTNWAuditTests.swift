@@ -437,3 +437,15 @@ final class SpaceForceReconTests: XCTestCase {
         XCTAssertEqual(engine.gameState?.shadow.satellites["recon"] ?? 0, before + 1, "a modern-era launch must add a recon satellite")
     }
 }
+
+// MARK: - 3.18.17 Space Force phase 2 self-check (early-warning missile defense)
+final class SpaceDefenseTests: XCTestCase {
+    func testWarningSatelliteCoverage() {
+        XCTAssertEqual(SpaceDefense.coverage(baseSDI: 0, warningSat: false), 0, accuracy: 0.001)
+        XCTAssertEqual(SpaceDefense.coverage(baseSDI: 0, warningSat: true), SpaceDefense.warningCoverageBonus, accuracy: 0.001,
+                       "early warning gives coverage even with no SDI")
+        XCTAssertEqual(SpaceDefense.coverage(baseSDI: 40, warningSat: true), 40 + SpaceDefense.warningCoverageBonus, accuracy: 0.001,
+                       "early warning adds on top of SDI")
+        XCTAssertEqual(SpaceDefense.coverage(baseSDI: 90, warningSat: true), 100, accuracy: 0.001, "capped at 100%")
+    }
+}

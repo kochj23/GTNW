@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.17] - 2026-10-23 — Space Force (phase 2: early warning)
+
+### Added
+- **Early-warning satellites** give the President advance launch detection: when your nation is the target of a
+  nuclear strike, a warning bird adds missile-defense coverage (`SpaceDefense.coverage`) — even with no SDI, and on
+  top of SDI when present — so more incoming warheads are tracked and intercepted. Launchable from the SPACE sheet.
+  With no warning satellite the interception path is identical to the prior SDI-only behavior.
+
 ## [3.18.16] - 2026-10-23 — Space Force (phase 1: reconnaissance)
 
 ### Added

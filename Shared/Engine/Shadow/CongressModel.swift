@@ -256,6 +256,9 @@ extension GameEngine {
     /// Does the player have at least one operational satellite of this type?
     func hasSatellite(_ type: SatType) -> Bool { (gameState?.shadow.satellites[type.rawValue] ?? 0) > 0 }
 
+    /// Does the player have an operational early-warning satellite overhead?
+    var hasEarlyWarningSatellite: Bool { hasSatellite(.warning) }
+
     /// What a satellite program costs the President, in $B. DESIGN CHOICES.
     static func satelliteCost(_ type: SatType) -> Double {
         switch type {
@@ -281,5 +284,15 @@ extension GameEngine {
         self.gameState = gs
         completePlayerAction()
         return true
+    }
+}
+
+/// Missile-defense coverage the player's early-warning satellite provides (3.18.17): advance launch detection gives
+/// defensive coverage even without SDI, and adds to it when SDI is present. Pure, so the self-check covers it.
+enum SpaceDefense {
+    static let warningCoverageBonus = 25.0
+    static let warningOnlyInterceptRate = 50
+    static func coverage(baseSDI: Int, warningSat: Bool) -> Double {
+        min(100, Double(max(0, baseSDI)) + (warningSat ? warningCoverageBonus : 0))
     }
 }

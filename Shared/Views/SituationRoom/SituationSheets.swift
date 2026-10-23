@@ -2124,17 +2124,33 @@ struct SpaceSheet: View {
                 .disabled(gameState.actionsRemaining == 0 || !spaceAge || gameState.gameOver)
             }
             .padding(8).themedPanel(retroFill: EGA.black)
+            let warnCount = gameState.shadow.satellites["warning"] ?? 0
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("EARLY WARNING").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                    Spacer()
+                    Text("IN ORBIT: \(warnCount)").font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                }
+                Text("Launch detection: when YOUR nation is the target of a nuclear strike, it adds missile-defense coverage (even without SDI) so more incoming warheads are tracked and intercepted.")
+                    .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+                Button(String(format: "LAUNCH EARLY-WARNING SATELLITE ($%.0fB)", GameEngine.satelliteCost(.warning))) {
+                    gameEngine.launchSatellite(.warning)
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: warnCount == 0))
+                .disabled(gameState.actionsRemaining == 0 || !spaceAge || gameState.gameOver)
+            }
+            .padding(8).themedPanel(retroFill: EGA.black)
             if !spaceAge {
                 Text("Nothing orbits yet — no satellite can launch before \(GameEngine.spaceAgeYear).")
                     .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed)
             }
-            Text("More orbital capabilities — early warning, GPS, comms — ride on this framework in later increments.")
+            Text("GPS and comms capabilities ride on this framework in later increments; ASAT awaits a foreign-constellation model.")
                 .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
             Spacer()
             HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
         }
         .padding(16)
-        .frame(width: FontScale.w(560), height: FontScale.h(460))
+        .frame(width: FontScale.w(560), height: FontScale.h(600))
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }

@@ -654,25 +654,24 @@ class GameEngine: ObservableObject {
         var interceptedWarheads = 0
         var penetratingWarheads = warheads
 
-        if target.hasSDI {
+        // 3.18.17: an early-warning satellite gives the player advance launch detection — defensive coverage even
+        // without SDI, and a boost on top of it. With no warning sat this is identical to the old SDI-only path.
+        let warningSat = target.id == gameState.playerCountryID && (gameState.shadow.satellites["warning"] ?? 0) > 0
+        if target.hasSDI || warningSat {
+            let coveragePct = SpaceDefense.coverage(baseSDI: target.hasSDI ? target.sdiCoverage : 0, warningSat: warningSat)
+            let interceptRate = target.hasSDI ? target.sdiInterceptionRate : SpaceDefense.warningOnlyInterceptRate
             addLog("", type: .system)
-            addLog("🛰️ SDI SYSTEM ACTIVATED", type: .warning)
+            addLog(target.hasSDI ? "🛰️ SDI SYSTEM ACTIVATED" : "🛰️ EARLY-WARNING SATELLITE: launch detected", type: .warning)
             addLog("Incoming warheads: \(warheads)", type: .info)
-            addLog("SDI Coverage: \(target.sdiCoverage)%", type: .info)
-            addLog("Interception Rate: \(target.sdiInterceptionRate)%", type: .info)
+            addLog("Coverage: \(Int(coveragePct))%", type: .info)
+            addLog("Interception Rate: \(interceptRate)%", type: .info)
 
-            // Calculate how many warheads are covered by SDI
-            let coveredWarheads = Int(Double(warheads) * (Double(target.sdiCoverage) / 100.0))
+            // Calculate how many warheads are covered, then roll for interception on them
+            let coveredWarheads = Int(Double(warheads) * (coveragePct / 100.0))
             let uncoveredWarheads = warheads - coveredWarheads
-
-            // Roll for interception on covered warheads
             for _ in 0..<coveredWarheads {
-                let roll = Int.random(in: 1...100)
-                if roll <= target.sdiInterceptionRate {
-                    interceptedWarheads += 1
-                }
+                if Int.random(in: 1...100) <= interceptRate { interceptedWarheads += 1 }
             }
-
             penetratingWarheads = uncoveredWarheads + (coveredWarheads - interceptedWarheads)
 
             addLog("", type: .system)
@@ -682,8 +681,8 @@ class GameEngine: ObservableObject {
             addLog("  Untracked: \(uncoveredWarheads)", type: .warning)
             addLog("  PENETRATING TARGET: \(penetratingWarheads)", type: .critical)
 
-            // SDI can be degraded by the attack
-            if penetratingWarheads > 5 {
+            // A saturation attack degrades the SDI hardware (not the satellite).
+            if penetratingWarheads > 5 && target.hasSDI {
                 target.sdiCoverage = max(0, target.sdiCoverage - 10)
                 target.sdiInterceptionRate = max(0, target.sdiInterceptionRate - 5)
                 addLog("⚠️ SDI system degraded by saturation attack", type: .warning)
