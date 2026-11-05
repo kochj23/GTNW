@@ -1,0 +1,181 @@
+truman	1945-1953	truman	Harry S. Truman	President
+truman	1945-1953	acheson	Dean Acheson	Secretary of State
+truman	1945-1953	marshall	George C. Marshall	Secretary of Defense
+truman	1945-1953	barkley	Alben W. Barkley	Vice President
+truman	1945-1953	smith_cia	Gen. Walter Bedell Smith	CIA Director
+truman	1945-1953	snyder	John W. Snyder	Secretary of Treasury
+truman	1945-1953	clark_ag	Tom C. Clark	Attorney General
+eisenhower	1953-1961	eisenhower	Dwight D. Eisenhower	President
+eisenhower	1953-1961	dulles_state	John Foster Dulles	Secretary of State
+eisenhower	1953-1961	dulles_cia	Allen Dulles	CIA Director
+eisenhower	1953-1961	nixon_vp	Richard Nixon	Vice President
+eisenhower	1953-1961	wilson_secdef	Charles 'Engine Charlie' Wilson	Secretary of Defense
+eisenhower	1953-1961	cutler_nsa	Robert Cutler	National Security Advisor
+eisenhower	1953-1961	humphrey_treasury	George M. Humphrey	Secretary of Treasury
+kennedy	1961-1963	kennedy	John F. Kennedy	President
+kennedy	1961-1963	mcnamara	Robert McNamara	Secretary of Defense
+kennedy	1961-1963	rusk	Dean Rusk	Secretary of State
+kennedy	1961-1963	rfk	Robert F. Kennedy	Attorney General
+kennedy	1961-1963	lbj_vp	Lyndon B. Johnson	Vice President
+kennedy	1961-1963	mccone	John McCone	CIA Director
+kennedy	1961-1963	bundy	McGeorge Bundy	National Security Advisor
+kennedy	1961-1963	dillon	Douglas Dillon	Secretary of Treasury
+johnson	1963-1969	johnson	Lyndon B. Johnson	President
+johnson	1963-1969	mcnamara_lbj	Robert McNamara	Secretary of Defense
+johnson	1963-1969	rusk_lbj	Dean Rusk	Secretary of State
+johnson	1963-1969	humphrey_vp	Hubert H. Humphrey	Vice President
+johnson	1963-1969	helms	Richard Helms	CIA Director
+johnson	1963-1969	rostow	Walt Rostow	National Security Advisor
+johnson	1963-1969	fowler	Henry H. Fowler	Secretary of Treasury
+nixon	1969-1974	nixon	Richard Nixon	President
+nixon	1969-1974	kissinger	Henry Kissinger	National Security Advisor
+nixon	1969-1974	agnew	Spiro Agnew	Vice President
+nixon	1969-1974	laird	Melvin Laird	Secretary of Defense
+nixon	1969-1974	helms_nixon	Richard Helms	CIA Director
+nixon	1969-1974	connally	John Connally	Secretary of Treasury
+ford	1974-1977	ford	Gerald Ford	President
+ford	1974-1977	kissinger_ford	Henry Kissinger	Secretary of State
+ford	1974-1977	rockefeller_vp	Nelson Rockefeller	Vice President
+ford	1974-1977	rumsfeld_ford	Donald Rumsfeld	Secretary of Defense
+ford	1974-1977	bush_cia	George H.W. Bush	CIA Director
+ford	1974-1977	scowcroft_ford	Brent Scowcroft	National Security Advisor
+ford	1974-1977	simon	William Simon	Secretary of Treasury
+carter	1977-1981	carter	Jimmy Carter	President
+carter	1977-1981	vance	Cyrus Vance	Secretary of State
+carter	1977-1981	brzezinski	Zbigniew Brzezinski	National Security Advisor
+carter	1977-1981	mondale	Walter Mondale	Vice President
+carter	1977-1981	brown_secdef	Harold Brown	Secretary of Defense
+carter	1977-1981	turner_cia	Adm. Stansfield Turner	CIA Director
+carter	1977-1981	blumenthal	W. Michael Blumenthal	Secretary of Treasury
+reagan	1981-1989	reagan	Ronald Reagan	President
+reagan	1981-1989	shultz	George Shultz	Secretary of State
+reagan	1981-1989	weinberger	Caspar Weinberger	Secretary of Defense
+reagan	1981-1989	casey	William Casey	CIA Director
+reagan	1981-1989	bush_vp	George H.W. Bush	Vice President
+reagan	1981-1989	powell_nsa	Gen. Colin Powell	National Security Advisor
+reagan	1981-1989	kirkpatrick	Jeane Kirkpatrick	UN Ambassador
+reagan	1981-1989	baker_reagan	James Baker III	Secretary of Treasury
+bush_sr	1989-1993	bush_sr	George H.W. Bush	President
+bush_sr	1989-1993	baker	James Baker	Secretary of State
+bush_sr	1989-1993	cheney	Dick Cheney	Secretary of Defense
+bush_sr	1989-1993	powell	General Colin Powell	Chairman, Joint Chiefs
+bush_sr	1989-1993	quayle	Dan Quayle	Vice President
+bush_sr	1989-1993	webster_cia	William Webster	CIA Director
+bush_sr	1989-1993	scowcroft_bushsr	Brent Scowcroft	National Security Advisor
+bush_sr	1989-1993	brady	Nicholas Brady	Secretary of Treasury
+clinton	1993-2001	clinton	Bill Clinton	President
+clinton	1993-2001	albright	Madeleine Albright	Secretary of State
+clinton	1993-2001	gore	Al Gore	Vice President
+clinton	1993-2001	cohen	William Cohen	Secretary of Defense
+clinton	1993-2001	tenet_clinton	George Tenet	CIA Director
+clinton	1993-2001	berger	Sandy Berger	National Security Advisor
+clinton	1993-2001	rubin	Robert Rubin	Secretary of Treasury
+bush_jr	2001-2009	bush_jr	George W. Bush	President
+bush_jr	2001-2009	cheney_vp	Dick Cheney	Vice President
+bush_jr	2001-2009	powell_state	Colin Powell	Secretary of State
+bush_jr	2001-2009	rumsfeld	Donald Rumsfeld	Secretary of Defense
+bush_jr	2001-2009	rice	Condoleezza Rice	National Security Advisor
+bush_jr	2001-2009	tenet_bush	George Tenet	CIA Director
+bush_jr	2001-2009	ridge	Tom Ridge	Secretary of Homeland Security
+bush_jr	2001-2009	negroponte	John Negroponte	Director of National Intelligence
+bush_jr	2001-2009	paulson	Hank Paulson	Secretary of Treasury
+obama	2009-2017	obama	Barack Obama	President
+obama	2009-2017	clinton_hillary	Hillary Clinton	Secretary of State
+obama	2009-2017	gates	Robert Gates	Secretary of Defense
+obama	2009-2017	biden_vp	Joe Biden	Vice President
+obama	2009-2017	brennan	John Brennan	CIA Director
+obama	2009-2017	donilon	Tom Donilon	National Security Advisor
+obama	2009-2017	geithner	Timothy Geithner	Secretary of Treasury
+obama	2009-2017	clapper	James Clapper	Director of National Intelligence
+trump_first	2017-2021	trump_first	Donald J. Trump	President
+trump_first	2017-2021	mattis	James Mattis	Secretary of Defense
+trump_first	2017-2021	tillerson	Rex Tillerson	Secretary of State
+trump_first	2017-2021	pence	Mike Pence	Vice President
+trump_first	2017-2021	bolton	John Bolton	National Security Advisor
+trump_first	2017-2021	mnuchin	Steven Mnuchin	Secretary of Treasury
+trump_first	2017-2021	haspel	Gina Haspel	CIA Director
+trump_first	2017-2021	pompeo	Mike Pompeo	CIA Director / Secretary of State
+biden	2021-2025	biden_pres	Joe Biden	President
+biden	2021-2025	blinken	Antony Blinken	Secretary of State
+biden	2021-2025	austin	Lloyd Austin	Secretary of Defense
+biden	2021-2025	sullivan	Jake Sullivan	National Security Advisor
+biden	2021-2025	harris	Kamala Harris	Vice President
+biden	2021-2025	burns_cia	William Burns	CIA Director
+biden	2021-2025	yellen	Janet Yellen	Secretary of Treasury
+biden	2021-2025	haines	Avril Haines	Director of National Intelligence
+washington	1789-1797	washington	George Washington	President
+washington	1789-1797	jefferson_sec	Thomas Jefferson	Secretary of State
+washington	1789-1797	hamilton	Alexander Hamilton	Secretary of Treasury
+washington	1789-1797	knox	Henry Knox	Secretary of War
+adams	1797-1801	adams	John Adams	President
+adams	1797-1801	pickering	Timothy Pickering	Secretary of State
+jefferson	1801-1809	jefferson	Thomas Jefferson	President
+jefferson	1801-1809	madison_sec	James Madison	Secretary of State
+jefferson	1801-1809	gallatin	Albert Gallatin	Secretary of Treasury
+madison	1809-1817	madison	James Madison	President
+madison	1809-1817	monroe_sec	James Monroe	Secretary of State
+monroe	1817-1825	monroe	James Monroe	President
+monroe	1817-1825	jq_adams_sec	John Quincy Adams	Secretary of State
+jq_adams	1825-1829	jq_adams	John Quincy Adams	President
+jq_adams	1825-1829	clay	Henry Clay	Secretary of State
+jackson	1829-1837	jackson	Andrew Jackson	President
+jackson	1829-1837	van_buren_sec	Martin Van Buren	Secretary of State
+van_buren	1837-1841	van_buren	Martin Van Buren	President
+harrison	1841	harrison	William Henry Harrison	President
+tyler	1841-1845	tyler	John Tyler	President
+tyler	1841-1845	webster	Daniel Webster	Secretary of State
+polk	1845-1849	polk	James K. Polk	President
+polk	1845-1849	buchanan_sec	James Buchanan	Secretary of State
+taylor	1849-1850	taylor	Zachary Taylor	President
+fillmore	1850-1853	fillmore	Millard Fillmore	President
+pierce	1853-1857	pierce	Franklin Pierce	President
+buchanan	1857-1861	buchanan	James Buchanan	President
+lincoln	1861-1865	lincoln	Abraham Lincoln	President
+lincoln	1861-1865	seward	William H. Seward	Secretary of State
+lincoln	1861-1865	stanton	Edwin M. Stanton	Secretary of War
+lincoln	1861-1865	grant_general	Ulysses S. Grant	General-in-Chief
+a_johnson	1865-1869	a_johnson	Andrew Johnson	President
+a_johnson	1865-1869	seward_cont	William H. Seward	Secretary of State
+grant	1869-1877	grant	Ulysses S. Grant	President
+grant	1869-1877	fish	Hamilton Fish	Secretary of State
+hayes	1877-1881	hayes	Rutherford B. Hayes	President
+garfield	1881	garfield	James A. Garfield	President
+arthur	1881-1885	arthur	Chester A. Arthur	President
+cleveland_first	1885-1889	cleveland	Grover Cleveland	President
+harrison_benjamin	1889-1893	harrison_benjamin	Benjamin Harrison	President
+cleveland_second	1893-1897	cleveland	Grover Cleveland	President
+mckinley	1897-1901	mckinley	William McKinley	President
+mckinley	1897-1901	hay	John Hay	Secretary of State
+mckinley	1897-1901	t_roosevelt_asst	Theodore Roosevelt	Assistant Secretary of Navy
+t_roosevelt	1901-1909	t_roosevelt	Theodore Roosevelt	President
+t_roosevelt	1901-1909	root	Elihu Root	Secretary of State
+t_roosevelt	1901-1909	taft_sec	William Howard Taft	Secretary of War
+taft	1909-1913	taft	William Howard Taft	President
+taft	1909-1913	knox_sec	Philander C. Knox	Secretary of State
+wilson	1913-1921	wilson	Woodrow Wilson	President
+wilson	1913-1921	lansing	Robert Lansing	Secretary of State
+harding	1921-1923	harding	Warren G. Harding	President
+harding	1921-1923	hoover_sec	Herbert Hoover	Secretary of Commerce
+coolidge	1923-1929	coolidge	Calvin Coolidge	President
+coolidge	1923-1929	kellogg	Frank B. Kellogg	Secretary of State
+hoover	1929-1933	hoover	Herbert Hoover	President
+hoover	1929-1933	stimson_hoover	Henry L. Stimson	Secretary of State
+fdr	1933-1945	fdr	Franklin D. Roosevelt	President
+fdr	1933-1945	hull	Cordell Hull	Secretary of State
+fdr	1933-1945	stimson	Henry L. Stimson	Secretary of War
+fdr	1933-1945	marshall_gen	George C. Marshall	Chief of Staff
+trump_second	2025-2029	trump	Donald J. Trump	President
+trump_second	2025-2029	vance	JD Vance	Vice President
+trump_second	2025-2029	rubio	Marco Rubio	Secretary of State
+trump_second	2025-2029	hegseth	Pete Hegseth	Secretary of Defense
+trump_second	2025-2029	bessent	Scott Bessent	Secretary of Treasury
+trump_second	2025-2029	bondi	Pam Bondi	Attorney General
+trump_second	2025-2029	noem	Kristi Noem	Secretary of Homeland Security
+trump_second	2025-2029	gabbard	Tulsi Gabbard	Director of National Intelligence
+trump_second	2025-2029	ratcliffe	John Ratcliffe	CIA Director
+trump_second	2025-2029	waltz	Mike Waltz	National Security Advisor
+trump_second	2025-2029	wright	Chris Wright	Secretary of Energy
+trump_second	2025-2029	stefanik	Elise Stefanik	UN Ambassador
+trump_second	2025-2029	brown	General Charles Q. Brown Jr.	Chairman, Joint Chiefs
+trump_second	2025-2029	wiles	Susie Wiles	Chief of Staff
+trump_second	2025-2029	leavitt	Karoline Leavitt	Press Secretary

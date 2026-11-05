@@ -2793,7 +2793,7 @@ final class CoalitionAndScenarioTests: XCTestCase {
     }
 
     func testEveryScenarioLoadsItsBoard() throws {
-        XCTAssertEqual(ScenarioDefinition.all.count, 10)
+        XCTAssertEqual(ScenarioDefinition.all.count, 16)
         for s in ScenarioDefinition.all {
             let (_, gs) = try scenario(s.id)
             XCTAssertEqual(gs.currentDate, s.startDate, s.id)
@@ -2801,6 +2801,31 @@ final class CoalitionAndScenarioTests: XCTestCase {
             for (a, b) in s.wars { XCTAssertTrue(gs.activeWars.contains { $0.aggressor == a && $0.defender == b }, "\(s.id): \(a)-\(b)") }
             XCTAssertFalse(Scorecard.lines(for: s.id, in: gs).isEmpty, s.id)
         }
+    }
+
+    // Techno-thrillers (3.19.0)
+
+    func testThrillersAreFictionAndScoredOnObjectives() throws {
+        XCTAssertEqual(ScenarioDefinition.thrillers.count, 6)
+        XCTAssertFalse(ScenarioDefinition.find("cuba1962")?.isFiction ?? true, "history stays history")
+        for s in ScenarioDefinition.thrillers {
+            XCTAssertTrue(s.isFiction, s.id)
+            XCTAssertFalse(s.events.isEmpty, "\(s.id) needs scripted beats")
+            XCTAssertTrue(s.events.allSatisfy { $0.date >= s.startDate }, "\(s.id): no events before the start")
+            let (_, gs) = try scenario(s.id)
+            let lines = Scorecard.lines(for: s.id, in: gs)
+            XCTAssertTrue(lines.allSatisfy { $0.historical.hasPrefix("Goal: ") }, s.id)
+            XCTAssertEqual(Scorecard.score(lines).matched, lines.count, "\(s.id): nothing has gone wrong on day one")
+            XCTAssertFalse(gs.shadow.eventQueue.isEmpty, "\(s.id): events survive the board's country filter")
+        }
+    }
+
+    func testNarvaGambitRussiaCrossesTheBorderOnSchedule() throws {
+        let (engine, gs) = try scenario("baltic2026", turn: .week)
+        XCTAssertFalse(Scorecard.fought("RUS", "EST", in: gs))
+        for _ in 0..<3 { gs.turn += 1; engine.processShadowTurn() }
+        XCTAssertTrue(Scorecard.fought("RUS", "EST", in: gs), "the 2 Mar invasion fires")
+        XCTAssertEqual(Scorecard.lines(for: "baltic2026", in: gs).first { $0.label.contains("nuclear") }?.matchesHistory, true)
     }
 
     // Functional: scenarios and their scorecards
@@ -5762,5 +5787,46 @@ final class CivilWarWMDGateTests: XCTestCase {
         let gs = ScenarioLoader.makeGameState(.civilWar1861, player: "USA")
         XCTAssertTrue(PresidentialAction.chemicalAttack.isAvailable(on: gs.currentDate, in: gs), "chem usable in 1861 Civil War")
         XCTAssertTrue(PresidentialAction.biologicalAttack.isAvailable(on: gs.currentDate, in: gs), "bio usable in 1861 Civil War")
+    }
+}
+
+// MARK: - Cabinet portraits (3.19.0)
+
+final class CabinetPortraitTests: XCTestCase {
+    private func png(_ img: PackPlatformImage?) -> Data? {
+        #if canImport(AppKit)
+        return img?.tiffRepresentation
+        #else
+        return img?.pngData()
+        #endif
+    }
+
+    func testEveryHistoricalAdvisorHasAPortrait() {
+        var missing: [String] = []
+        for admin in Advisor.allAdministrations() {
+            for a in admin.advisors where CabinetPortraits.image(id: a.id, name: a.name) == nil {
+                missing.append("\(admin.id)/\(a.id)")
+            }
+        }
+        XCTAssertEqual(missing, [], "advisors without a period portrait")
+    }
+
+    func testSharedIdsResolveToTheRightPerson() throws {
+        let cyrus = try XCTUnwrap(CabinetPortraits.image(id: "vance", name: "Cyrus Vance"))
+        let jd = try XCTUnwrap(CabinetPortraits.image(id: "vance", name: "JD Vance"))
+        XCTAssertNotEqual(png(cyrus), png(jd), "Carter's Secretary of State is not Trump's Vice President")
+        XCTAssertEqual(png(CabinetPortraits.image(id: nil, name: "JD Vance")), png(jd), "name-only callers get the same person")
+        XCTAssertEqual(CabinetPortraits.disambiguatedKey(id: "vance", name: "JD Vance"), "vance--jdvance")
+    }
+
+    func testPeriodCorrectRolesAreDistinctPortraits() throws {
+        let vp = try XCTUnwrap(CabinetPortraits.image(id: "nixon_vp", name: "Richard Nixon"))
+        let pres = try XCTUnwrap(CabinetPortraits.image(id: "nixon", name: "Richard Nixon"))
+        XCTAssertNotEqual(png(vp), png(pres), "Eisenhower's VP is the 1950s Nixon, not the 1970s president")
+    }
+
+    func testNameOnlyLookupAndFallback() {
+        XCTAssertNotNil(CabinetPortraits.image(id: nil, name: "Dean Acheson"))
+        XCTAssertNil(CabinetPortraits.image(id: "invented_minister", name: "Nobody Atall"), "invented advisors fall back to pack art or initials")
     }
 }

@@ -51,16 +51,21 @@ struct AdvicePanel: View {
     }
 }
 
-/// Advisor portrait: the pack portrait for the post (retro art), otherwise a drawn badge with initials.
+/// Advisor portrait: the person's period portrait, else the pack portrait for the post (retro art), otherwise a drawn
+/// badge with initials.
 struct AdvisorPortrait: View {
     let title: String
     let name: String
     var size: CGFloat = 48
     var status: AdvisorStatus? = nil
+    var advisorID: String? = nil
 
     var body: some View {
         ZStack {
-            if let key = ShadowPack.advisorKey(forTitle: title) {
+            if let portrait = CabinetPortraits.image(id: advisorID, name: name) {
+                Image(packImage: portrait).resizable().aspectRatio(contentMode: .fill)
+                    .accessibilityLabel("\(name) portrait")
+            } else if let key = ShadowPack.advisorKey(forTitle: title) {
                 PackImage("advisor.\(key).button", "advisor.\(key).portrait") { drawn }
             } else {
                 drawn

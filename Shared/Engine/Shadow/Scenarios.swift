@@ -51,6 +51,8 @@ struct ScenarioDefinition: Identifiable {
     /// Build the board for this year rather than the administration's first year (3.12.0); nil = as before.
     var boardYear: Int? = nil
     var allowsEarlyWMD: Bool = false   // lift the WMD era-gate (the Civil War lets you wage bio/chem anachronistically)
+    /// Techno-thriller what-if (3.19.0): an invented crisis on a real board, scored against objectives, not history.
+    var isFiction: Bool = false
 
     var administration: Administration? {
         let all = Advisor.allAdministrations()
@@ -60,6 +62,7 @@ struct ScenarioDefinition: Identifiable {
     static func d(_ y: Int, _ m: Int, _ day: Int) -> Date { GameCalendar.date(year: y, month: m, day: day) }
 
     static let all: [ScenarioDefinition] = [civilWar1861, pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, gulf1990, sept11_2001, modern2025]
+        + thrillers
 
     static func find(_ id: String) -> ScenarioDefinition? { all.first { $0.id == id } }
 
@@ -240,6 +243,160 @@ struct ScenarioDefinition: Identifiable {
         relations: [("USA", "RUS", -60), ("USA", "CHN", -30)],
         events: [],
         suggestedTurnLength: .month)
+
+    // MARK: Techno-thrillers (3.19.0)
+    //
+    // Original what-if crises in the techno-thriller tradition — submarines, special operations, stolen warheads,
+    // cyber attacks and rogue commanders — set on the real board of their year. The people and plots are invented
+    // for GTNW; the hardware, geography and politics are period-correct.
+
+    static let thrillers: [ScenarioDefinition] = [silentRunning1984, shadowWar1989, missingWarhead1992, baltic2026, straitOfFire2027, blackout2026]
+
+    /// A Soviet missile submarine stops answering Moscow after a hard-line plot in the Northern Fleet.
+    static let silentRunning1984 = ScenarioDefinition(
+        id: "silentrunning1984",
+        title: "Silent Running, 1984",
+        summary: "November 1984. A Soviet missile submarine with sixteen nuclear missiles has dropped off every sonar "
+            + "plot in the North Atlantic after a hard-line plot in the Northern Fleet. Moscow calls it an exercise "
+            + "and is sending the whole fleet out to look. Find the boat before someone gets an order to fire.",
+        startDate: d(1984, 11, 12), eraYear: 1984, defcon: .defcon3,
+        wars: [("RUS", "AFG")],
+        relations: [("USA", "RUS", -65), ("RUS", "USA", -70), ("USA", "NOR", 80), ("USA", "GBR", 85)],
+        events: [
+            ScheduledEvent(date: d(1984, 11, 14), kind: .news, actor: nil, target: nil,
+                           text: "Underwater listening stations lose a Soviet missile submarine north of the Faroes. Hunter submarines are told to go quiet."),
+            ScheduledEvent(date: d(1984, 11, 17), kind: .massTroops, actor: "RUS", target: "NOR",
+                           text: "The Soviet Northern Fleet sorties in strength past North Cape. Forty surface ships, no warning."),
+            ScheduledEvent(date: d(1984, 11, 21), kind: .condemn, actor: "RUS", target: "USA",
+                           text: "Moscow accuses the U.S. Navy of 'piratical interference' with a routine Soviet exercise."),
+            ScheduledEvent(date: d(1984, 11, 26), kind: .news, actor: nil, target: nil,
+                           text: "A patrol aircraft gets a contact 400 miles off Norfolk, then loses it. The Joint Chiefs ask what Moscow knows."),
+            ScheduledEvent(date: d(1984, 12, 3), kind: .unrest, actor: nil, target: "RUS",
+                           text: "Arrests of senior naval officers in Murmansk. The plot was bigger than one boat."),
+        ],
+        suggestedTurnLength: .day, isFiction: true)
+
+    /// Cartel bombs in Bogota and a dead DEA team: a covert war that is one leak away from a real one.
+    static let shadowWar1989 = ScenarioDefinition(
+        id: "shadowwar1989",
+        title: "Shadow War, 1989",
+        summary: "September 1989. A cartel truck bomb has killed four American agents in Bogotá, and the cartels have put "
+            + "a price on Colombia's president. Your options run from aid and advisers to deniable strikes in the jungle. "
+            + "Break the cartels without ending up at war with Colombia, or with its neighbours.",
+        startDate: d(1989, 9, 4), eraYear: 1989, defcon: .defcon5,
+        wars: [],
+        relations: [("USA", "COL", 55), ("COL", "USA", 40), ("USA", "PAN", -70), ("USA", "VEN", 20)],
+        events: [
+            ScheduledEvent(date: d(1989, 9, 10), kind: .unrest, actor: nil, target: "COL",
+                           text: "Cartel gunmen stage bombings in Medellín and Cali. Colombia declares a state of siege."),
+            ScheduledEvent(date: d(1989, 9, 24), kind: .assassination, actor: nil, target: "COL",
+                           text: "A car bomb hits the Colombian president's motorcade."),
+            ScheduledEvent(date: d(1989, 10, 15), kind: .news, actor: nil, target: "COL",
+                           text: "A newspaper reports U.S. special forces operating from a Colombian base. Bogotá's congress demands answers."),
+            ScheduledEvent(date: d(1989, 11, 2), kind: .condemn, actor: "COL", target: "USA",
+                           text: "Colombian senators denounce 'Yankee commandos'. The government asks Washington to keep it quiet."),
+            ScheduledEvent(date: d(1989, 12, 1), kind: .unrest, actor: nil, target: "PAN",
+                           text: "Cartel money is moving through Panama's banks with official protection."),
+        ],
+        suggestedTurnLength: .week, isFiction: true)
+
+    /// After the Soviet collapse a warhead goes missing between Kazakhstan and the sea.
+    static let missingWarhead1992 = ScenarioDefinition(
+        id: "missingwarhead1992",
+        title: "The Missing Warhead, 1992",
+        summary: "March 1992. The Soviet Union is three months gone. An audit of a Kazakh missile base finds one tactical "
+            + "warhead too few, and an unpaid colonel has disappeared. Intelligence traces a truck to the Caspian. Find it "
+            + "before it reaches a port, and don't let an old enemy take the blame for it.",
+        startDate: d(1992, 3, 9), eraYear: 1992, defcon: .defcon4,
+        wars: [],
+        relations: [("USA", "RUS", 20), ("RUS", "USA", 10), ("USA", "IRN", -75), ("IRN", "USA", -80), ("USA", "KAZ", 30)],
+        events: [
+            ScheduledEvent(date: d(1992, 3, 12), kind: .unrest, actor: nil, target: "KAZ",
+                           text: "Kazakh troops seal the missile field. The base commander is found dead in his office."),
+            ScheduledEvent(date: d(1992, 3, 20), kind: .news, actor: nil, target: "IRN",
+                           text: "Spy satellites follow a lead-lined truck to a ferry terminal on the Caspian."),
+            ScheduledEvent(date: d(1992, 4, 2), kind: .condemn, actor: "IRN", target: "USA",
+                           text: "Tehran calls American accusations 'a pretext for aggression' and moves air defences to the coast."),
+            ScheduledEvent(date: d(1992, 4, 18), kind: .news, actor: nil, target: nil,
+                           text: "A freighter out of the Gulf of Oman stops answering its owners. It was due at a Mediterranean port next week."),
+            ScheduledEvent(date: d(1992, 5, 1), kind: .unrest, actor: nil, target: "RUS",
+                           text: "Moscow hard-liners say the West stole the warhead to discredit Russia. A coup rumour sweeps the capital."),
+        ],
+        suggestedTurnLength: .week, isFiction: true)
+
+    /// A "spontaneous" uprising in north-east Estonia and unmarked soldiers at the border: will Article 5 hold?
+    static let baltic2026 = ScenarioDefinition(
+        id: "baltic2026",
+        title: "Narva Gambit, 2026",
+        summary: "February 2026. Riots in Narva, Estonia's border city, have brought 'self-defence volunteers' in unmarked "
+            + "uniforms across the river. Moscow says it is protecting Russian speakers. Tallinn has invoked Article 4 and "
+            + "will invoke Article 5. Hold the alliance together without the war going nuclear.",
+        startDate: d(2026, 2, 16), eraYear: 2025, defcon: .defcon3,
+        wars: [("RUS", "UKR")],
+        relations: [("USA", "RUS", -70), ("RUS", "USA", -75), ("USA", "EST", 80), ("RUS", "EST", -80), ("EST", "RUS", -85),
+                    ("USA", "POL", 85), ("USA", "FIN", 75)],
+        events: [
+            ScheduledEvent(date: d(2026, 2, 17), kind: .unrest, actor: nil, target: "EST",
+                           text: "Armed men without insignia take Narva's town hall and the border bridge."),
+            ScheduledEvent(date: d(2026, 2, 19), kind: .massTroops, actor: "RUS", target: "EST",
+                           text: "Russian armoured columns move west from Pskov. Belarus closes its airspace."),
+            ScheduledEvent(date: d(2026, 2, 24), kind: .news, actor: nil, target: nil,
+                           text: "Undersea data cables between Finland and Estonia are cut. Tallinn's banks go offline."),
+            ScheduledEvent(date: d(2026, 3, 2), kind: .invade, actor: "RUS", target: "EST",
+                           text: "Russian forces cross the Estonian frontier in strength 'to restore order'."),
+            ScheduledEvent(date: d(2026, 3, 4), kind: .condemn, actor: "RUS", target: "POL",
+                           text: "Moscow warns Warsaw that any NATO convoy through the Suwałki Gap is a legitimate target."),
+        ],
+        suggestedTurnLength: .week, boardYear: 2025, isFiction: true)
+
+    /// A quarantine of Taiwan, carriers in the Philippine Sea, and the clock running on the island's fuel.
+    static let straitOfFire2027 = ScenarioDefinition(
+        id: "straitoffire2027",
+        title: "Strait of Fire, 2027",
+        summary: "August 2027. Beijing has declared a 'customs quarantine' of Taiwan. Coast-guard cutters are boarding "
+            + "tankers, the island has about ten weeks of fuel, and missile brigades on the mainland are at full readiness. "
+            + "Break the quarantine, outlast it, or negotiate. Every choice risks a war between nuclear powers.",
+        startDate: d(2027, 8, 1), eraYear: 2025, defcon: .defcon3,
+        wars: [("RUS", "UKR")],
+        relations: [("USA", "CHN", -60), ("CHN", "USA", -65), ("USA", "TWN", 80), ("CHN", "TWN", -90), ("TWN", "CHN", -80),
+                    ("USA", "JPN", 85), ("USA", "PHL", 70), ("USA", "KOR", 75)],
+        events: [
+            ScheduledEvent(date: d(2027, 8, 3), kind: .massTroops, actor: "CHN", target: "TWN",
+                           text: "Amphibious brigades load at Fujian ports. Beijing says the quarantine is 'law enforcement'."),
+            ScheduledEvent(date: d(2027, 8, 9), kind: .news, actor: nil, target: nil,
+                           text: "A cyber attack takes down port cranes in Long Beach and Yokohama. The code is new, and the attackers are good."),
+            ScheduledEvent(date: d(2027, 8, 20), kind: .condemn, actor: "CHN", target: "JPN",
+                           text: "Beijing warns Tokyo that U.S. aircraft flying from Okinawa make Japan 'a party to the conflict'."),
+            ScheduledEvent(date: d(2027, 9, 6), kind: .strike, actor: "CHN", target: "TWN",
+                           text: "Missiles hit Taiwanese radar sites and airfields. Beijing calls it 'a precise warning'."),
+            ScheduledEvent(date: d(2027, 9, 20), kind: .unrest, actor: nil, target: "TWN",
+                           text: "Petrol rationing in Taipei. Fuel queues stretch for miles."),
+        ],
+        suggestedTurnLength: .week, boardYear: 2025, isFiction: true)
+
+    /// The lights go out on the eastern seaboard and nobody claims it.
+    static let blackout2026 = ScenarioDefinition(
+        id: "blackout2026",
+        title: "Dark Grid, 2026",
+        summary: "December 2026, the coldest week of the winter. Malware has tripped substations from Boston to Atlanta "
+            + "and forty million Americans have no power. The evidence points at Tehran, Pyongyang and Moscow, possibly "
+            + "planted. Hit back at the wrong country and the real attacker wins.",
+        startDate: d(2026, 12, 14), eraYear: 2025, defcon: .defcon3,
+        wars: [("RUS", "UKR")],
+        relations: [("USA", "IRN", -75), ("USA", "PRK", -80), ("USA", "RUS", -65), ("USA", "CHN", -35)],
+        events: [
+            ScheduledEvent(date: d(2026, 12, 15), kind: .unrest, actor: nil, target: "USA",
+                           text: "Looting in three cities. Governors call out the National Guard as temperatures fall below zero."),
+            ScheduledEvent(date: d(2026, 12, 18), kind: .news, actor: nil, target: "IRN",
+                           text: "The malware's code has comments in Farsi. Analysts say it was meant to be found."),
+            ScheduledEvent(date: d(2026, 12, 23), kind: .condemn, actor: "PRK", target: "USA",
+                           text: "Pyongyang praises the 'punishment of the imperialists' but denies responsibility."),
+            ScheduledEvent(date: d(2027, 1, 4), kind: .news, actor: nil, target: "RUS",
+                           text: "A defector in Vienna says the attack came from a Russian military intelligence unit using borrowed tools."),
+            ScheduledEvent(date: d(2027, 1, 12), kind: .massTroops, actor: "IRN", target: "SAU",
+                           text: "Iranian missile units disperse. Tehran expects to be blamed whoever did it."),
+        ],
+        suggestedTurnLength: .week, boardYear: 2025, isFiction: true)
 }
 
 // MARK: - Scorecard (3.12.0)
@@ -273,6 +430,11 @@ enum Scorecard {
     /// A yes/no line: history's answer and date, and the game's.
     private static func line(_ label: String, history: Bool, when: String, game: Bool) -> ScorecardLine {
         ScorecardLine(label: label, historical: yes(history) + (when.isEmpty ? "" : " (\(when))"), player: yes(game), matchesHistory: history == game)
+    }
+
+    /// An objective line for a techno-thriller: what success looks like against what happened in this game.
+    private static func goal(_ label: String, want: Bool, game: Bool) -> ScorecardLine {
+        ScorecardLine(label: label, historical: "Goal: " + yes(want), player: yes(game), matchesHistory: want == game)
     }
 
     static func lines(for id: String, in gs: GameState) -> [ScorecardLine] {
@@ -326,6 +488,30 @@ enum Scorecard {
                    line("Nuclear weapons used", history: false, when: "", game: nukes)]
         case "modern2025":
             out = [line("Nuclear weapons used", history: false, when: "to date", game: nukes)]
+        case "silentrunning1984":
+            out = [goal("Avoid war with the Soviet Union", want: false, game: fought("USA", "RUS", in: gs)),
+                   goal("Keep Norway out of the fighting", want: false, game: fought("RUS", "NOR", in: gs)),
+                   goal("No nuclear weapons used", want: false, game: nukes)]
+        case "shadowwar1989":
+            out = [goal("Stay out of a war with Colombia", want: false, game: fought("USA", "COL", in: gs)),
+                   goal("Colombia's government survives", want: true, game: !defeated("COL", in: gs)),
+                   goal("Keep Venezuela out of it", want: false, game: fought("USA", "VEN", in: gs))]
+        case "missingwarhead1992":
+            out = [goal("No nuclear detonation", want: false, game: nukes),
+                   goal("Avoid war with Iran", want: false, game: fought("USA", "IRN", in: gs)),
+                   goal("Avoid war with Russia", want: false, game: fought("USA", "RUS", in: gs))]
+        case "baltic2026":
+            out = [goal("Estonia is not overrun", want: true, game: !defeated("EST", in: gs)),
+                   goal("Poland stays out of the fighting", want: false, game: fought("RUS", "POL", in: gs)),
+                   goal("No nuclear weapons used", want: false, game: nukes)]
+        case "straitoffire2027":
+            out = [goal("Taiwan is not conquered", want: true, game: !defeated("TWN", in: gs)),
+                   goal("Japan stays out of the fighting", want: false, game: fought("CHN", "JPN", in: gs)),
+                   goal("No nuclear weapons used", want: false, game: nukes)]
+        case "blackout2026":
+            out = [goal("Don't hit the wrong country (Iran)", want: false, game: fought("USA", "IRN", in: gs)),
+                   goal("Don't hit the wrong country (North Korea)", want: false, game: fought("USA", "PRK", in: gs)),
+                   goal("No nuclear weapons used", want: false, game: nukes)]
         default:
             break
         }

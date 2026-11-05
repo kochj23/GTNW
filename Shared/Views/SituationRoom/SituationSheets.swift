@@ -425,7 +425,8 @@ struct ScenarioList: View {
             ForEach(ScenarioDefinition.all) { s in
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(s.title.uppercased())  ·  \(GameCalendar.format(s.startDate))  ·  \(s.suggestedTurnLength.displayName) turns")
+                        Text("\(s.title.uppercased())  ·  \(GameCalendar.format(s.startDate))  ·  \(s.suggestedTurnLength.displayName) turns"
+                             + (s.isFiction ? "  ·  TECHNO-THRILLER" : ""))
                             .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
                         Text(s.summary).font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white.opacity(0.85))
                             .fixedSize(horizontal: false, vertical: true)
@@ -1506,6 +1507,7 @@ struct ScorecardSheet: View {
         let id = gameState.shadow.scenarioID ?? ""
         let lines = Scorecard.lines(for: id, in: gameState)
         let score = Scorecard.score(lines)
+        let fiction = ScenarioDefinition.find(id)?.isFiction ?? false
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "list.bullet.clipboard.fill")
@@ -1514,10 +1516,10 @@ struct ScorecardSheet: View {
                 Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
             }
             .font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
-            Text("YOU MATCHED HISTORY ON \(score.matched) OF \(score.total)").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            Text(fiction ? "YOU MET \(score.matched) OF \(score.total) OBJECTIVES" : "YOU MATCHED HISTORY ON \(score.matched) OF \(score.total)").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalGreen)
             HStack {
                 Text("").frame(maxWidth: .infinity, alignment: .leading)
-                Text("HISTORY").frame(width: FontScale.w(230), alignment: .leading)
+                Text(fiction ? "OBJECTIVE" : "HISTORY").frame(width: FontScale.w(230), alignment: .leading)
                 Text("THIS GAME").frame(width: FontScale.w(90), alignment: .leading)
             }
             .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.neonCyan)

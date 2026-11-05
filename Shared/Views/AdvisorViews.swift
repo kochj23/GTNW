@@ -71,7 +71,7 @@ struct AdvisorCardView: View {
     var body: some View {
         VStack(spacing: 8) {
             // Portrait placeholder
-            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
+            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title, advisorID: advisor.id)
                 .frame(width: FontScale.w(100), height: FontScale.h(100))
                 .border(advisor.colorValue, width: 2)
                 .overlay(alignment: .bottom) {
@@ -154,7 +154,7 @@ struct AdvisorDetailView: View {
                     HStack(alignment: .top, spacing: 30) {
                         // Portrait
                         VStack(spacing: 10) {
-                            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title)
+                            PlaceholderAdvisorImage(name: advisor.name, color: advisor.colorValue, title: advisor.title, advisorID: advisor.id)
                                 .frame(width: FontScale.w(200), height: FontScale.h(200))
                                 .border(advisor.colorValue, width: 3)
 
@@ -318,12 +318,39 @@ struct AdvisorDetailView: View {
 
 // MARK: - Supporting Views
 
-/// Advisor portrait: the Shadow President portrait for this cabinet post when the local Shadow Pack is installed,
-/// otherwise a placeholder with initials.
+/// Period portraits of the historical cabinets (3.19.0): a public-domain photograph or painting of each person from
+/// their years in office, rendered in an SVGA-era 256-colour style (tools/cabinet_portraits; credits in
+/// Documentation/PORTRAIT_CREDITS.md). Keyed by Advisor id, with the name as a fallback for callers that only have it.
+enum CabinetPortraits {
+    private static let idByName: [String: String] = {
+        var m: [String: String] = [:]
+        for admin in Advisor.allAdministrations() {
+            for a in admin.advisors where m[a.name] == nil { m[a.name] = a.id }
+        }
+        return m
+    }()
+
+    /// Asset key for an id two administrations share (e.g. "vance" is Cyrus Vance and JD Vance): "<id>--<name slug>".
+    static func disambiguatedKey(id: String, name: String) -> String {
+        id + "--" + name.lowercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    static func image(id: String?, name: String) -> PackPlatformImage? {
+        let keys = [id, idByName[name]].compactMap { $0 }.flatMap { [disambiguatedKey(id: $0, name: name), $0] }
+        for key in keys {
+            if let img = PackPlatformImage(named: "Portraits/\(key)") { return img }
+        }
+        return nil
+    }
+}
+
+/// Advisor portrait: the person's period portrait, else the Shadow President portrait for this cabinet post when the
+/// local Shadow Pack is installed, otherwise a placeholder with initials.
 struct PlaceholderAdvisorImage: View {
     let name: String
     let color: Color
     var title: String? = nil
+    var advisorID: String? = nil
     @ObservedObject private var pack = ShadowPack.shared
 
     var initials: String {
@@ -334,7 +361,13 @@ struct PlaceholderAdvisorImage: View {
     }
 
     var body: some View {
-        if let title, let portrait = pack.advisorPortrait(title: title) {
+        if let portrait = CabinetPortraits.image(id: advisorID, name: name) {
+            Image(packImage: portrait)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .clipped()
+                .accessibilityLabel("\(name) portrait")
+        } else if let title, let portrait = pack.advisorPortrait(title: title) {
             Image(packImage: portrait)
                 .interpolation(.none)
                 .resizable()

@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.19.0] - 2026-11-05 — Cabinet portraits and techno-thrillers
+
+### Added
+- **Period portraits for every historical cabinet** (`CabinetPortraits`, `Shared/Assets.xcassets/Portraits`): 180
+  advisors from Washington's cabinet to the second Trump administration, each from their own years in office (Nixon
+  as VP is the 1953 Nixon; Bush at the CIA is 1976). Sources are public-domain/CC0 Commons images, face-cropped with
+  Vision, background removed, and rendered in a 256-colour SVGA style (298×228) in the classic frame with a role tag.
+  They take precedence over the generic Shadow Pack post portraits in the cabinet rail, briefings, advice panels
+  and advisor cards; invented advisors fall back as before. Ids two administrations share (`vance`) resolve by
+  name (`vance--jdvance`). Generator: `tools/cabinet_portraits` (also renders an EGA variant); credits in
+  `Documentation/PORTRAIT_CREDITS.md`.
+- **Six techno-thriller scenarios** (`ScenarioDefinition.thrillers`, `isFiction`): Silent Running (1984), Shadow War
+  (1989), The Missing Warhead (1992), Narva Gambit (2026), Dark Grid (2026) and Strait of Fire (2027). Original
+  plots on period-correct boards with scripted beats; the scorecard shows **objectives** ("YOU MET 2 OF 3
+  OBJECTIVES") instead of history, and the scenario list tags them TECHNO-THRILLER.
+
+### Tests
+- `CabinetPortraitTests` (every historical advisor has a portrait; shared ids resolve to the right person;
+  period-specific roles are distinct images; name-only lookup and fallback), thriller objective and schedule tests.
+
 ## [3.18.19] - 2026-10-23 — Air Force (strategic air campaign)
 
 ### Added

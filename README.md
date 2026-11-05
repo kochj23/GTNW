@@ -53,7 +53,7 @@ Written by Jordan Koch.
 | **Fighting a war** | Terms of surrender, sized offensives, fleets and amphibious landings, the era's real weapons, a finite army with drafts and militia calls, Congress and the War Powers Resolution, advisor warnings, allied coalitions | 3.2–3.12 |
 | **Land and empire** | Unclaimed land, colonies and peoples' land on every continent, resources and income by era, occupation and statehood, Antarctica, group actions, territory money (extraction rates, levies) | 3.3–3.13 |
 | **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy | 3.11–3.16 |
-| **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard | 3.12 |
+| **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard; six techno-thrillers scored on objectives | 3.12–3.19 |
 | **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries, starvation and supply, civilians and land, deception, the sea; the other powers use them too | 3.17 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
 | **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 668 tests in seven categories | 3.1–3.17 |
@@ -94,6 +94,13 @@ Everything happens on one screen:
 - On every action, the seven advisors recommend **APPROVE**, **CAUTION** or **OPPOSE**, and each gives a reason.
 - Advisors keep standing proposals, which you can accept, reject, or answer by asking for an alternative.
 - An advisor who is overruled too often resigns. Advisors can also be fired, die in attacks, or leave in a scandal.
+- **Period portraits of every cabinet (new in 3.19.0)**: all 180 historical advisors, Washington's cabinet through the
+  second Trump administration, have their own portrait from their years in office — 1950s Nixon as Eisenhower's
+  vice president, 1976 Bush at the CIA, the 1898 Roosevelt at the Navy Department. Each is a public-domain
+  photograph or painting, cropped to the face, its background blacked out and re-rendered in a 256-colour SVGA style
+  in the game's red-and-yellow frame with a role tag. They replace the generic post portraits wherever advisors
+  appear; invented advisors keep the Shadow Pack art or initials. Built by `tools/cabinet_portraits`; every source is
+  credited in [Documentation/PORTRAIT_CREDITS.md](Documentation/PORTRAIT_CREDITS.md).
 
 ### World leaders and computer-run countries
 
@@ -754,6 +761,19 @@ genocides has a matching tactic id.
       O -- refuse --> R[Relations −5]
       S[Historical scenario] --> B[Board + dated events] --> SC[Scorecard: history vs this game]
   ```
+- **Techno-thrillers (new in 3.19.0)**: six original what-if crises in the techno-thriller tradition, set on the
+  real board of their year and marked TECHNO-THRILLER in the scenario list. Their scorecard compares your game with
+  **objectives** rather than history.
+
+  | Scenario | Start | The crisis | Objectives |
+  |---|---|---|---|
+  | Silent Running | 12 Nov 1984 | A Soviet missile submarine goes dark after a plot in the Northern Fleet | No war with the USSR, Norway kept out, no nuclear use |
+  | Shadow War | 4 Sep 1989 | Cartel bombs in Bogotá and a covert war that could become a real one | No war with Colombia, its government survives, Venezuela kept out |
+  | The Missing Warhead | 9 Mar 1992 | A warhead missing from a Kazakh base, tracked across the Caspian | No detonation, no war with Iran or Russia |
+  | Narva Gambit | 16 Feb 2026 | Unmarked troops in north-east Estonia, then the real invasion | Estonia not overrun, Poland kept out, no nuclear use |
+  | Dark Grid | 14 Dec 2026 | A winter blackout on the East Coast with planted evidence | Don't strike Iran or North Korea on false evidence, no nuclear use |
+  | Strait of Fire | 1 Aug 2027 | A "customs quarantine" of Taiwan and ten weeks of fuel | Taiwan not conquered, Japan kept out, no nuclear use |
+
 - **The Gulf War, 1990 (new in 3.12.2)**: a scenario starting on invasion day, 2 Aug 1990, scored against
   history: Congress's authorization (12 Jan 1991), the 35-nation coalition, Desert Storm, Kuwait liberated
   (28 Feb 1991), no nuclear use. Thirteen Days (1962) now also scores the naval quarantine (24 Oct 1962) and DEFCON 2.
@@ -1268,6 +1288,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.19.0 | Nov 2026 | Period portraits for all 180 historical cabinet members in an SVGA style; six techno-thriller scenarios scored on objectives |
 | 3.17.6 | Oct 2026 | Dirty tactics, part seven: computer-run powers use the same catalog, and the record of the age — twenty-seven dated entries for what other powers did, and for abolition |
 | 3.17.5 | Oct 2026 | Dirty tactics, part six: the sea and what is left on the ground — press gangs, unrestricted submarine warfare, hired foreign regiments whose sovereign can recall them, mines that keep killing, and a firebombing stance |
 | 3.17.4 | Oct 2026 | Dirty tactics, part five: deception — a manufactured pretext Congress accepts, yellow journalism, enemy uniforms, counterfeiting, and the opium trade as state policy |
@@ -1326,6 +1347,9 @@ for U.S. history and political science.
 
 MIT License, Copyright (c) 2025-2026 Jordan Koch. See [LICENSE](LICENSE).
 
+- **Cabinet portraits:** public-domain and CC0 photographs and paintings from Wikimedia Commons (mostly official U.S.
+  government portraits), re-rendered by `tools/cabinet_portraits`. Per-image credits:
+  [Documentation/PORTRAIT_CREDITS.md](Documentation/PORTRAIT_CREDITS.md).
 - **Map outlines:** [Natural Earth](https://www.naturalearthdata.com) 1:50m Admin 0 (public domain), simplified by
   `tools/natural_earth_to_gtnw.py`.
 - ***Shadow President*** (D.C. True, 1993) inspired the Situation Room's mechanics. None of its art, sound, text or

@@ -321,7 +321,7 @@ struct AdvisorRail: View {
                     Button { briefingRole = role } label: {
                         HStack(spacing: 6) {
                             AdvisorPortrait(title: adv?.title ?? AdviceEngine.roleTitle(role), name: adv?.name ?? "Vacant",
-                                            size: 38, status: adv == nil ? departed?.status : nil)
+                                            size: 38, status: adv == nil ? departed?.status : nil, advisorID: adv?.id)
                             VStack(alignment: .leading, spacing: 1) {
                                 // 3.11.0: other nations' cabinets show their own offices.
                                 Text((gameState.playerCountryID == "USA" ? AdviceEngine.roleTitle(role) : (adv?.title ?? AdviceEngine.roleTitle(role))).uppercased())
@@ -357,7 +357,7 @@ struct AdvisorBriefingSheet: View {
         let adv = AdviceEngine.advisor(for: role, in: gameState.advisors)
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                AdvisorPortrait(title: adv?.title ?? AdviceEngine.roleTitle(role), name: adv?.name ?? "Vacant", size: 90)
+                AdvisorPortrait(title: adv?.title ?? AdviceEngine.roleTitle(role), name: adv?.name ?? "Vacant", size: 90, advisorID: adv?.id)
                 VStack(alignment: .leading, spacing: 4) {
                     Text((gameState.playerCountryID == "USA" ? AdviceEngine.roleTitle(role) : (adv?.title ?? AdviceEngine.roleTitle(role))).uppercased())
                         .font(ThemeFont.mono(14, .bold)).foregroundColor(GTNWColors.terminalAmber)
