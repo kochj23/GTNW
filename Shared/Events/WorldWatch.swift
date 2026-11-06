@@ -35,7 +35,7 @@ enum WorldWatch {
     static func pairKey(_ a: String, _ b: String) -> String { a < b ? "\(a)|\(b)" : "\(b)|\(a)" }
 
     /// At most this many decisions per turn from wars and changes of power; the rest go to the ticker only.
-    static let maxDecisionsPerTurn = 4
+    static let maxDecisionsPerTurn = 2
 
     /// What changed since `old`: decision cards (most important first) and ticker headlines for everything.
     static func changes(from old: Snapshot, to gs: GameState) -> (decisions: [CrisisEvent], headlines: [String]) {
@@ -275,10 +275,13 @@ enum WorldWatch {
         }
     }
 
-    /// About how many emergencies strike other nations in a game year.
-    static let emergenciesPerYear = 10.0
+    /// About how many emergencies strike other nations in a game year. (3.21.1: 10 was several a month once wars,
+    /// coups and random crises were added on top — far too many.)
+    static let emergenciesPerYear = 4.0
     /// At most this many per turn, however long the turn.
-    static let maxEmergenciesPerTurn = 2
+    static let maxEmergenciesPerTurn = 1
+    /// When this many decisions are already waiting, a new emergency is news on the ticker, not another card.
+    static let busyDesk = 2
 
     static func disasterCrisis(gameState gs: GameState, roll: () -> Double = { Double.random(in: 0..<1) }) -> CrisisEvent? {
         let year = gs.currentYear

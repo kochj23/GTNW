@@ -687,7 +687,7 @@ genocides has a matching tactic id.
     modern happens in 1861) with the responses a head of state actually has: a relief package priced in the era's
     money, an airlift and hospital ship, medical teams, refugee resettlement, a technical team, evacuating
     Americans, security forces, an IMF loan, or condolences only. Aid to an adversary costs approval at home and
-    wins more abroad; adversaries also offer "exploit the chaos". About ten a game year, at most two a turn.
+    wins more abroad; adversaries also offer "exploit the chaos". About four a game year, at most one a turn (3.21.1); when two or more decisions are already waiting, a new emergency is reported on the ticker instead of adding another card.
   - **A queue** (`CrisisManager.pendingCrises`) means a war, a coup and a hurricane in the same turn all reach the
     desk ("📥 2 MORE DECISIONS WAITING"); a decision the world has overtaken (the war already ended) is dropped.
     Random domestic crises are also far more frequent (60%/year at DEFCON 5, up from 5%).
@@ -1379,6 +1379,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.21.1 | Nov 2026 | Calmer desk: world emergencies cut from about ten a year to about four (one a turn at most, news-only when two decisions are already waiting); at most two war/change-of-power cards a turn |
 | 3.21.0 | Nov 2026 | The whole election cycle: decision to run, caucus/primaries/conventions by era, challengers, running mates, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment |
 | 3.20.0 | Nov 2026 | World watch: every new war and change of power is a decision; 75 kinds of world emergency with real responses; a crisis queue; epigraphs from sacred texts, science fiction and military doctrine |
 | 3.19.0 | Nov 2026 | Period portraits for all 180 historical cabinet members in an SVGA style; six techno-thriller scenarios scored on objectives |

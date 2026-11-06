@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.21.1] - 2026-11-06 — A calmer desk
+
+### Changed
+- World emergencies: about four a game year (was ten), at most one a turn (was two). When two or more decisions are
+  already waiting, a new emergency is posted to the ticker and log as news instead of becoming another card.
+- World watch: at most two war / change-of-power decision cards a turn (was four); the rest are still posted as news.
+
 ## [3.21.0] - 2026-11-06 — The election cycle
 
 ### Added

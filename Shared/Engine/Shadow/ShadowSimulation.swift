@@ -249,11 +249,17 @@ extension GameEngine {
             crisisManager.presentCrisis(disaster)
             addLog("🌀 DISASTER: \(disaster.title)", type: .critical)
         }
-        // 3.20.0: emergencies abroad — about ten a game year, each a decision (send aid, evacuate, sanction…).
+        // 3.20.0: emergencies abroad (3.21.1: about four a game year, one a turn at most), each a decision (send aid, evacuate, sanction…).
         let emergencies = min(WorldWatch.maxEmergenciesPerTurn, gs.scale.integer(annual: WorldWatch.emergenciesPerYear))
         for _ in 0..<max(0, emergencies) {
             guard let e = crisisManager.createCrisis(type: .worldDisaster, gameState: gs) else { continue }
             gs.shadow.post(e.title, date: gs.currentDate, severity: 2)
+            // 3.21.1: a busy desk gets the news, not another decision.
+            let waiting = crisisManager.pendingCrises.count + (crisisManager.activeCrisis == nil ? 0 : 1)
+            guard waiting < WorldWatch.busyDesk else {
+                addLog("🌐 WORLD EMERGENCY (news only — your desk is full): \(e.title)", type: .warning)
+                continue
+            }
             crisisManager.presentCrisis(e)
             addLog("🌐 WORLD EMERGENCY: \(e.title)", type: .critical)
             addLog("   \(Quotations.line(e.epigraph))", type: .info)

@@ -168,6 +168,9 @@ final class WorldWatchTests: XCTestCase {
         for (a, b) in [("RUS", "EST"), ("CHN", "TWN"), ("IND", "PAK"), ("IRN", "ISR"), ("PRK", "KOR"), ("ARM", "AZE")] { goToWar(gs, a, b) }
         let found = WorldWatch.changes(from: base, to: gs)
         XCTAssertLessThanOrEqual(found.decisions.count, WorldWatch.maxDecisionsPerTurn)
+        XCTAssertLessThanOrEqual(WorldWatch.maxDecisionsPerTurn, 2, "3.21.1: no more than two world-watch cards a turn")
+        XCTAssertLessThanOrEqual(WorldWatch.emergenciesPerYear, 4, "3.21.1: a handful of emergencies a year, not several a month")
+        XCTAssertEqual(WorldWatch.maxEmergenciesPerTurn, 1)
         XCTAssertGreaterThanOrEqual(found.headlines.count, 6)
     }
 
