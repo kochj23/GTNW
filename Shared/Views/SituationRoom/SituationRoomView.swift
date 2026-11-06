@@ -288,9 +288,15 @@ struct SituationTopBar: View {
 
     private var electionLine: String {
         guard gameState.shadow.electionsEnabled else { return "ELECTIONS OFF" }
+        // 3.21.0: a lame duck counts down to the end; everyone else to the next step of the election calendar.
+        if let leave = gameState.shadow.campaign.leaveOfficeOn {
+            return "LAME DUCK: \(GameCalendar.days(from: gameState.currentDate, to: leave)) DAYS LEFT"
+        }
+        if let next = ElectionCycle.next(after: gameState.currentDate) {
+            return "\(next.stage.label(year: next.year)) IN \(GameCalendar.days(from: gameState.currentDate, to: next.date)) DAYS"
+        }
         let next = GameCalendar.nextElection(after: gameState.currentDate)
-        let days = GameCalendar.days(from: gameState.currentDate, to: next)
-        return "\(days) DAYS TO ELECTION"
+        return "\(GameCalendar.days(from: gameState.currentDate, to: next)) DAYS TO ELECTION"
     }
 }
 

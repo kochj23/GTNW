@@ -260,6 +260,8 @@ struct VictoryScreen: View {
         case .economicVictory?, .prosperity?: return [.economy, .peace]
         case .supremacy?, .survival?: return [.nuclear, .victory, .power]
         case .pyrrhicVictory?: return [.victory, .apocalypse, .defeat]
+        case nil where [.lostElection, .termLimited, .retired, .deniedRenomination].contains(gameState.shadow.domesticEnding):
+            return [.election, .leadership, .power]
         case nil: return (gameState.getPlayerCountry()?.isDestroyed ?? false) ? [.apocalypse, .nuclear, .defeat] : [.defeat, .power, .coup]
         }
     }

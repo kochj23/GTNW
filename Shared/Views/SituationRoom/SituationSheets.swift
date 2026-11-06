@@ -456,18 +456,57 @@ struct ElectionNightView: View {
             .frame(height: FontScale.h(120))
             Text("ELECTION NIGHT — \(GameCalendar.format(result.date).uppercased())").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
             HStack(spacing: 30) {
-                VStack { Text("YOU").font(ThemeFont.mono(12)); Text(String(format: "%.1f%%", result.playerShare)).font(ThemeFont.mono(26, .bold)) }
+                VStack { Text((result.playerName ?? "YOU").uppercased()).font(ThemeFont.mono(12)); Text(figure(ev: result.playerEV, share: result.playerShare)).font(ThemeFont.mono(26, .bold)) }
                     .foregroundColor(result.won ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
-                VStack { Text(result.opponentName.uppercased()).font(ThemeFont.mono(12)); Text(String(format: "%.1f%%", result.opponentShare)).font(ThemeFont.mono(26, .bold)) }
+                VStack { Text(result.opponentName.uppercased()).font(ThemeFont.mono(12)); Text(figure(ev: result.opponentEV, share: result.opponentShare)).font(ThemeFont.mono(26, .bold)) }
                     .foregroundColor(result.won ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
             }
-            Text(result.won ? "Four more years. The Situation Room stays yours — don't waste it." : "The voters have chosen someone else. Your access ends on Inauguration Day.")
+            if let total = result.totalEV, let p = result.playerEV, let o = result.opponentEV {
+                // 3.21.0: the Electoral College bar, with the majority line.
+                GeometryReader { g in
+                    let w = g.size.width, t = CGFloat(total)
+                    ZStack(alignment: .leading) {
+                        Rectangle().fill(Color.gray.opacity(0.3))
+                        HStack(spacing: 0) {
+                            Rectangle().fill(GTNWColors.terminalGreen).frame(width: w * CGFloat(p) / t)
+                            Spacer(minLength: 0)
+                            if let x = result.thirdEV, x > 0 { Rectangle().fill(GTNWColors.terminalAmber).frame(width: w * CGFloat(x) / t) }
+                            Rectangle().fill(GTNWColors.terminalRed).frame(width: w * CGFloat(o) / t)
+                        }
+                        Rectangle().fill(Color.white).frame(width: 2).offset(x: w * CGFloat(total / 2 + 1) / t)
+                    }
+                }
+                .frame(height: FontScale.h(14))
+                Text(detailLine(total: total)).font(ThemeFont.mono(11)).foregroundColor(Theme.isRetro ? EGA.lightGray : .gray)
+                    .multilineTextAlignment(.center)
+            }
+            Text(verdict)
                 .font(ThemeFont.mono(12)).foregroundColor(Theme.isRetro ? EGA.white : .white).multilineTextAlignment(.center)
             Button("CONTINUE") { dismiss() }.buttonStyle(ThemedButtonStyle(prominent: true))
         }
         .padding(24)
         .frame(width: FontScale.w(560))
         .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    private func figure(ev: Int?, share: Double) -> String {
+        if let ev { return result.popularVoteRecorded == false ? "\(ev) EV" : String(format: "%d EV · %.1f%%", ev, share) }
+        return String(format: "%.1f%%", share)
+    }
+
+    private func detailLine(total: Int) -> String {
+        var parts = ["\(total / 2 + 1) electoral votes to win, of \(total)"]
+        if let n = result.thirdName, let x = result.thirdEV { parts.append(String(format: "%@ %d EV, %.1f%%", n, x, result.thirdShare ?? 0)) }
+        if result.popularVoteRecorded == false { parts.append("most electors chosen by state legislatures; no national popular vote") }
+        if let by = result.decidedBy { parts.append("decided by \(by)") }
+        return parts.joined(separator: " · ")
+    }
+
+    private var verdict: String {
+        if result.playerName != nil {
+            return result.won ? "Your party holds the White House. Your own term still ends on Inauguration Day." : "Your party loses the White House. Your term ends on Inauguration Day."
+        }
+        return result.won ? "Four more years. The Situation Room stays yours — don't waste it." : "The voters have chosen someone else. You are a lame duck until Inauguration Day."
     }
 }
 
@@ -484,6 +523,9 @@ struct DomesticEndingBanner: View {
                 PackImage("screen.assassination_player.aspect4x3", "screen.assassination_player") { drawn("scope", "THE PRESIDENT IS DEAD") }
             case .lostElection:
                 drawn("person.crop.circle.badge.xmark", "DEFEATED AT THE POLLS")
+            case .termLimited: drawn("hourglass.bottomhalf.filled", "TERM-LIMITED")
+            case .retired: drawn("figure.walk.departure", "RETIRED FROM OFFICE")
+            case .deniedRenomination: drawn("person.2.slash.fill", "DENIED RENOMINATION")
             case .civilWar:
                 drawn("flame.fill", "CIVIL WAR")
             case .noConfidence: drawn("hand.thumbsdown.fill", "NO CONFIDENCE")

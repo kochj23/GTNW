@@ -40,6 +40,8 @@ the Internet Archive and service doctrine sites); science-fiction lines are shor
 | For hatred does not cease by hatred at any time: hatred ceases by love, this is an old rule. | Dhammapada 5 (Müller) |
 | If one man conquer in battle a thousand times thousand men, and if another conquer himself, he is the greatest of conquerors. | Dhammapada 103 (Müller) |
 | Now I am become Death, the destroyer of worlds. | J. Robert Oppenheimer (1965), recalling the Bhagavad Gita |
+| Take you wise men, and understanding, and known among your tribes, and I will make them rulers over you. | Deuteronomy 1:13 (KJV) |
+| To every thing there is a season, and a time to every purpose under the heaven: | Ecclesiastes 3:1 (KJV) |
 
 ## Science fiction
 
@@ -68,6 +70,7 @@ the Internet Archive and service doctrine sites); science-fiction lines are shor
 | We will not go quietly into the night! We will not vanish without a fight! | President Whitmore, Independence Day (1996) |
 | No one would have believed in the last years of the nineteenth century that this world was being watched keenly and closely by intelligences greater than man's. | H. G. Wells, The War of the Worlds (1898) |
 | It was our last, best hope for peace. | Babylon 5, season one opening narration (1994) |
+| To summarize the summary: anyone who is capable of getting themselves made President should on no account be allowed to do the job. | Douglas Adams, The Restaurant at the End of the Universe (1980) |
 
 ## Military doctrine
 
@@ -107,3 +110,5 @@ the Internet Archive and service doctrine sites); science-fiction lines are shor
 | Every gun that is made, every warship launched, every rocket fired signifies, in the final sense, a theft from those who hunger and are not fed, those who are cold and are not clothed. | Dwight D. Eisenhower, "The Chance for Peace" (1953) |
 | Mankind must put an end to war—or war will put an end to mankind. | John F. Kennedy, address to the UN General Assembly (1961) |
 | A nuclear war cannot be won and must never be fought. | Reagan–Gorbachev joint statement, Geneva (1985) |
+| The US Constitution provides for civilian control of the military. | AFDD 6-0, Command and Control |
+| In contrast, Regulars accept restraints on their full right of citizenship in order to honor the sacred tradition of civilian control over the military. | I Am the Guard: A History of the Army National Guard, 1636–2000 |

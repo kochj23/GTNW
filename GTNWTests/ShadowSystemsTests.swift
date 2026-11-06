@@ -314,6 +314,10 @@ final class PopularityTests: XCTestCase {
 
         gs.shadow.popularity = 10
         engine.holdElection(on: GameCalendar.electionDay(year: 2032))
+        // 3.21.0: a defeated President is a lame duck until Inauguration Day, then the game ends.
+        XCTAssertNil(gs.shadow.domesticEnding)
+        XCTAssertEqual(gs.shadow.campaign.leaveReason, .lostElection)
+        engine.processElectionCycle(from: GameCalendar.date(year: 2032, month: 11, day: 20), to: GameCalendar.date(year: 2033, month: 1, day: 21))
         XCTAssertEqual(gs.shadow.domesticEnding, .lostElection)
     }
 }

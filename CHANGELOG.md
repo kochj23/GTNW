@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.21.0] - 2026-11-06 — The election cycle
+
+### Added
+- **The whole election, by the law of its year** (`ElectionHistory`, `ElectionRules`, `ElectionCycle`): the
+  decision to run; the King Caucus (1796–1824), legislatures (1828), conventions (1832+), primaries (1912+, binding
+  from 1972) with Iowa (1972+), New Hampshire (1920+) and Super Tuesday (1988+); history's intra-party challengers
+  (or one drawn by your unpopularity); running mates (12th Amendment, 1804+); both conventions; the fall campaign
+  by era; debates (1960, 1976+; VP 1976, 1984+); October surprises; election night with the popular vote (1824+)
+  and the Electoral College (each year's elector count and majority, third parties, popular/electoral splits);
+  electors meeting, the count in Congress, inauguration (March 4 → January 20 from 1937); House contingent
+  elections; recounts and court fights; midterms every other November with House seat swings.
+- **The 22nd Amendment and lame ducks**: historical Presidents start with their real record (Reagan in 1985 and
+  Trump in 2025 are in their last term; Truman exempt; Ford limited to one election). A defeated, retiring,
+  term-limited or denied President serves until Inauguration Day, then the game ends with its own ending.
+- **Always on the calendar**: the top bar counts down to the next election step; every step is on the ticker;
+  election decisions jump the crisis queue, are never dropped, and are decided by your staff (and reported) if
+  still open on election night. History's nominees are your opponents.
+- Election epigraphs (Deuteronomy 1:13, Ecclesiastes 3:1, Proverbs 29:2; Douglas Adams; AFDD 6-0; *I Am the Guard*).
+
+### Changed
+- Losing an election no longer ends the game on election night; it ends on Inauguration Day.
+- The election-night sheet shows the Electoral College bar, the majority line, third parties and who decided it.
+
 ## [3.20.0] - 2026-11-06 — The world watch
 
 ### Added

@@ -31,6 +31,8 @@ enum CrisisEventType: String, Codable, CaseIterable {
     case worldDisaster = "World Disaster"     // a hurricane, quake, flood… strikes another nation
     case warOutbreak = "War Outbreak"         // two nations go to war
     case regimeChange = "Change of Power"     // a coup, a new regime, an annexation or a liberation
+    // 3.21.0
+    case election = "Election"                // a step in the election cycle that needs the President
 
     /// What an epigraph on this crisis should be about.
     var quoteTags: Set<QuoteTag> {
@@ -50,6 +52,7 @@ enum CrisisEventType: String, Codable, CaseIterable {
         case .naturalDisaster, .worldDisaster: return [.disaster, .mercy, .fear]
         case .warOutbreak: return [.war, .escalation, .alliance]
         case .regimeChange: return [.power, .coup, .occupation]
+        case .election: return [.election, .leadership, .power]
         }
     }
 }
@@ -157,13 +160,21 @@ struct CrisisConsequences: Codable {
     var ceasefireBetween: [String]? = nil
     /// The President's nation goes to war against this country.
     var joinWarAgainst: String? = nil
+    // 3.21.0 — the election cycle.
+    /// Points of vote share gained or lost.
+    var campaign: Double? = nil
+    /// A campaign decision handled by `ElectionCycle.apply` ("retire", "debate|mock", "gamble|…").
+    var electionChoice: String? = nil
 
     init(relationshipChanges: [String: Int] = [:], approvalChange: Int = 0,
          defconChange: Int = 0, economicImpact: Int = 0, militaryImpact: Int = 0,
          triggersWar: Bool = false, warTarget: String? = nil, message: String,
          mutualRelations: [String: Int]? = nil, countryStability: [String: Int]? = nil,
          countryMilitary: [String: Int]? = nil, countryEconomy: [String: Int]? = nil,
-         ceasefireBetween: [String]? = nil, joinWarAgainst: String? = nil) {
+         ceasefireBetween: [String]? = nil, joinWarAgainst: String? = nil,
+         campaign: Double? = nil, electionChoice: String? = nil) {
+        self.campaign = campaign
+        self.electionChoice = electionChoice
         self.relationshipChanges = relationshipChanges
         self.approvalChange = approvalChange
         self.defconChange = defconChange
@@ -261,7 +272,7 @@ class CrisisManager: ObservableObject {
             return createNaturalDisasterCrisis(gameState: gameState)
         case .worldDisaster:
             return WorldWatch.disasterCrisis(gameState: gameState)
-        case .warOutbreak, .regimeChange:
+        case .warOutbreak, .regimeChange, .election:
             return nil   // built from what actually changed in the world (WorldWatch.decisions)
         }
     }
@@ -1321,9 +1332,18 @@ class CrisisManager: ObservableObject {
     /// Present crisis to player
     func presentCrisis(_ crisis: CrisisEvent) {
         if activeCrisis != nil {
-            // Queue it; the oldest waiting decision gives way when the desk is overflowing.
-            pendingCrises.append(crisis)
-            if pendingCrises.count > Self.maxPending { pendingCrises.removeFirst(pendingCrises.count - Self.maxPending) }
+            // Queue it; the oldest waiting decision gives way when the desk is overflowing — but never an election
+            // decision (3.21.0): those jump the queue, because the calendar won't wait.
+            if crisis.type == .election {
+                let at = pendingCrises.firstIndex { $0.type != .election } ?? pendingCrises.endIndex
+                pendingCrises.insert(crisis, at: at)
+            } else {
+                pendingCrises.append(crisis)
+            }
+            while pendingCrises.count > Self.maxPending {
+                guard let drop = pendingCrises.firstIndex(where: { $0.type != .election }) else { break }
+                pendingCrises.remove(at: drop)
+            }
             return
         }
         activeCrisis = crisis
@@ -1418,6 +1438,11 @@ class CrisisManager: ObservableObject {
             gameState.countries[pi].atWarWith.insert(enemy)
             gameState.countries[ei].atWarWith.insert(gameState.playerCountryID)
             gameState.activeWars.append(War(aggressor: gameState.playerCountryID, defender: enemy, startTurn: gameState.turn, intensity: 6))
+        }
+
+        // 3.21.0: campaign decisions.
+        if consequences.campaign != nil || consequences.electionChoice != nil {
+            ElectionCycle.apply(consequences, to: gameState)
         }
 
         // Trigger war if needed

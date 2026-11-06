@@ -24,6 +24,7 @@ enum QuoteTag: String, Codable, CaseIterable {
     case war, nuclear, peace, diplomacy, deterrence, escalation, intelligence, deception
     case disaster, mercy, power, coup, occupation, defeat, victory, leadership, economy
     case unrest, uncertainty, apocalypse, alliance, cyber, space, terror, accident, fear
+    case election   // 3.21.0
 }
 
 struct Quotation: Identifiable, Hashable {
@@ -69,6 +70,11 @@ enum Quotations {
     static let all: [Quotation] = sacred + sciFi + military
 
     static let sacred: [Quotation] = [
+        // 3.21.0 — elections and the consent of the governed.
+        Quotation(text: "Take you wise men, and understanding, and known among your tribes, and I will make them rulers over you.",
+                  source: "Deuteronomy 1:13 (KJV)", kind: .sacred, tags: [.election, .leadership]),
+        Quotation(text: "To every thing there is a season, and a time to every purpose under the heaven:",
+                  source: "Ecclesiastes 3:1 (KJV)", kind: .sacred, tags: [.election, .uncertainty, .defeat]),
         Quotation(text: "And he shall judge among the nations, and shall rebuke many people: and they shall beat their swords into plowshares, and their spears into pruninghooks: nation shall not lift up sword against nation, neither shall they learn war any more.",
                   source: "Isaiah 2:4 (KJV)", kind: .sacred, tags: [.peace, .war, .victory, .diplomacy]),
         Quotation(text: "Blessed are the peacemakers: for they shall be called the children of God.",
@@ -106,7 +112,7 @@ enum Quotations {
         Quotation(text: "He changeth the times and the seasons: he removeth kings, and setteth up kings.",
                   source: "Daniel 2:21 (KJV)", kind: .sacred, tags: [.power, .coup, .occupation]),
         Quotation(text: "When the righteous are in authority, the people rejoice: but when the wicked beareth rule, the people mourn.",
-                  source: "Proverbs 29:2 (KJV)", kind: .sacred, tags: [.power, .coup, .unrest]),
+                  source: "Proverbs 29:2 (KJV)", kind: .sacred, tags: [.power, .coup, .unrest, .election]),
         Quotation(text: "And if a kingdom be divided against itself, that kingdom cannot stand.",
                   source: "Mark 3:24 (KJV)", kind: .sacred, tags: [.unrest, .coup, .alliance]),
         Quotation(text: "Pride goeth before destruction, and an haughty spirit before a fall.",
@@ -136,6 +142,9 @@ enum Quotations {
     ]
 
     static let sciFi: [Quotation] = [
+        // 3.21.0
+        Quotation(text: "To summarize the summary: anyone who is capable of getting themselves made President should on no account be allowed to do the job.",
+                  source: "Douglas Adams, The Restaurant at the End of the Universe (1980)", kind: .sciFi, tags: [.election, .power, .leadership]),
         Quotation(text: "A strange game. The only winning move is not to play.",
                   source: "WOPR, WarGames (1983)", kind: .sciFi, tags: [.nuclear, .peace, .deterrence, .victory]),
         Quotation(text: "Gentlemen, you can't fight in here! This is the War Room!",
@@ -185,6 +194,11 @@ enum Quotations {
     ]
 
     static let military: [Quotation] = [
+        // 3.21.0
+        Quotation(text: "The US Constitution provides for civilian control of the military.",
+                  source: "AFDD 6-0, Command and Control", kind: .military, tags: [.election, .power, .leadership]),
+        Quotation(text: "In contrast, Regulars accept restraints on their full right of citizenship in order to honor the sacred tradition of civilian control over the military.",
+                  source: "I Am the Guard: A History of the Army National Guard, 1636–2000", kind: .military, tags: [.election, .power]),
         Quotation(text: "Deterrence is the practice of discouraging an actor from taking unwanted action.",
                   source: "AFDP 3-0, Operations (USAF)", kind: .military, tags: [.deterrence, .nuclear]),
         Quotation(text: "The fundamental purpose of US nuclear forces is deterrence and in that context, the US uses nuclear weapons every day.",

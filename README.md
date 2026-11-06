@@ -55,6 +55,7 @@ Written by Jordan Koch.
 | **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy; a world watch that turns every war, change of power and world emergency into a decision, with epigraphs from sacred texts, science fiction and military doctrine | 3.11–3.20 |
 | **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard; six techno-thrillers scored on objectives | 3.12–3.19 |
 | **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries, starvation and supply, civilians and land, deception, the sea; the other powers use them too | 3.17 |
+| **Elections** | The whole American election cycle with the law of each year: the decision to run, the King Caucus or the primaries (Iowa, New Hampshire, Super Tuesday), challengers from your own party, running mates, conventions, the fall campaign, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment | 3.21 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
 | **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 668 tests in seven categories | 3.1–3.17 |
 
@@ -112,7 +113,7 @@ Everything happens on one screen:
 
 ### Domestic politics
 
-- Popularity and polls, plus presidential elections, which can be turned off.
+- Popularity and polls, plus presidential elections, which can be turned off (see **The election cycle** below).
 - Impeachment escalates month by month when you are both unpopular and ruthless.
 - Assassination risk rises with ruthlessness and very low approval. Extreme unrest at home can end in civil war.
 - **Presidential powers**:
@@ -120,6 +121,49 @@ Everything happens on one screen:
   - 6 kinds of pardon
   - Presidential addresses with cooldowns
   - Cabinet firings, which have knock-on effects on loyalty and approval
+
+### The election cycle (new in 3.21.0)
+
+You always know you are in an election. The Situation Room's top bar counts down to the next step (IOWA CAUCUSES
+IN 42 DAYS, LAME DUCK: 40 DAYS LEFT), every step is posted to the ticker, and the ones that matter are decision
+cards. Election decisions jump the crisis queue and are never dropped; any still unanswered on election night are
+decided by your campaign staff and reported.
+
+Each cycle follows the law and party practice of its year (`ElectionHistory`, `ElectionRules`, `ElectionCycle`):
+
+| Step | When | What happens |
+|------|------|--------------|
+| Decision to run | Spring of the year before (1972+), November before (1912–68), January (earlier) | Announce, announce early with a war chest, or retire. Term-limited Presidents are told, years ahead, and decide how hard to campaign for the nominee. |
+| Challenge | December before (1912+), February (earlier) | History's challengers (TR 1912, Kefauver 1952, McCarthy 1968, Reagan 1976, Ted Kennedy 1980, Buchanan 1992, and the convention fights that denied Fillmore, Pierce, Andrew Johnson and Arthur) or one drawn by your unpopularity. |
+| Nomination | King Caucus 1796–1824; legislatures 1828; conventions 1832+; primaries matter from 1912 and bind from 1972 | Iowa (1972+), New Hampshire (1920+), Super Tuesday (1988+), the final primaries; lose one and you can fight on, go negative, or withdraw like Truman and LBJ. Lose the delegates and the convention denies you the nomination. |
+| Running mate | Before the convention (1804+, after the 12th Amendment) | Keep the VP, balance the ticket, or gamble on a rising star. |
+| Conventions | The opposition first, then yours (its date moves with the era) | The opponent's bounce; your acceptance speech theme (a letter before 1932, television from 1952). |
+| Fall campaign | Labor Day | Front porch, whistle-stop, radio, TV and digital ads, a swing-state ground game, the Rose Garden, or going negative, by era. |
+| Debates | 1960, then 1976+ (VP debates 1976 and 1984+) | Prepare with mock debates, run on your record, or rehearse zingers. |
+| October surprise | Late October | A leak, a deal abroad, bad numbers, opposition research, a hurricane at home. |
+| Election night | Tuesday after the first Monday of November | Popular vote (from 1824) and the Electoral College, with that year's elector count and majority; third parties can carry states; the popular-vote winner can lose the College. |
+| After | Electors meet, Congress counts (Feb → Jan 6 from 1937), Inauguration (Mar 4 → Jan 20 from 1937) | No majority: the House decides under the 12th Amendment. Narrow loss: concede, demand recounts, or go to court. A defeated, retired, term-limited or denied President serves as a lame duck until Inauguration Day, when the game ends. |
+| Midterms | Every other November | Campaign for the party, stay above the fray, or nationalize it; the President's party usually loses House seats, which moves congressional support. |
+
+Historical Presidents start with their real record: Reagan begun in 1985 has already been elected twice and cannot
+run in 1988; Trump in 2025 is serving his second (non-consecutive) term; Truman was exempt from the 22nd Amendment;
+Ford, who served more than two years of Nixon's term, could be elected only once. Opponents are history's nominees
+(Carter in 1980 faces Reagan); after 2024 they are invented.
+
+```mermaid
+flowchart LR
+  D[Decision to run] -->|run| N[Caucus / primaries / convention]
+  D -->|retire or term-limited| L[Lame duck]
+  N -->|denied| L
+  N --> R[Running mate] --> C[Conventions] --> F[Fall campaign] --> DB[Debates] --> O[October surprise] --> E{Election night}
+  E -->|majority| W[Four more years]
+  E -->|lost| X{Close?}
+  X -->|recount / courts| W
+  X -->|concede| L
+  E -->|no majority| H[House decides] --> W
+  H --> L
+  L --> I[Inauguration Day: game over]
+```
 
 ### Budget and foreign aid
 
@@ -879,7 +923,7 @@ genocides has a matching tactic id.
 | Diplomatic: lasting peace treaties | Nuclear war, whether you launch or are hit |
 | Domination: sole superpower | DEFCON 1 with no resolution |
 | Economic: win the economic war | Losing an election (when elections are on) |
-| Peacemaker: 20 game years with no wars and no launches by you | Impeachment |
+| Peacemaker: 20 game years with no wars and no launches by you | Impeachment; term-limited, retired, or denied renomination (each at the next Inauguration Day) |
 | Survival: 100 game years through a nuclear winter | Assassination |
 | **WOPR ending**: 50 game years with zero wars and zero launches | Civil war |
 
@@ -1335,6 +1379,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.21.0 | Nov 2026 | The whole election cycle: decision to run, caucus/primaries/conventions by era, challengers, running mates, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment |
 | 3.20.0 | Nov 2026 | World watch: every new war and change of power is a decision; 75 kinds of world emergency with real responses; a crisis queue; epigraphs from sacred texts, science fiction and military doctrine |
 | 3.19.0 | Nov 2026 | Period portraits for all 180 historical cabinet members in an SVGA style; six techno-thriller scenarios scored on objectives |
 | 3.17.6 | Oct 2026 | Dirty tactics, part seven: computer-run powers use the same catalog, and the record of the age — twenty-seven dated entries for what other powers did, and for abolition |

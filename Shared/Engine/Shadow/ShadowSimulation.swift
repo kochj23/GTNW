@@ -44,6 +44,8 @@ extension GameEngine {
         if gs.shadow.electionsEnabled {
             let e = GameCalendar.nextElection(after: gs.currentDate)
             gs.shadow.post("Next presidential election: \(GameCalendar.format(e)).", date: gs.currentDate)
+            gs.shadow.campaign = CampaignState()
+            initializeCampaign(asOf: gs.currentDate)   // 3.21.0: party, terms served, term limits, the calendar ahead
         }
         for i in gs.advisors.indices { AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs) }
         self.gameState = gs
@@ -808,12 +810,10 @@ extension GameEngine {
             gs.shadow.post("State of the Union: the President addresses a joint session of Congress.", date: to, severity: 1)
         }
 
-        // Election day.
+        // 3.21.0: the election cycle — decision to run, primaries, conventions, debates, election night, midterms,
+        // and the lame-duck end of a presidency on Inauguration Day.
         if gs.shadow.electionsEnabled && gs.shadow.domesticEnding == nil {
-            for y in GameCalendar.year(of: from)...GameCalendar.year(of: to) where y % 4 == 0 {
-                let day = GameCalendar.electionDay(year: y)
-                if GameCalendar.window(from: from, to: to, contains: day) { holdElection(on: day) }
-            }
+            processElectionCycle(from: from, to: to)
         }
 
         // Assassination.
@@ -829,26 +829,7 @@ extension GameEngine {
         gs.countries[pi].congressionalSupport += (congressTarget - gs.countries[pi].congressionalSupport) / 4
     }
 
-    func holdElection(on day: Date) {
-        guard let gs = gameState else { return }
-        let share = PopularityModel.voteShare(popularity: gs.shadow.popularity, termsWon: gs.shadow.termsWon, noise: Double.random(in: -1...1))
-        let won = share > 50
-        let result = ElectionResult(date: day, playerShare: share, opponentShare: 100 - share, won: won,
-                                    opponentName: PopularityModel.challenger(for: GameCalendar.year(of: day)))
-        gs.shadow.lastElection = result
-        ShadowPack.shared.play("sfx.election_speech\(Int.random(in: 1...3))")
-        if won {
-            gs.shadow.cabinetFollowsHistory = false   // 3.12.2: a re-elected leader writes their own history
-            gs.shadow.termsWon += 1
-            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 5)
-            gs.shadow.post(String(format: "ELECTION NIGHT: You win %.1f%% to %.1f%%. Four more years.", share, 100 - share), date: day, severity: 3)
-            addLog(String(format: "🗳️ RE-ELECTED with %.1f%% of the vote.", share), type: .critical)
-        } else {
-            gs.shadow.post(String(format: "ELECTION NIGHT: %@ wins %.1f%% to %.1f%%.", result.opponentName, 100 - share, share), date: day, severity: 3)
-            endPresidency(.lostElection)
-        }
-        self.gameState = gs
-    }
+    // holdElection(on:) moved to ElectionCycle.swift in 3.21.0 (Electoral College, lame ducks, contested counts).
 
     /// End the game for a domestic reason. The normal game-over flow (VictoryChecker.checkDefeat) picks this up.
     func endPresidency(_ ending: DomesticEnding) {

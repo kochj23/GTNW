@@ -17,6 +17,8 @@ enum DomesticEnding: String, Codable, CaseIterable {
     case impeached
     case assassinated
     case civilWar
+    // 3.21.0: the election cycle's other ways out.
+    case termLimited, retired, deniedRenomination
     // How leaders of other nations fall (3.11.0).
     case noConfidence, coup, revolution, partyCongress, juntaDecision, royalDismissal
 
@@ -26,6 +28,9 @@ enum DomesticEnding: String, Codable, CaseIterable {
         case .impeached: return "Congress has removed you from office."
         case .assassinated: return "The President has been assassinated."
         case .civilWar: return "The country has collapsed into civil war."
+        case .termLimited: return "Your second term is over. The 22nd Amendment allows no third. You hand over the keys at noon."
+        case .retired: return "You did not seek another term. Your successor takes the oath; your presidency is history."
+        case .deniedRenomination: return "Your own party denied you its nomination. Your presidency ends on Inauguration Day."
         case .noConfidence: return "The government loses a vote of no confidence. You are out."
         case .coup: return "The army has seized power. You are overthrown."
         case .revolution: return "Revolution sweeps the regime away."
@@ -49,6 +54,19 @@ struct ElectionResult: Codable, Hashable {
     var opponentShare: Double
     var won: Bool
     var opponentName: String
+    // 3.21.0: the Electoral College and the rest of the story (optional so older saves still load).
+    var playerEV: Int? = nil
+    var opponentEV: Int? = nil
+    var totalEV: Int? = nil
+    var thirdEV: Int? = nil
+    var thirdName: String? = nil
+    var thirdShare: Double? = nil
+    /// False before 1824, when most electors were chosen by state legislatures.
+    var popularVoteRecorded: Bool? = nil
+    /// Set when the President was not on the ballot ("Your party's nominee").
+    var playerName: String? = nil
+    /// Who settled it when the voters didn't: the House, a recount, the courts.
+    var decidedBy: String? = nil
 }
 
 /// A line in the bottom news ticker.
@@ -78,6 +96,8 @@ struct ShadowState: Codable {
     var electionsEnabled: Bool = true
     var lastElection: ElectionResult?
     var termsWon: Int = 0
+    /// 3.21.0: the election cycle — primaries, conventions, debates, midterms, lame-duck dates.
+    var campaign = CampaignState()
     /// 0 = none, 1 = Congress investigating, 2 = articles of impeachment, 3 = trial in the Senate
     var impeachmentStage: Int = 0
     /// Accumulated public outrage from ruthless acts (nukes, assassinations, unprovoked wars). Decays over time.
@@ -216,7 +236,7 @@ struct ShadowState: Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case popularity, polls, electionsEnabled, lastElection, termsWon, impeachmentStage, ruthlessness
+        case popularity, polls, electionsEnabled, lastElection, termsWon, impeachmentStage, ruthlessness, campaign
         case domesticEnding, budget, aidRemaining, aidSent, budgetReviewPending, lastBudgetYear
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
@@ -238,6 +258,7 @@ struct ShadowState: Codable {
         electionsEnabled = try c.decodeIfPresent(Bool.self, forKey: .electionsEnabled) ?? true
         lastElection = try c.decodeIfPresent(ElectionResult.self, forKey: .lastElection)
         termsWon = try c.decodeIfPresent(Int.self, forKey: .termsWon) ?? 0
+        campaign = (try? c.decodeIfPresent(CampaignState.self, forKey: .campaign)) ?? CampaignState()
         impeachmentStage = try c.decodeIfPresent(Int.self, forKey: .impeachmentStage) ?? 0
         ruthlessness = try c.decodeIfPresent(Double.self, forKey: .ruthlessness) ?? 0
         domesticEnding = try c.decodeIfPresent(DomesticEnding.self, forKey: .domesticEnding)
