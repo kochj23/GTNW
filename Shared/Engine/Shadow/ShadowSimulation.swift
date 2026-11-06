@@ -57,6 +57,7 @@ extension GameEngine {
         showingGameOver = false
         crisisManager.activeCrisis = nil
         setupShadowSystems()
+        resetWorldWatch()
         gameState?.shadow.post(s.summary, date: gameState?.currentDate ?? s.startDate, severity: 1)
         beginPlaySession()
         addLog("SCENARIO: \(s.title.uppercased())", type: .system)
@@ -236,6 +237,7 @@ extension GameEngine {
                 guard let crisis = crisisManager.createCrisis(type: type, gameState: gs) else { continue }
                 crisisManager.presentCrisis(crisis)
                 addLog("🚨 ANXIETY SPIKE → CRISIS: \(crisis.title)", type: .critical)
+                addLog("   \(Quotations.line(crisis.epigraph))", type: .info)
             }
         }
         // Natural disasters (3.18.14): an era-agnostic shock, independent of anxiety — a modest annual chance
@@ -244,6 +246,41 @@ extension GameEngine {
            let disaster = crisisManager.createCrisis(type: .naturalDisaster, gameState: gs) {
             crisisManager.presentCrisis(disaster)
             addLog("🌀 DISASTER: \(disaster.title)", type: .critical)
+        }
+        // 3.20.0: emergencies abroad — about ten a game year, each a decision (send aid, evacuate, sanction…).
+        let emergencies = min(WorldWatch.maxEmergenciesPerTurn, gs.scale.integer(annual: WorldWatch.emergenciesPerYear))
+        for _ in 0..<max(0, emergencies) {
+            guard let e = crisisManager.createCrisis(type: .worldDisaster, gameState: gs) else { continue }
+            gs.shadow.post(e.title, date: gs.currentDate, severity: 2)
+            crisisManager.presentCrisis(e)
+            addLog("🌐 WORLD EMERGENCY: \(e.title)", type: .critical)
+            addLog("   \(Quotations.line(e.epigraph))", type: .info)
+        }
+    }
+
+    // MARK: World watch (3.20.0)
+
+    /// Forget the old world: a new game, scenario or loaded save starts a fresh baseline and an empty queue.
+    func resetWorldWatch() {
+        crisisManager.pendingCrises = []
+        crisisManager.worldBaseline = gameState.map(WorldWatch.snapshot)
+    }
+
+    /// Compare the world with the last watch: every new war and change of power is posted, and the most
+    /// important become decisions on the President's desk. Runs once a turn after every nation has moved.
+    func watchWorld() {
+        guard let gs = gameState, !gs.gameOver else { return }
+        guard let base = crisisManager.worldBaseline else { crisisManager.worldBaseline = WorldWatch.snapshot(gs); return }
+        let found = WorldWatch.changes(from: base, to: gs)
+        crisisManager.worldBaseline = WorldWatch.snapshot(gs)
+        for h in found.headlines {
+            gs.shadow.post(h, date: gs.currentDate, severity: 2)
+            addLog("🌐 \(h)", type: .warning)
+        }
+        for c in found.decisions {
+            crisisManager.presentCrisis(c)
+            addLog("🚨 DECISION: \(c.title)", type: .critical)
+            addLog("   \(Quotations.line(c.epigraph))", type: .info)
         }
     }
 
@@ -998,6 +1035,7 @@ extension GameEngine {
         showingGameOver = false
         gameState = gs
         if gs.shadow.startSnapshot == nil { setupShadowSystems(electionsEnabled: gs.shadow.electionsEnabled) }
+        resetWorldWatch()
         // Continuing a save is a new sitting: a new play session that notes where it picked up.
         beginPlaySession(resumedFromTurn: gs.turn)
         addLog("📂 Loaded \(slot == 0 ? "autosave" : "slot \(slot)") — \(gs.currentDateLabel).", type: .info)

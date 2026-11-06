@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.20.0] - 2026-11-06 — The world watch
+
+### Added
+- **World watch** (`WorldWatch`): each turn, after every nation has moved, the world is compared with the last turn.
+  Every new war and every change of power (annexation, liberation, new regime) is posted to the ticker and the most
+  important (up to four a turn) become decision cards: sanction, arm the defender, broker a ceasefire (ends the war),
+  join an ally's war, back a partner, stay out; refuse recognition, sanction, arm the resistance, accept; recognize,
+  aid, withhold, back the opposition. Being attacked yourself brings a war-cabinet card.
+- **World emergencies** (`EmergencyCatalog`, 75 kinds from a 2021–2026 research sweep): natural hazards, epidemics,
+  humanitarian, industrial, infrastructure and cyber, security and economic emergencies strike plausible nations of
+  the era (hazard belts in ISO alpha-3; modern kinds wait for their era) about ten times a game year, with
+  era-appropriate responses: relief priced in the era's money, airlift and hospital ship, medical teams, refugees,
+  technical teams, evacuation, security forces, IMF loans, condolences, or — for adversaries — exploiting the chaos.
+- **Crisis queue** (`CrisisManager.pendingCrises`): simultaneous decisions wait their turn instead of being dropped;
+  overtaken ones (a war that already ended) are skipped. The crisis card shows how many more are waiting.
+- **Epigraphs** (`Quotations`, `EpigraphView`): every crisis, war, change of power, scenario and ending carries a
+  quote matched to its subject from the sacred texts, science fiction or military doctrine (verbatim, attributed;
+  `Documentation/QUOTATION_SOURCES.md`). Endings show one from each shelf; the log prints each card's quote.
+- `CrisisConsequences` gained effects on other nations: two-way relations, stability, military and economy changes,
+  ceasefires and joining a war.
+
+### Changed
+- Random crises are far more frequent: 60–98% a year by DEFCON, up from 5–50%.
+
+### Tests
+- `QuotationTests`, `EmergencyCatalogTests`, `WorldWatchTests` (war and change-of-power detection, the player's own
+  wars and annexations excluded, per-turn cap, queue and stale decisions, ceasefire and joining a war, two-way
+  relations, aid spending, era gating, the engine's per-turn watch).
+
 ## [3.19.0] - 2026-11-05 — Cabinet portraits and techno-thrillers
 
 ### Added

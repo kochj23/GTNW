@@ -36,6 +36,15 @@ struct DetailedCrisisView: View {
                             .background(Color.black.opacity(0.5))
                             .border(AppSettings.terminalGreen, width: 1)
 
+                        // 3.20.0: an epigraph from the sacred texts, science fiction or military doctrine
+                        EpigraphView(quote: crisis.epigraph)
+
+                        if !crisisManager.pendingCrises.isEmpty {
+                            Text("📥 \(crisisManager.pendingCrises.count) MORE DECISION\(crisisManager.pendingCrises.count == 1 ? "" : "S") WAITING")
+                                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
+                                .foregroundColor(AppSettings.terminalAmber)
+                        }
+
                         // Options
                         ForEach(Array(crisis.options.enumerated()), id: \.offset) { index, option in
                             crisisOptionCard(option: option, index: index)

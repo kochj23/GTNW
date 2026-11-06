@@ -126,6 +126,7 @@ class GameEngine: ObservableObject {
         } else {
             setupShadowSystems()
         }
+        resetWorldWatch()
         beginPlaySession()
 
         addLog("WOPR SYSTEM INITIALIZED", type: .system)
@@ -204,6 +205,7 @@ class GameEngine: ObservableObject {
         // times out falls back to fast rule-based AI so a turn never hangs.
         Task { @MainActor in
             await processAITurnsWithBrains()
+            watchWorld()   // 3.20.0: new wars and changes of power become decisions
             processCommentary(seen: seenBeforeTurn)
             showAISummary()
             isProcessingAITurn = false   // Allow actions again
@@ -392,6 +394,7 @@ class GameEngine: ObservableObject {
         if let crisis = crisisManager.generateRandomCrisis(gameState: gameState) {
             crisisManager.presentCrisis(crisis)
             addLog("🚨 CRISIS EVENT: \(crisis.title)", type: .critical)
+            addLog("   \(Quotations.line(crisis.epigraph))", type: .info)
         }
     }
 

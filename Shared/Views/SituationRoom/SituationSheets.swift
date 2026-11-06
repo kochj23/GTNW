@@ -430,6 +430,7 @@ struct ScenarioList: View {
                             .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
                         Text(s.summary).font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white.opacity(0.85))
                             .fixedSize(horizontal: false, vertical: true)
+                        EpigraphView(quote: s.epigraph, compact: true)   // 3.20.0
                     }
                     Spacer()
                     Button("START") { onStart(s) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))

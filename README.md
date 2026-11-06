@@ -52,7 +52,7 @@ Written by Jordan Koch.
 |-------|--------------|----------|
 | **Fighting a war** | Terms of surrender, sized offensives, fleets and amphibious landings, the era's real weapons, a finite army with drafts and militia calls, Congress and the War Powers Resolution, advisor warnings, allied coalitions | 3.2–3.12 |
 | **Land and empire** | Unclaimed land, colonies and peoples' land on every continent, resources and income by era, occupation and statehood, Antarctica, group actions, territory money (extraction rates, levies) | 3.3–3.13 |
-| **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy | 3.11–3.16 |
+| **The world around you** | Play any nation with its real cabinet; cabinets and nations that follow history (renames, foundings, absorptions); a living world scaled by difficulty; era-true nations everywhere; Nova's live commentary; the Hall of Infamy; a world watch that turns every war, change of power and world emergency into a decision, with epigraphs from sacred texts, science fiction and military doctrine | 3.11–3.20 |
 | **Scenarios** | Pearl Harbor, the Berlin Blockade, Korea 1950, 9/11 and the Gulf War, each with a history scorecard; six techno-thrillers scored on objectives | 3.12–3.19 |
 | **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries, starvation and supply, civilians and land, deception, the sea; the other powers use them too | 3.17 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
@@ -621,6 +621,53 @@ genocides has a matching tactic id.
   ```
 
 ### The world around you
+
+- **The world watch and world emergencies (new in 3.20.0)**: the world now reaches the President as decisions, not
+  footnotes.
+  - **Every new war** (`WorldWatch.changes`) becomes a card: sanction the aggressor, arm the defender, broker a
+    ceasefire (it can actually end the war), go to war alongside an ally or partner, or stay out. If someone attacks
+    *you*, the card is a war cabinet: rally allies, mobilize, seek a ceasefire.
+  - **Every change of power**: an annexation (refuse recognition, sanction, arm the resistance, accept), a liberation
+    (recognize and aid), or a new regime (recognize, aid, withhold recognition, back the opposition covertly).
+  - **World emergencies** (`EmergencyCatalog`, 75 kinds researched from 2021–2026): hurricanes, typhoons and
+    cyclones, earthquakes, tsunamis, eruptions, floods and flash floods, dam bursts, landslides, glacial floods,
+    droughts, heat and cold waves, wildfires, locusts, dust storms; Ebola, Marburg, cholera, mpox, bird flu, measles,
+    dengue, a "Disease X" and pandemics; famine, refugee exoduses, mass deportations, weaponised migration, migrant
+    shipwrecks, fuel-blockade collapse, atrocities; nuclear plants in peril, port explosions, toxic spills, oil
+    spills, mine, factory, rail, ferry and air disasters, airliner shoot-downs, crowd crushes; blackouts, bombed
+    grids, ransomware on governments, hospitals and industry, global IT outages, cable and pipeline sabotage, state
+    hackers in the phone networks, solar storms, anti-satellite debris; coups, assassinations, leaders seized,
+    terror attacks, hostages, wrongful detentions, embassy evacuations, civil wars, uprisings, border clashes, drone
+    incursions, shipping attacks and piracy; defaults, currency collapses, bank runs, oil and food shocks, export
+    bans. Each strikes a plausible nation of the era (a hurricane hits Cuba or Haiti, not Switzerland; nothing
+    modern happens in 1861) with the responses a head of state actually has: a relief package priced in the era's
+    money, an airlift and hospital ship, medical teams, refugee resettlement, a technical team, evacuating
+    Americans, security forces, an IMF loan, or condolences only. Aid to an adversary costs approval at home and
+    wins more abroad; adversaries also offer "exploit the chaos". About ten a game year, at most two a turn.
+  - **A queue** (`CrisisManager.pendingCrises`) means a war, a coup and a hurricane in the same turn all reach the
+    desk ("📥 2 MORE DECISIONS WAITING"); a decision the world has overtaken (the war already ended) is dropped.
+    Random domestic crises are also far more frequent (60%/year at DEFCON 5, up from 5%).
+  - **Epigraphs** (`Quotations`): every crisis, war, change of power, scenario and ending carries a line matched to
+    its subject from three shelves: **sacred texts** (KJV, JPS, Rodwell's Qur'an, Legge's *Tao Te Ching*, Müller's
+    *Dhammapada*), **science fiction** (*WarGames*, *Dr. Strangelove*, *Star Trek*, *Dune*, *Foundation*…) and
+    **military doctrine** (verbatim sentences from public-domain USAF, USMC, US Army and USSF publications, plus
+    Sun Tzu, Clausewitz, Moltke, Brodie, Eisenhower, Kennedy). Endings show one from each shelf. Sources:
+    [Documentation/QUOTATION_SOURCES.md](Documentation/QUOTATION_SOURCES.md).
+
+  ```mermaid
+  flowchart TD
+      T[End of turn: every nation has moved] --> W[World watch: compare with last turn]
+      W -->|new war| WC[War card: sanction / arm / ceasefire / join / stay out]
+      W -->|annexed, freed, new regime| RC[Change-of-power card]
+      S[Shadow turn] -->|~10 a year| E[EmergencyCatalog: kind + era + plausible nation]
+      E --> EC[Emergency card: relief / airlift / medical / refugees / evacuate / loan]
+      WC --> Q[Crisis queue]
+      RC --> Q
+      EC --> Q
+      Q --> D[President decides; next card comes up]
+      D --> X[Relations both ways, stability, money, wars started or ended]
+      Q -.-> L[Every card carries an epigraph]
+  ```
 
 - **Play as other nations (new in 3.11.0)**: **Nation** on the start screen picks any nation that exists in the
   start year (★ = real cabinet data). The cabinet is the nation's real officeholders on the start date, from bundled
@@ -1288,6 +1335,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.20.0 | Nov 2026 | World watch: every new war and change of power is a decision; 75 kinds of world emergency with real responses; a crisis queue; epigraphs from sacred texts, science fiction and military doctrine |
 | 3.19.0 | Nov 2026 | Period portraits for all 180 historical cabinet members in an SVGA style; six techno-thriller scenarios scored on objectives |
 | 3.17.6 | Oct 2026 | Dirty tactics, part seven: computer-run powers use the same catalog, and the record of the age — twenty-seven dated entries for what other powers did, and for abolition |
 | 3.17.5 | Oct 2026 | Dirty tactics, part six: the sea and what is left on the ground — press gangs, unrestricted submarine warfare, hired foreign regiments whose sovereign can recall them, mines that keep killing, and a firebombing stance |
@@ -1350,6 +1398,9 @@ MIT License, Copyright (c) 2025-2026 Jordan Koch. See [LICENSE](LICENSE).
 - **Cabinet portraits:** public-domain and CC0 photographs and paintings from Wikimedia Commons (mostly official U.S.
   government portraits), re-rendered by `tools/cabinet_portraits`. Per-image credits:
   [Documentation/PORTRAIT_CREDITS.md](Documentation/PORTRAIT_CREDITS.md).
+- **Epigraphs:** public-domain scripture translations (KJV, JPS 1917, Rodwell 1861, Legge 1891, Müller 1881),
+  verbatim lines from public-domain U.S. military publications, and short quotations from works of science fiction
+  and public figures, each attributed in place. List: [Documentation/QUOTATION_SOURCES.md](Documentation/QUOTATION_SOURCES.md).
 - **Map outlines:** [Natural Earth](https://www.naturalearthdata.com) 1:50m Admin 0 (public domain), simplified by
   `tools/natural_earth_to_gtnw.py`.
 - ***Shadow President*** (D.C. True, 1993) inspired the Situation Room's mechanics. None of its art, sound, text or

@@ -27,6 +27,31 @@ enum CrisisEventType: String, Codable, CaseIterable {
     case spyRingUncovered = "Spy Ring Uncovered"
     case assassinationAttempt = "Assassination Attempt"
     case naturalDisaster = "Natural Disaster"
+    // 3.20.0: the world's news reaches the Oval Office as decisions, not footnotes.
+    case worldDisaster = "World Disaster"     // a hurricane, quake, flood… strikes another nation
+    case warOutbreak = "War Outbreak"         // two nations go to war
+    case regimeChange = "Change of Power"     // a coup, a new regime, an annexation or a liberation
+
+    /// What an epigraph on this crisis should be about.
+    var quoteTags: Set<QuoteTag> {
+        switch self {
+        case .falseAlarm: return [.nuclear, .accident, .uncertainty, .deterrence]
+        case .nuclearAccident, .radiationLeak, .weaponsMalfunction: return [.accident, .nuclear, .apocalypse]
+        case .terroristThreat: return [.terror, .fear]
+        case .espionageDiscovered, .spyRingUncovered: return [.intelligence, .deception]
+        case .militaryCoup: return [.coup, .power]
+        case .cyberAttack: return [.cyber, .intelligence]
+        case .diplomaticIncident: return [.diplomacy, .escalation]
+        case .economicCollapse: return [.economy, .unrest]
+        case .rogueCommander: return [.accident, .nuclear, .leadership]
+        case .satelliteFailure: return [.space, .cyber, .uncertainty]
+        case .civilUnrest: return [.unrest, .power]
+        case .assassinationAttempt: return [.terror, .coup, .leadership]
+        case .naturalDisaster, .worldDisaster: return [.disaster, .mercy, .fear]
+        case .warOutbreak: return [.war, .escalation, .alliance]
+        case .regimeChange: return [.power, .coup, .occupation]
+        }
+    }
 }
 
 /// Severity levels for crisis events
@@ -72,6 +97,12 @@ struct CrisisEvent: Identifiable, Codable {
     var resolved: Bool = false
     var chosenOption: Int?
 
+    /// 3.20.0: the epigraph for this crisis — one line from the sacred texts, science fiction or military
+    /// doctrine, matched to its subject and stable for its lifetime.
+    var epigraph: Quotation { Quotations.pick(quoteTags ?? type.quoteTags, seed: id.uuidString) }
+    /// Subject override for the epigraph (an epidemic wants different lines than an earthquake).
+    var quoteTags: Set<QuoteTag>? = nil
+
     init(type: CrisisEventType, severity: CrisisSeverity, title: String, description: String,
          affectedCountries: [String], turn: Int, timeLimit: Int? = nil, options: [CrisisOption]) {
         self.id = UUID()
@@ -116,10 +147,23 @@ struct CrisisConsequences: Codable {
     var triggersWar: Bool = false
     var warTarget: String?
     var message: String
+    // 3.20.0 — effects on other nations (optional so older saves and API payloads still decode).
+    /// Relations moved in BOTH directions between the President's nation and these countries.
+    var mutualRelations: [String: Int]? = nil
+    var countryStability: [String: Int]? = nil
+    var countryMilitary: [String: Int]? = nil
+    var countryEconomy: [String: Int]? = nil
+    /// Ends the wars between these countries (a brokered ceasefire).
+    var ceasefireBetween: [String]? = nil
+    /// The President's nation goes to war against this country.
+    var joinWarAgainst: String? = nil
 
     init(relationshipChanges: [String: Int] = [:], approvalChange: Int = 0,
          defconChange: Int = 0, economicImpact: Int = 0, militaryImpact: Int = 0,
-         triggersWar: Bool = false, warTarget: String? = nil, message: String) {
+         triggersWar: Bool = false, warTarget: String? = nil, message: String,
+         mutualRelations: [String: Int]? = nil, countryStability: [String: Int]? = nil,
+         countryMilitary: [String: Int]? = nil, countryEconomy: [String: Int]? = nil,
+         ceasefireBetween: [String]? = nil, joinWarAgainst: String? = nil) {
         self.relationshipChanges = relationshipChanges
         self.approvalChange = approvalChange
         self.defconChange = defconChange
@@ -128,6 +172,12 @@ struct CrisisConsequences: Codable {
         self.triggersWar = triggersWar
         self.warTarget = warTarget
         self.message = message
+        self.mutualRelations = mutualRelations
+        self.countryStability = countryStability
+        self.countryMilitary = countryMilitary
+        self.countryEconomy = countryEconomy
+        self.ceasefireBetween = ceasefireBetween
+        self.joinWarAgainst = joinWarAgainst
     }
 }
 
@@ -136,6 +186,12 @@ class CrisisManager: ObservableObject {
     @Published var activeCrisis: CrisisEvent?
     @Published var crisisHistory: [CrisisEvent] = []
     @Published var crisisTimeRemaining: Int = 0
+    /// 3.20.0: decisions waiting behind the one on the desk — a war, a coup and a hurricane in the same turn all
+    /// reach the President instead of the later ones being dropped.
+    @Published var pendingCrises: [CrisisEvent] = []
+    static let maxPending = 8
+    /// What the world looked like at the last watch (wars, who rules where). Not saved: a loaded game re-baselines.
+    var worldBaseline: WorldWatch.Snapshot?
 
     private var timer: Timer?
 
@@ -144,11 +200,12 @@ class CrisisManager: ObservableObject {
         // Higher DEFCON = more likely to have crisis
         let crisisProbability: Double
         switch gameState.defconLevel {
-        case .defcon5: crisisProbability = 0.05
-        case .defcon4: crisisProbability = 0.10
-        case .defcon3: crisisProbability = 0.20
-        case .defcon2: crisisProbability = 0.35
-        case .defcon1: crisisProbability = 0.50
+        // 3.20.0: raised from 5–50%/year — the desk should be busy (world emergencies are rolled separately).
+        case .defcon5: crisisProbability = 0.60
+        case .defcon4: crisisProbability = 0.75
+        case .defcon3: crisisProbability = 0.88
+        case .defcon2: crisisProbability = 0.95
+        case .defcon1: crisisProbability = 0.98
         }
 
         // The table above is per game year; scale it to the turn length.
@@ -202,6 +259,10 @@ class CrisisManager: ObservableObject {
             return createAssassinationCrisis(gameState: gameState)
         case .naturalDisaster:
             return createNaturalDisasterCrisis(gameState: gameState)
+        case .worldDisaster:
+            return WorldWatch.disasterCrisis(gameState: gameState)
+        case .warOutbreak, .regimeChange:
+            return nil   // built from what actually changed in the world (WorldWatch.decisions)
         }
     }
 
@@ -1259,6 +1320,12 @@ class CrisisManager: ObservableObject {
 
     /// Present crisis to player
     func presentCrisis(_ crisis: CrisisEvent) {
+        if activeCrisis != nil {
+            // Queue it; the oldest waiting decision gives way when the desk is overflowing.
+            pendingCrises.append(crisis)
+            if pendingCrises.count > Self.maxPending { pendingCrises.removeFirst(pendingCrises.count - Self.maxPending) }
+            return
+        }
         activeCrisis = crisis
         if let timeLimit = crisis.timeLimit {
             crisisTimeRemaining = timeLimit
@@ -1288,6 +1355,16 @@ class CrisisManager: ObservableObject {
         crisisHistory.append(crisis)
         activeCrisis = nil
         stopTimer()
+        presentNextPending(gameState: gameState)
+    }
+
+    /// Bring the next waiting decision to the desk, skipping any the world has already overtaken
+    /// (a war that ended, a country that no longer exists).
+    func presentNextPending(gameState: GameState) {
+        while activeCrisis == nil, !pendingCrises.isEmpty {
+            let next = pendingCrises.removeFirst()
+            if WorldWatch.stillRelevant(next, in: gameState) { presentCrisis(next) }
+        }
     }
 
     /// Apply consequences to game state
@@ -1314,6 +1391,33 @@ class CrisisManager: ObservableObject {
         }
         if consequences.militaryImpact != 0, let pi = gameState.countries.firstIndex(where: { $0.id == gameState.playerCountryID }) {
             gameState.countries[pi].militaryStrength = max(1, gameState.countries[pi].militaryStrength + consequences.militaryImpact)
+        }
+
+        // 3.20.0: effects on other nations.
+        for (id, change) in consequences.mutualRelations ?? [:] {
+            gameState.modifyRelation(from: gameState.playerCountryID, to: id, by: change)
+            gameState.modifyRelation(from: id, to: gameState.playerCountryID, by: change)
+        }
+        func adjust(_ table: [String: Int]?, _ apply: (inout Country, Int) -> Void) {
+            for (id, change) in table ?? [:] {
+                if let i = gameState.countries.firstIndex(where: { $0.id == id }) { apply(&gameState.countries[i], change) }
+            }
+        }
+        adjust(consequences.countryStability) { $0.stability = max(1, min(100, $0.stability + $1)) }
+        adjust(consequences.countryMilitary) { $0.militaryStrength = max(1, min(100, $0.militaryStrength + $1)) }
+        adjust(consequences.countryEconomy) { $0.economicStrength = max(1, min(100, $0.economicStrength + $1)) }
+        if let pair = consequences.ceasefireBetween, pair.count == 2 {
+            let (a, b) = (pair[0], pair[1])
+            if let i = gameState.countries.firstIndex(where: { $0.id == a }) { gameState.countries[i].atWarWith.remove(b) }
+            if let i = gameState.countries.firstIndex(where: { $0.id == b }) { gameState.countries[i].atWarWith.remove(a) }
+            gameState.activeWars.removeAll { Set([$0.aggressor, $0.defender]) == Set(pair) }
+        }
+        if let enemy = consequences.joinWarAgainst, enemy != gameState.playerCountryID,
+           let pi = gameState.countries.firstIndex(where: { $0.id == gameState.playerCountryID }),
+           let ei = gameState.countries.firstIndex(where: { $0.id == enemy }) {
+            gameState.countries[pi].atWarWith.insert(enemy)
+            gameState.countries[ei].atWarWith.insert(gameState.playerCountryID)
+            gameState.activeWars.append(War(aggressor: gameState.playerCountryID, defender: enemy, startTurn: gameState.turn, intensity: 6))
         }
 
         // Trigger war if needed

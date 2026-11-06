@@ -61,6 +61,19 @@ struct ScenarioDefinition: Identifiable {
 
     static func d(_ y: Int, _ m: Int, _ day: Int) -> Date { GameCalendar.date(year: y, month: m, day: day) }
 
+    /// 3.20.0: the scenario's epigraph — what it is about, as the sacred texts, science fiction or doctrine put it.
+    var epigraph: Quotation { Quotations.pick(Self.epigraphTags[id] ?? [.war, .uncertainty], seed: id) }
+    static let epigraphTags: [String: Set<QuoteTag>] = [
+        "civilwar1861": [.war, .unrest, .alliance], "pearl1941": [.war, .intelligence, .deception],
+        "berlin1948": [.mercy, .deterrence, .alliance], "korea1950": [.war, .alliance, .escalation],
+        "cuba1962": [.nuclear, .deterrence, .diplomacy], "ablearcher1983": [.nuclear, .intelligence, .uncertainty],
+        "world1990": [.peace, .power], "gulf1990": [.war, .alliance, .occupation], "sept11_2001": [.terror, .fear],
+        "modern2025": [.uncertainty, .power, .cyber], "silentrunning1984": [.nuclear, .deception, .intelligence],
+        "shadowwar1989": [.terror, .war, .deception], "missingwarhead1992": [.nuclear, .terror, .intelligence],
+        "baltic2026": [.war, .alliance, .deterrence], "straitoffire2027": [.war, .escalation, .economy],
+        "blackout2026": [.cyber, .deception, .accident],
+    ]
+
     static let all: [ScenarioDefinition] = [civilWar1861, pearlHarbor1941, berlin1948, korea1950, cuba1962, ableArcher1983, world1990, gulf1990, sept11_2001, modern2025]
         + thrillers
 

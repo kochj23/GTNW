@@ -81,6 +81,14 @@ struct VictoryScreen: View {
                 // Nova's post-mortem roast
                 if !gameState.novaRoast.isEmpty { novaRoastView() }
 
+                // 3.20.0: three epigraphs — sacred, science fiction, military — for how it ended
+                VStack(spacing: 6) {
+                    ForEach(Quotations.triad(endingTags, seed: "\(gameState.shadow.playSessionID?.uuidString ?? "")\(victoryType?.rawValue ?? "defeat")")) { q in
+                        EpigraphView(quote: q, compact: true)
+                    }
+                }
+                .padding(.horizontal, 40)
+
                 // WOPR Quote
                 woprQuote()
             }
@@ -242,6 +250,18 @@ struct VictoryScreen: View {
         NSPasteboard.general.setString(gameState.novaRoast, forType: .string)
         #endif
         roastCopied = true
+    }
+
+    /// What the closing epigraphs are about.
+    private var endingTags: Set<QuoteTag> {
+        switch victoryType {
+        case .peaceMaker?, .nobelPeace?, .secretEnding?: return [.peace, .victory, .nuclear]
+        case .diplomaticVictory?, .allianceLeader?: return [.diplomacy, .alliance, .victory]
+        case .economicVictory?, .prosperity?: return [.economy, .peace]
+        case .supremacy?, .survival?: return [.nuclear, .victory, .power]
+        case .pyrrhicVictory?: return [.victory, .apocalypse, .defeat]
+        case nil: return (gameState.getPlayerCountry()?.isDestroyed ?? false) ? [.apocalypse, .nuclear, .defeat] : [.defeat, .power, .coup]
+        }
     }
 
     private func woprQuote() -> some View {
