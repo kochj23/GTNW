@@ -36,6 +36,31 @@ struct StoreStatusBadge: View {
     }
 }
 
+/// 3.22.0: a full-width warning under the Situation Room's top bar when this game won't reach Nova.
+struct NovaSyncBanner: View {
+    @ObservedObject var store: GameStoreService = .shared
+    /// Tests pass the text; the app reads it from the store, re-checked every minute.
+    var text: String? = nil
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 60)) { ctx in
+            if let message = text ?? store.novaWarning(now: ctx.date) {
+                HStack(spacing: 8) {
+                    Image(systemName: "eye.slash").font(.scaled(size: 12, weight: .bold))
+                    Text(message).font(ThemeFont.mono(11, .bold)).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .foregroundColor(Theme.isRetro ? EGA.black : GTNWColors.terminalAmber)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Theme.isRetro ? AnyView(Rectangle().fill(EGA.yellow))
+                                          : AnyView(RoundedRectangle(cornerRadius: 4).stroke(GTNWColors.terminalAmber, lineWidth: 1)))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(message)
+            }
+        }
+    }
+}
+
 #if os(macOS)
 struct GameStoreSettingsView: View {
     @ObservedObject var store: GameStoreService = .shared

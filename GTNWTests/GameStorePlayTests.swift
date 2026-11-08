@@ -457,3 +457,342 @@ final class PlayHistoryFrameTests: XCTestCase {
         XCTAssertTrue(e.playSession?.ended ?? false)
     }
 }
+
+// MARK: - 3.22.0: the roast log (every order, what the cabinet said, crisis calls, elections, swings, post-mortem)
+
+enum RoastFixtures {
+    static let oppose = ActionAdvice(advisorID: nil, advisorName: "Jane Hawk", advisorTitle: "Secretary of State",
+                                     stance: .oppose, reason: "This will start a war we cannot win.", successEstimate: 0.22)
+    static let danger = [AdvisorWarning(who: "Joint Chiefs", text: "We lose two carriers.", level: 2),
+                         AdvisorWarning(who: "Vice President", text: "Approval drops 12.", level: 1)]
+
+    @MainActor
+    static func started(_ dir: URL, remote: GameStore? = InMemoryGameStore()) throws -> (GameEngine, GameStoreService, GameState, UUID) {
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        return (e, service, gs, try XCTUnwrap(gs.shadow.playSessionID))
+    }
+
+    static func card(chance: Double = 1.0) -> CrisisEvent {
+        let c = CrisisConsequences(approvalChange: 0, message: "x")
+        return CrisisEvent(type: .election, severity: .serious, title: "The October Surprise",
+                           description: "A tape surfaces a week before the vote.", affectedCountries: ["USA"], turn: 1,
+                           options: [CrisisOption(title: "Deny everything", description: "It's a fake.", consequences: c, successChance: chance),
+                                     CrisisOption(title: "Come clean", description: "Own it.", advisorRecommendation: "Press Secretary",
+                                                  consequences: c, successChance: chance),
+                                     CrisisOption(title: "Change the subject", description: "Bomb something.", consequences: c, successChance: chance)])
+    }
+}
+
+final class RoastLogUnitTests: XCTestCase {
+
+    func testStatsJSONAndRecentOrdersAreCapped() {
+        var s = PlayStats()
+        for i in 0..<20 { s.noteOrder("order \(i)") }
+        XCTAssertEqual(s.lastOrders.count, PlayHistory.recentOrders)
+        XCTAssertEqual(s.lastOrders.last, "order 19")
+        XCTAssertEqual(s.lastOrders.first, "order 12")
+        let j = s.json
+        for k in ["orders_given", "advisors_overruled", "danger_warnings_ignored", "backed_down_after_advice",
+                  "crises_failed", "advisors_resigned", "biggest_one_turn_approval_drop", "last_orders"] {
+            XCTAssertNotNil(j[k], k)
+        }
+        XCTAssertTrue(JSONSerialization.isValidJSONObject(j))
+    }
+
+    @MainActor
+    func testSwingsFireAtTheirThresholdsAndMoveTheBaseline() throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        let gs = try XCTUnwrap(e.gameState)
+        let t = PlaySessionTracker(id: UUID(), startedAt: Date(), gs: gs, resumedFromTurn: nil)
+        XCTAssertTrue(PlayHistory.swings(gs, t).isEmpty, "nothing moved")
+
+        gs.shadow.popularity = t.lastPopularity - 4.9
+        XCTAssertTrue(PlayHistory.swings(gs, t).isEmpty, "a 4.9-point dip is noise")
+        gs.shadow.popularity -= 5
+        let drop = PlayHistory.swings(gs, t)
+        XCTAssertEqual(drop.map(\.0), ["approval_swing"])
+        XCTAssertEqual(drop.first?.1["change"] as? Double, -5)
+        XCTAssertEqual(t.stats.biggestApprovalDrop, 5, accuracy: 0.01)
+        XCTAssertTrue(PlayHistory.swings(gs, t).isEmpty, "the baseline moved: the same drop is not logged twice")
+
+        gs.defconLevel = DefconLevel(rawValue: max(1, t.lastDefcon - 1))!
+        gs.shadow.impeachmentStage = t.lastImpeachmentStage + 1
+        let pi = try XCTUnwrap(gs.countries.firstIndex { $0.id == "USA" })
+        gs.countries[pi].congressionalSupport = (t.lastCongress ?? 50) - PlayHistory.congressSwing
+        XCTAssertEqual(PlayHistory.swings(gs, t).map(\.0), ["defcon_change", "impeachment_track", "congress_swing"])
+    }
+
+    func testNovaWarningOnlyWhenNovaWontSeeTheGame() {
+        let now = Date()
+        XCTAssertNotNil(StoreStatus.novaWarning(.localOnly("DB credentials not set up yet"), offlineSince: nil, now: now))
+        XCTAssertTrue(StoreStatus.novaWarning(.localOnly("no CA"), offlineSince: nil, now: now)!.contains("no CA"))
+        XCTAssertNil(StoreStatus.novaWarning(.online, offlineSince: nil, now: now))
+        XCTAssertNil(StoreStatus.novaWarning(.syncing, offlineSince: now.addingTimeInterval(-3600), now: now))
+        XCTAssertNil(StoreStatus.novaWarning(.offline(pending: 3), offlineSince: now.addingTimeInterval(-60), now: now),
+                     "a short blip isn't worth a banner")
+        let long = StoreStatus.novaWarning(.offline(pending: 3), offlineSince: now.addingTimeInterval(-StoreStatus.novaGrace - 60), now: now)
+        XCTAssertTrue(long?.contains("11 MIN") == true, long ?? "nil")
+        XCTAssertTrue(long?.contains("3 change") == true)
+    }
+}
+
+final class RoastLogFunctionalTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testOverruledOrderCarriesTheAdviceTheWarningsAndTheResult() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service, gs, id) = try RoastFixtures.started(dir, remote: remote)
+        let report = ActionReport(title: "Air Strike — China", lines: ["❌ AIR STRIKE — FAILED", "   The jets turned back.", "a", "b", "c"],
+                                  success: false)
+        gs.shadow.popularity = 41
+        e.logPresidentialOrder(.airStrike, targetID: "CHN", advice: RoastFixtures.oppose, warnings: RoastFixtures.danger,
+                               size: AttackSize(troops: 0, aircraft: 40, warheads: 0), warhead: nil,
+                               popularityBefore: 48, report: report, resignation: "Jane Hawk has resigned.")
+        e.playSessionTurnEnded()
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+
+        let fetched1 = await remote.events(id)
+        let order = try XCTUnwrap(fetched1.first { $0.kind == "president_order" })
+        let d = PlayFixtures.detail(order)
+        XCTAssertEqual(d["action"] as? String, "Air Strike")
+        XCTAssertEqual(d["target_name"] as? String, "People's Republic of China")
+        XCTAssertEqual(d["overruled_advisor"] as? Bool, true)
+        XCTAssertEqual(d["advisor_stance"] as? String, "oppose")
+        XCTAssertEqual(d["advisor_said"] as? String, "This will start a war we cannot win.")
+        XCTAssertEqual(d["advisor_odds"] as? Double, 0.22)
+        XCTAssertEqual(d["danger_warnings_ignored"] as? Int, 1)
+        XCTAssertEqual((d["cabinet_warnings"] as? [[String: Any]])?.count, 2)
+        XCTAssertEqual(d["worked"] as? Bool, false)
+        XCTAssertEqual((d["result"] as? [String])?.count, PlayHistory.orderLines)
+        XCTAssertEqual(d["approval_before"] as? Double, 48)
+        XCTAssertEqual(d["approval_after"] as? Double, 41)
+        XCTAssertEqual(d["resignation"] as? String, "Jane Hawk has resigned.")
+
+        let fetched2 = await remote.playSessions[id]
+        let stats = try XCTUnwrap(PlayFixtures.summary(fetched2)["session_stats"] as? [String: Any])
+        XCTAssertEqual(stats["orders_given"] as? Int, 1)
+        XCTAssertEqual(stats["orders_failed"] as? Int, 1)
+        XCTAssertEqual(stats["advisors_overruled"] as? Int, 1)
+        XCTAssertEqual(stats["danger_warnings_ignored"] as? Int, 1)
+        XCTAssertEqual(stats["advisors_resigned"] as? Int, 1)
+        XCTAssertEqual((stats["last_orders"] as? [String])?.first,
+                       "Air Strike -> People's Republic of China (overruled Secretary of State; ignored 1 danger warning; FAILED)")
+    }
+
+    @MainActor
+    func testRealOrderThroughTheAdviceFlowIsLoggedOnce() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service, _, id) = try RoastFixtures.started(dir, remote: remote)
+        e.performAdvisedAction(.sanctions, targetID: "CHN", advice: RoastFixtures.oppose)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let orders = await remote.events(id).filter { $0.kind == "president_order" }
+        XCTAssertEqual(orders.count, 1)
+        let d = PlayFixtures.detail(try XCTUnwrap(orders.first))
+        XCTAssertEqual(d["action"] as? String, PresidentialAction.sanctions.rawValue)
+        XCTAssertNotNil(d["result"], "the outcome lines the President saw")
+        XCTAssertEqual(e.playSession?.stats.orders, 1)
+    }
+
+    @MainActor
+    func testBackingDownAndRecommendationsAreLogged() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service, gs, id) = try RoastFixtures.started(dir, remote: remote)
+        e.declineAdvisedAction(advice: RoastFixtures.oppose, action: .airStrike, targetID: "CHN")
+        e.declineAdvisedAction(advice: nil)   // no advice: nothing to log
+        let i = try XCTUnwrap(gs.advisors.indices.first { gs.advisors[$0].isActive })
+        gs.advisors[i].recommendedAction = PresidentialAction.sanctions.rawValue
+        gs.advisors[i].recommendedTarget = "CHN"
+        gs.advisors[i].currentAdvice = "Squeeze them."
+        e.rejectRecommendation(advisorID: gs.advisors[i].id)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+
+        let events = await remote.events(id)
+        let back = try XCTUnwrap(events.first { $0.kind == "backed_down" })
+        XCTAssertEqual(PlayFixtures.detail(back)["action"] as? String, "Air Strike")
+        XCTAssertEqual(events.filter { $0.kind == "backed_down" }.count, 1)
+        let rec = PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "recommendation" }))
+        XCTAssertEqual(rec["accepted"] as? Bool, false)
+        XCTAssertEqual(rec["advice"] as? String, "Squeeze them.")
+        XCTAssertEqual(rec["target_name"] as? String, "People's Republic of China")
+        XCTAssertEqual(e.playSession?.stats.backedDown, 1)
+        XCTAssertEqual(e.playSession?.stats.recommendationsRejected, 1)
+    }
+
+    @MainActor
+    func testCrisisDecisionFromAnyScreenIsLoggedWithTheRoadsNotTaken() async throws {
+        let remote = InMemoryGameStore()
+        var (e, service, gs, id) = try RoastFixtures.started(dir, remote: remote)
+        e.crisisManager.presentCrisis(RoastFixtures.card(chance: 0))
+        e.crisisManager.resolveCrisis(optionIndex: 2, gameState: &gs)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let fetched3 = await remote.events(id)
+        let d = PlayFixtures.detail(try XCTUnwrap(fetched3.first { $0.kind == "crisis_decision" }))
+        XCTAssertEqual(d["title"] as? String, "The October Surprise")
+        XCTAssertEqual(d["chose"] as? String, "Change the subject")
+        XCTAssertEqual(d["worked"] as? Bool, false)
+        XCTAssertEqual(d["other_options"] as? [String], ["Deny everything", "Come clean"])
+        XCTAssertEqual(d["passed_over_advised"] as? [String], ["Come clean (Press Secretary)"])
+        XCTAssertEqual(e.playSession?.stats.crisesFailed, 1)
+    }
+
+    @MainActor
+    func testGameOverPostMortemHasTheLastOrders() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service, gs, id) = try RoastFixtures.started(dir, remote: remote)
+        for _ in 0..<3 {
+            e.logPresidentialOrder(.airStrike, targetID: "CHN", advice: RoastFixtures.oppose, warnings: [], size: nil, warhead: nil,
+                                   popularityBefore: 50, report: nil, resignation: nil)
+        }
+        gs.gameOver = true
+        gs.gameOverReason = "Impeached and removed from office"
+        e.recordGameOver(gs, score: GameScore.calculate(from: gs, victoryType: nil), victory: nil)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let fetched4 = await remote.events(id)
+        let d = PlayFixtures.detail(try XCTUnwrap(fetched4.first { $0.kind == "game_over" }))
+        XCTAssertEqual((d["last_orders"] as? [String])?.count, 3)
+        XCTAssertEqual(d["advisors_overruled"] as? Int, 3)
+        XCTAssertNotNil(d["approval_end"])
+        XCTAssertNotNil(d["impeachment_stage"])
+    }
+}
+
+final class RoastLogIntegrationTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testElectionNightAndSwingsReachTheDB() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service, gs, id) = try RoastFixtures.started(dir, remote: remote)
+        let year = gs.currentYear + (4 - gs.currentYear % 4) % 4
+        e.holdElection(on: ElectionRules(year: year).electionDay)
+        gs.shadow.popularity -= 12
+        e.playSessionTurnEnded()
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let events = await remote.events(id)
+        let d = PlayFixtures.detail(try XCTUnwrap(events.first { $0.kind == "election_result" }))
+        XCTAssertEqual(d["year"] as? Int, year)
+        let ev = (d["electoral_votes"] as? Int ?? 0) + (d["opponent_electoral_votes"] as? Int ?? 0) + (d["third_electoral_votes"] as? Int ?? 0)
+        XCTAssertEqual(ev, d["electors"] as? Int)
+        XCTAssertTrue(["won", "lost", "no_majority"].contains(d["outcome"] as? String ?? ""))
+        XCTAssertTrue(events.contains { $0.kind == "approval_swing" })
+        XCTAssertEqual(events.map(\.seq), Array(0..<events.count))
+    }
+}
+
+final class RoastLogSecurityTests: XCTestCase {
+    private var dir: URL!
+    override func setUp() { super.setUp(); dir = StoreFixtures.tempDir() }
+    override func tearDown() { try? FileManager.default.removeItem(at: dir); super.tearDown() }
+
+    @MainActor
+    func testHostileAdviceAndWarningTextIsCleanedAndUnderTheCap() async throws {
+        let remote = InMemoryGameStore()
+        let (e, service, _, id) = try RoastFixtures.started(dir, remote: remote)
+        let nasty = String(repeating: "\u{0007}<script>alert(1)</script>\u{202E}Robert'); --", count: 400)
+        let advice = ActionAdvice(advisorID: nil, advisorName: nasty, advisorTitle: nasty, stance: .oppose, reason: nasty, successEstimate: .nan)
+        let warnings = (0..<20).map { _ in AdvisorWarning(who: nasty, text: nasty, level: 2) }
+        let report = ActionReport(title: nasty, lines: Array(repeating: nasty, count: 50), success: false)
+        e.logPresidentialOrder(.airStrike, targetID: nasty, advice: advice, warnings: warnings, size: nil, warhead: nil,
+                               popularityBefore: .infinity, report: report, resignation: nasty)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let fetched5 = await remote.events(id)
+        let order = try XCTUnwrap(fetched5.first { $0.kind == "president_order" })
+        XCTAssertLessThanOrEqual(order.detail.count, PlayHistory.maxDetailBytes)
+        let text = String(decoding: order.detail, as: UTF8.self)
+        XCTAssertFalse(text.contains("\u{0007}"))
+        XCTAssertFalse(text.contains("\u{202E}"))
+        let d = PlayFixtures.detail(order)
+        XCTAssertLessThanOrEqual((d["advisor_said"] as? String ?? "").count, PlayHistory.maxText)
+        XCTAssertEqual(d["advisor_odds"] as? Double, 0, "NaN never reaches the JSON")
+    }
+}
+
+final class RoastLogPerformanceTests: XCTestCase {
+
+    @MainActor
+    func testAThousandOrdersLogQuickly() throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let (e, _, _, _) = try RoastFixtures.started(dir)
+        let start = Date()
+        for _ in 0..<1000 {
+            e.logPresidentialOrder(.airStrike, targetID: "CHN", advice: RoastFixtures.oppose, warnings: RoastFixtures.danger,
+                                   size: nil, warhead: nil, popularityBefore: 50, report: nil, resignation: nil)
+        }
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2.0)
+        XCTAssertEqual(e.playSession?.stats.orders, 1000)
+        XCTAssertEqual(e.playSession?.stats.lastOrders.count, PlayHistory.recentOrders, "memory stays bounded")
+    }
+}
+
+final class RoastLogRetryTests: XCTestCase {
+
+    @MainActor
+    func testOfflineClockStartsOnceAndClearsWhenBack() async throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let remote = InMemoryGameStore()
+        await remote.setReachable(false)
+        let service = StoreFixtures.service(dir, remote: remote)
+        service.playSessionUpdated(PlayFixtures.session())
+        _ = await service.syncNow()
+        await MainActor.run {}
+        let since = try XCTUnwrap(service.offlineSince)
+        _ = await service.syncNow()
+        await MainActor.run {}
+        XCTAssertEqual(service.offlineSince, since, "a second failed pass doesn't restart the clock")
+        XCTAssertNil(service.novaWarning(), "tests never show the banner")
+        await remote.setReachable(true)
+        let synced = await service.syncNow()
+        await MainActor.run {}
+        XCTAssertTrue(synced)
+        XCTAssertNil(service.offlineSince)
+    }
+}
+
+final class RoastLogFrameTests: XCTestCase {
+
+    #if os(macOS)
+    @MainActor
+    func testBannerShowsInBothSkinsAndVanishesWhenFine() {
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let shown = NSHostingView(rootView: NovaSyncBanner(text: "NOVA CAN'T SEE THIS GAME: test").frame(width: 600))
+            shown.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThan(shown.fittingSize.height, 10, "\(theme)")
+            let hidden = NSHostingView(rootView: NovaSyncBanner().frame(width: 600))
+            hidden.layoutSubtreeIfNeeded()
+            XCTAssertLessThan(hidden.fittingSize.height, 2, "no banner in a test run")
+        }
+    }
+    #endif
+}
+
+final class RoastLogFitTests: XCTestCase {
+    /// Security / unit: an over-cap detail is shortened, never silently dropped; small ones are untouched.
+    func testOversizedDetailIsShortenedNotDropped() throws {
+        let small: [String: Any] = ["a": "short", "n": 3]
+        XCTAssertEqual(PlayHistory.fitted(small), PlayHistory.json(small))
+        let big: [String: Any] = ["lines": Array(repeating: String(repeating: "x", count: 300), count: 30), "n": 7]
+        let d = try XCTUnwrap(PlayHistory.fitted(big))
+        XCTAssertLessThanOrEqual(d.count, PlayHistory.maxDetailBytes)
+        let back = try XCTUnwrap(try JSONSerialization.jsonObject(with: d) as? [String: Any])
+        XCTAssertEqual(back["n"] as? Int, 7, "numbers survive the cut")
+    }
+}

@@ -659,6 +659,9 @@ extension GameEngine {
             c.midtermResults[year] = seats
             gs.countries[pi].congressionalSupport = max(5, min(95, gs.countries[pi].congressionalSupport + seats / 2))
             let verb = seats >= 0 ? "GAINS \(seats)" : "LOSES \(-seats)"
+            logPlayEvent("midterms", detail: ["year": year, "house_seats": seats, "approval": PlayHistory.num(pop),
+                                              "at_war": atWar, "congressional_support": gs.countries[pi].congressionalSupport,
+                                              "game_date": PlayHistory.day(date)])
             announce("MIDTERMS: your party \(verb) House seats. Congressional support is now \(gs.countries[pi].congressionalSupport)%.", severity: 3, on: date)
             if seats <= -20 {
                 decide(ElectionCycle.card("A Shellacking",
@@ -711,6 +714,21 @@ extension GameEngine {
         result.playerName = playerName
         gs.shadow.lastElection = result
         ShadowPack.shared.play("sfx.election_speech\(Int.random(in: 1...3))")
+        var tallyDetail: [String: Any] = [
+            "year": year, "on_the_ballot": c.running, "opponent": PlayHistory.text(opponent),
+            "outcome": t.outcome == .won ? "won" : t.outcome == .lost ? "lost" : "no_majority",
+            "electoral_votes": t.playerEV, "opponent_electoral_votes": t.opponentEV, "electors": t.electors,
+            "approval": PlayHistory.num(gs.shadow.popularity), "terms_won_before": gs.shadow.termsWon,
+            "game_date": PlayHistory.day(day)]
+        if rules.hasPopularVote {
+            tallyDetail["popular_vote"] = PlayHistory.num(t.playerPopular)
+            tallyDetail["opponent_popular_vote"] = PlayHistory.num(t.opponentPopular)
+        }
+        if let third, t.thirdEV > 0 || third.popular > 0 {
+            tallyDetail["third_candidate"] = PlayHistory.text(third.name)
+            tallyDetail["third_electoral_votes"] = t.thirdEV
+        }
+        logPlayEvent("election_result", detail: tallyDetail)
 
         let pop = rules.hasPopularVote ? String(format: " (popular vote %.1f%% to %.1f%%)", t.playerPopular, t.opponentPopular) : ""
         let ev = "\(t.playerEV) to \(t.opponentEV) electoral votes\(t.thirdEV > 0 ? ", \(t.thirdEV) for \(third?.name ?? "a third candidate")" : "")"

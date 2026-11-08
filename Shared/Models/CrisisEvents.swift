@@ -205,6 +205,8 @@ class CrisisManager: ObservableObject {
     var worldBaseline: WorldWatch.Snapshot?
 
     private var timer: Timer?
+    /// 3.22.0: told about every decision (the engine logs it for Nova's column), whichever screen or API made it.
+    var onResolved: ((CrisisEvent, Int, Bool) -> Void)?
 
     /// Generate a random crisis event based on game state
     func generateRandomCrisis(gameState: GameState) -> CrisisEvent? {
@@ -1373,6 +1375,7 @@ class CrisisManager: ObservableObject {
         crisis.resolved = true
         crisis.chosenOption = optionIndex
         crisisHistory.append(crisis)
+        onResolved?(crisis, optionIndex, success)
         activeCrisis = nil
         stopTimer()
         presentNextPending(gameState: gameState)

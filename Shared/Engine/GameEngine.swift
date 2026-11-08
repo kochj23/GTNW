@@ -85,6 +85,9 @@ class GameEngine: ObservableObject {
         // Engine ready to start game
         // Initialize advisors
         advisors = Advisor.trumpCabinet()
+        crisisManager.onResolved = { [weak self] crisis, option, worked in
+            self?.logCrisisDecision(crisis, option: option, worked: worked)
+        }
 
         // Initialize AI Backend Manager
         Task { @MainActor in

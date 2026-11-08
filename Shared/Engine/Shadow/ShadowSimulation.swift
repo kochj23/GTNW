@@ -912,13 +912,19 @@ extension GameEngine {
         if action.wmd != nil, let problem = wmdProblem(action) { addLog("❌ \(action.rawValue): \(problem)", type: .error); return }
         // Snapshot the log so we can show the President exactly what his order produced (3.18.11).
         let logStart = logMessages.count
+        // 3.22.0: what the room said before he gave the order, for the play log (the same warnings the sheet showed).
+        let popularityBefore = gs.shadow.popularity
+        let warnings = MajorAction.isMajor(action) && AdvisorWarnings.enabled()
+            ? advisorWarnings(for: .attack(action, target: targetID, size: size)) : []
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size, warhead: warhead)
         reportActionOutcome(action, targetID: targetID, from: logStart)
         // Nuclear launches record their own fallout in launchNuclearStrike.
         if action.rung != .nuclear { recordPlayerAction(rung: action.rung, hostile: action.isHostile, detected: false) }
+        var resignation: String?
         if let a = advice, let id = a.advisorID, let i = gs.advisors.firstIndex(where: { $0.id == id }) {
             if a.stance == .oppose {
                 if let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs) {
+                    resignation = msg
                     gs.advisors.append(AdviceEngine.appointActing(replacing: gs.advisors[i], sequence: gs.advisors.count))
                     gs.shadow.post(msg, date: gs.currentDate, severity: 2)
                     addLog("👔 \(msg)", type: .warning)
@@ -928,6 +934,8 @@ extension GameEngine {
             }
         }
         self.gameState = gs
+        logPresidentialOrder(action, targetID: targetID, advice: advice, warnings: warnings, size: size, warhead: warhead,
+                             popularityBefore: popularityBefore, report: actionResult, resignation: resignation)
         completePlayerAction()
     }
 
@@ -954,6 +962,7 @@ extension GameEngine {
         let adv = gs.advisors[i]
         let advice = ActionAdvice(advisorID: adv.id, advisorName: adv.name, advisorTitle: adv.title, stance: .approve,
                                   reason: adv.currentAdvice ?? "", successEstimate: action.successChance)
+        logRecommendation(adv, accepted: true)
         performAdvisedAction(action, targetID: target, advice: advice)
         AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs)
         return true
@@ -962,12 +971,15 @@ extension GameEngine {
     /// REJECT: the advisor notes it; repeated rejections wear down loyalty (and can end in resignation).
     func rejectRecommendation(advisorID: String) {
         guard let gs = gameState, let i = gs.advisors.firstIndex(where: { $0.id == advisorID }) else { return }
-        if let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs) {
+        let adv = gs.advisors[i]
+        let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs)
+        if let msg {
             gs.advisors.append(AdviceEngine.appointActing(replacing: gs.advisors[i], sequence: gs.advisors.count))
             gs.shadow.post(msg, date: gs.currentDate, severity: 2)
             addLog("👔 \(msg)", type: .warning)
         }
         self.gameState = gs
+        logRecommendation(adv, accepted: false, resignation: msg)
     }
 
     /// REQUEST ALTERNATIVE: the advisor proposes something different.
@@ -980,7 +992,8 @@ extension GameEngine {
     }
 
     /// The player listened and backed off.
-    func declineAdvisedAction(advice: ActionAdvice?) {
+    func declineAdvisedAction(advice: ActionAdvice?, action: PresidentialAction? = nil, targetID: String? = nil) {
+        if let a = advice, a.stance == .oppose { logBackedDown(action, targetID: targetID, advice: a) }
         guard let gs = gameState, let a = advice, a.stance == .oppose, let id = a.advisorID,
               let i = gs.advisors.firstIndex(where: { $0.id == id }) else { return }
         AdviceEngine.registerFollowed(advisorIndex: i, in: gs)

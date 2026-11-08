@@ -98,6 +98,7 @@ struct SituationRoomView: View {
     private var compactLayout: some View {
         VStack(spacing: 6) {
             ScrollView(.horizontal, showsIndicators: false) { SituationTopBar(gameState: gameState, onSheet: { sheet = $0 }) }
+            NovaSyncBanner()
             mapControls
             VectorWorldMap(gameState: gameState, selectedCountryID: $selectedCountryID, zoom: $zoom, filter: $filter)
                 .frame(minHeight: FontScale.h(220))
@@ -120,6 +121,7 @@ struct SituationRoomView: View {
     private var wideLayout: some View {
         VStack(spacing: 6) {
             SituationTopBar(gameState: gameState, onSheet: { sheet = $0 })
+            NovaSyncBanner()
             HStack(alignment: .top, spacing: 6) {
                 AdvisorRail(gameState: gameState, selected: selected, briefingRole: $briefingRole)
                     .frame(width: FontScale.w(190))
@@ -860,7 +862,7 @@ struct ActionLadderSheet: View {
                         CabinetWarningsView(warnings: warnings)
                         HStack {
                             Button("CANCEL") {
-                                gameEngine.declineAdvisedAction(advice: advice)
+                                gameEngine.declineAdvisedAction(advice: advice, action: a, targetID: target.id)
                                 dismiss()
                             }
                             .buttonStyle(ThemedButtonStyle())

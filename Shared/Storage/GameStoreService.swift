@@ -34,6 +34,26 @@ enum StoreStatus: Equatable {
         case .online: return "Saved to the Games DB."
         }
     }
+
+    /// 3.22.0: how long the DB may be down before the Situation Room says Nova can't see this game.
+    static let novaGrace: TimeInterval = 10 * 60
+
+    /// 3.22.0: the Situation Room banner, or nil when Nova will see this game. A Mac with no Games DB password (an
+    /// ad hoc build can't keep one) used to hold days of games in its queue with only a grey LOCAL chip to show for it.
+    static func novaWarning(_ status: StoreStatus, offlineSince: Date?, now: Date = Date()) -> String? {
+        switch status {
+        case .localOnly(let why):
+            return "NOVA CAN'T SEE THIS GAME: this Mac isn't connected to the Games DB (\(why)). "
+                + "Nothing you do here will be written up. Fix it in Settings › Saves & DB."
+        case .offline(let n):
+            guard let since = offlineSince, now.timeIntervalSince(since) >= novaGrace else { return nil }
+            let mins = Int(now.timeIntervalSince(since) / 60)
+            return "NOVA HASN'T HEARD FROM THIS MAC FOR \(mins) MIN: the Games DB is unreachable. "
+                + "\(n) change(s) are queued here and will reach Nova when it's back."
+        case .syncing, .online:
+            return nil
+        }
+    }
 }
 
 extension RetryPolicy {
@@ -47,6 +67,8 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
     static let shared: GameStoreService = makeDefault()
 
     @Published private(set) var status: StoreStatus
+    /// When the DB last went from reachable (or unknown) to unreachable; nil while syncing fine (3.22.0).
+    @Published private(set) var offlineSince: Date?
     /// Bumped whenever cached records change, so views re-read `records`.
     @Published private(set) var revision = 0
 
@@ -251,7 +273,20 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
     // MARK: Publishing (main thread)
 
     private func publish(status s: StoreStatus) {
-        if Thread.isMainThread { if status != s { status = s } } else { DispatchQueue.main.async { if self.status != s { self.status = s } } }
+        let apply = { [self] in
+            if status != s { status = s }
+            switch s {
+            case .offline: if offlineSince == nil { offlineSince = Date() }
+            case .online, .localOnly: offlineSince = nil
+            case .syncing: break   // a retry in progress doesn't reset the clock
+            }
+        }
+        if Thread.isMainThread { apply() } else { DispatchQueue.main.async(execute: apply) }
+    }
+
+    /// The banner text for right now (nil in tests and smoke runs, which are local-only on purpose).
+    func novaWarning(now: Date = Date()) -> String? {
+        Self.isTestOrSmokeRun ? nil : StoreStatus.novaWarning(status, offlineSince: offlineSince, now: now)
     }
 
     private func bump() {

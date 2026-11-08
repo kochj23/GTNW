@@ -1298,6 +1298,10 @@ GTNW/
 
 ### Play history (schema `play`, new in 3.1.2)
 
+If this Mac can't reach the Games DB (no password in the keychain, which is always the case for an ad hoc-signed
+build, or the DB down for more than ten minutes), a banner under the Situation Room's top bar says Nova can't see the
+game (3.22.0). Event details over the 4 KB cap are shortened, never dropped.
+
 Every sitting is logged to the shared `play` schema in the same Games DB (`play.sessions` + `play.events`, see
 NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what was played. Rows are `game='gtnw'`,
 `client='mac'`, `player` = the store's player id, written as role `gtnw` (row-level security keeps it to its own rows).
@@ -1307,6 +1311,12 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | New game or scenario | A new session id (kept on the game as `shadow.playSessionID` / `playSessionStartedAt`), the session row, event `game_start` |
 | Loading a save to continue | A **new** session (started now) whose summary has `resumed_from_turn` |
 | End of every turn | Events `ticker` (new ticker items with severity ≥ 2) and `nuclear_strike` (new strikes); upsert of `last_seen_at`, `actions` (turns this session) and a running summary |
+| Every presidential order (3.22.0) | Event `president_order`: `action`, `target_name`, the responsible `advisor`, `advisor_stance`, `advisor_said`, `advisor_odds`, `overruled_advisor`, the `cabinet_warnings` shown and `danger_warnings_ignored`, `worked`, the `result` lines, `approval_before` / `approval_after`, any `resignation` |
+| Advice taken or not (3.22.0) | Events `backed_down` (cancelled after an advisor opposed it), `recommendation` (a standing recommendation `accepted` or rejected) |
+| Crisis and decision cards (3.22.0) | Event `crisis_decision`: `title`, `situation`, `chose`, `odds`, `worked`, `other_options`, `passed_over_advised` — from the Situation Room, the crisis sheet or the local API |
+| Elections (3.22.0) | Events `election_result` (electoral and popular vote, opponent, outcome) and `midterms` (House seats) |
+| Swings (3.22.0) | Events `approval_swing` (≥ 5 points in a turn), `defcon_change`, `impeachment_track`, `congress_swing` (≥ 8 points) |
+| Session tallies (3.22.0) | Summary `session_stats`: orders given / failed, advisors overruled, danger warnings ignored, times backed down, recommendations taken / rejected, crises decided / failed, resignations, the biggest one-turn approval drop and the last eight orders; `game_over` carries the same post-mortem |
 | Dirty tactics (3.17.0) | Events `tactic_used` (`tactic`, `target`, `covert`, `scale`, `legal_status`), `tactic_exposed`, `tactic_tribunal`, `tactic_program_started` / `_ready` / `_discovered`, `tactic_aftermath`, `tactic_stance` (3.17.2), `drug_operations` (3.17.4), `hired_troops_recalled` (3.17.5), `world_atrocity` and `ai_tactic` (3.17.6) |
 | Absorptions (3.16.2) | Events `nation_absorbed` (`land`, `by`), `annexation_crisis` (`land`, `by`) |
 | Foundings (3.16.1) | Events `nation_founded` (`country`, `name`), `independence_movement` (`land`, `owner`) |
@@ -1379,6 +1389,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.22.0 | Nov 2026 | The roast log: every presidential order is logged with what the cabinet said and whether you overruled them, plus every crisis call (and the options you passed over), election and midterm results, big approval / DEFCON / impeachment / Congress swings, session tallies and a game-over post-mortem, so Nova's column can tell the whole story. A Situation Room banner says when this Mac's games can't reach Nova |
 | 3.21.1 | Nov 2026 | Calmer desk: world emergencies cut from about ten a year to about four (one a turn at most, news-only when two decisions are already waiting); at most two war/change-of-power cards a turn |
 | 3.21.0 | Nov 2026 | The whole election cycle: decision to run, caucus/primaries/conventions by era, challengers, running mates, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment |
 | 3.20.0 | Nov 2026 | World watch: every new war and change of power is a decision; 75 kinds of world emergency with real responses; a crisis queue; epigraphs from sacred texts, science fiction and military doctrine |
