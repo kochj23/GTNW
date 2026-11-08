@@ -131,7 +131,7 @@ enum StoreMigrationCLI {
         let args = CommandLine.arguments
         let backupRoot = args.firstIndex(of: "--backup-dir").flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil }
             .map { URL(fileURLWithPath: $0, isDirectory: true) } ?? LegacyStoreImport.defaultBackupRoot
-        if args.contains("--setup-credentials"),
+        if args.contains("--setup-credentials"), !Edition.isPublic,
            KeychainGameStoreCredentials().password(account: GameStoreConfig.load().user) == nil {
             do { print("credentials stored: \(try GameStoreSetup.fetchFromCore3())") }
             catch { print("credential setup failed: \(error)") }

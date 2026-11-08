@@ -796,3 +796,41 @@ final class RoastLogFitTests: XCTestCase {
         XCTAssertEqual(back["n"] as? Int, 7, "numbers survive the cut")
     }
 }
+
+// MARK: - 3.22.1: the public edition (no Games DB, no core3, no Nova banner)
+
+final class PublicEditionTests: XCTestCase {
+
+    /// Security: a public build never reaches for the home-LAN Games DB on its own.
+    func testPublicDefaultsHaveNoGamesDB() {
+        XCTAssertFalse(GameStoreConfig.makeDefaults(isPublic: true).enabled)
+        XCTAssertTrue(GameStoreConfig.makeDefaults(isPublic: false).enabled, "Jordan's own builds keep it")
+        let (remote, why) = GameStoreService.makeRemote(GameStoreConfig.makeDefaults(isPublic: true))
+        XCTAssertNil(remote)
+        XCTAssertEqual(why, "Games DB disabled in Settings")
+    }
+
+    /// Unit: the "Nova can't see this game" banner never shows in the public edition.
+    @MainActor
+    func testNoNovaBannerInThePublicEdition() {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let service = StoreFixtures.service(dir, remote: nil)
+        XCTAssertNil(service.novaWarning(isPublic: true))
+        XCTAssertFalse(Edition.isPublic, "the test build is the normal edition")
+    }
+
+    /// Functional: a public game (no store remote) plays start to finish and writes no play history.
+    @MainActor
+    func testPublicGamePlaysWithNoPlayHistory() throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let (e, service) = PlayFixtures.engine(dir, remote: nil)
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        e.performAdvisedAction(.sanctions, targetID: "CHN", advice: RoastFixtures.oppose)
+        let gs = try XCTUnwrap(e.gameState)
+        gs.gameOver = true
+        e.recordGameOver(gs, score: GameScore.calculate(from: gs, victoryType: nil), victory: nil)
+        XCTAssertFalse(service.local.pending.contains { $0.isPlayHistory }, "nothing queued for a DB that isn't there")
+    }
+}

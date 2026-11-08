@@ -15,6 +15,17 @@ import Foundation
 import CryptoKit
 import Security
 
+/// Which build this is (3.22.1). The public edition is built with `PUBLIC_EDITION` in
+/// SWIFT_ACTIVE_COMPILATION_CONDITIONS and without the games-pg CA (tools/make_public_dmg.sh): no Games DB by default,
+/// no core3 SSH hand-off, no "Nova can't see this game" banner. Everything else is the same game.
+enum Edition {
+    #if PUBLIC_EDITION
+    static let isPublic = true
+    #else
+    static let isPublic = false
+    #endif
+}
+
 // MARK: - Records
 
 /// One save slot. Slot 0 is the autosave. `payload` is the JSON-encoded `GameState`.
@@ -282,8 +293,14 @@ struct GameStoreConfig: Equatable, Sendable {
     /// Every game row is scoped by this id (one player today; the column keeps room for more).
     var playerID: String
 
-    static let defaults = GameStoreConfig(enabled: true, host: "192.168.1.5", port: 5433, tlsServerName: "nova-core3",
-                                          database: "games", user: "gtnw", ownerUser: "gtnw_owner", playerID: "default")
+    static let defaults = makeDefaults(isPublic: Edition.isPublic)
+
+    /// 3.22.1: the public edition ships with the Games DB off (it is Jordan's home-LAN database; strangers never get
+    /// a password to it). A player who runs their own Games DB can still turn it on in Settings.
+    static func makeDefaults(isPublic: Bool) -> GameStoreConfig {
+        GameStoreConfig(enabled: !isPublic, host: "192.168.1.5", port: 5433, tlsServerName: "nova-core3",
+                        database: "games", user: "gtnw", ownerUser: "gtnw_owner", playerID: "default")
+    }
 
     static let keyPrefix = "GTNW.store."
 

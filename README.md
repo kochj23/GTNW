@@ -1210,6 +1210,22 @@ nova_gtnw_host.py advance | check | status | reset
 
 ## Installation
 
+### Public download (3.22.1)
+
+The public edition is the whole game minus everything that belongs to the Nova home lab: the Games DB is off (and its
+CA is not in the bundle), the core3 SSH credential hand-off is hidden, play history is never written and the "Nova
+can't see this game" banner never shows. AI is the player's own (Ollama, MLX, or their API key), or none: computer-run
+countries fall back to rule-based play and commentary to its stock lines.
+
+```bash
+tools/make_public_dmg.sh            # release: Developer ID signed, notarized, stapled DMG in /Volumes/Data/xcode/binaries
+tools/make_public_dmg.sh --adhoc    # local test of the whole pipeline (the DMG is not for distribution)
+```
+
+The release build needs Xcode signed in to team QRRCB8HB3W (Settings › Accounts): Xcode creates the Developer ID
+certificate and notarizes through that account. Set `NOTARY_PROFILE` to also notarize and staple the DMG itself.
+The build compiles with `PUBLIC_EDITION` (see `Edition` in `Shared/Storage/GameStore.swift`).
+
 ### DMG (recommended)
 
 1. Download `GTNW-v<version>-build<N>.dmg` from [GitHub Releases](https://github.com/kochj23/GTNW/releases).
@@ -1389,6 +1405,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.22.1 | Nov 2026 | The public edition: `tools/make_public_dmg.sh` builds a Developer ID–signed, notarized DMG of the full game with no Games DB, no core3 hand-off, no bundled Games DB CA and no Nova banner, for giving GTNW to anyone |
 | 3.22.0 | Nov 2026 | The roast log: every presidential order is logged with what the cabinet said and whether you overruled them, plus every crisis call (and the options you passed over), election and midterm results, big approval / DEFCON / impeachment / Congress swings, session tallies and a game-over post-mortem, so Nova's column can tell the whole story. A Situation Room banner says when this Mac's games can't reach Nova |
 | 3.21.1 | Nov 2026 | Calmer desk: world emergencies cut from about ten a year to about four (one a turn at most, news-only when two decisions are already waiting); at most two war/change-of-power cards a turn |
 | 3.21.0 | Nov 2026 | The whole election cycle: decision to run, caucus/primaries/conventions by era, challengers, running mates, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment |

@@ -93,9 +93,11 @@ struct GameStoreSettingsView: View {
             Section("Credentials (one-time setup)") {
                 Text(hasPassword ? "Password for \(config.user) is in GTNW's keychain." : "Not set up yet: GTNW saves on this device only.")
                     .font(.scaled(.caption))
-                HStack {
-                    Button("Fetch from core3 (SSH)") { fetchFromCore3() }
-                    Text("runs remote.sh getpw over ssh -o BatchMode=yes").font(.scaled(.caption2)).foregroundColor(.secondary)
+                if !Edition.isPublic {
+                    HStack {
+                        Button("Fetch from core3 (SSH)") { fetchFromCore3() }
+                        Text("runs remote.sh getpw over ssh -o BatchMode=yes").font(.scaled(.caption2)).foregroundColor(.secondary)
+                    }
                 }
                 HStack {
                     ScaledMenuPicker(selection: $pasteRole, options: [("gtnw", "gtnw"), ("gtnw_owner", "gtnw_owner")])

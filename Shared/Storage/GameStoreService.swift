@@ -284,9 +284,10 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
         if Thread.isMainThread { apply() } else { DispatchQueue.main.async(execute: apply) }
     }
 
-    /// The banner text for right now (nil in tests and smoke runs, which are local-only on purpose).
-    func novaWarning(now: Date = Date()) -> String? {
-        Self.isTestOrSmokeRun ? nil : StoreStatus.novaWarning(status, offlineSince: offlineSince, now: now)
+    /// The banner text for right now (nil in tests and smoke runs, which are local-only on purpose, and in the
+    /// public edition, where there is no Nova to see the game).
+    func novaWarning(now: Date = Date(), isPublic: Bool = Edition.isPublic) -> String? {
+        Self.isTestOrSmokeRun || isPublic ? nil : StoreStatus.novaWarning(status, offlineSince: offlineSince, now: now)
     }
 
     private func bump() {
