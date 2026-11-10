@@ -5914,4 +5914,16 @@ final class PresidentPlayedTests: XCTestCase {
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: PlaySummary.build(gs, session: session)) as? [String: Any])
         XCTAssertEqual(json["leader"] as? String, lincoln.president)
     }
+
+    // 3.22.4: the collection achievements count every game, not just this one.
+    func testPresidentsAccumulateAcrossGames() {
+        let p = AchievementEngine.playedPrefix
+        let stored = [p + "truman", p + "eisenhower", "first_strike", p + "kennedy"]
+        let ever = AchievementEngine.everPlayed(stored: stored, current: ["johnson"])
+        XCTAssertEqual(ever, ["truman", "eisenhower", "kennedy", "johnson"])
+        XCTAssertFalse(ever.contains("first_strike"), "real achievements are not presidents")
+        XCTAssertTrue(StoreValidation.isIdentifier(p + "trump_second"), "markers pass the store's id check")
+        let ids = Set(Advisor.allAdministrations().map(\.id))
+        XCTAssertTrue(ids.isSuperset(of: ["washington", "lincoln", "truman", "trump_second"]))
+    }
 }

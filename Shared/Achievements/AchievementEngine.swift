@@ -305,7 +305,22 @@ class AchievementEngine: ObservableObject {
 
     // MARK: - Check Achievements
 
+    /// 3.22.4: every president played in any game, kept as hidden `played.<administration id>` rows in the same
+    /// achievements table (local store + Games DB, no schema change), so the collection achievements can be earned.
+    nonisolated static let playedPrefix = "played."
+
+    nonisolated static func everPlayed(stored: [String], current: [String]) -> Set<String> {
+        Set(stored.filter { $0.hasPrefix(playedPrefix) }.map { String($0.dropFirst(playedPrefix.count)) }).union(current)
+    }
+
+    private var presidentsEverPlayed: Set<String> = []
+
     func checkAchievements(gameState: GameState) {
+        let stored = GameStoreService.shared.records.achievements.map(\.id)
+        for id in gameState.presidentsPlayed where !stored.contains(Self.playedPrefix + id) {
+            GameStoreService.shared.unlockAchievement(Self.playedPrefix + id)
+        }
+        presidentsEverPlayed = Self.everPlayed(stored: stored, current: gameState.presidentsPlayed)
         for achievement in allAchievements() {
             guard !isUnlocked(achievement.id) else { continue }
 
@@ -322,7 +337,7 @@ class AchievementEngine: ObservableObject {
         // Founding Era
         case "founding_father":
             let foundingPresidents = ["washington", "adams", "jefferson", "madison", "monroe", "jq_adams"]
-            return Set(gameState.presidentsPlayed).intersection(foundingPresidents).count == 6
+            return presidentsEverPlayed.intersection(foundingPresidents).count == 6
 
         case "washington_complete":
             return gameState.presidentsPlayed.contains("washington") && gameState.gameOver
@@ -398,15 +413,15 @@ class AchievementEngine: ObservableObject {
 
         // Collection
         case "time_traveler":
-            return gameState.presidentsPlayed.count >= 47
+            return presidentsEverPlayed.isSuperset(of: Advisor.allAdministrations().map(\.id))
 
         case "cold_warrior":
             let coldWarPresidents = ["truman", "eisenhower", "kennedy", "johnson", "nixon", "ford", "carter", "reagan", "bush_sr"]
-            return Set(gameState.presidentsPlayed).intersection(coldWarPresidents).count == 9
+            return presidentsEverPlayed.intersection(coldWarPresidents).count == 9
 
         case "modern_president":
             let modernPresidents = ["clinton", "bush_jr", "obama", "trump_first", "biden", "trump_second"]
-            return Set(gameState.presidentsPlayed).intersection(modernPresidents).count == 6
+            return presidentsEverPlayed.intersection(modernPresidents).count == 6
 
         // Special
         case "wopr_choice":
@@ -461,11 +476,11 @@ class AchievementEngine: ObservableObject {
 
     private func loadUnlocked() {
         // Durable copy lives in the Games DB / local store (moved out of UserDefaults `gtnw_achievements`).
-        unlockedAchievements = Set(GameStoreService.shared.records.achievements.map(\.id))
+        unlockedAchievements = Set(GameStoreService.shared.records.achievements.map(\.id).filter { !$0.hasPrefix(Self.playedPrefix) })
     }
 
     private func saveUnlocked() {
-        let known = Set(GameStoreService.shared.records.achievements.map(\.id))
+        let known = Set(GameStoreService.shared.records.achievements.map(\.id))   // played.* markers are never in unlockedAchievements
         for id in unlockedAchievements.subtracting(known) { GameStoreService.shared.unlockAchievement(id) }
     }
 

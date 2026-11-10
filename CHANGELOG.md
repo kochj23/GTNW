@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.4] - 2026-11-10 — Presidents add up
+
+### Fixed
+- The collection achievements (Founding Father, Cold Warrior, Modern President, Time Traveler) count every game
+  you have played, not only the current one. Each president played is kept as a hidden `played.<administration>`
+  row in the achievements table (local store and Games DB, no schema change). Time Traveler now means every
+  administration in the game, not a hard-coded 47.
+
 ## [3.22.3] - 2026-11-10 — The game knows who you are
 
 ### Fixed
