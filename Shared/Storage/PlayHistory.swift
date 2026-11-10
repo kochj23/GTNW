@@ -226,6 +226,14 @@ enum PlaySummary {
         var stats = PlayStats()
     }
 
+    /// The U.S. president the player chose to be (3.22.3), e.g. "Donald Trump" for a 2025 game.
+    static func president(_ gs: GameState) -> String? {
+        guard let id = gs.presidentsPlayed.last else { return nil }
+        return administrations[id]
+    }
+    private static let administrations: [String: String] =
+        Dictionary(Advisor.allAdministrations().map { ($0.id, $0.president) }, uniquingKeysWith: { a, _ in a })
+
     /// Everything the reporter may quote about this session, from the game as it stands now.
     /// `score`/`victory` are set at game over (`historyID` = the game_history row).
     static func build(_ gs: GameState, session: Session, score: GameScore? = nil, victory: VictoryType? = nil,
@@ -238,7 +246,8 @@ enum PlaySummary {
             "country": String(gs.playerCountryID.prefix(8)),
             // 3.11.0: the nation played and its leader, so the column can say who ran what.
             "country_name": PlayHistory.text(player?.name ?? gs.playerCountryID),
-            "leader": PlayHistory.text(gs.playerCountryID == "USA" ? "" : (player.map { NationModel.leader(for: $0, on: gs.startDate).display } ?? "")),
+            "leader": PlayHistory.text(gs.playerCountryID == "USA" ? (PlaySummary.president(gs) ?? "")
+                                       : (player.map { NationModel.leader(for: $0, on: gs.startDate).display } ?? "")),
             "difficulty": gs.difficultyLevel.rawValue,
             "turn_length": gs.turnLength.rawValue,
             "game_date_start": GameCalendar.format(gs.startDate),

@@ -331,6 +331,9 @@ class GameState: ObservableObject, Codable {
             self.advisors = Advisor.trumpCabinet()
             self.eraStartYear = 2025
         }
+        // 3.22.3: who the player is. Nothing ever filled this, so the president achievements never unlocked, the
+        // leaderboard said "The President" and the play log could not say Little Mister played as Trump.
+        self.presidentsPlayed = [administration?.id ?? "trump_second"]
 
         if let s = scenario {
             systems.scenario = s

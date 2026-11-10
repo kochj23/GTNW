@@ -1735,7 +1735,7 @@ class GameEngine: ObservableObject {
 
     /// Leaderboard + game history + scenario progress for a finished game.
     func recordGameOver(_ gameState: GameState, score: GameScore, victory: VictoryType?) {
-        let name = gameState.presidentsPlayed.last ?? "The President"
+        let name = PlaySummary.president(gameState) ?? "The President"
         let entry = leaderboardManager.addEntry(playerName: name, score: score)
         // The game_history row shares the play session's id (a fresh UUID when no session is running).
         let id = finishPlaySession(score: score, victory: victory) ?? UUID()

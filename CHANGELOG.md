@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.3] - 2026-11-10 — The game knows who you are
+
+### Fixed
+- The president you choose is recorded. Nothing ever filled `presidentsPlayed`, so the Washington, Jefferson,
+  Lincoln and other president achievements could never unlock, the leaderboard said "The President", and the play
+  log sent Nova an empty leader for U.S. games (a 2025 game as Donald Trump was written up without his name).
+  The play log's `leader` now names the U.S. president too.
+- Assassination cards use the first title and the bare name from the historical record ("Emperor of Austria", not
+  "Emperor of Austria; King of Hungary"), so no card names a nation that does not exist yet.
+
 ## [3.22.2] - 2026-11-10 — Crises that belong to their year
 
 ### Fixed

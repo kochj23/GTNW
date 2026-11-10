@@ -5899,3 +5899,19 @@ final class CabinetPortraitTests: XCTestCase {
         XCTAssertNil(CabinetPortraits.image(id: "invented_minister", name: "Nobody Atall"), "invented advisors fall back to pack art or initials")
     }
 }
+
+final class PresidentPlayedTests: XCTestCase {
+    // 3.22.3: the game knows who the player is — achievements, the leaderboard and Nova's column all need it.
+    func testThePresidentIsRecordedAndNamed() throws {
+        let trump = GameState(playerCountryID: "USA")
+        XCTAssertEqual(trump.presidentsPlayed, ["trump_second"])
+        XCTAssertEqual(PlaySummary.president(trump), "Donald Trump")
+        let lincoln = try XCTUnwrap(Advisor.allAdministrations().first { $0.id == "lincoln" })
+        let gs = GameState(playerCountryID: "USA", administration: lincoln)
+        XCTAssertEqual(gs.presidentsPlayed, ["lincoln"])
+        XCTAssertEqual(PlaySummary.president(gs), lincoln.president)
+        let session = PlaySummary.Session(id: UUID(), startTurn: 0, resumedFromTurn: nil, gameDateAtStart: "")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: PlaySummary.build(gs, session: session)) as? [String: Any])
+        XCTAssertEqual(json["leader"] as? String, lincoln.president)
+    }
+}

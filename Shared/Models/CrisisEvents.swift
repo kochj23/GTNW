@@ -1086,8 +1086,12 @@ class CrisisManager: ObservableObject {
         let y = gameState.currentYear
         // The real head of state on this date when the record has one; otherwise a title of the era.
         let holder = NationModel.leader(for: country, on: gameState.currentDate)
-        let leaderTitle = holder.generic ? EraWords.leaderTitles(y).randomElement()! : holder.title
-        let leaderName = holder.generic ? "\(country.name)'s \(leaderTitle.lowercased())" : holder.name
+        // The record's titles and names can carry other realms and notes ("Emperor of Austria; King of Hungary",
+        // "Sovereign (via the East India Company)"): the card keeps the first title and the bare name.
+        let short = { (t: String) in String(t.split(whereSeparator: { ";(".contains($0) }).first ?? Substring(t))
+            .trimmingCharacters(in: .whitespaces) }
+        let leaderTitle = holder.generic ? EraWords.leaderTitles(y).randomElement()! : short(holder.title)
+        let leaderName = holder.generic ? "\(country.name)'s \(leaderTitle.lowercased())" : short(holder.name)
         let eventLocation = EraWords.venues(y).randomElement()!
         let attackMethod = EraWords.assassinationMethods(y).randomElement()!
 
