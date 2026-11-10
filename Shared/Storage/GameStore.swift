@@ -343,23 +343,28 @@ protocol GameStoreCredentials: Sendable {
 /// The Games DB passwords in GTNW's own **Data Protection keychain** (`kSecUseDataProtectionKeychain`, service
 /// `nova-games-pg`, account = role name), per NovaGames CONTRACT §11. Items there are bound to the team-signed app
 /// (keychain-access-groups entitlement), so rebuilds never put up a "wants to use your keychain" dialog. The login
-/// keychain is never read. The password gets there once, through `GameStoreSetup` (first-launch setup in
-/// Settings › Saves & DB).
+/// keychain is read only by builds without that entitlement (ad hoc, e.g. office-2 .99, 2026-11-10): there the item
+/// lives in the login keychain under the same service/account, so a LAN game DB doesn't need a registered device.
+/// The password gets there once, through `GameStoreSetup` (first-launch setup in Settings › Saves & DB).
 struct KeychainGameStoreCredentials: GameStoreCredentials {
     static let service = "nova-games-pg"
     let service: String
 
     init(service: String = KeychainGameStoreCredentials.service) { self.service = service }
 
-    private func query(_ account: String) -> [String: Any] {
+    private func query(_ account: String, dataProtection: Bool = true) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
-         kSecUseDataProtectionKeychain as String: true,
+         kSecUseDataProtectionKeychain as String: dataProtection,
          kSecAttrService as String: service,
          kSecAttrAccount as String: account]
     }
 
     func password(account: String) -> String? {
-        var q = query(account)
+        read(query(account)) ?? read(query(account, dataProtection: false))
+    }
+
+    private func read(_ base: [String: Any]) -> String? {
+        var q = base
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
         var out: AnyObject?
@@ -371,23 +376,31 @@ struct KeychainGameStoreCredentials: GameStoreCredentials {
     /// Store (or replace) a password. Throws the OSStatus as `notConfigured` text, never the value.
     func store(_ password: String, account: String) throws {
         guard GameStoreSetup.isPlausiblePassword(password) else { throw GameStoreError.invalid("password format") }
+        var st = write(password, account: account, dataProtection: true)
+        if st == errSecMissingEntitlement {   // ad hoc build: no keychain-access-groups, use the login keychain
+            st = write(password, account: account, dataProtection: false)
+        }
+        guard st == errSecSuccess else { throw GameStoreError.notConfigured("Keychain error \(st)") }
+    }
+
+    private func write(_ password: String, account: String, dataProtection: Bool) -> OSStatus {
         let data = Data(password.utf8)
-        let update: [String: Any] = [kSecValueData as String: data]
-        var st = SecItemUpdate(query(account) as CFDictionary, update as CFDictionary)
+        let base = query(account, dataProtection: dataProtection)
+        var st = SecItemUpdate(base as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         if st == errSecItemNotFound {
-            var add = query(account)
+            var add = base
             add[kSecValueData as String] = data
             add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
             add[kSecAttrLabel as String] = "GTNW Games DB (\(account))"
             st = SecItemAdd(add as CFDictionary, nil)
         }
-        guard st == errSecSuccess else {
-            throw GameStoreError.notConfigured(st == errSecMissingEntitlement
-                ? "this build has no keychain entitlement (unsigned build)" : "Keychain error \(st)")
-        }
+        return st
     }
 
-    func remove(account: String) { SecItemDelete(query(account) as CFDictionary) }
+    func remove(account: String) {
+        SecItemDelete(query(account) as CFDictionary)
+        SecItemDelete(query(account, dataProtection: false) as CFDictionary)
+    }
 }
 
 /// One-time credential hand-off (CONTRACT §11): fetch the role passwords from core3 over SSH

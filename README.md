@@ -1117,7 +1117,8 @@ flowchart LR
   - TLS is required, verified with `verify-full` against the bundled CA.
   - Every value is passed as a bound parameter.
   - Save payloads are versioned JSON, capped at 8 MiB and validated on load.
-  - Passwords are kept only in GTNW's Data Protection keychain.
+  - Passwords are kept only in the Keychain: GTNW's Data Protection keychain for team-signed builds, the login
+    keychain (same service `nova-games-pg`) for ad hoc builds, which can't hold the keychain entitlement (3.22.1).
 - **Configuration.** The default server is `192.168.1.5:5433` (TLS name `nova-core3`); you can change it under
   Settings › Saves & DB. That tab also handles one-time credential setup in either of two ways:
   - *Fetch from core3 (SSH)* runs `remote.sh getpw` with `BatchMode`.
@@ -1314,8 +1315,7 @@ GTNW/
 
 ### Play history (schema `play`, new in 3.1.2)
 
-If this Mac can't reach the Games DB (no password in the keychain, which is always the case for an ad hoc-signed
-build, or the DB down for more than ten minutes), a banner under the Situation Room's top bar says Nova can't see the
+If this Mac can't reach the Games DB (no password in the keychain, or the DB down for more than ten minutes), a banner under the Situation Room's top bar says Nova can't see the
 game (3.22.0). Event details over the 4 KB cap are shortened, never dropped.
 
 Every sitting is logged to the shared `play` schema in the same Games DB (`play.sessions` + `play.events`, see
