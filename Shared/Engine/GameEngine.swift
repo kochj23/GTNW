@@ -85,6 +85,7 @@ class GameEngine: ObservableObject {
         // Engine ready to start game
         // Initialize advisors
         advisors = Advisor.trumpCabinet()
+        crisisManager.currentYear = { [weak self] in self?.gameState?.currentYear }
         crisisManager.onResolved = { [weak self] crisis, option, worked in
             self?.logCrisisDecision(crisis, option: option, worked: worked)
         }

@@ -4729,6 +4729,71 @@ final class DirtyTacticsIncendiaryTests: XCTestCase {
         XCTAssertTrue(DirtyTactics.available(in: 1944, group: .incendiary).allSatisfy { $0.exists(in: 1944) })
     }
 
+    // Security (3.22.2): no crisis from a later era — a cyber attack on nuclear command in 1814 was a real report
+    func testNoAnachronisticCrisis() throws {
+        let mgr = CrisisManager()
+        for year in [1789, 1814, 1864, 1913, 1944] {
+            let e = GameEngine()
+            e.startNewGame(turnLength: .month, year: year)
+            let gs = try XCTUnwrap(e.gameState)
+            for type in CrisisEventType.allCases where !CrisisManager.exists(type, in: year) {
+                XCTAssertNil(mgr.createCrisis(type: type, gameState: gs), "\(type) in \(year)")
+            }
+            for _ in 0..<300 {
+                if let c = mgr.generateRandomCrisis(gameState: gs) {
+                    XCTAssertTrue(CrisisManager.exists(c.type, in: year), "\(c.title) rolled in \(year)")
+                    XCTAssertFalse(c.title.contains("CYBER") || c.title.contains("NUCLEAR") || c.title.contains("Satellite"),
+                                   "\(c.title) in \(year)")
+                }
+            }
+        }
+        // The wording of every-era crises belongs to the year too.
+        let banned: [(String, Int)] = [("CIA", 1947), ("NSA", 1952), ("UN General Assembly", 1945), ("drone", 2002),
+            ("Cyber", 1990), ("warheads", 1945), ("Nuclear command", 1945), ("Pentagon", 1947), ("NGO", 1945),
+            ("tech company", 1985), ("Aldrich Ames", 1994), ("televised", 1950), ("Director of National Intelligence", 2005),
+            ("National Security Advisor", 1953), ("Secretary of Defense", 1947), ("General Secretary", 1922),
+            ("Supreme Leader", 1979), ("car bomb", 1920), ("aircraft carrier", 1925), ("Unemployment", 1900)]
+        let everyEra: [CrisisEventType] = [.espionageDiscovered, .assassinationAttempt, .civilUnrest, .economicCollapse,
+                                           .diplomaticIncident, .spyRingUncovered]
+        for year in [1789, 1814, 1864, 1913] {
+            let e = GameEngine()
+            e.startNewGame(turnLength: .month, year: year)
+            let gs = try XCTUnwrap(e.gameState)
+            for type in everyEra {
+                for _ in 0..<40 {
+                    // What the President sees: the card after presentCrisis has put it into the year's words.
+                    guard let raw = mgr.createCrisis(type: type, gameState: gs) else { continue }
+                    let c = EraWords.localize(raw, year: year)
+                    let text = ([c.title, c.description] + c.options.flatMap { [$0.title, $0.description,
+                                $0.advisorRecommendation ?? "", $0.consequences.message] }).joined(separator: " ")
+                    for (word, first) in banned where year < first {
+                        XCTAssertNil(text.range(of: "\\b\(word)\\b", options: .regularExpression),
+                                     "\(type) in \(year) mentions \(word)")
+                    }
+                }
+            }
+        }
+        // Every card is put into its year's words on the way to the desk (the 1792 column: a CIA Director and
+        // DEFCON under Washington).
+        let card = CrisisEvent(type: .diplomaticIncident, severity: .serious, title: "UN Security Council meets",
+            description: "DEFCON 2. The CIA Director and the Secretary of Defense disagree. A bank RUN in SOCIAL circles.",
+            affectedCountries: [], turn: 1, options: [CrisisOption(title: "Cyber operation", description: "Ask the UN",
+            advisorRecommendation: "Director of Central Intelligence", consequences: CrisisConsequences(message: "NSA pleased."),
+            successChance: 0.5)])
+        let old = EraWords.localize(card, year: 1792)
+        let all = ([old.title, old.description] + old.options.flatMap { [$0.title, $0.description,
+                   $0.advisorRecommendation ?? "", $0.consequences.message] }).joined(separator: " ")
+        for word in ["CIA", "DEFCON", "Secretary of Defense", "UN Security Council", "Cyber", "NSA", "Central Intelligence"] {
+            XCTAssertNil(all.range(of: "\\b\(word)\\b", options: .regularExpression), "\(word) survived into 1792: \(all)")
+        }
+        XCTAssertTrue(all.contains("bank RUN in SOCIAL"), "whole words only: \(all)")
+        XCTAssertTrue(all.contains("Secretary of War"))
+        XCTAssertEqual(EraWords.localize(card, year: 2025).description, card.description, "modern years untouched")
+        XCTAssertFalse(CrisisManager.exists(.cyberAttack, in: 1989))
+        XCTAssertTrue(CrisisManager.exists(.cyberAttack, in: 2025))
+        XCTAssertTrue(CrisisManager.exists(.civilUnrest, in: 1789), "unrest belongs to every era")
+    }
+
     // Integration: a treaty-banned burning in 1950 costs the world, Congress and the tribunals
     func testATreatyBannedBurningCostsEverything() throws {
         let (e, gs) = try war(1950, with: "PRK")

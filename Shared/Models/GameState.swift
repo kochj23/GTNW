@@ -1393,3 +1393,98 @@ extension GameState {
     /// before.
     static func counterspies(_ year: Int) -> String { year >= 1908 ? "The FBI" : "U.S. marshals" }
 }
+
+/// Era vocabulary for the crises that can happen in any year (3.22.2), so an 1814 spy is not a "tech company
+/// employee" and an 1850 assassin does not use a drone. Each list only holds what existed in that year.
+enum EraWords {
+    /// The U.S. foreign-intelligence service.
+    static func spyService(_ y: Int) -> String {
+        y >= 1947 ? "CIA" : y >= 1942 ? "OSS" : y >= 1882 ? "Office of Naval Intelligence" : "State Department agents"
+    }
+    /// The advisor who speaks for intelligence.
+    static func spyChief(_ y: Int) -> String {
+        y >= 1947 ? "CIA Director" : y >= 1942 ? "OSS Director" : "Secretary of State"
+    }
+    static func intelligenceHead(_ y: Int) -> String { y >= 2005 ? "Director of National Intelligence" : spyChief(y) }
+    static func securityAdvisor(_ y: Int) -> String { y >= 1953 ? "National Security Advisor" : "Secretary of State" }
+    static func defenseChief(_ y: Int) -> String { y >= 1947 ? "Secretary of Defense" : "Secretary of War" }
+    static func healthChief(_ y: Int) -> String { y >= 1953 ? "Secretary of Health" : y >= 1871 ? "Surgeon General" : "the President's physician" }
+    /// Where nations meet.
+    static func forum(_ y: Int) -> String {
+        y >= 1945 ? "UN General Assembly" : y >= 1920 ? "League of Nations assembly" : "great-power congress"
+    }
+    static func agencies(_ y: Int) -> [String] {
+        ["State Department", y >= 1947 ? "Pentagon" : "War Department", "Navy Department"]
+            + (y >= 1947 ? ["CIA"] : []) + (y >= 1952 ? ["NSA"] : []) + (y >= 1977 ? ["DOE"] : [])
+    }
+    static func coverJobs(_ y: Int) -> [String] {
+        [y >= 1900 ? "embassy attaché" : "legation secretary", y >= 1900 ? "trade representative" : "merchant",
+         y >= 1900 ? "journalist" : "newspaper correspondent", y >= 1900 ? "academic researcher" : "visiting professor"]
+            + (y >= 1945 ? ["NGO worker"] : []) + (y >= 1985 ? ["tech company employee"] : [])
+    }
+    static func assassinationMethods(_ y: Int) -> [String] {
+        ["pistol", "poison", "dagger", "insider threat"] + (y >= 1880 ? ["bomb"] : []) + (y >= 1900 ? ["sniper"] : [])
+            + (y >= 1920 ? ["car bomb"] : []) + (y >= 2002 ? ["drone strike"] : [])
+    }
+    static func venues(_ y: Int) -> [String] {
+        ["state dinner", "military parade", "peace summit", y >= 1920 ? "motorcade" : "carriage procession",
+         forum(y)] + (y >= 1925 ? ["aircraft carrier visit"] : []) + (y >= 1950 ? ["nuclear facility inspection"] : [])
+    }
+    static func leaderTitles(_ y: Int) -> [String] {
+        ["Prime Minister", "President", "Chancellor", "King"] + (y < 1920 ? ["Emperor", "Sultan", "Tsar"] : [])
+            + (y >= 1922 && y <= 1991 ? ["General Secretary"] : []) + (y >= 1979 ? ["Supreme Leader"] : [])
+    }
+    /// The benchmark for a bad intelligence breach.
+    static func worstBreach(_ y: Int) -> String {
+        y >= 1994 ? "the worst intelligence breach since Aldrich Ames" : y >= 1951 ? "the worst breach since the Cambridge Five"
+            : y >= 1780 ? "the worst betrayal since Benedict Arnold" : "the worst betrayal in memory"
+    }
+    static func publicity(_ y: Int) -> String { y >= 1950 ? "Trial televised" : y >= 1920 ? "Trial on every radio" : "Trial in every newspaper" }
+    static func cyberAvailable(_ y: Int) -> Bool { y >= 1990 }
+
+    /// Modern posts and terms → the year's (3.22.2). Applied to every crisis card in `CrisisManager.presentCrisis`,
+    /// whatever made it (the random roll, the hand-written timeline, the world watch, elections, the local API).
+    /// Longest phrases first, so "Director of Central Intelligence" is replaced before "Central Intelligence".
+    static func replacements(_ y: Int) -> [(String, String)] {
+        var r: [(String, String)] = []
+        if y < 2005 { r.append(("Director of National Intelligence", spyChief(y))) }
+        if y < 1947 {
+            r += [("Director of Central Intelligence", spyChief(y)), ("CIA Director", spyChief(y)),
+                  ("Secretary of Defense", "Secretary of War"), ("Pentagon", "War Department"), ("CIA", spyService(y))]
+        }
+        if y < 1953 { r.append(("National Security Advisor", securityAdvisor(y))) }
+        if y < 1953 { r.append(("Secretary of Health", healthChief(y))) }
+        if y < 1946 { r += [("White House Chief of Staff", "the President's private secretary"),
+                            ("Chief of Staff", "Private Secretary")] }
+        if y < 1937 { r.append(("Press Secretary", "Private Secretary")) }
+        if y < 1952 { r.append(("NSA", spyService(y))) }
+        if y < 1959 { r += [("DEFCON", "Alert level")] }
+        if y < 1945 { r += [("UN Security Council", "the great powers"), ("UN General Assembly", forum(y)),
+                            ("the UN", "the powers"), ("UN", "international")] }
+        if y < 1990 { r += [("cyber operation", "covert operation"), ("Cyber operation", "Covert operation")] }
+        return r
+    }
+
+    static func localize(_ text: String, year: Int) -> String {
+        // Whole words only: "UN" must not touch "RUN", "CIA" must not touch "SOCIAL".
+        replacements(year).reduce(text) {
+            $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "\\b", with: $1.1,
+                                    options: .regularExpression)
+        }
+    }
+
+    static func localize(_ c: CrisisEvent, year: Int) -> CrisisEvent {
+        var c = c
+        c.title = localize(c.title, year: year)
+        c.description = localize(c.description, year: year)
+        c.options = c.options.map { o in
+            var o = o
+            o.title = localize(o.title, year: year)
+            o.description = localize(o.description, year: year)
+            o.advisorRecommendation = o.advisorRecommendation.map { localize($0, year: year) }
+            o.consequences.message = localize(o.consequences.message, year: year)
+            return o
+        }
+        return c
+    }
+}

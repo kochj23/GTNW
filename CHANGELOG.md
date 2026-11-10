@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.2] - 2026-11-10 — Crises that belong to their year
+
+### Fixed
+- No more cyber attacks on nuclear command in 1814. Each crisis type has a first year (cyber 1990, satellites 1957,
+  false alarms 1960, terrorism 1955, nuclear accidents and rogue commanders 1945); random rolls and direct creation
+  both respect it.
+- Every-era crises (espionage, assassination, unrest, economic collapse, diplomacy) use the year's agencies, titles,
+  venues, methods and money: the Secret Service before the CIA, Secretary of War before Defense, the Concert of the
+  Powers before the UN, the real head of state of the day as the target.
+- Every crisis card is put into its year's words on the way to the desk (EraWords): a 1792 column had a CIA Director
+  and DEFCON under Washington. Whole words only, modern years untouched.
+
 ## [3.21.1] - 2026-11-06 — A calmer desk
 
 ### Changed

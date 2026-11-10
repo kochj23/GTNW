@@ -91,12 +91,12 @@ struct CrisisEvent: Identifiable, Codable {
     let id: UUID
     let type: CrisisEventType
     let severity: CrisisSeverity
-    let title: String
-    let description: String
+    var title: String
+    var description: String
     let affectedCountries: [String]
     let turn: Int
     let timeLimit: Int?  // Seconds to respond (nil = no limit)
-    let options: [CrisisOption]
+    var options: [CrisisOption]
     var resolved: Bool = false
     var chosenOption: Int?
 
@@ -123,10 +123,10 @@ struct CrisisEvent: Identifiable, Codable {
 /// An option for responding to a crisis
 struct CrisisOption: Identifiable, Codable {
     let id: UUID
-    let title: String
-    let description: String
-    let advisorRecommendation: String?  // Which advisor recommends this
-    let consequences: CrisisConsequences
+    var title: String
+    var description: String
+    var advisorRecommendation: String?  // Which advisor recommends this
+    var consequences: CrisisConsequences
     let successChance: Double  // 0.0-1.0
 
     init(title: String, description: String, advisorRecommendation: String? = nil,
@@ -207,6 +207,8 @@ class CrisisManager: ObservableObject {
     private var timer: Timer?
     /// 3.22.0: told about every decision (the engine logs it for Nova's column), whichever screen or API made it.
     var onResolved: ((CrisisEvent, Int, Bool) -> Void)?
+    /// 3.22.2: the game year, so every card is put into its era's words before the President sees it.
+    var currentYear: (() -> Int?)?
 
     /// Generate a random crisis event based on game state
     func generateRandomCrisis(gameState: GameState) -> CrisisEvent? {
@@ -232,13 +234,33 @@ class CrisisManager: ObservableObject {
             .radiationLeak, .spyRingUncovered, .assassinationAttempt, .naturalDisaster
         ]
 
-        let type = crisisTypes.randomElement()!
+        // 3.22.2: only crises that can happen in this year (no cyber attacks or stolen warheads in 1814).
+        guard let type = crisisTypes.filter({ Self.exists($0, in: gameState.currentYear) }).randomElement() else {
+            return nil
+        }
         return createCrisis(type: type, gameState: gameState)
     }
+
+    /// The first year a crisis type can happen (3.22.2). Before it, `createCrisis` returns nil from every path
+    /// (the random roll, the local API, the email host), so nothing modern reaches an earlier era.
+    static func firstYear(_ type: CrisisEventType) -> Int {
+        switch type {
+        case .cyberAttack: return 1990                                   // GameState.cyberWarfareAvailable
+        case .satelliteFailure: return 1957                              // Sputnik; satelliteSurveillanceAvailable
+        case .falseAlarm: return 1960                                    // NORAD radar + early-warning satellites
+        case .terroristThreat: return 1955                               // a stolen tactical nuclear weapon
+        case .nuclearAccident, .radiationLeak, .rogueCommander, .weaponsMalfunction, .militaryCoup:
+            return 1945                                                  // these are written for nuclear states
+        default: return Int.min
+        }
+    }
+
+    static func exists(_ type: CrisisEventType, in year: Int) -> Bool { year >= firstYear(type) }
 
     /// Create a specific crisis event
     /// nil when no country qualifies for that crisis (e.g. no armed rivals left late in a game).
     func createCrisis(type: CrisisEventType, gameState: GameState) -> CrisisEvent? {
+        guard Self.exists(type, in: gameState.currentYear) else { return nil }
         switch type {
         case .falseAlarm:
             return createFalseAlarmCrisis(gameState: gameState)
@@ -695,7 +717,7 @@ class CrisisManager: ObservableObject {
             Status: Partial penetration achieved
             Risk: Unauthorized launch possible
 
-            NSA and Cyber Command responding.
+            NSA\(gameState.currentYear >= 2010 ? " and Cyber Command" : "") responding.
             """,
             affectedCountries: [enemy.id],
             turn: gameState.turn,
@@ -878,8 +900,8 @@ class CrisisManager: ObservableObject {
         guard let country = gameState.liveCountries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
         let agentNames = ["Sarah Chen", "Viktor Sokolov", "Abdul Rahman", "Li Wei", "Maria Volkov", "Hassan Al-Din"]
         let agent = agentNames.randomElement()!
-        let coverJobs = ["embassy attaché", "trade representative", "journalist", "NGO worker", "academic researcher", "tech company employee"]
-        let coverJob = coverJobs.randomElement()!
+        let y = gameState.currentYear
+        let coverJob = EraWords.coverJobs(y).randomElement()!
         let classified = gameState.currentYear < 1945 ? ["war plans", "naval dispositions", "diplomatic cables", "fortification maps"]
             : ["nuclear launch codes", "\(gameState.deliverySystemLabel) deployment plans", "SDI technology", "submarine patrol routes", "CIA NOC list", "NSA encryption keys"]
         let documents = classified.randomElement()!
@@ -901,13 +923,13 @@ class CrisisManager: ObservableObject {
 
             Network Extent:
             • \(Int.random(in: 5...20)) co-conspirators identified
-            • Penetration of \(["Pentagon", "CIA", "NSA", "State Department", "DOE"].randomElement()!)
+            • Penetration of \(EraWords.agencies(y).randomElement()!)
             • Damage assessment: SEVERE
             • Ongoing investigation
 
             \(country.name) denies everything. Ambassador recalled.
 
-            This is the worst intelligence breach since Aldrich Ames.
+            This is \(EraWords.worstBreach(y)).
             """,
             affectedCountries: [country.id],
             turn: gameState.turn,
@@ -916,11 +938,11 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Public Trial and Execution",
                     description: "Make example of \(agent), deter future spies",
-                    advisorRecommendation: "Secretary of Defense",
+                    advisorRecommendation: EraWords.defenseChief(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -40],
                         approvalChange: 15,
-                        message: "Trial televised. \(agent) executed. \(country.name) retaliates by arresting your citizens."
+                        message: "\(EraWords.publicity(y)). \(agent) executed. \(country.name) retaliates by arresting your citizens."
                     ),
                     successChance: 1.0
                 ),
@@ -938,7 +960,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Turn \(agent) Into Double Agent",
                     description: "Feed false information through spy network",
-                    advisorRecommendation: "CIA Director",
+                    advisorRecommendation: EraWords.spyChief(y),
                     consequences: CrisisConsequences(
                         approvalChange: 20,
                         message: "\(agent) agrees to cooperate. Feed false intel to \(country.name) for 5 turns. Major advantage."
@@ -948,7 +970,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Massive Counterintelligence Sweep",
                     description: "Dismantle entire \(country.name) spy network",
-                    advisorRecommendation: "CIA Director",
+                    advisorRecommendation: EraWords.spyChief(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -30],
                         approvalChange: 25,
@@ -959,18 +981,19 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Quiet Deportation",
                     description: "Expel spy quietly, avoid diplomatic incident",
-                    advisorRecommendation: "Director of National Intelligence",
+                    advisorRecommendation: EraWords.intelligenceHead(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -5],
                         approvalChange: -10,
                         message: "Quiet resolution. Public angry about weakness. \(country.name) continues spying."
                     ),
                     successChance: 1.0
-                ),
+                )
+            ] + (EraWords.cyberAvailable(y) ? [
                 CrisisOption(
                     title: "Cyber Retaliation Against \(country.name)",
                     description: "Hack their intelligence services",
-                    advisorRecommendation: "National Security Advisor",
+                    advisorRecommendation: EraWords.securityAdvisor(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -35],
                         approvalChange: 18,
@@ -978,7 +1001,7 @@ class CrisisManager: ObservableObject {
                     ),
                     successChance: 0.75
                 )
-            ]
+            ] : [])
         )
     }
 
@@ -989,12 +1012,13 @@ class CrisisManager: ObservableObject {
 
     private func createEconomicCollapseCrisis(gameState: GameState) -> CrisisEvent? {
         guard let country = gameState.liveCountries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
-        let debtB = Int.random(in: 50...500)
+        let y = gameState.currentYear
+        let debt = y >= 1950 ? "$\(Int.random(in: 50...500))B" : y >= 1900 ? "$\(Int.random(in: 1...20))B" : "$\(Int.random(in: 20...400))M"
         let unemployment = Int.random(in: 25...60)
         return createDetailedCrisis(
             type: .economicCollapse,
             title: "💰 \(country.name) Economic Collapse",
-            description: "\(country.name) economy in free-fall. National debt: $\(debtB)B. Unemployment: \(unemployment)%. Currency worthless. \(Int.random(in: 100...500))K refugees fleeing. Government requesting emergency aid. Risk of state failure.",
+            description: "\(country.name) economy in free-fall. National debt: \(debt). \(y >= 1900 ? "Unemployment: \(unemployment)%." : "Banks failing, mills idle.") Currency worthless. \(Int.random(in: 100...500))K refugees fleeing. Government requesting emergency aid. Risk of state failure.",
             country: country,
             gameState: gameState
         )
@@ -1020,7 +1044,7 @@ class CrisisManager: ObservableObject {
         return createDetailedCrisis(
             type: .civilUnrest,
             title: "🔥 Massive Unrest in \(country.name)",
-            description: "Civil unrest in \(country.name) capital. \(protesters.formatted()) protesters demanding reforms. Turned violent. \(deaths) dead, \(deaths * 3) injured. \(country.name) has \(country.nuclearWarheads) warheads. Military loyalty uncertain. Risk of coup.",
+            description: "Civil unrest in \(country.name) capital. \(protesters.formatted()) protesters demanding reforms. Turned violent. \(deaths) dead, \(deaths * 3) injured. \(gameState.currentYear >= 1945 && country.nuclearWarheads > 0 ? "\(country.name) has \(country.nuclearWarheads) warheads. " : "")Military loyalty uncertain. Risk of coup.",
             country: country,
             gameState: gameState
         )
@@ -1059,21 +1083,20 @@ class CrisisManager: ObservableObject {
 
     private func createAssassinationCrisis(gameState: GameState) -> CrisisEvent? {
         guard let country = gameState.liveCountries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
-        let leaders = ["Prime Minister", "President", "Supreme Leader", "Chancellor", "King", "General Secretary"]
-        let leaderTitle = leaders.randomElement()!
-        let leaderNames = ["Vladimir Ivanov", "Chen Wei", "Mohammad Al-Rashid", "Kim Jong-nam", "Dmitri Volkov", "Hassan Rouhani", "Viktor Orban"]
-        let leaderName = leaderNames.randomElement()!
-        let locations = ["state dinner", "military parade", "UN General Assembly", "peace summit", "nuclear facility inspection", "aircraft carrier visit"]
-        let eventLocation = locations.randomElement()!
-        let methods = ["sniper", "poison", "car bomb", "insider threat", "drone strike"]
-        let attackMethod = methods.randomElement()!
+        let y = gameState.currentYear
+        // The real head of state on this date when the record has one; otherwise a title of the era.
+        let holder = NationModel.leader(for: country, on: gameState.currentDate)
+        let leaderTitle = holder.generic ? EraWords.leaderTitles(y).randomElement()! : holder.title
+        let leaderName = holder.generic ? "\(country.name)'s \(leaderTitle.lowercased())" : holder.name
+        let eventLocation = EraWords.venues(y).randomElement()!
+        let attackMethod = EraWords.assassinationMethods(y).randomElement()!
 
         return CrisisEvent(
             type: .assassinationAttempt,
             severity: .catastrophic,
             title: "🎯 ASSASSINATION ATTEMPT ON \(country.name.uppercased()) LEADER",
             description: """
-            BREAKING: Assassination attempt on \(country.name) \(leaderTitle) \(leaderName).
+            BREAKING: Assassination attempt on \(holder.generic ? leaderName : "\(country.name) \(leaderTitle) \(leaderName)").
 
             Location: \(eventLocation.capitalized)
             Method: \(attackMethod.capitalized)
@@ -1083,12 +1106,12 @@ class CrisisManager: ObservableObject {
             Intelligence Assessment:
             • \(country.name) security forces in chaos
             • Hardliners demanding retaliation
-            • Nuclear command authority unclear
+            • \(y >= 1945 && country.nuclearWarheads > 0 ? "Nuclear command authority unclear" : "Command of the army unclear")
             • Some officers calling for immediate strikes
 
             \(country.name) requesting international assistance but threatening "consequences" if Western involvement discovered.
 
-            CIA believes this may be internal power struggle, NOT foreign attack.
+            The \(EraWords.spyService(y)) believes this may be an internal power struggle, NOT a foreign attack.
             """,
             affectedCountries: [country.id],
             turn: gameState.turn,
@@ -1096,8 +1119,8 @@ class CrisisManager: ObservableObject {
             options: [
                 CrisisOption(
                     title: "Offer Intelligence Assistance",
-                    description: "Share CIA findings, help investigation",
-                    advisorRecommendation: "CIA Director",
+                    description: "Share \(EraWords.spyService(y)) findings, help investigation",
+                    advisorRecommendation: EraWords.spyChief(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 25],
                         approvalChange: 10,
@@ -1107,8 +1130,8 @@ class CrisisManager: ObservableObject {
                 ),
                 CrisisOption(
                     title: "Send Medical Team",
-                    description: "Emergency trauma surgeons and equipment",
-                    advisorRecommendation: "Secretary of Health",
+                    description: y >= 1900 ? "Emergency trauma surgeons and equipment" : "The best surgeons the Navy can spare",
+                    advisorRecommendation: EraWords.healthChief(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: 30],
                         approvalChange: 15,
@@ -1120,7 +1143,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Exploit the Chaos",
                     description: "Launch covert operation during instability",
-                    advisorRecommendation: "CIA Director",
+                    advisorRecommendation: EraWords.spyChief(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -60],
                         approvalChange: -15,
@@ -1141,7 +1164,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Blame Rival Nation",
                     description: "Suggest \(gameState.liveCountries.filter { $0.id != country.id && !$0.isPlayerControlled }.randomElement()?.name ?? "enemy") responsible",
-                    advisorRecommendation: "National Security Advisor",
+                    advisorRecommendation: EraWords.securityAdvisor(y),
                     consequences: CrisisConsequences(
                         approvalChange: -10,
                         message: "Accusation creates diplomatic incident. No proof. Relations worsen across board."
@@ -1151,7 +1174,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Deploy Peacekeeping Force",
                     description: "Stabilize situation with military presence",
-                    advisorRecommendation: "Secretary of Defense",
+                    advisorRecommendation: EraWords.defenseChief(y),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -20],
                         approvalChange: 8,
@@ -1177,7 +1200,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Military Response",
                     description: "Deploy forces to address situation",
-                    advisorRecommendation: "Secretary of Defense",
+                    advisorRecommendation: EraWords.defenseChief(gameState.currentYear),
                     consequences: CrisisConsequences(
                         relationshipChanges: [country.id: -10],
                         approvalChange: 8,
@@ -1211,8 +1234,8 @@ class CrisisManager: ObservableObject {
                 ),
                 CrisisOption(
                     title: "Covert Operation",
-                    description: "CIA handles quietly",
-                    advisorRecommendation: "CIA Director",
+                    description: "\(EraWords.spyService(gameState.currentYear)) handles quietly",
+                    advisorRecommendation: EraWords.spyChief(gameState.currentYear),
                     consequences: CrisisConsequences(
                         approvalChange: 15,
                         economicImpact: -200,
@@ -1221,7 +1244,7 @@ class CrisisManager: ObservableObject {
                     successChance: 0.60
                 ),
                 CrisisOption(
-                    title: "UN/International Coalition",
+                    title: gameState.currentYear >= 1945 ? "UN/International Coalition" : "Concert of the Powers",
                     description: "Build multilateral response",
                     advisorRecommendation: "Secretary of State",
                     consequences: CrisisConsequences(
@@ -1263,7 +1286,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Military Response",
                     description: "Deploy military forces to address situation",
-                    advisorRecommendation: "Secretary of Defense",
+                    advisorRecommendation: EraWords.defenseChief(gameState.currentYear),
                     consequences: CrisisConsequences(
                         relationshipChanges: countryID.map { [$0: -10] } ?? [:],
                         approvalChange: 5,
@@ -1297,7 +1320,7 @@ class CrisisManager: ObservableObject {
                 CrisisOption(
                     title: "Covert Operation",
                     description: "CIA handles situation quietly",
-                    advisorRecommendation: "CIA Director",
+                    advisorRecommendation: EraWords.spyChief(gameState.currentYear),
                     consequences: CrisisConsequences(
                         approvalChange: 12,
                         economicImpact: -200,
@@ -1333,6 +1356,7 @@ class CrisisManager: ObservableObject {
 
     /// Present crisis to player
     func presentCrisis(_ crisis: CrisisEvent) {
+        let crisis = currentYear?().map { EraWords.localize(crisis, year: $0) } ?? crisis
         if activeCrisis != nil {
             // Queue it; the oldest waiting decision gives way when the desk is overflowing — but never an election
             // decision (3.21.0): those jump the queue, because the calendar won't wait.
