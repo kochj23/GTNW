@@ -331,7 +331,7 @@ final class AIOpponentRetryTests: XCTestCase {
         XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.noBackendAvailable))
         XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.invalidConfiguration))
         XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.mlxScriptNotConfigured))
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.ethicalViolation("x")))
+        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.missingAPIKey))
         XCTAssertTrue(AIBackendManager.isRetryable(AIBackendError.mlxExecutionFailed("oom")))
         XCTAssertTrue(AIBackendManager.isRetryable(URLError(.timedOut)))
         XCTAssertTrue(AIBackendManager.isRetryable(HTTPStatusError(statusCode: 503)))

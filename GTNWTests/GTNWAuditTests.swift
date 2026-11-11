@@ -109,7 +109,7 @@ final class CrisisResolutionSafetyTests: XCTestCase {
     // return nil or a valid crisis in a world with no eligible country, never crash.
     func testCrisisFactoriesSurviveDisarmedWorld() {
         let manager = CrisisManager()
-        var gs = GameState(playerCountryID: "USA")
+        let gs = GameState(playerCountryID: "USA")
         for i in gs.countries.indices { gs.countries[i].nuclearWarheads = 0 }
         for type in CrisisEventType.allCases { _ = manager.createCrisis(type: type, gameState: gs) }
         XCTAssertNil(manager.createCrisis(type: .militaryCoup, gameState: gs))

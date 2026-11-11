@@ -60,8 +60,12 @@ enum FontScale {
     /// Scales a fixed height by the factor, capped to the usable screen height.
     static func h(_ value: CGFloat) -> CGFloat { min(of(value), max(value, screenSize.height * 0.9)) }
 
+    /// Layout tests pin the display size so results don't depend on the Mac running them.
+    static var screenOverride: CGSize?
+
     /// The usable area of the main display (a large default when no screen is attached, e.g. headless tests).
     static var screenSize: CGSize {
+        if let screenOverride { return screenOverride }
         #if os(macOS)
         return NSScreen.main?.visibleFrame.size ?? CGSize(width: 3440, height: 1400)
         #else

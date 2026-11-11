@@ -109,7 +109,10 @@ final class GTNWFrameTests: XCTestCase {
 /// At 2× text the key views must lay out inside the minimum window without truncation or overflow.
 @MainActor
 final class FontScaleFrameTests: XCTestCase {
-    override func tearDown() { FontScale.forced = nil; Theme.forced = nil; super.tearDown() }
+    // The 2× layout checks assume a large display (a 4K panel at its default scaled resolution is only ~1920 points
+    // wide, and the window clamp would then fail them on that Mac alone), so they pin the screen size.
+    override func setUp() { super.setUp(); FontScale.screenOverride = CGSize(width: 3440, height: 1400) }
+    override func tearDown() { FontScale.forced = nil; Theme.forced = nil; FontScale.screenOverride = nil; super.tearDown() }
 
     private func fit<V: View>(_ view: V, width: CGFloat = 10_000) -> CGSize {
         NSHostingController(rootView: view).sizeThatFits(in: CGSize(width: width, height: 10_000))

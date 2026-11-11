@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.23.0] - 2026-11-11 — AI options
+
+### Fixed
+- OpenRouter country brains (Claude, GPT, Gemini, Llama) sent no API key: every call was a 401 that fell back to
+  rule-based play, and each one still sent the world state to OpenRouter. They now send the Keychain key
+  (`com.jkoch.gtnw.openrouter`) over https only. Without a key they are not offered and nothing is sent.
+- The Ollama URL was hard-coded to localhost; it is now a setting used by the AI backend, the brain model list and
+  new Ollama brains. The Nova Gateway URL used by Gateway-Claude is a setting too.
+- MLX generation no longer blocks the main thread and no longer needs an unused "script path".
+- The two 2× layout frame tests pin the display size, so they no longer fail on a Mac whose screen is under about
+  2,200 points wide.
+
+### Added
+- **Use AI** switch (Settings → AI and the AI menu). Off: nothing is sent, every brain plays rule-based, commentary
+  uses its templates.
+- Backends use the shared ids `auto`, `ollama`, `mlx`, `tinyllm`, `tinychat`, `openwebui`, `novagateway`,
+  `openrouter`, `openai`; the old saved selection is migrated. New backends: Nova Gateway and OpenRouter.
+- Auto mode fails over down a fixed order (Ollama, MLX, TinyChat, TinyLLM, OpenWebUI, Nova Gateway, OpenRouter,
+  OpenAI) with bounded retries and per-request timeouts.
+- Secure key fields for OpenRouter and OpenAI (Keychain only; the old OpenAI item moves once). Keys are refused
+  over http.
+- Status everywhere: "Active: … (reachable)", "No backend reachable" or "AI off", plus Test Connection.
+- Every model reply is sanitised (reasoning blocks, control characters, length) before the game uses it.
+- 42 AI-options tests across all seven categories (`GTNWTests/AIOptionsTests.swift`).
+
+### Removed
+- Google Cloud, Azure, AWS and IBM Watson backends. They never worked (Google's URL held a placeholder project id,
+  AWS was a stub) and had no key fields. Use OpenRouter.
+- Dead AI code that was in no macOS target or never called: `AIBackendManager+Enhanced` (did not compile),
+  `+Generation`, `+EthicalGuardian`, `AIBackendStatusMenu`, `EthicalAIGuardian`, `AIProfiler`, `GTNW/AICapabilities/`
+  (read an OpenAI key from the environment), the stale root AI status documents, and `Package.swift` (it swept in all
+  of `Shared/`, lacked PostgresNIO and never built; the Xcode project is the build).
+- README claims for the Living Room, Predictive Intelligence and the other "AI-driven extras": no screen opens them.
+
 ## [3.22.5] - 2026-11-10 — Back to the start
 
 ### Fixed

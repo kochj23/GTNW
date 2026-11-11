@@ -708,7 +708,7 @@ struct UnifiedCommandCenter: View {
         HStack(spacing: 12) {
             // Backend picker with availability dots
             Menu {
-                ForEach([AIBackend.ollama, .mlx, .tinyLLM, .tinyChat, .openWebUI, .auto], id: \.self) { backend in
+                ForEach(LLMBackendType.pickerCases, id: \.self) { backend in
                     Button(action: {
                         AIBackendManager.shared.selectedBackend = backend
                         AIBackendManager.shared.saveSettings()
@@ -722,7 +722,7 @@ struct UnifiedCommandCenter: View {
                                 .fill(isBackendAvailable(backend) ? Color.green : Color.gray)
                                 .frame(width: FontScale.w(8), height: FontScale.h(8))
 
-                            Text(backend.rawValue)
+                            Text(backend.displayName)
 
                             Spacer()
 
@@ -743,7 +743,7 @@ struct UnifiedCommandCenter: View {
 
                     Image(systemName: "brain.head.profile")
                         .font(.scaled(size: 12))
-                    Text(AIBackendManager.shared.selectedBackend.rawValue)
+                    Text(AIBackendManager.shared.selectedBackend.displayName)
                         .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
                 }
                 .foregroundColor(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
@@ -756,7 +756,7 @@ struct UnifiedCommandCenter: View {
                         .stroke(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed, lineWidth: 1)
                 )
             }
-            .help("AI Backend: \(AIBackendManager.shared.activeBackend?.rawValue ?? "None Available")")
+            .help(AIStatusText.line(enabled: AIBackendManager.shared.aiEnabled, active: AIBackendManager.shared.activeBackend))
 
             // Ollama model picker (if Ollama selected)
             if AIBackendManager.shared.selectedBackend == .ollama && AIBackendManager.shared.isOllamaAvailable {
@@ -800,19 +800,7 @@ struct UnifiedCommandCenter: View {
     }
 
     private func isBackendAvailable(_ backend: AIBackend) -> Bool {
-        switch backend {
-        case .ollama: return AIBackendManager.shared.isOllamaAvailable
-        case .mlx: return AIBackendManager.shared.isMLXAvailable
-        case .tinyLLM: return AIBackendManager.shared.isTinyLLMAvailable
-        case .tinyChat: return AIBackendManager.shared.isTinyChatAvailable
-        case .openWebUI: return AIBackendManager.shared.isOpenWebUIAvailable
-        case .openAI: return AIBackendManager.shared.isOpenAIAvailable
-        case .googleCloud: return AIBackendManager.shared.isGoogleCloudAvailable
-        case .azureCognitive: return AIBackendManager.shared.isAzureAvailable
-        case .awsAI: return AIBackendManager.shared.isAWSAvailable
-        case .ibmWatson: return AIBackendManager.shared.isIBMWatsonAvailable
-        case .auto: return AIBackendManager.shared.activeBackend != nil
-        }
+        AIBackendManager.shared.isAvailable(backend)
     }
 
     // MARK: - Actions

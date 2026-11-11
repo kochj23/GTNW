@@ -17,6 +17,7 @@ struct BrainAssignmentView: View {
     @State private var localModels: [ModelInfo] = []
     @State private var loadingModels = false
     @State private var searchText = ""
+    @ObservedObject private var ai = AIBackendManager.shared
 
     /// A small curated set of frontier models reachable via OpenRouter.
     private let frontierModels: [(label: String, id: String)] = [
@@ -26,7 +27,7 @@ struct BrainAssignmentView: View {
         ("Gemini (OpenRouter)", "google/gemini-2.5-pro"),
         ("Llama (OpenRouter)", "meta-llama/llama-3.3-70b-instruct")
     ]
-    private let openRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions"
+    private let openRouterEndpoint = AIBackendManager.openRouterChatURL
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,6 +39,11 @@ struct BrainAssignmentView: View {
                         Text("Every unassigned country uses the fast Rule-Based AI. Set a country to \"This Session\" for true PvP against a live Claude Code session, \"Gateway-Claude\" for an always-on opponent, or any local / frontier model.")
                             .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(.secondary)
+                        if !ai.aiEnabled {
+                            Text("AI is OFF (Settings → AI). Every brain below plays as Rule-Based AI until it is turned back on.")
+                                .font(.scaled(size: 12, weight: .bold, design: .monospaced))
+                                .foregroundColor(GTNWColors.terminalAmber)
+                        }
                     }
                     ForEach(filteredCountries(gameState), id: \.id) { country in
                         row(for: country)
@@ -127,14 +133,20 @@ struct BrainAssignmentView: View {
                 }
             }
 
-            Menu("Frontier Models (OpenRouter)") {
-                ForEach(frontierModels, id: \.id) { fm in
-                    Button(fm.label) {
-                        gameEngine.setBrain(
-                            .model(id: fm.id, endpoint: openRouterEndpoint, backend: .openRouter),
-                            for: countryID)
+            // OpenRouter brains need a key in the Keychain (Settings → AI); without one they are not offered.
+            if ai.hasOpenRouterKey {
+                Menu("Frontier Models (OpenRouter)") {
+                    ForEach(frontierModels, id: \.id) { fm in
+                        Button(fm.label) {
+                            gameEngine.setBrain(
+                                .model(id: fm.id, endpoint: openRouterEndpoint, backend: .openRouter),
+                                for: countryID)
+                        }
                     }
                 }
+            } else {
+                Button("Frontier Models — add an OpenRouter key in Settings → AI") {}
+                    .disabled(true)
             }
         } label: {
             HStack(spacing: 6) {

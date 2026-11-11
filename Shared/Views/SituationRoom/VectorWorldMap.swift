@@ -466,7 +466,6 @@ struct VectorWorldMap: View {
         let selected = selectedCountryID.flatMap { gameState.getCountry(id: $0) }
         // An unclaimed land frames like a country, from its template.
         let land = selected == nil ? selectedCountryID.flatMap { WorldCountriesDatabase.template(id: $0) } : nil
-        let unclaimed = gameState.unclaimedLandIDs
         switch zoom {
         case .world: break
         case .region:

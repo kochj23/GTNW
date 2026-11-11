@@ -59,6 +59,9 @@ extension GameEngine {
         // Partition countries by brain on the main actor (reads state safely).
         var remoteJobs: [(id: String, brain: AIBrain, request: MoveRequest)] = []
         var ruleBasedIDs: [String] = []
+        // Global "Use AI" switch: off means every automated country plays the built-in rule-based AI and no
+        // brain request leaves the app.
+        let aiOn = AIBackendManager.shared.aiEnabled
 
         for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
             let assigned = brain(for: country.id)
@@ -68,7 +71,7 @@ extension GameEngine {
             case .ruleBased:
                 ruleBasedIDs.append(country.id)
             default:
-                if let request = buildMoveRequest(for: country.id) {
+                if aiOn, let request = buildMoveRequest(for: country.id) {
                     remoteJobs.append((country.id, assigned, request))
                 } else {
                     ruleBasedIDs.append(country.id)

@@ -81,8 +81,7 @@ struct GlobalThermalNuclearWarApp: App {
 
                 Divider()
 
-                Text("Active: \(AIBackendManager.shared.activeBackend?.rawValue ?? "None")")
-                    .disabled(true)
+                AIStatusMenuItems()
             }
 
             CommandMenu("Retro") {

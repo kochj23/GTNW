@@ -9,7 +9,8 @@
 //                        coordination bus (true PvP)
 //    • .gatewayClaude  — an always-on Gateway-Claude, answers inline
 //    • .model(...)     — any OpenAI-compatible endpoint (local Ollama model or
-//                        an OpenRouter frontier model)
+//                        an OpenRouter frontier model; OpenRouter brains send the
+//                        Keychain key over https, and send nothing without one)
 //
 //  Transport lives here; the request/response contract and the pure
 //  buildMoveRequest/applyMove helpers live in AIMove.swift.
@@ -97,8 +98,13 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
 
 /// Tunable transport settings. All timeouts guarantee the turn loop never hangs.
 struct BrainConfig: Sendable {
-    /// Nova Gateway OpenAI-compatible chat endpoint (always-on Gateway-Claude).
-    var gatewayEndpoint: String = "http://127.0.0.1:18792/v1/chat/completions"
+    /// Nova Gateway OpenAI-compatible chat endpoint (always-on Gateway-Claude). Follows Settings → AI →
+    /// "Nova Gateway URL" unless a caller pins it.
+    var gatewayEndpointOverride: String? = nil
+    var gatewayEndpoint: String {
+        get { gatewayEndpointOverride ?? "\(AIEndpointSettings.novaGatewayURL)/v1/chat/completions" }
+        set { gatewayEndpointOverride = newValue }
+    }
     var gatewayModel: String = "chat"
     var gatewayTimeout: TimeInterval = 30
 
@@ -119,6 +125,8 @@ struct BrainConfig: Sendable {
     /// Injectable seams so tests can drive the full transport with no network.
     var transport: HTTPTransport = HTTP.live
     var retrySleep: RetrySleeper = Retry.realSleep
+    /// Where an OpenRouter brain gets its key: the Keychain (com.jkoch.gtnw.openrouter). Tests inject a fake.
+    var openRouterKey: @Sendable () -> String? = { AIKeyStore.key(.openRouter) }
 
     static let `default` = BrainConfig()
 }
@@ -137,7 +145,8 @@ struct ModelInfo: Identifiable, Equatable, Hashable, Sendable {
 }
 
 enum ModelRegistry {
-    static let ollamaHost = "http://localhost:11434"
+    /// The Ollama server from Settings → AI (default http://localhost:11434).
+    static var ollamaHost: String { AIEndpointSettings.ollamaURL }
 
     /// PURE: map an Ollama `/api/tags` body to models. Empty/garbage → [].
     static func parseOllamaTags(_ data: Data) -> [ModelInfo] {
@@ -184,13 +193,18 @@ struct OpenAICompatibleRequest {
     var maxTokens: Int = 300
     var timeout: TimeInterval = 30
     var apiKey: String? = nil
+    /// Extra headers (e.g. OpenRouter attribution). Only sent alongside a key, so https only.
+    var extraHeaders: [String: String] = [:]
     /// Injectable transport + retry (tests use a stub and a no-op sleep).
     var transport: HTTPTransport = HTTP.live
     var retryPolicy: RetryPolicy = .network
     var sleep: RetrySleeper = Retry.realSleep
 
+    /// Nil when the endpoint is unusable — including any attempt to send a key over plain http.
     func makeURLRequest() -> URLRequest? {
-        guard let url = URL(string: endpoint) else { return nil }
+        guard let url = URL(string: endpoint), AIEndpointPolicy.isValidServerURL(endpoint) else { return nil }
+        let carriesKey = !(apiKey ?? "").isEmpty
+        if carriesKey && !AIEndpointPolicy.mayCarryKey(url) { return nil }
         let body: [String: Any] = [
             "model": model,
             "temperature": temperature,
@@ -205,6 +219,7 @@ struct OpenAICompatibleRequest {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let apiKey, !apiKey.isEmpty {
             req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            for (k, v) in extraHeaders { req.setValue(v, forHTTPHeaderField: k) }
         }
         req.timeoutInterval = timeout
         req.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -270,9 +285,19 @@ enum BrainClient {
                                            transport: config.transport, retryPolicy: config.retryPolicy,
                                            sleep: config.retrySleep)
             }
-        case .model(let id, let endpoint, _):
+        case .model(let id, let endpoint, let backend):
+            // OpenRouter needs a key. Without one (or over anything but https) nothing is sent — the game state
+            // never leaves the Mac for a call that could only fail — and the country plays rule-based.
+            var key: String? = nil
+            if backend == .openRouter {
+                guard let k = config.openRouterKey(), !k.isEmpty,
+                      AIEndpointPolicy.mayCarryKey(URL(string: endpoint)) else { return nil }
+                key = k
+            }
+            let apiKey = key
             return await withMoveTimeout(config.modelTimeout) {
-                await openAICompatibleMove(request, endpoint: endpoint, model: id,
+                await openAICompatibleMove(request, endpoint: endpoint, model: id, apiKey: apiKey,
+                                           extraHeaders: apiKey == nil ? [:] : OpenRouterAuth.attribution,
                                            transport: config.transport, retryPolicy: config.retryPolicy,
                                            sleep: config.retrySleep)
             }
@@ -287,6 +312,8 @@ enum BrainClient {
     /// Prompt an OpenAI-compatible endpoint for a MoveResponse.
     static func openAICompatibleMove(
         _ request: MoveRequest, endpoint: String, model: String,
+        apiKey: String? = nil,
+        extraHeaders: [String: String] = [:],
         transport: @escaping HTTPTransport = HTTP.live,
         retryPolicy: RetryPolicy = .network,
         sleep: @escaping RetrySleeper = Retry.realSleep
@@ -310,6 +337,7 @@ enum BrainClient {
             endpoint: endpoint, model: model,
             systemPrompt: system, userPrompt: user,
             temperature: 0.6, maxTokens: 250,
+            apiKey: apiKey, extraHeaders: extraHeaders,
             transport: transport, retryPolicy: retryPolicy, sleep: sleep
         ).send()
         guard let text else { return nil }
