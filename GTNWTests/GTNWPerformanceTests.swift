@@ -89,10 +89,10 @@ final class GTNWPerformanceTests: XCTestCase {
         let e = startedEngine()
         e.setBrain(.model(id: "m", endpoint: "http://127.0.0.1:1/v1", backend: .ollama), for: "RUS")
         e.brainConfig.modelTimeout = 0.5
-        e.brainConfig.transport = { _ in
+        e.useKitTransport({ _ in
             try await Task.sleep(nanoseconds: 30_000_000_000)
             throw URLError(.timedOut)
-        }
+        })
         let start = Date()
         await e.processAITurnsWithBrains()
         let t = Date().timeIntervalSince(start)

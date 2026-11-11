@@ -18,7 +18,7 @@ class LiveNewsNetwork: ObservableObject {
     @Published var isGenerating = false
     @Published var selectedOutlet: NewsOutlet = .cnn
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
 
     private init() {}
 

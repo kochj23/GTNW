@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import NovaAIKit
 
 /// Simplified command-focused interface
 struct CommandView: View {
@@ -106,15 +107,9 @@ struct CommandView: View {
 
                 Spacer()
 
-                // AI Backend status
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(gameEngine.aiBackend.activeBackend != nil ? Color.green : Color.gray)
-                        .frame(width: FontScale.w(8), height: FontScale.h(8))
-                    Text(gameEngine.aiBackend.activeBackend?.rawValue.uppercased() ?? "LOCAL")
-                        .font(.scaled(size: 10, design: .monospaced))
-                        .foregroundColor(gameEngine.aiBackend.activeBackend != nil ? AppSettings.terminalGreen : AppSettings.terminalAmber)
-                }
+                // AI status (NovaAIKit): green = a backend answers, orange = offline (rule-based AI), grey = AI off
+                NovaAIStatusIndicator(ai: AppAI.shared, checksOnAppear: false)
+                    .font(.scaled(size: 10, design: .monospaced))
 
                 Button(action: {
                     withAnimation {

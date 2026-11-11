@@ -8,6 +8,7 @@
 
 import Foundation
 import Combine
+import NovaAIKit
 
 /// Main game engine - ObservableObject for SwiftUI integration
 class GameEngine: ObservableObject {
@@ -20,8 +21,8 @@ class GameEngine: ObservableObject {
     @Published var newsManager = NewsManager()
     @Published var leaderboardManager = LeaderboardManager()
     @Published var eventLogger = EventLogger()
-    /// The shared AI backend (main-actor isolated; a nested ObservableObject is not re-published anyway).
-    @MainActor var aiBackend: AIBackendManager { .shared }
+    /// The game's AI calls (NovaAIKit via `AppAI`; replies pass `AIOutputSanitizer`).
+    @MainActor var aiBackend: GameAI { .shared }
     @Published var showingVictoryScreen = false
     /// True while the War Room sheet is up, so the surrender-terms sheet presents from there instead of the root.
     @Published var warRoomOpen = false
@@ -90,25 +91,26 @@ class GameEngine: ObservableObject {
             self?.logCrisisDecision(crisis, option: option, worked: worked)
         }
 
-        // Initialize AI Backend Manager
-        Task { @MainActor in
-            await AIBackendManager.shared.checkBackendAvailability()
+        // Check the AI backends once (NovaAIKit) and log what the game will use. Not under XCTest: the shared AI is
+        // offline there, and a late log line would land in whatever game a test starts next.
+        if !AudioGate.underXCTest { Task { @MainActor in
+            let ai = AppAI.shared
+            await ai.refreshStatus()
 
             // Log connection status
-            if let backend = AIBackendManager.shared.activeBackend {
+            if let backend = ai.status.activeBackend {
                 addLog("🤖 AI BACKEND: \(backend.rawValue.uppercased())", type: .system)
-                if backend == .ollama, !AIBackendManager.shared.ollamaModels.isEmpty {
-                    addLog("   Model: \(AIBackendManager.shared.selectedOllamaModel)", type: .info)
-                    addLog("   Available models: \(AIBackendManager.shared.ollamaModels.count)", type: .info)
-                } else if backend == .mlx {
-                    addLog("   Python MLX Toolkit active", type: .info)
-                }
+                addLog("   Model: \(ai.settings.model(for: backend))", type: .info)
+                if let host = ai.status.host { addLog("   Host: \(host)", type: .info) }
+            } else if !ai.isEnabled {
+                addLog("⚪ AI: OFF (Settings → AI)", type: .system)
+                addLog("   Using enhanced fallback AI (still challenging!)", type: .info)
             } else {
                 addLog("⚪ AI BACKEND: OFFLINE", type: .system)
                 addLog("   Using enhanced fallback AI (still challenging!)", type: .info)
-                addLog("   To enable: Install Ollama or configure MLX", type: .info)
+                addLog("   To enable: start Ollama or pick a backend in Settings → AI", type: .info)
             }
-        }
+        } }
     }
 
     // MARK: - Game Lifecycle

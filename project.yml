@@ -4,6 +4,11 @@ options:
   bundleIdPrefix: com.wopr
   generateEmptyDirectories: true
 
+packages:
+  NovaAIKit:
+    url: https://github.com/kochj23/NovaAIKit.git
+    from: 1.0.0
+
 settings:
   base:
     SWIFT_VERSION: "5.9"
@@ -16,6 +21,9 @@ targets:
     deploymentTarget: "13.0"
     sources:
       - Shared
+    dependencies:
+      - package: NovaAIKit
+        product: NovaAIKit
     settings:
       PRODUCT_NAME: GTNW
       PRODUCT_BUNDLE_IDENTIFIER: com.wopr.gtnw.macos
@@ -33,6 +41,9 @@ targets:
     deploymentTarget: "15.0"
     sources:
       - Shared
+    dependencies:
+      - package: NovaAIKit
+        product: NovaAIKit
     settings:
       PRODUCT_NAME: GTNW
       PRODUCT_BUNDLE_IDENTIFIER: com.wopr.gtnw.ios

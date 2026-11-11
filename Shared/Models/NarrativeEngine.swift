@@ -14,7 +14,7 @@ class NarrativeEngine: ObservableObject {
     @Published var currentStoryArcs: [StoryArc] = []
     @Published var advisorDrama: [AdvisorEvent] = []
 
-    private let aiBackend = AIBackendManager.shared
+    private let aiBackend = GameAI.shared
 
     /// Generate AI-powered news headlines
     func generateNews(

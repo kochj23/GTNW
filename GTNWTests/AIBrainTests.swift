@@ -9,6 +9,7 @@
 //
 
 import XCTest
+import NovaAIKit
 @testable import GTNW
 
 final class AIBrainTests: XCTestCase {
@@ -161,16 +162,18 @@ final class AIBrainTests: XCTestCase {
                       "RUS should fall back to rule-based when its session doesn't answer")
     }
 
-    // MARK: - parseOllamaTags
+    // MARK: - Ollama model list (NovaAIKit)
 
-    func testParseOllamaTags() {
-        let body = #"{"models":[{"name":"qwen3:4b","size":2600000000},{"name":"llama3:8b","size":4700000000}]}"#.data(using: .utf8)!
-        let models = ModelRegistry.parseOllamaTags(body)
-        XCTAssertEqual(models.count, 2)
-        XCTAssertEqual(models.first?.name, "qwen3:4b")
-        XCTAssertEqual(ModelRegistry.parseOllamaTags(Data()), [])
-        XCTAssertEqual(ModelRegistry.parseOllamaTags("garbage".data(using: .utf8)!), [])
-        XCTAssertEqual(ModelRegistry.parseOllamaTags("{}".data(using: .utf8)!), [])
+    func testParseOllamaTags() async {
+        let tags = #"{"models":[{"name":"qwen3:4b","size":2600000000},{"name":"llama3:8b","size":4700000000}]}"#
+        let ok = KitTest.engine(transport: { r in (Data(tags.utf8), Stub.response(200, url: r.url)) })
+        let models = await ok.listModels(.ollama)
+        XCTAssertEqual(models, ["llama3:8b", "qwen3:4b"])
+        for junk in ["", "garbage", "{}"] {
+            let e = KitTest.engine(transport: { r in (Data(junk.utf8), Stub.response(200, url: r.url)) })
+            let listed = await e.listModels(.ollama)
+            XCTAssertEqual(listed, NovaAIBackend.ollama.fallbackModels, "junk → the picker's fallback list")
+        }
     }
 
     // MARK: - MoveResponse decoding (incl. malformed)

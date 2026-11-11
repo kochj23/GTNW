@@ -7,11 +7,12 @@
 //
 
 import SwiftUI
+import NovaAIKit
 
 struct TextCommandInterface: View {
     @EnvironmentObject var gameEngine: GameEngine
     @StateObject private var eventLogger = EventLogger()
-    @StateObject private var mlxManager = MLXManager()
+    @StateObject private var mlxManager = TerminalAdvisor()   // name kept from the MLX era (3.24: NovaAIKit)
     @State private var commandText = ""
     @State private var commandHistory: [String] = []
     @State private var historyIndex = -1
@@ -71,16 +72,8 @@ struct TextCommandInterface: View {
                         .font(GTNWFonts.caption())
                         .foregroundColor(GTNWColors.terminalAmber)
 
-                    if mlxManager.isConnected {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(GTNWColors.terminalGreen)
-                                .frame(width: FontScale.w(8), height: FontScale.h(8))
-                            Text("MLX AI ONLINE")
-                                .font(GTNWFonts.caption())
-                                .foregroundColor(GTNWColors.terminalGreen)
-                        }
-                    }
+                    NovaAIStatusIndicator(ai: AppAI.shared, checksOnAppear: false)
+                        .font(GTNWFonts.caption())
                 }
             }
 

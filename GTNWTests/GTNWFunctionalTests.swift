@@ -481,8 +481,8 @@ final class AIOpponentFunctionalTests: XCTestCase {
         let probe = RetryProbe()
         let e = GameEngine()
         e.startNewGame(playerCountryID: "USA")
-        e.brainConfig.transport = Stub.transport(probe, script: [(nil, "")])   // Ollama down
-        e.brainConfig.retrySleep = probe.sleeper
+        // Ollama answers 503 every time (down): retried, then the country plays rule-based.
+        e.useKitTransport(Stub.transport(probe, script: [(503, "")]), sleep: probe.sleeper)
         e.setBrain(.model(id: "qwen3:4b", endpoint: "http://127.0.0.1:1/v1/chat/completions", backend: .ollama), for: "RUS")
         let turn = e.gameState?.turn ?? 0
 
@@ -501,7 +501,7 @@ final class AIOpponentFunctionalTests: XCTestCase {
         let content = #"{\"action\":\"DECLARE_WAR\",\"target\":\"USA\"}"#
         let e = GameEngine()
         e.startNewGame(playerCountryID: "USA")
-        e.brainConfig.transport = Stub.transport(probe, script: [(200, #"{"choices":[{"message":{"content":""# + content + #""}}]}"#)])
+        e.useKitTransport(Stub.transport(probe, script: [(200, #"{"choices":[{"message":{"content":""# + content + #""}}]}"#)]))
         e.setBrain(.gatewayClaude, for: "RUS")
 
         e.endTurn()

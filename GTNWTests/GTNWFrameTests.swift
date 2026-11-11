@@ -34,7 +34,7 @@ final class GTNWFrameTests: XCTestCase {
         XCTAssertNil(engine.gameState, "fresh launch starts on the start screen")
         XCTAssertEqual(engine.brainConfig.liveSessionTimeout, BrainConfig.default.liveSessionTimeout)
         _ = ThemeManager.shared
-        _ = AIBackendManager.shared
+        _ = AppAI.shared
         _ = ShadowPack.shared
     }
 

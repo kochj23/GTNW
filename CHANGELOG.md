@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.24.0] - 2026-11-11 — AI on NovaAIKit
+
+### Changed
+- AI: migrated to NovaAIKit 1.0.0 (https://github.com/kochj23/NovaAIKit). One `NovaAI` instance (`AppAI.shared`) now
+  provides the Use AI switch, the nine backends (auto, ollama, mlx, tinyllm, tinychat, openwebui, novagateway,
+  openrouter, openai), Auto failover with a 60 s skip for a server that just failed, three attempts per backend,
+  per-request timeouts, https-only keys, the status and the model lists. GTNW keeps its prompts, its validators
+  (`AIOutputSanitizer`, `MoveResponse` + `applyMove`) and its fallbacks (rule-based brains, template commentary).
+- Settings → AI is the kit's `NovaAISettingsView` (URL and model per backend, model lists, timeout, key fields, Test
+  connection). `NovaAIStatusIndicator` shows the status in Settings, the Command Center toolbar, the AI-stats header
+  and the WOPR terminal.
+- Country brains (Ollama, OpenRouter, Gateway-Claude, any OpenAI-compatible server) go through the kit pinned to
+  their own server and model; OpenRouter still sends its Keychain key over https only and nothing without one.
+- A reply that fails validation is asked for once more with the reason before the fallback is used.
+- The WOPR terminal's "what should I do" analysis uses the game's AI, with the old rule-based situation read as its
+  fallback (it used to call a python script that only printed one of three fixed lines).
+- MLX is reached as `mlx_lm.server` over HTTP (default `http://localhost:8081`) instead of spawning python.
+
+### Migration
+- The 3.23 settings (`AIBackendManager_*` in UserDefaults: backend, on/off, Ollama URL and model, TinyLLM/TinyChat/
+  OpenWebUI/Nova Gateway URLs, Nova Gateway/OpenRouter/OpenAI models) are imported once, then deleted.
+- Keychain items `com.jkoch.gtnw.openrouter` / `com.jkoch.gtnw.openai` (account `apiKey`) are the kit's own names, so
+  saved keys keep working. A key still in the pre-3.23 `com.jordankoch.GTNW` item is copied, verified and removed.
+- Security: any plaintext OpenAI key or removed-backend secret left in UserDefaults is moved to the Keychain or deleted.
+
+### Removed
+- GTNW's own AI client code: `AIBackendManager`, `LLMBackendType`, `AIEndpointSettings`/`AIEndpointPolicy`,
+  `AIKeyStore`/`KeychainStore`, `OpenAICompatibleRequest`, `ModelRegistry`, `OpenRouterAuth`, `AIBackendSettingsView`,
+  the unused `OllamaService` and the python `MLXManager` (its event log moved to `EventLog.swift`, its command
+  parser to `TerminalAdvisor`). Google/Azure/AWS/IBM stay removed (not in NovaAIKit).
+
+### Tests
+- `GTNWTests/AIKitAdoptionTests.swift` (the kit contract: AI off, offline, validators, Keychain names, migration,
+  no legacy client) and `AIKitTestSupport.swift` (stub transport bridged into the kit's URLSession). The AI options,
+  retry, security, brain and integration tests were rewritten against the kit, with no coverage dropped.
+
 ## [3.23.0] - 2026-11-11 — AI options
 
 ### Fixed

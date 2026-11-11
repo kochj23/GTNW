@@ -20,7 +20,7 @@ class WorldLeaderVoices: ObservableObject {
     @Published var voiceLibrary: [String: VoiceModel] = [:]
     @Published var generatedAudio: [GeneratedAudio] = []
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
     private var audioPlayer: AVAudioPlayer?
 
     // Voice library directory

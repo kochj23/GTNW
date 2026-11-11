@@ -3,7 +3,7 @@
 //  GTNWTests
 //
 //  // MARK: - Retry
-//  Every external call (LLM HTTP, Ollama, live-session bridge, MLX subprocess)
+//  Every external call (LLM backends via NovaAIKit, live-session bridge, Games DB sync)
 //  must retry 2–3 times with backoff and never fail silently on the first attempt.
 //  All tests use stub transports and a recording no-op sleep — no network, fast.
 //
@@ -11,6 +11,7 @@
 //
 
 import XCTest
+import NovaAIKit
 @testable import GTNW
 
 // MARK: - Test doubles
@@ -210,45 +211,59 @@ final class AIOpponentRetryTests: XCTestCase {
                     worldStateSummary: "test", legalActions: ["WAIT"])
     }
 
+    private static let ollamaBrain = AIBrain.model(id: "qwen3:4b", endpoint: "http://127.0.0.1:1/v1/chat/completions", backend: .ollama)
+
+    private func config(_ transport: @escaping HTTPTransport, _ probe: RetryProbe) -> BrainConfig {
+        var c = BrainConfig()
+        c.engine = KitTest.engine(transport: transport, sleep: probe.sleeper)
+        c.modelTimeout = 5
+        return c
+    }
+
+    // LLM brains (NovaAIKit): 408/429/5xx retried with backoff, three attempts per backend.
+
     func testLLMRequestRetriesThenSucceeds() async {
         let probe = RetryProbe()
-        var r = OpenAICompatibleRequest(endpoint: "http://127.0.0.1:1/v1/chat/completions", model: "m",
-                                        systemPrompt: "s", userPrompt: "u")
-        r.transport = Stub.transport(probe, script: [(nil, ""), (500, ""), (200, Stub.chatOK)])
-        r.sleep = probe.sleeper
-        let text = await r.send()
-        XCTAssertNotNil(text)
+        let c = config(Stub.transport(probe, script: [(502, ""), (500, ""), (200, Stub.chatOK)]), probe)
+        let resp = await BrainClient.requestMove(moveRequest(), brain: Self.ollamaBrain, config: c)
+        XCTAssertEqual(resp?.action, "WAIT")
         XCTAssertEqual(probe.calls, 3)
+        XCTAssertEqual(probe.sleeps, [0.5, 1.0])
     }
 
     func testLLMRequestGivesUpAfterThreeAttempts() async {
         let probe = RetryProbe()
-        var r = OpenAICompatibleRequest(endpoint: "http://127.0.0.1:1/v1", model: "m", systemPrompt: "s", userPrompt: "u")
-        r.transport = Stub.transport(probe, script: [(nil, "")])
-        r.sleep = probe.sleeper
-        let text = await r.send()
-        XCTAssertNil(text)
+        let c = config(Stub.transport(probe, script: [(503, "")]), probe)
+        let resp = await BrainClient.requestMove(moveRequest(), brain: Self.ollamaBrain, config: c)
+        XCTAssertNil(resp)
         XCTAssertEqual(probe.calls, 3)
     }
 
     func testLLMRequestDoesNotRetryUnauthorized() async {
         let probe = RetryProbe()
-        var r = OpenAICompatibleRequest(endpoint: "http://127.0.0.1:1/v1", model: "m", systemPrompt: "s", userPrompt: "u")
-        r.transport = Stub.transport(probe, script: [(401, "")])
-        r.sleep = probe.sleeper
-        let text = await r.send()
-        XCTAssertNil(text)
+        let c = config(Stub.transport(probe, script: [(401, "")]), probe)
+        let resp = await BrainClient.requestMove(moveRequest(), brain: Self.ollamaBrain, config: c)
+        XCTAssertNil(resp)
         XCTAssertEqual(probe.calls, 1, "bad credentials won't fix themselves")
     }
 
-    func testOllamaModelListRetries() async {
+    func testLLMRequestDoesNotRetryRefusedConnection() async {
         let probe = RetryProbe()
-        let models = await ModelRegistry.fetchLocalModels(
-            host: "http://127.0.0.1:1",
-            transport: Stub.transport(probe, script: [(503, ""), (200, Stub.tagsOK)]),
-            sleep: probe.sleeper)
-        XCTAssertEqual(models.map(\.name), ["qwen3:4b"])
-        XCTAssertEqual(probe.calls, 2)
+        let c = config(Stub.transport(probe, script: [(nil, "")]), probe)
+        let resp = await BrainClient.requestMove(moveRequest(), brain: Self.ollamaBrain, config: c)
+        XCTAssertNil(resp)
+        XCTAssertEqual(probe.calls, 1, "a server that refuses is down: fall back at once")
+    }
+
+    func testOllamaModelListAsksOnceAndFallsBack() async {
+        let probe = RetryProbe()
+        let up = KitTest.engine(transport: Stub.transport(probe, script: [(200, Stub.tagsOK)]))
+        let models = await up.listModels(.ollama)
+        XCTAssertEqual(models, ["qwen3:4b"])
+        XCTAssertEqual(probe.calls, 1)
+        let down = KitTest.engine(transport: Stub.transport(RetryProbe(), script: [(503, "")]))
+        let fallback = await down.listModels(.ollama)
+        XCTAssertEqual(fallback, NovaAIBackend.ollama.fallbackModels)
     }
 
     func testLiveSessionPostRetries() async {
@@ -262,106 +277,89 @@ final class AIOpponentRetryTests: XCTestCase {
 
     func testBrainClientModelMoveRetriesThroughConfig() async {
         let probe = RetryProbe()
-        var config = BrainConfig()
-        config.transport = Stub.transport(probe, script: [(nil, ""), (200, Stub.chatOK)])
-        config.retrySleep = probe.sleeper
-        config.modelTimeout = 5
-        let resp = await BrainClient.requestMove(moveRequest(),
-                                                 brain: .model(id: "qwen3:4b", endpoint: "http://127.0.0.1:1/v1/chat/completions", backend: .ollama),
-                                                 config: config)
+        let c = config(Stub.transport(probe, script: [(503, ""), (200, Stub.chatOK)]), probe)
+        let resp = await BrainClient.requestMove(moveRequest(), brain: Self.ollamaBrain, config: c)
         XCTAssertEqual(resp?.action, "WAIT")
         XCTAssertEqual(probe.calls, 2)
     }
 
+    /// Side features (shared AI): Ollama 503 twice, then an answer.
     @MainActor
-    func testOllamaServiceGenerateRetries() async {
+    func testFeatureGenerateRetries() async throws {
         let probe = RetryProbe()
-        let svc = OllamaService(monitorSystem: false)
-        svc.isConnected = true
-        svc.transport = Stub.transport(probe, script: [(nil, ""), (503, ""), (200, #"{"response":" hello "}"#)])
-        svc.retrySleep = probe.sleeper
-        let text = await svc.generate(prompt: "hi")
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                            transport: Stub.transport(probe, script: [(503, ""), (503, ""), (200, KitTest.ollama(" hello "))]),
+                            sleep: probe.sleeper)
+        let text = try await GameAI.shared.generate(prompt: "hi", ai: ai)
         XCTAssertEqual(text, "hello")
         XCTAssertEqual(probe.calls, 3)
     }
 
+    /// The status check marks Ollama online from its model list (one probe, short timeout).
     @MainActor
-    func testOllamaServiceInitializeRetriesBeforeDeclaringOffline() async {
+    func testStatusCheckMarksOllamaOnline() async {
         let probe = RetryProbe()
-        let svc = OllamaService(monitorSystem: false)
-        svc.transport = Stub.transport(probe, script: [(nil, ""), (200, Stub.tagsOK)])
-        svc.retrySleep = probe.sleeper
-        await svc.initialize()
-        XCTAssertTrue(svc.isConnected)
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                            transport: Stub.transport(probe, script: [(200, Stub.tagsOK)]))
+        await ai.refreshStatus()
+        XCTAssertTrue(ai.status.isReachable)
+        XCTAssertEqual(ai.status.activeBackend, .ollama)
+        XCTAssertEqual(probe.calls, 1)
+    }
+
+    /// MLX is an HTTP server now (mlx_lm.server, default :8081): retried like any backend.
+    @MainActor
+    func testMLXBackendRetriesOnFailure() async throws {
+        let probe = RetryProbe()
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .mlx },
+                            transport: Stub.transport(probe, script: [(500, ""), (200, AIFixtures.chat("RECOMMEND_MAINTAIN_STATUS_QUO"))]),
+                            sleep: probe.sleeper)
+        let text = try await GameAI.shared.generate(prompt: "advice", ai: ai)
+        XCTAssertEqual(text, "RECOMMEND_MAINTAIN_STATUS_QUO")
         XCTAssertEqual(probe.calls, 2)
+        XCTAssertEqual(ai.status.activeBackend, .mlx)
     }
 
-    func testMLXSubprocessRetriesOnFailure() async {
+    /// Junk output counts as a failure: re-asked once, then the built-in answer.
+    @MainActor
+    func testJunkOutputCountsAsFailure() async {
         let probe = RetryProbe()
-        let mlx = MLXManager()
-        mlx.isConnected = true
-        mlx.retrySleep = probe.sleeper
-        mlx.pythonRunner = { _ in
-            switch probe.hit() {
-            case 1: return (1, "")                       // crash
-            default: return (0, "RECOMMEND_MAINTAIN_STATUS_QUO\n")
-            }
-        }
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .mlx },
+                            transport: Stub.transport(probe, script: [(200, AIFixtures.chat("??? !!!"))]))
         let gs = GameState(playerCountryID: "USA")
-        let country = try! XCTUnwrap(gs.getCountry(id: "RUS"))
-        let out = await mlx.getCountryAction(country: country, gameState: gs)
-        XCTAssertEqual(out, "RECOMMEND_MAINTAIN_STATUS_QUO")
-        XCTAssertEqual(probe.calls, 2)
+        let advice = await TerminalAdvisor(ai: ai).getStrategicAdvice(situation: "what should I do", gameState: gs)
+        XCTAssertEqual(advice, TerminalAdvisor.builtInAdvice(gameState: gs))
+        XCTAssertEqual(probe.calls, 2, "asked, rejected, asked once more, then the fallback")
     }
 
-    func testMLXScriptErrorOutputCountsAsFailure() async {
-        let probe = RetryProbe()
-        let mlx = MLXManager()
-        mlx.isConnected = true
-        mlx.retrySleep = probe.sleeper
-        mlx.pythonRunner = { _ in probe.hit(); return (0, "ERROR: No module named mlx") }
-        let gs = GameState(playerCountryID: "USA")
-        let out = await mlx.getCountryAction(country: gs.countries[0], gameState: gs)
-        XCTAssertNil(out)
-        XCTAssertEqual(probe.calls, RetryPolicy.subprocess.maxAttempts)
+    func testRetryClassification() {
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.disabled))
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.noBackendAvailable))
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.missingKey(.openAI)))
+        XCTAssertTrue(NovaAIRetry.isRetryable(URLError(.networkConnectionLost)))
+        XCTAssertTrue(NovaAIRetry.isRetryable(NovaAIError.httpStatus(503)))
+        XCTAssertTrue(NovaAIRetry.isRetryable(NovaAIError.httpStatus(408)))
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.httpStatus(400)))
+        XCTAssertEqual(AppAI.configuration.retry.worstCaseSleep, 1.5, accuracy: 1e-9)
     }
 
     @MainActor
-    func testAIBackendManagerRetryClassification() {
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.noBackendAvailable))
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.invalidConfiguration))
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.mlxScriptNotConfigured))
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.missingAPIKey))
-        XCTAssertTrue(AIBackendManager.isRetryable(AIBackendError.mlxExecutionFailed("oom")))
-        XCTAssertTrue(AIBackendManager.isRetryable(URLError(.timedOut)))
-        XCTAssertTrue(AIBackendManager.isRetryable(HTTPStatusError(statusCode: 503)))
-        XCTAssertFalse(AIBackendManager.isRetryable(HTTPStatusError(statusCode: 400)))
-    }
-
-    @MainActor
-    func testAIBackendManagerOllamaGenerateRetries() async throws {
-        let mgr = AIBackendManager.shared
-        let saved = (mgr.activeBackend, mgr.httpTransport, mgr.retrySleep)
-        defer { mgr.activeBackend = saved.0; mgr.httpTransport = saved.1; mgr.retrySleep = saved.2 }
+    func testOllamaGenerateRetriesWithBackoff() async throws {
         let probe = RetryProbe()
-        mgr.activeBackend = .ollama
-        mgr.httpTransport = Stub.transport(probe, script: [(nil, ""), (500, ""), (200, #"{"response":"DEFCON 3"}"#)])
-        mgr.retrySleep = probe.sleeper
-        let text = try await mgr.generate(prompt: "status?")
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                            transport: Stub.transport(probe, script: [(500, ""), (500, ""), (200, KitTest.ollama("DEFCON 3"))]),
+                            sleep: probe.sleeper)
+        let text = try await GameAI.shared.generate(prompt: "status?", ai: ai)
         XCTAssertEqual(text, "DEFCON 3")
         XCTAssertEqual(probe.calls, 3)
         XCTAssertEqual(probe.sleeps, [0.5, 1.0])
     }
 
     @MainActor
-    func testAIBackendManagerNoBackendFailsFastWithoutCalls() async {
-        let mgr = AIBackendManager.shared
-        let saved = (mgr.activeBackend, mgr.httpTransport)
-        defer { mgr.activeBackend = saved.0; mgr.httpTransport = saved.1 }
+    func testAIOffFailsFastWithoutCalls() async {
         let probe = RetryProbe()
-        mgr.activeBackend = nil
-        mgr.httpTransport = Stub.transport(probe, script: [(200, "")])
-        do { _ = try await mgr.generate(prompt: "x"); XCTFail("should throw") } catch {}
+        let ai = KitTest.ai(KitTest.settings { $0.enabled = false }, transport: Stub.transport(probe, script: [(200, "")]))
+        do { _ = try await GameAI.shared.generate(prompt: "x", ai: ai); XCTFail("should throw") } catch {}
         XCTAssertEqual(probe.calls, 0)
     }
 }

@@ -17,7 +17,7 @@ class DynamicCrisisGenerator: ObservableObject {
     @Published var isGenerating = false
     @Published var generatedCrises: [DynamicCrisis] = []
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
 
     private init() {}
 

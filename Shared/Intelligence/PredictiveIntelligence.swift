@@ -20,7 +20,7 @@ class PredictiveIntelligence: ObservableObject {
     @Published var crisisProbabilities: [CrisisProbability] = []
     @Published var isAnalyzing = false
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
 
     private init() {}
 

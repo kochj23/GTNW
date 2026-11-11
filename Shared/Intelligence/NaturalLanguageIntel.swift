@@ -18,7 +18,7 @@ class NaturalLanguageIntel: ObservableObject {
     @Published var queryHistory: [IntelQuery] = []
     @Published var lastError: String?
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
 
     private init() {}
 

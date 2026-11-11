@@ -21,7 +21,7 @@ class TheLivingRoom: ObservableObject {
     @Published var isPlayingAudio = false
 
     private let voices = WorldLeaderVoices.shared
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
     private var audioPlayer: AVAudioPlayer?
 
     private init() {}

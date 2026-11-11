@@ -18,7 +18,7 @@ class PropagandaEngine: ObservableObject {
     @Published var propagandaGallery: [PropagandaPoster] = []
     @Published var lastError: String?
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
 
     private init() {
         loadGallery()

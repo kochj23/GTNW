@@ -1,8 +1,9 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-811-brightgreen)
-![Version](https://img.shields.io/badge/version-3.23.0-blue)
+![Tests](https://img.shields.io/badge/tests-828-brightgreen)
+![Version](https://img.shields.io/badge/version-3.24.0-blue)
+![AI](https://img.shields.io/badge/AI-NovaAIKit%201.0-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -15,7 +16,8 @@ built around a live world map, handle historical and generated crises, manage th
 arsenal, and deal with a world that moves on its own: the era's wars break out on their dates, the powers race you
 for land, and nations rise, rename and fall when they really did, while Nova, your advisor, comments on all of it.
 AI is optional: any country can be played by a local or frontier model, a live Claude session or the built-in
-rule-based AI, and with AI switched off the whole game runs offline on its own logic. You can win by conquest, by endurance, or by peace. The question is whether the only winning move really is not to
+rule-based AI, and with AI switched off the whole game runs offline on its own logic. Since 3.24 the AI layer is
+[NovaAIKit](https://github.com/kochj23/NovaAIKit), the same AI feature set every one of Jordan's apps uses. You can win by conquest, by endurance, or by peace. The question is whether the only winning move really is not to
 play.
 
 The game is inspired by the WOPR computer in *WarGames* (1983), and the Situation Room by *Shadow President* (1993).
@@ -58,8 +60,8 @@ Written by Jordan Koch.
 | **Fighting dirty** | Dirty tactics with real era windows, a legal status that tightens with the treaties, an open-or-covert choice and a discovery chance that rises with the era, the scale and the crowd; chemical and biological, incendiaries, starvation and supply, civilians and land, deception, the sea; the other powers use them too | 3.17 |
 | **Elections** | The whole American election cycle with the law of each year: the decision to run, the King Caucus or the primaries (Iowa, New Hampshire, Super Tuesday), challengers from your own party, running mates, conventions, the fall campaign, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment | 3.21 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
-| **AI options** | A global Use AI switch, the shared backend ids (Ollama, MLX, TinyLLM, TinyChat, OpenWebUI, Nova Gateway, OpenRouter, OpenAI) with Auto failover, editable URLs, Keychain-only keys over https, status and Test Connection, sanitised replies, and OpenRouter brains that actually send their key | 3.23 |
-| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 811 tests in seven categories | 3.1–3.23 |
+| **AI options** | A global Use AI switch, the shared backend ids (Ollama, MLX, TinyLLM, TinyChat, OpenWebUI, Nova Gateway, OpenRouter, OpenAI) with Auto failover, editable URLs, Keychain-only keys over https, status and Test Connection, sanitised replies, and OpenRouter brains that actually send their key (3.23); all of it now from the shared NovaAIKit package, with the drop-in settings screen and status indicator (3.24) | 3.23–3.24 |
+| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 828 tests in seven categories | 3.1–3.24 |
 
 The sections below are grouped by theme; each feature notes the version that introduced it.
 
@@ -913,8 +915,9 @@ genocides has a matching tactic id.
 ### AI in the game
 
 AI is optional and never required to play. With AI on and a backend reachable it drives Nova's live commentary and
-end-game roast, and any country you hand to a model brain. Everything else is the game's own logic. See
-[AI options](#ai-options).
+end-game roast, the WOPR terminal's "what should I do" analysis, and any country you hand to a model brain.
+Everything else is the game's own logic, and each of those features has a built-in answer when AI is off or down
+(template lines, the terminal's situation read, rule-based moves). See [AI options](#ai-options).
 
 (Older releases listed a Living Room with cloned leader voices, Predictive Intelligence, natural-language queries,
 propaganda and a live news network. That code is still under `Shared/` but no screen opens it, so it is not part of
@@ -1029,12 +1032,16 @@ flowchart TB
     SVC --> LOC & PG
   end
 
-  subgraph AI["AI layer"]
-    AIB["AIBackendManager<br/>Use AI switch · Auto failover · Retry · sanitiser<br/>Ollama · MLX · TinyLLM · TinyChat · OpenWebUI<br/>Nova Gateway · OpenRouter · OpenAI"]
-    EP["AIEndpointSettings<br/>Ollama / gateway URLs · AI on/off"]
-    KS["AIKeyStore (Keychain)<br/>com.jkoch.gtnw.openrouter · .openai"]
+  subgraph AI["AI layer (Shared/AI)"]
+    APPAI["AppAI.shared — NovaAI (NovaAIKit)<br/>Use AI switch · Auto failover · retries · timeouts<br/>status · settings (UserDefaults, no secrets)"]
+    GAI["GameAI<br/>text / generate + AIOutputSanitizer validator"]
+    TA["TerminalAdvisor<br/>WOPR terminal: rules + AI advice"]
+    VIEWS["GTNWAISettingsView · AIStatusMenuItems · AIBackendToolbar<br/>(NovaAISettingsView · NovaAIStatusIndicator)"]
+    KS["Keychain<br/>com.jkoch.gtnw.openrouter · .openai"]
     API["NovaAPIServer :37431 (loopback)"]
-    AIB --> EP & KS
+    GAI & TA --> APPAI
+    VIEWS --> APPAI
+    APPAI --> KS
   end
 
   ROOT --> START & TABS
@@ -1042,8 +1049,8 @@ flowchart TB
   UI --> GE
   GE --> GS
   GE --> SVC
-  NC --> AIB
-  BR -.->|URLs · OpenRouter key · on/off| EP & KS
+  NC --> GAI
+  BR -->|NovaAIEngine snapshot · pinned backend| APPAI
   API --> GE
   DESIGN -.-> UI
   WID["GTNW Widget (WidgetKit)"] -. App Group .- GE
@@ -1150,7 +1157,7 @@ Each country can be driven by a different **brain**. You assign them in the **BR
 | **Rule-based AI** | The fast built-in AI and the default for every computer-run country. It never uses the network. |
 | **This Session (live PvP)** | A live Claude Code session answers that country's moves in real time. |
 | **Gateway-Claude (always-on)** | An opponent served by the Nova Gateway (Settings → AI → Nova Gateway URL, default `http://127.0.0.1:18792`) that doesn't need a human session. |
-| **Local / frontier models** | Any OpenAI-compatible endpoint: local Ollama models (listed from the Ollama URL in Settings → AI, default `http://localhost:11434`), or frontier models (Claude, GPT, Gemini, Llama) through OpenRouter. OpenRouter brains are offered only once an OpenRouter key is saved in Settings → AI; the key goes in the `Authorization` header over https. Without a key nothing is sent and the country plays rule-based. |
+| **Local / frontier models** | Local Ollama models (listed from the Ollama URL in Settings → AI, default `http://localhost:11434`), frontier models (Claude, GPT, Gemini, Llama) through OpenRouter, or any OpenAI-compatible server. Each brain call goes through NovaAIKit pinned to that brain's backend, server and model (no failover to another provider), with the kit's retries, timeout and https-only key rule. OpenRouter brains are offered only once an OpenRouter key is saved in Settings → AI; the key goes in the `Authorization` header over https. Without a key nothing is sent and the country plays rule-based. |
 
 With **Use AI** off (Settings → AI or the AI menu) every brain plays as rule-based AI and nothing is sent.
 Only countries with a brain other than rule-based make remote calls, and those calls run concurrently in a
@@ -1166,47 +1173,66 @@ The row schema is in `migrations/2026-08-18_gtnw_coordination_moves.sql`.
 ## AI options
 
 AI is optional. With it off, or with nothing reachable, the game plays exactly as designed with its own rule-based
-logic and stock lines; a failed AI call never costs a turn or blocks one. Settings → **AI** (⌥⌘A, or the **AI**
-menu) holds everything below.
+logic and stock lines; a failed AI call never costs a turn or blocks one. Since 3.24.0 every AI option comes from
+[NovaAIKit](https://github.com/kochj23/NovaAIKit) 1.0 (`Shared/AI/AppAI.swift`); GTNW keeps its prompts, its
+validators and its fallbacks. Settings → **AI** (⌥⌘A, or the **AI** menu) is the kit's settings screen.
 
 | Option | What it does |
 |--------|--------------|
-| **Use AI** | The global switch (also in the **AI** menu). Off: no AI request leaves the Mac, every brain plays rule-based, commentary uses its templates. |
-| **Backend** | `Auto`, `Ollama`, `MLX` (macOS), `TinyLLM`, `TinyChat`, `OpenWebUI`, `Nova Gateway`, `OpenRouter`, `OpenAI`. Stored as the shared ids `auto`, `ollama`, `mlx`, `tinyllm`, `tinychat`, `openwebui`, `novagateway`, `openrouter`, `openai`; selections saved by older versions are migrated. |
-| **Auto** | Probes the local servers (one short request each, 3 s timeout) and uses the first that answers in this order: Ollama, MLX, TinyChat, TinyLLM, OpenWebUI, Nova Gateway, then OpenRouter and OpenAI if a key is saved. If the backend in use fails, the request moves down that list. An explicit choice never switches provider. |
-| **Models and URLs** | Ollama model (picked from the server's list), Nova Gateway model, OpenRouter model (e.g. `anthropic/claude-sonnet-4.5`), OpenAI model, MLX model. Every server URL is editable (Ollama, TinyLLM, TinyChat, OpenWebUI, Nova Gateway); the defaults are localhost, and any LAN host works. |
-| **Keys** | OpenRouter and OpenAI keys are typed into secure fields and stored only in the Keychain (services `com.jkoch.gtnw.openrouter` and `com.jkoch.gtnw.openai`), never in `UserDefaults`, files or logs. A key is only ever sent over https. An OpenAI key saved by an older version is moved to the new item once. |
-| **Status** | A dot and "Active: Ollama (reachable)", "No backend reachable" or "AI off" in Settings, the **AI** menu and the Command Center, with **Refresh Status** and **Test Connection** (a one-word round trip with its time). |
+| **Use AI** | The global switch (Settings, the **AI** menu and the Command Center's backend menu). Off: no AI request leaves the Mac, every brain plays rule-based, commentary uses its templates, the terminal gives its built-in read. |
+| **Backend** | `Auto`, `Ollama`, `MLX` (macOS), `TinyChat`, `TinyLLM`, `OpenWebUI`, `Nova Gateway`, `OpenRouter`, `OpenAI` (ids `auto`, `ollama`, `mlx`, `tinychat`, `tinyllm`, `openwebui`, `novagateway`, `openrouter`, `openai`). |
+| **Auto** | Tries the backends in a fixed order: Ollama, MLX, TinyChat, TinyLLM, OpenWebUI, Nova Gateway, then OpenRouter and OpenAI if a key is saved. A server that just failed is skipped for 60 s. An explicit choice never switches provider. |
+| **Models and URLs** | A URL and a model per backend, every one editable; the model list comes from the server (Ollama `/api/tags`, OpenAI-style `/v1/models`). Defaults: Ollama `http://localhost:11434`, MLX `http://localhost:8081` (`mlx_lm.server`), TinyChat/TinyLLM `http://localhost:8000`, OpenWebUI `http://localhost:8080`, Nova Gateway `http://127.0.0.1:18792` (model `chat`). |
+| **Timeout** | Per request, default 30 s (10 s to 5 min). Status probes use 3 s. |
+| **Keys** | OpenRouter and OpenAI (and OpenWebUI's optional key) are typed into secure fields and stored only in the Keychain: `com.jkoch.gtnw.openrouter`, `com.jkoch.gtnw.openai`, account `apiKey` — the same items 3.23 wrote, so saved keys keep working. Never in `UserDefaults`, files or logs; a key is only sent over https (OpenWebUI may use plain http to this Mac only). |
+| **Status** | `NovaAIStatusIndicator` in Settings, the Command Center toolbar, the AI-stats header and the WOPR terminal: green online (backend, host, latency), orange offline, grey off. Click to re-check. **Test connection** in Settings. |
 | **Claude** | Choose Nova Gateway, or OpenRouter with an `anthropic/claude-*` model. There is no separate Anthropic backend. |
 
-Every reply passes a sanitiser before the game sees it (reasoning blocks and control characters removed, length
-capped, empty or junk replies rejected so the next backend or the scripted line is used). A brain's move must be one
-of its legal actions; anything else, and any warhead count beyond its arsenal, is rejected or clamped.
+**Validation and fallback, per feature**
 
-Timeouts and retries: generation requests time out after 30 s and brain moves after 25–30 s. Every call goes through
-`Shared/Engine/Retry.swift`: 3 attempts with 0.5 s then 1 s backoff for network calls (2 for subprocesses), retrying
-only transport errors, 408, 429 and 5xx. A missing key, a bad URL or another 4xx fails at once.
+| Feature | AI does | Validator | Fallback |
+|---------|---------|-----------|----------|
+| Nova's commentary and end-game roast | One sardonic line per headline | `AIOutputSanitizer` (reasoning, control characters, length, junk) | The template line, posted at once |
+| Country brains (model, Gateway-Claude) | One JSON move | `MoveResponse.decode`, then `applyMove` (legal action, real target, warheads clamped) | Rule-based move for that country |
+| WOPR terminal advice | A short strategic read | `AIOutputSanitizer` | Built-in DEFCON / war / arsenal read |
+| Side models (war room, narrative, news, intel, crises) | Generated text | `AIOutputSanitizer` | Each feature's own scripted text |
+
+A rejected reply is asked for once more with the reason, then the fallback is used.
+
+Retries and timeouts: three attempts per backend with 0.5 s then 1 s backoff, only for 408, 429, 5xx and a dropped
+connection; a refused connection or timeout fails over at once; a missing key, a bad URL or another 4xx fails at once.
+Brain moves are also capped by their own 25–30 s timeout so a turn never waits on a model.
 
 ```mermaid
 flowchart LR
-  F["Nova commentary · roast<br/>(any AI feature)"] --> M{"Use AI on?"}
-  B["Country brain<br/>(model / gateway / live)"] --> M
-  M -- off --> R["Rule-based AI · template line"]
+  F["Nova commentary · roast<br/>terminal advice · side features"] --> GAI["GameAI.text / generate"]
+  B["Country brain<br/>(model / Gateway-Claude)"] --> BR["BrainClient<br/>AppAI.shared.engine pinned to the brain's server"]
+  GAI --> M{"Use AI on?"}
+  BR --> M
+  M -- off --> R["Rule-based move · template line · built-in read"]
   M -- on --> SEL{"Backend"}
-  SEL -- Auto --> CH["First reachable:<br/>Ollama → MLX → TinyChat → TinyLLM<br/>→ OpenWebUI → Nova Gateway<br/>→ OpenRouter → OpenAI"]
+  SEL -- Auto --> CH["Ollama → MLX → TinyChat → TinyLLM<br/>→ OpenWebUI → Nova Gateway<br/>→ OpenRouter → OpenAI (keyed)"]
   SEL -- explicit --> ONE["That backend only"]
-  CH & ONE --> RT["Retry.run<br/>3 tries · backoff · timeout"]
+  CH & ONE --> RT["NovaAIKit engine<br/>3 tries · backoff · timeout · 60 s health skip"]
   RT -- fails --> NEXT["Auto: next backend"] --> RT
-  RT -- answer --> SAN["Sanitise / validate move"]
-  SAN -- usable --> G["Game state / ticker"]
-  SAN -- junk --> R
+  RT -- answer --> V["Validate: sanitiser / MoveResponse + applyMove"]
+  V -- rejected --> RE["Ask once more"] --> V2{"OK?"}
+  V2 -- no --> R
+  V -- usable --> G["Game state / ticker / terminal"]
+  V2 -- yes --> G
   NEXT -- none left --> R
   K[("Keychain<br/>com.jkoch.gtnw.openrouter<br/>com.jkoch.gtnw.openai")] -. https only .-> RT
 ```
 
-Google Cloud, Azure, AWS and IBM Watson were removed in 3.23.0. They never worked: Google's URL contained a
-placeholder project id, AWS was a stub, and there was no way to enter their keys. OpenRouter covers those models with
-one key.
+**Upgrading from 3.23 or earlier.** On first launch GTNW imports the old `AIBackendManager_*` settings once (backend,
+on/off, Ollama URL and model, TinyLLM/TinyChat/OpenWebUI/Nova Gateway URLs, Nova Gateway/OpenRouter/OpenAI models)
+into the kit's settings and deletes the old keys, moves any OpenAI key still in the old `com.jordankoch.GTNW` item
+into `com.jkoch.gtnw.openai`, and deletes plaintext secrets of the removed backends from `UserDefaults`. The python
+MLX path (`python3 -c mlx_lm…`) is gone: MLX is now `mlx_lm.server` over HTTP (`mlx_lm.server --port 8081`).
+
+Google Cloud, Azure, AWS and IBM Watson were removed in 3.23.0 and are not in NovaAIKit. They never worked: Google's
+URL contained a placeholder project id, AWS was a stub, and there was no way to enter their keys. OpenRouter covers
+those models with one key.
 
 ---
 
@@ -1265,14 +1291,15 @@ The build compiles with `PUBLIC_EDITION` (see `Edition` in `Shared/Storage/GameS
 
 1. Download `GTNW-v<version>-build<N>.dmg` from [GitHub Releases](https://github.com/kochj23/GTNW/releases).
 2. Open it and drag **GTNW** onto the **Applications** shortcut.
-3. (Optional) For AI features, install Ollama and a model: `brew install ollama && ollama pull mistral`, or add an
+3. (Optional) For AI features, install Ollama and a model: `brew install ollama && ollama pull qwen3:8b`, or add an
    OpenRouter key in Settings → AI. See [AI options](#ai-options).
 
 GTNW isn't on the Mac App Store.
 
 ### Build from source
 
-Requires Xcode 15 or later.
+Requires Xcode 16 or later (Swift 6 toolchain for the NovaAIKit package). Xcode resolves NovaAIKit
+(`https://github.com/kochj23/NovaAIKit`, 1.0.0 up to the next major) on first open; no credentials needed.
 
 ```bash
 git clone git@github.com:kochj23/GTNW.git
@@ -1333,12 +1360,13 @@ GTNW/
     Design/                FontScale (text size + scaled controls), Theme (Modern / Retro EGA), ModernDesign
     Engine/                GameEngine, Retry; Shadow/ (calendar, profiles, anxieties, budget, aid,
                            popularity, elections, advice, combat, scenarios, world evaluation, simulation)
-    Models/                GameState, Country, crises, advisors, alliances, world DB, factbook, AIBackendManager
+    Models/                GameState, Country, crises, advisors, alliances, world DB, factbook, event log
     Views/                 Start screen, MainTabView, Command Center, maps, crises, powers, leaderboard
       SituationRoom/       Home screen, VectorWorldMap, advice panel, sheets
     Storage/               GameStore protocol, Postgres / local / in-memory stores, service, migrations, UI
     ShadowPack/            Optional local Shadow President art and sound loader
-    AI/                    LLMBackendType (backend ids, Auto order), AIKeyStore (Keychain), output sanitiser, AI settings
+    AI/                    AppAI (NovaAIKit instance, legacy migration, GameAI text calls), GTNWAIViews (settings,
+                           AI menu, toolbar), TerminalAdvisor (WOPR terminal), AIOutputSanitizer, adaptive opponent
     Intelligence/ Diplomacy/ Warfare/ Economics/ Events/ Media/ Cinematics/ Audio/
     Achievements/ Visualization/ Resources/
     NovaAPIServer.swift    Loopback HTTP API
@@ -1399,18 +1427,18 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **811 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **828 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 216 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden, the starvation windows and the 1906 food laws, the civilian-tactic eras and the maximum extraction rate, the deception eras, the sea eras and the treaties the United States never joined, the record of the age; AI options: backend ids and migration, Auto order and failover chain, URL and key policy, the reply sanitiser, status text |
-| **Functional** | 156 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open, burning towns, the scale a President orders, flamethrowers on a front, a starvation stance that bites and lapses, the embalmed-beef bargain, camps ending an insurgency, removal, internment and its redress, a pretext Congress accepts until it is exposed, counterfeiting, enemy uniforms, press gangs and hired regiments on top of the cap, the submarine and firebombing stances, the record firing on its real dates, abolition on the record; AI options: the game fully playable with AI off, the switch persisting, Ollama and gateway URLs reaching every caller, a saved key making OpenRouter selectable, Test Connection |
-| **Security** | 92 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire, no player action for slavery or genocide, computer-run powers kept to their era; AI options: OpenRouter brains send their Keychain key and nothing without one, no key over http, no key to local or gateway brains, Keychain round trip on a test-only service, legacy key migration, no keys in defaults or the environment, AI off sends nothing |
-| **Integration** | 58 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal, mines that keep killing, computer-run powers using the era's tactics; AI options: engine to OpenRouter brain to state, keyless brains offline, sanitised manager output, an empty reply failing over, the Nova Gateway route |
-| **Performance** | 50 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 and in 1789 under one second with the whole 3.17 series in the loop (profiled at about 0.25 s and 0.02 s in Debug); AI options: an AI-off turn with thirty model brains makes no calls, bounded probe and request timeouts, a cheap sanitiser |
-| **Retry** | 79 | `RetryPolicy` and `Retry.run`; LLM clients, Ollama, MLX and Games DB sync all retry; every new save field decodes from older saves; a failed commentary backend leaves the template line; AI options: Auto fails over after bounded retries, an explicit backend never switches, a missing key or 401 fails fast, a 429 is retried |
+| **Unit** | 218 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden, the starvation windows and the 1906 food laws, the civilian-tactic eras and the maximum extraction rate, the deception eras, the sea eras and the treaties the United States never joined, the record of the age; AI options (NovaAIKit): GTNW's configuration and Keychain names, legacy settings migration, brain routing to a pinned kit engine, the reply validator, the built-in terminal advice |
+| **Functional** | 160 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open, burning towns, the scale a President orders, flamethrowers on a front, a starvation stance that bites and lapses, the embalmed-beef bargain, camps ending an insurgency, removal, internment and its redress, a pretext Congress accepts until it is exposed, counterfeiting, enemy uniforms, press gangs and hired regiments on top of the cap, the submarine and firebombing stances, the record firing on its real dates, abolition on the record; AI options: the game fully playable with AI off, the switch persisting, Ollama and gateway URLs reaching every caller, a saved key making OpenRouter selectable, Test Connection, every AI feature working with AI off and with every backend down |
+| **Security** | 97 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire, no player action for slavery or genocide, computer-run powers kept to their era; AI options: OpenRouter brains send their Keychain key and nothing without one, no key over http, no key to local or gateway brains, Keychain items `com.jkoch.gtnw.*` (in-memory store under test), legacy key migration, no keys in defaults or the environment, AI off sends nothing, the shared AI hermetic under tests, no old AI client left in the sources |
+| **Integration** | 60 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal, mines that keep killing, computer-run powers using the era's tactics; AI options: engine to OpenRouter brain to state, keyless brains offline, sanitised manager output, an empty reply failing over, the Nova Gateway route, a refused server falling back without retries |
+| **Performance** | 51 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 and in 1789 under one second with the whole 3.17 series in the loop (profiled at about 0.25 s and 0.02 s in Debug); AI options: an AI-off turn with thirty model brains makes no calls, bounded probe and request timeouts, a cheap sanitiser |
+| **Retry** | 82 | `RetryPolicy` and `Retry.run`; model brains (through NovaAIKit: 408, 429 and 5xx retried, three tries) and Games DB sync retry; every new save field decodes from older saves; a failed commentary backend leaves the template line; AI options: Auto fails over after bounded retries, an explicit backend never switches, a missing key or 401 fails fast, a 429 is retried |
 | **Frame** | 57 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/`; AI options: Settings → AI, the status line and AI menu, the brains panel with and without a key |
 
 Test runs are silent and stay off the desktop (3.12.1): the app mutes every audio path when `GTNW_MUTE=1`, when
@@ -1429,7 +1457,9 @@ tools/launch_smoke.sh /Applications/GTNW.app
 - Core gameplay works with no internet connection. Saves sync to the Games DB on the LAN when it can be reached and
   stay local otherwise.
 - There is no telemetry or tracking.
-- API keys and DB passwords are stored only in the Keychain, never in `UserDefaults`, files or logs.
+- API keys and DB passwords are stored only in the Keychain, never in `UserDefaults`, files or logs. AI keys are
+  sent only over https, only to the backend they belong to; with no key nothing is sent to OpenRouter or OpenAI.
+- With **Use AI** off no game data leaves the Mac for AI. Prompts carry game facts only, never anything about you.
 - The HTTP API listens on loopback only.
 - Postgres connections use TLS `verify-full` against a pinned CA.
 
@@ -1439,6 +1469,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.24.0 | Nov 2026 | AI on NovaAIKit 1.0: the kit's settings screen and status indicator, Auto failover with a 60 s health skip, re-ask on a rejected reply, MLX over `mlx_lm.server`; brains, commentary and the WOPR terminal keep their prompts, validators and fallbacks; old settings and keys migrate once; GTNW's own AI client, key store and the python MLX/Ollama clients removed |
 | 3.23.0 | Nov 2026 | AI options: a global Use AI switch, the shared backend ids with Nova Gateway and OpenRouter, Auto failover, editable Ollama and gateway URLs, Keychain key fields (OpenRouter brains finally send their key, https only), status and Test Connection, sanitised replies; the never-working Google/Azure/AWS/IBM backends and dead AI code removed |
 | 3.22.1 | Nov 2026 | The public edition: `tools/make_public_dmg.sh` builds a Developer ID–signed, notarized DMG of the full game with no Games DB, no core3 hand-off, no bundled Games DB CA and no Nova banner, for giving GTNW to anyone |
 | 3.22.0 | Nov 2026 | The roast log: every presidential order is logged with what the cabinet said and whether you overruled them, plus every crisis call (and the options you passed over), election and midterm results, big approval / DEFCON / impeachment / Congress swings, session tallies and a game-over post-mortem, so Nova's column can tell the whole story. A Situation Room banner says when this Mac's games can't reach Nova |

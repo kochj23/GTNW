@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import NovaAIKit
 
 enum NovaCommentary {
     static let defaultsKey = "GTNW.novaCommentary"
@@ -42,24 +43,29 @@ enum NovaCommentary {
         """
 
     #if os(macOS)
-    /// Wire the live generator to the local AI backends (Ollama, MLX, …): two attempts, then the template stands.
+    /// Wire the live generators to the game's AI (NovaAIKit: Auto failover, retries, timeouts; the reply must pass
+    /// `AIOutputSanitizer`). AI off, nothing reachable or an unusable reply → nil and the template line stands.
     /// Never under XCTest.
     static func wireLiveBackends() {
         guard !AudioGate.underXCTest else { return }
         generator = { prompt in
-            await MainActor.run { AIBackendManager.shared.activeBackend } == nil ? nil
-                : try? await Retry.run("nova-commentary", policy: .subprocess) {
-                    try await AIBackendManager.shared.generate(prompt: prompt, systemPrompt: systemPrompt, temperature: 0.9, maxTokens: 60)
-                }
+            await liveLine(prompt, system: systemPrompt, temperature: 0.9, maxTokens: 60)
         }
         roastGenerator = { prompt in
-            await MainActor.run { AIBackendManager.shared.activeBackend } == nil ? nil
-                : try? await Retry.run("nova-roast", policy: .subprocess) {
-                    try await AIBackendManager.shared.generate(prompt: prompt, systemPrompt: roastSystemPrompt, temperature: 0.95, maxTokens: 90)
-                }
+            await liveLine(prompt, system: roastSystemPrompt, temperature: 0.95, maxTokens: 90)
         }
     }
     #endif
+
+    /// One AI line for `prompt`, or nil (AI off / unavailable / rejected twice) so the caller keeps its template.
+    @MainActor
+    static func liveLine(_ prompt: String, system: String, temperature: Double, maxTokens: Int, ai: NovaAI? = nil) async -> String? {
+        let ai = ai ?? AppAI.shared
+        guard ai.isEnabled else { return nil }
+        let r = await GameAI.shared.text(prompt: prompt, systemPrompt: system, temperature: temperature,
+                                         maxTokens: maxTokens, ai: ai, fallback: { "" })
+        return r.isAI ? r.value : nil
+    }
 
     /// Stable string hash (Swift's hashValue changes per launch).
     static func stableHash(_ s: String) -> Int { s.utf8.reduce(5381) { ($0 &* 33 &+ Int($1)) & 0x7fffffff } }

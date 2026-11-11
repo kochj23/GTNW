@@ -1,6 +1,15 @@
 {
-  "originHash" : "c7ced254269df6de79c501e4c750ba25d87a42910bee2f46f1c64d27658dfb51",
+  "originHash" : "f5d31ab86474b8daf7a251561279871b9a3dd46bfdd412e27a789a4d5c5de887",
   "pins" : [
+    {
+      "identity" : "novaaikit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kochj23/NovaAIKit.git",
+      "state" : {
+        "revision" : "e556e454c7544090680fb9a817fe933a4bd2d6b7",
+        "version" : "1.0.0"
+      }
+    },
     {
       "identity" : "postgres-nio",
       "kind" : "remoteSourceControl",

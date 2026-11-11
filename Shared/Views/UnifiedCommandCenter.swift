@@ -704,103 +704,9 @@ struct UnifiedCommandCenter: View {
 
     // MARK: - AI Backend Selector with Availability Indicators
 
+    /// NovaAIKit status dot + backend picker + Ollama model picker (GTNWAIViews.swift).
     private var aiBackendSelector: some View {
-        HStack(spacing: 12) {
-            // Backend picker with availability dots
-            Menu {
-                ForEach(LLMBackendType.pickerCases, id: \.self) { backend in
-                    Button(action: {
-                        AIBackendManager.shared.selectedBackend = backend
-                        AIBackendManager.shared.saveSettings()
-                        Task {
-                            await AIBackendManager.shared.checkBackendAvailability()
-                        }
-                    }) {
-                        HStack(spacing: 8) {
-                            // Availability indicator (green dot like TopGUI)
-                            Circle()
-                                .fill(isBackendAvailable(backend) ? Color.green : Color.gray)
-                                .frame(width: FontScale.w(8), height: FontScale.h(8))
-
-                            Text(backend.displayName)
-
-                            Spacer()
-
-                            if AIBackendManager.shared.selectedBackend == backend {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                    }
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    // Status dot
-                    Circle()
-                        .fill(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
-                        .frame(width: FontScale.w(8), height: FontScale.h(8))
-                        .shadow(color: AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed, radius: 3)
-
-                    Image(systemName: "brain.head.profile")
-                        .font(.scaled(size: 12))
-                    Text(AIBackendManager.shared.selectedBackend.displayName)
-                        .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
-                }
-                .foregroundColor(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.05))
-                .cornerRadius(6)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(AIBackendManager.shared.activeBackend != nil ? GTNWColors.terminalGreen : GTNWColors.terminalRed, lineWidth: 1)
-                )
-            }
-            .help(AIStatusText.line(enabled: AIBackendManager.shared.aiEnabled, active: AIBackendManager.shared.activeBackend))
-
-            // Ollama model picker (if Ollama selected)
-            if AIBackendManager.shared.selectedBackend == .ollama && AIBackendManager.shared.isOllamaAvailable {
-                Menu {
-                    ForEach(AIBackendManager.shared.ollamaModels, id: \.self) { model in
-                        Button(action: {
-                            AIBackendManager.shared.selectedOllamaModel = model
-                            AIBackendManager.shared.saveSettings()
-                        }) {
-                            HStack {
-                                Text(model)
-                                Spacer()
-                                if AIBackendManager.shared.selectedOllamaModel == model {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "cpu")
-                            .font(.scaled(size: 12))
-                        Text(AIBackendManager.shared.selectedOllamaModel)
-                            .font(.scaled(size: 11, weight: .semibold, design: .monospaced))
-                            .lineLimit(1)
-                    }
-                    .foregroundColor(GTNWColors.neonCyan)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.05))
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(GTNWColors.neonCyan, lineWidth: 1)
-                    )
-                }
-                .help("Ollama Model")
-            }
-        }
-    }
-
-    private func isBackendAvailable(_ backend: AIBackend) -> Bool {
-        AIBackendManager.shared.isAvailable(backend)
+        AIBackendToolbar()
     }
 
     // MARK: - Actions
@@ -816,11 +722,11 @@ struct UnifiedCommandCenter: View {
 
     private func openAISettings() {
         #if os(macOS)
-        let settingsView = AIBackendSettingsView()
+        let settingsView = GTNWAISettingsView()
         let hostingController = NSHostingController(rootView: settingsView)
 
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "AI Backend Settings"
+        window.title = "AI Settings"
         window.styleMask = [.titled, .closable, .resizable]
         window.setContentSize(NSSize(width: 600, height: 700))
         window.center()

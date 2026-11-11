@@ -9,15 +9,18 @@
 //
 
 import SwiftUI
+import NovaAIKit
 
 struct BrainAssignmentView: View {
     @EnvironmentObject var gameEngine: GameEngine
     @Environment(\.dismiss) var dismiss
 
-    @State private var localModels: [ModelInfo] = []
+    @State private var localModels: [String] = []
     @State private var loadingModels = false
     @State private var searchText = ""
-    @ObservedObject private var ai = AIBackendManager.shared
+    /// Read off the main thread in `loadModels` (a Keychain read can prompt after an ad hoc rebuild).
+    @State private var hasOpenRouterKey = false
+    @ObservedObject private var ai = AppAI.shared
 
     /// A small curated set of frontier models reachable via OpenRouter.
     private let frontierModels: [(label: String, id: String)] = [
@@ -27,7 +30,9 @@ struct BrainAssignmentView: View {
         ("Gemini (OpenRouter)", "google/gemini-2.5-pro"),
         ("Llama (OpenRouter)", "meta-llama/llama-3.3-70b-instruct")
     ]
-    private let openRouterEndpoint = AIBackendManager.openRouterChatURL
+    /// Stored with each brain (full chat URL, the format saved games already use).
+    private var openRouterEndpoint: String { "\(ai.settings.url(for: .openRouter))/chat/completions" }
+    private var ollamaEndpoint: String { "\(ai.settings.url(for: .ollama))/v1/chat/completions" }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,7 +44,7 @@ struct BrainAssignmentView: View {
                         Text("Every unassigned country uses the fast Rule-Based AI. Set a country to \"This Session\" for true PvP against a live Claude Code session, \"Gateway-Claude\" for an always-on opponent, or any local / frontier model.")
                             .font(.scaled(size: 12, design: .monospaced))
                             .foregroundColor(.secondary)
-                        if !ai.aiEnabled {
+                        if !ai.isEnabled {
                             Text("AI is OFF (Settings → AI). Every brain below plays as Rule-Based AI until it is turned back on.")
                                 .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                                 .foregroundColor(GTNWColors.terminalAmber)
@@ -121,20 +126,17 @@ struct BrainAssignmentView: View {
 
             if !localModels.isEmpty {
                 Menu("Local Models (Ollama)") {
-                    ForEach(localModels) { model in
-                        Button(model.name.isEmpty ? model.id : "\(model.name)  \(model.sizeLabel)") {
-                            gameEngine.setBrain(
-                                .model(id: model.name,
-                                       endpoint: "\(ModelRegistry.ollamaHost)/v1/chat/completions",
-                                       backend: .ollama),
-                                for: countryID)
+                    ForEach(localModels, id: \.self) { model in
+                        Button(model) {
+                            gameEngine.setBrain(.model(id: model, endpoint: ollamaEndpoint, backend: .ollama),
+                                                for: countryID)
                         }
                     }
                 }
             }
 
             // OpenRouter brains need a key in the Keychain (Settings → AI); without one they are not offered.
-            if ai.hasOpenRouterKey {
+            if hasOpenRouterKey {
                 Menu("Frontier Models (OpenRouter)") {
                     ForEach(frontierModels, id: \.id) { fm in
                         Button(fm.label) {
@@ -188,10 +190,13 @@ struct BrainAssignmentView: View {
 
     private func loadModels() {
         loadingModels = true
+        let keys = ai.keys
         Task {
-            let models = await ModelRegistry.fetchLocalModels()
+            let models = await ai.listModels(for: .ollama)
+            let hasKey = await Task.detached(priority: .utility) { keys.hasKey(for: .openRouter) }.value
             await MainActor.run {
                 self.localModels = models
+                self.hasOpenRouterKey = hasKey
                 self.loadingModels = false
             }
         }

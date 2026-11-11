@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import NovaAIKit
 
 /// Whose turn it is, for the UI banner and action gating.
 enum TurnPhase: Equatable {
@@ -61,7 +62,7 @@ extension GameEngine {
         var ruleBasedIDs: [String] = []
         // Global "Use AI" switch: off means every automated country plays the built-in rule-based AI and no
         // brain request leaves the app.
-        let aiOn = AIBackendManager.shared.aiEnabled
+        let aiOn = AppAI.shared.isEnabled
 
         for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
             let assigned = brain(for: country.id)
@@ -83,7 +84,8 @@ extension GameEngine {
         var responses: [String: MoveResponse] = [:]
         if !remoteJobs.isEmpty {
             addLog("🧠 Consulting \(remoteJobs.count) brain(s) concurrently…", type: .info)
-            let config = brainConfig
+            var config = brainConfig
+            if config.engine == nil { config.engine = AppAI.shared.engine }
             let override = brainTransportOverride
             responses = await withTaskGroup(of: (String, MoveResponse?).self) { group in
                 for job in remoteJobs {

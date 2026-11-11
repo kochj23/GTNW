@@ -14,7 +14,7 @@ class WhatIfSimulator: ObservableObject {
     @Published var simulationResults: [ActionSimulation] = []
     @Published var isSimulating = false
 
-    private let aiBackend = AIBackendManager.shared
+    private let aiBackend = GameAI.shared
 
     /// Simulate an action's consequences
     func simulate(

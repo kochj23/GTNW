@@ -11,7 +11,7 @@ import Foundation
 /// AI decision engine based on personality, memory, and emotional state
 @MainActor
 class AIPersonalityEngine: ObservableObject {
-    private let aiBackend = AIBackendManager.shared
+    private let aiBackend = GameAI.shared
 
     /// Generate personality-driven AI decision
     func makeDecision(

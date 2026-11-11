@@ -17,7 +17,7 @@ class MultiPerspectiveAnalyzer: ObservableObject {
     @Published var isAnalyzing = false
     @Published var currentAnalysis: WarPerspectiveAnalysis?
 
-    private let llm = AIBackendManager.shared
+    private let llm = GameAI.shared
 
     private init() {}
 

@@ -15,7 +15,7 @@ class AIWarRoom: ObservableObject {
     @Published var threatAnalysis: ThreatAnalysis?
     @Published var isAnalyzing = false
 
-    private let aiBackend = AIBackendManager.shared
+    private let aiBackend = GameAI.shared
 
     /// Analyze current strategic situation
     func analyzeSituation(gameState: GameState) async -> ThreatAnalysis {

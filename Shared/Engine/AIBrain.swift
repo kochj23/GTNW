@@ -8,9 +8,10 @@
 //    • .liveSession    — a LIVE Claude Code session answering over the PG
 //                        coordination bus (true PvP)
 //    • .gatewayClaude  — an always-on Gateway-Claude, answers inline
-//    • .model(...)     — any OpenAI-compatible endpoint (local Ollama model or
-//                        an OpenRouter frontier model; OpenRouter brains send the
-//                        Keychain key over https, and send nothing without one)
+//    • .model(...)     — a local Ollama model, an OpenRouter frontier model or any
+//                        OpenAI-compatible server. Model brains go through NovaAIKit
+//                        (3.24): OpenRouter sends the Keychain key over https only,
+//                        and sends nothing without one.
 //
 //  Transport lives here; the request/response contract and the pure
 //  buildMoveRequest/applyMove helpers live in AIMove.swift.
@@ -19,6 +20,7 @@
 //
 
 import Foundation
+import NovaAIKit
 
 // MARK: - Brain identity
 
@@ -98,13 +100,12 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
 
 /// Tunable transport settings. All timeouts guarantee the turn loop never hangs.
 struct BrainConfig: Sendable {
-    /// Nova Gateway OpenAI-compatible chat endpoint (always-on Gateway-Claude). Follows Settings → AI →
-    /// "Nova Gateway URL" unless a caller pins it.
-    var gatewayEndpointOverride: String? = nil
-    var gatewayEndpoint: String {
-        get { gatewayEndpointOverride ?? "\(AIEndpointSettings.novaGatewayURL)/v1/chat/completions" }
-        set { gatewayEndpointOverride = newValue }
-    }
+    /// The NovaAIKit engine model brains go through (keys, https-only rule, retries, timeouts). Nil = the app's
+    /// `AppAI.shared.engine` at the start of the turn; tests inject one with a stub session.
+    var engine: NovaAIEngine? = nil
+
+    /// Nova Gateway base URL for Gateway-Claude. Nil = Settings → AI → Nova Gateway URL.
+    var gatewayBaseURL: String? = nil
     var gatewayModel: String = "chat"
     var gatewayTimeout: TimeInterval = 30
 
@@ -120,131 +121,71 @@ struct BrainConfig: Sendable {
     /// Timeout for `.model(...)` brains.
     var modelTimeout: TimeInterval = 30
 
-    /// Every remote brain call is retried with backoff (inside the timeouts above).
+    /// The live-session bridge (not an LLM) keeps GTNW's own retry/transport seams.
     var retryPolicy: RetryPolicy = .network
-    /// Injectable seams so tests can drive the full transport with no network.
     var transport: HTTPTransport = HTTP.live
     var retrySleep: RetrySleeper = Retry.realSleep
-    /// Where an OpenRouter brain gets its key: the Keychain (com.jkoch.gtnw.openrouter). Tests inject a fake.
-    var openRouterKey: @Sendable () -> String? = { AIKeyStore.key(.openRouter) }
 
     static let `default` = BrainConfig()
 }
 
-// MARK: - Model registry (pure parsing + optional fetch)
+// MARK: - Brain routing (pure)
 
-struct ModelInfo: Identifiable, Equatable, Hashable, Sendable {
-    var id: String { name }
-    var name: String
-    var sizeBytes: Int64
-
-    var sizeLabel: String {
-        guard sizeBytes > 0 else { return "" }
-        return String(format: "%.1f GB", Double(sizeBytes) / 1_000_000_000)
-    }
-}
-
-enum ModelRegistry {
-    /// The Ollama server from Settings → AI (default http://localhost:11434).
-    static var ollamaHost: String { AIEndpointSettings.ollamaURL }
-
-    /// PURE: map an Ollama `/api/tags` body to models. Empty/garbage → [].
-    static func parseOllamaTags(_ data: Data) -> [ModelInfo] {
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let models = json["models"] as? [[String: Any]] else { return [] }
-        return models.compactMap { dict in
-            guard let name = dict["name"] as? String, !name.isEmpty else { return nil }
-            let size: Int64
-            if let i64 = dict["size"] as? Int64 { size = i64 }
-            else if let i = dict["size"] as? Int { size = Int64(i) }
-            else { size = 0 }
-            return ModelInfo(name: name, sizeBytes: size)
-        }
-    }
-
-    /// Fetch installed local models from Ollama. Network — retried with backoff,
-    /// returns [] once retries are exhausted.
-    static func fetchLocalModels(
-        host: String = ollamaHost,
-        transport: @escaping HTTPTransport = HTTP.live,
-        policy: RetryPolicy = .network,
-        sleep: @escaping RetrySleeper = Retry.realSleep
-    ) async -> [ModelInfo] {
-        guard let url = URL(string: "\(host)/api/tags") else { return [] }
-        var req = URLRequest(url: url)
-        req.timeoutInterval = 5
-        guard let (data, _) = try? await Retry.http(req, label: "Ollama /api/tags",
-                                                    transport: transport, policy: policy, sleep: sleep)
-        else { return [] }
-        return parseOllamaTags(data)
-    }
-}
-
-// MARK: - Minimal OpenAI-compatible client
-
-/// A small vendored equivalent of AIStudio's `OpenAICompatibleRequest`: builds a
-/// chat-completions POST and extracts `choices[0].message.content`.
-struct OpenAICompatibleRequest {
-    var endpoint: String
+/// Where a model brain's request goes, in NovaAIKit terms.
+struct BrainTarget: Equatable, Sendable {
+    var backend: NovaAIBackend
+    var baseURL: String
     var model: String
-    var systemPrompt: String
-    var userPrompt: String
-    var temperature: Double = 0.5
-    var maxTokens: Int = 300
-    var timeout: TimeInterval = 30
-    var apiKey: String? = nil
-    /// Extra headers (e.g. OpenRouter attribution). Only sent alongside a key, so https only.
-    var extraHeaders: [String: String] = [:]
-    /// Injectable transport + retry (tests use a stub and a no-op sleep).
-    var transport: HTTPTransport = HTTP.live
-    var retryPolicy: RetryPolicy = .network
-    var sleep: RetrySleeper = Retry.realSleep
+}
 
-    /// Nil when the endpoint is unusable — including any attempt to send a key over plain http.
-    func makeURLRequest() -> URLRequest? {
-        guard let url = URL(string: endpoint), AIEndpointPolicy.isValidServerURL(endpoint) else { return nil }
-        let carriesKey = !(apiKey ?? "").isEmpty
-        if carriesKey && !AIEndpointPolicy.mayCarryKey(url) { return nil }
-        let body: [String: Any] = [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
-            ]
-        ]
-        var req = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let apiKey, !apiKey.isEmpty {
-            req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            for (k, v) in extraHeaders { req.setValue(v, forHTTPHeaderField: k) }
+enum BrainRoute {
+    /// Chat paths a stored brain endpoint may end with (brains saved before 3.24 store the full chat URL).
+    static let chatSuffixes = ["/v1/chat/completions", "/chat/completions", "/api/chat", "/api/generate"]
+
+    /// PURE: the base URL the kit wants for `backend`: the stored endpoint minus its chat path and trailing
+    /// slashes. OpenRouter/OpenAI bases keep their `/v1` (the kit appends `/chat/completions`).
+    static func baseURL(_ endpoint: String, for backend: NovaAIBackend = .novaGateway) -> String {
+        var s = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        while s.hasSuffix("/") { s.removeLast() }
+        let suffixes = [backend.chatPath] + (backend.requiresKey ? [] : chatSuffixes)
+        for suffix in suffixes where !suffix.isEmpty && s.hasSuffix(suffix) {
+            s.removeLast(suffix.count)
+            break
         }
-        req.timeoutInterval = timeout
-        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        return req
+        while s.hasSuffix("/") { s.removeLast() }
+        return s
     }
 
-    /// PURE: extract assistant content from an OpenAI-compatible response body.
-    static func parseContent(_ data: Data) -> String? {
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-        if let choices = json["choices"] as? [[String: Any]], let first = choices.first {
-            if let message = first["message"] as? [String: Any],
-               let content = message["content"] as? String { return content }
-            if let text = first["text"] as? String { return text }  // legacy completion shape
+    /// PURE: the kit backend/URL/model for a brain; nil for brains that never call a model.
+    static func target(for brain: AIBrain, gatewayBaseURL: String, gatewayModel: String) -> BrainTarget? {
+        switch brain {
+        case .human, .ruleBased, .liveSession:
+            return nil
+        case .gatewayClaude:
+            return BrainTarget(backend: .novaGateway, baseURL: baseURL(gatewayBaseURL, for: .novaGateway), model: gatewayModel)
+        case .model(let id, let endpoint, let backend):
+            let kit: NovaAIBackend
+            switch backend {
+            case .ollama: kit = .ollama
+            case .openRouter: kit = .openRouter
+            case .gateway, .openAICompatible: kit = .novaGateway   // OpenAI-compatible /v1/chat/completions
+            }
+            return BrainTarget(backend: kit, baseURL: baseURL(endpoint, for: kit), model: id)
         }
-        return json["response"] as? String  // ollama native fallback
     }
 
-    /// Send and return the assistant text, or nil once retries are exhausted.
-    /// Transport errors and 408/429/5xx are retried with backoff; other 4xx fail fast.
-    func send() async -> String? {
-        guard let req = makeURLRequest() else { return nil }
-        guard let (data, _) = try? await Retry.http(req, label: "LLM \(model) @ \(endpoint)",
-                                                    transport: transport, policy: retryPolicy, sleep: sleep)
-        else { return nil }
-        return Self.parseContent(data)
+    /// The engine for one brain call: the app's engine pinned to exactly this backend, server and model (no Auto
+    /// failover to another provider, no extra LAN servers), with the brain's timeout.
+    static func engine(_ base: NovaAIEngine, for target: BrainTarget, timeout: TimeInterval) -> NovaAIEngine {
+        var e = base
+        var s = base.settings
+        s.backend = target.backend
+        s.urls[target.backend.rawValue] = target.baseURL
+        s.models[target.backend.rawValue] = target.model
+        s.extraOllamaEndpoints = []
+        s.timeout = min(max(timeout, NovaAISettings.timeoutRange.lowerBound), NovaAISettings.timeoutRange.upperBound)
+        e.settings = s
+        return e
     }
 }
 
@@ -268,6 +209,7 @@ func withMoveTimeout(
     }
 }
 
+
 // MARK: - Brain transport
 
 /// Dispatches a MoveRequest to the correct backend and returns a MoveResponse,
@@ -275,57 +217,16 @@ func withMoveTimeout(
 /// run concurrently off the main thread.
 enum BrainClient {
 
-    static func requestMove(_ request: MoveRequest, brain: AIBrain, config: BrainConfig) async -> MoveResponse? {
-        switch brain {
-        case .human, .ruleBased:
-            return nil
-        case .gatewayClaude:
-            return await withMoveTimeout(config.gatewayTimeout) {
-                await openAICompatibleMove(request, endpoint: config.gatewayEndpoint, model: config.gatewayModel,
-                                           transport: config.transport, retryPolicy: config.retryPolicy,
-                                           sleep: config.retrySleep)
-            }
-        case .model(let id, let endpoint, let backend):
-            // OpenRouter needs a key. Without one (or over anything but https) nothing is sent — the game state
-            // never leaves the Mac for a call that could only fail — and the country plays rule-based.
-            var key: String? = nil
-            if backend == .openRouter {
-                guard let k = config.openRouterKey(), !k.isEmpty,
-                      AIEndpointPolicy.mayCarryKey(URL(string: endpoint)) else { return nil }
-                key = k
-            }
-            let apiKey = key
-            return await withMoveTimeout(config.modelTimeout) {
-                await openAICompatibleMove(request, endpoint: endpoint, model: id, apiKey: apiKey,
-                                           extraHeaders: apiKey == nil ? [:] : OpenRouterAuth.attribution,
-                                           transport: config.transport, retryPolicy: config.retryPolicy,
-                                           sleep: config.retrySleep)
-            }
-        case .liveSession:
-            return await withMoveTimeout(config.liveSessionTimeout) {
-                await LiveSessionBus.requestMove(request, config: config, transport: config.transport,
-                                                 retryPolicy: config.retryPolicy, sleep: config.retrySleep)
-            }
-        }
-    }
-
-    /// Prompt an OpenAI-compatible endpoint for a MoveResponse.
-    static func openAICompatibleMove(
-        _ request: MoveRequest, endpoint: String, model: String,
-        apiKey: String? = nil,
-        extraHeaders: [String: String] = [:],
-        transport: @escaping HTTPTransport = HTTP.live,
-        retryPolicy: RetryPolicy = .network,
-        sleep: @escaping RetrySleeper = Retry.realSleep
-    ) async -> MoveResponse? {
-        let system = """
+    static let systemPrompt = """
         You are the strategic AI for one nation in a Cold War / nuclear simulation. \
         Respond with ONLY a JSON object of the form \
         {"action":"<ACTION>","target":"<COUNTRY_ID or null>","params":{"warheads":N},"rationale":"..."}. \
         Choose exactly one action from the provided legalActions. Use a target country ID from the world state \
         for actions that require one. Do not add prose outside the JSON.
         """
-        let user = """
+
+    static func userPrompt(_ request: MoveRequest) -> String {
+        """
         \(request.worldStateSummary)
 
         Turn: \(request.turn)  Year: \(request.year)  DEFCON: \(request.defcon)
@@ -333,15 +234,35 @@ enum BrainClient {
 
         Reply with the JSON move now.
         """
-        let text = await OpenAICompatibleRequest(
-            endpoint: endpoint, model: model,
-            systemPrompt: system, userPrompt: user,
-            temperature: 0.6, maxTokens: 250,
-            apiKey: apiKey, extraHeaders: extraHeaders,
-            transport: transport, retryPolicy: retryPolicy, sleep: sleep
-        ).send()
-        guard let text else { return nil }
-        return MoveResponse.decode(fromText: text)
+    }
+
+    static func requestMove(_ request: MoveRequest, brain: AIBrain, config: BrainConfig) async -> MoveResponse? {
+        switch brain {
+        case .human, .ruleBased:
+            return nil
+        case .liveSession:
+            return await withMoveTimeout(config.liveSessionTimeout) {
+                await LiveSessionBus.requestMove(request, config: config, transport: config.transport,
+                                                 retryPolicy: config.retryPolicy, sleep: config.retrySleep)
+            }
+        case .gatewayClaude, .model:
+            guard let base = config.engine else { return nil }
+            let gateway = config.gatewayBaseURL ?? base.settings.url(for: .novaGateway)
+            guard let target = BrainRoute.target(for: brain, gatewayBaseURL: gateway, gatewayModel: config.gatewayModel)
+            else { return nil }
+            let timeout = brain == .gatewayClaude ? config.gatewayTimeout : config.modelTimeout
+            let engine = BrainRoute.engine(base, for: target, timeout: timeout)
+            return await withMoveTimeout(timeout) { await modelMove(request, engine: engine) }
+        }
+    }
+
+    /// One move from a model through NovaAIKit. OpenRouter needs its Keychain key and https: without either the kit
+    /// sends nothing (the world state never leaves the Mac) and the country plays rule-based. The reply is
+    /// validated by `MoveResponse.decode`; legality is checked by `applyMove`.
+    static func modelMove(_ request: MoveRequest, engine: NovaAIEngine) async -> MoveResponse? {
+        let req = NovaAIRequest(prompt: userPrompt(request), system: systemPrompt, temperature: 0.6, maxTokens: 250)
+        guard let reply = try? await engine.complete(req) else { return nil }
+        return MoveResponse.decode(fromText: reply.text)
     }
 }
 

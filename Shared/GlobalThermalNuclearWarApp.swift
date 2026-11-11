@@ -104,7 +104,7 @@ struct GlobalThermalNuclearWarApp: App {
         Settings {
             TabView {
                 ThemeSettingsView().tabItem { Label("Game", systemImage: "gamecontroller") }
-                AIBackendSettingsView().tabItem { Label("AI", systemImage: "cpu") }
+                GTNWAISettingsView().tabItem { Label("AI", systemImage: "cpu") }
                 ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
                 GameStoreSettingsView().tabItem { Label("Saves & DB", systemImage: "externaldrive.connected.to.line.below") }
             }

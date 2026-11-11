@@ -2,16 +2,17 @@
 //  AIOptionsTests.swift
 //  GTNWTests
 //
-//  The AI options layer (3.23.0): global switch, canonical backend ids + migration, Auto order and failover,
-//  editable endpoints, Keychain-only keys (OpenRouter brains now send theirs), https-only keys, output sanitising,
-//  status and settings UI. One XCTestCase per category: Unit, Security, Retry, Performance, Integration,
-//  Functional, Frame. No real network and no real Keychain items (tests use a per-run service prefix).
+//  GTNW's AI options on NovaAIKit (3.24): global switch, canonical backend ids + legacy migration, Auto order and
+//  failover, editable endpoints, Keychain-only keys (OpenRouter brains send theirs, over https only), output
+//  sanitising, status and settings UI. One XCTestCase per category: Unit, Security, Retry, Performance,
+//  Integration, Functional, Frame. No real network, no real Keychain, no real defaults.
 //
 //  Created by Jordan Koch on 2026.
 //
 
 import XCTest
 import SwiftUI
+import NovaAIKit
 @testable import GTNW
 
 // MARK: - Shared helpers
@@ -47,26 +48,10 @@ enum AIFixtures {
                     worldStateSummary: "world", legalActions: ["WAIT", "DECLARE_WAR"])
     }
 
-    /// Put the shared manager back to the state a fresh test host has (no probing under XCTest).
+    /// The shared (hermetic, in-memory) AI back to a fresh state: on, Auto, no keys.
     @MainActor
-    static func resetManager() {
-        let m = AIBackendManager.shared
-        m.aiEnabled = true
-        m.selectedBackend = .auto
-        m.isOllamaAvailable = false; m.isMLXAvailable = false; m.isTinyLLMAvailable = false
-        m.isTinyChatAvailable = false; m.isOpenWebUIAvailable = false; m.isNovaGatewayAvailable = false
-        m.isOpenRouterAvailable = false; m.isOpenAIAvailable = false
-        m.activeBackend = nil
-        m.httpTransport = HTTP.live
-        m.retrySleep = Retry.realSleep
-        m.generationRetryPolicy = .network
-        m.ollamaBaseURL = AIEndpointSettings.ollamaDefault
-        m.novaGatewayURL = AIEndpointSettings.novaGatewayDefault
-        AIEndpointSettings.defaults.removeObject(forKey: AIEndpointSettings.Keys.ollamaURL)
-        AIEndpointSettings.defaults.removeObject(forKey: AIEndpointSettings.Keys.novaGatewayURL)
-        AIEndpointSettings.aiEnabled = true
-        for slot in AIKeyStore.Slot.allCases { AIKeyStore.store(slot).delete() }
-        m.refreshKeyPresence()
+    static func resetShared() {
+        AppAI.shared = AppAI.makeShared()
     }
 
     static var repoRoot: URL {
@@ -76,6 +61,14 @@ enum AIFixtures {
     static func source(_ relative: String) throws -> String {
         try String(contentsOf: repoRoot.appendingPathComponent(relative), encoding: .utf8)
     }
+
+    static func config(_ engine: NovaAIEngine) -> BrainConfig {
+        var c = BrainConfig()
+        c.engine = engine
+        c.modelTimeout = 5
+        c.gatewayTimeout = 5
+        return c
+    }
 }
 
 // MARK: - Unit
@@ -83,47 +76,44 @@ enum AIFixtures {
 final class AIOptionsUnitTests: XCTestCase {
 
     func testCanonicalBackendIds() {
-        XCTAssertEqual(LLMBackendType.allCases.map(\.rawValue),
+        XCTAssertEqual(NovaAIBackend.allCases.map(\.rawValue),
                        ["auto", "ollama", "mlx", "tinyllm", "tinychat", "openwebui", "novagateway", "openrouter", "openai"])
-        XCTAssertEqual(LLMBackendType.autoOrder,
+        XCTAssertEqual(NovaAIBackend.autoOrder,
                        [.ollama, .mlx, .tinyChat, .tinyLLM, .openWebUI, .novaGateway, .openRouter, .openAI])
-        XCTAssertFalse(LLMBackendType.autoOrder.contains(.auto))
-        XCTAssertTrue(LLMBackendType.pickerCases.contains(.mlx), "MLX is offered on macOS")
+        XCTAssertFalse(NovaAIBackend.autoOrder.contains(.auto))
+        XCTAssertTrue(NovaAIBackend.selectable.contains(.mlx), "MLX is offered on macOS")
+        XCTAssertEqual(NovaAIBackend.allCases.count, 9)
     }
 
     func testOldDisplayNameSelectionsMigrate() {
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "Ollama"), .ollama)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "MLX Toolkit"), .mlx)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "TinyLLM"), .tinyLLM)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "TinyChat"), .tinyChat)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "OpenWebUI"), .openWebUI)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "OpenAI"), .openAI)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "Auto (Prefer Ollama)"), .auto)
+        XCTAssertEqual(NovaAIBackend(legacyName: "Ollama"), .ollama)
+        XCTAssertEqual(NovaAIBackend(legacyName: "MLX Toolkit"), .mlx)
+        XCTAssertEqual(NovaAIBackend(legacyName: "TinyLLM"), .tinyLLM)
+        XCTAssertEqual(NovaAIBackend(legacyName: "TinyChat"), .tinyChat)
+        XCTAssertEqual(NovaAIBackend(legacyName: "OpenWebUI"), .openWebUI)
+        XCTAssertEqual(NovaAIBackend(legacyName: "OpenAI"), .openAI)
+        XCTAssertEqual(NovaAIBackend(legacyName: "Auto (Prefer Ollama)"), .auto)
+        XCTAssertEqual(NovaAIBackend(legacyName: "Auto (Prefer Local)"), .auto)
         for removed in ["Google Cloud AI", "Microsoft Azure", "AWS AI Services", "IBM Watson"] {
-            XCTAssertEqual(LLMBackendType.migrate(persisted: removed), .auto, removed)
+            XCTAssertEqual(NovaAIBackend(legacyName: removed), .auto, removed)
         }
-        XCTAssertEqual(LLMBackendType.migrate(persisted: nil), .auto)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "openrouter"), .openRouter)
-        XCTAssertEqual(LLMBackendType.migrate(persisted: "garbage"), .auto)
+        XCTAssertEqual(NovaAIBackend(legacyName: "openrouter"), .openRouter)
+        XCTAssertNil(NovaAIBackend(legacyName: "garbage"))
     }
 
-    func testAutoPicksFirstReachableInOrder() {
-        XCTAssertEqual(LLMBackendType.resolve(selected: .auto, available: [.openRouter, .tinyLLM]), .tinyLLM)
-        XCTAssertEqual(LLMBackendType.resolve(selected: .auto, available: [.openAI, .novaGateway]), .novaGateway)
-        XCTAssertEqual(LLMBackendType.resolve(selected: .auto, available: [.ollama, .mlx]), .ollama)
-        XCTAssertNil(LLMBackendType.resolve(selected: .auto, available: []))
+    func testAutoTriesBackendsInFixedOrder() {
+        let auto = KitTest.engine()
+        XCTAssertEqual(auto.chain(), NovaAIBackend.autoOrder)
+        XCTAssertEqual(auto.candidates().map(\.backend), [.ollama, .mlx, .tinyChat, .tinyLLM, .openWebUI, .novaGateway],
+                       "keyed clouds join only with a key")
+        let keyed = KitTest.engine(keys: [.openRouter: "sk-or-x"])
+        XCTAssertEqual(keyed.candidates().last?.backend, .openRouter)
     }
 
-    func testExplicitChoiceOnlyWhenReachable() {
-        XCTAssertEqual(LLMBackendType.resolve(selected: .novaGateway, available: [.novaGateway, .ollama]), .novaGateway)
-        XCTAssertNil(LLMBackendType.resolve(selected: .ollama, available: [.novaGateway]))
-    }
-
-    func testFailoverChain() {
-        XCTAssertEqual(LLMBackendType.failoverChain(selected: .auto, active: .ollama, available: [.ollama, .openAI, .novaGateway]),
-                       [.ollama, .novaGateway, .openAI])
-        XCTAssertEqual(LLMBackendType.failoverChain(selected: .ollama, active: .ollama, available: [.ollama, .openAI]), [.ollama])
-        XCTAssertEqual(LLMBackendType.failoverChain(selected: .auto, active: nil, available: [.ollama]), [])
+    func testExplicitChoiceNeverSwitchesProvider() {
+        let e = KitTest.engine(settings: KitTest.settings { $0.backend = .novaGateway })
+        XCTAssertEqual(e.chain(), [.novaGateway])
+        XCTAssertEqual(e.candidates().map(\.backend), [.novaGateway])
     }
 
     func testSanitizerCleansModelOutput() {
@@ -136,26 +126,51 @@ final class AIOptionsUnitTests: XCTestCase {
         XCTAssertEqual(AIOutputSanitizer.clean("line one\nline two"), "line one\nline two")
     }
 
-    func testEndpointPolicy() {
-        XCTAssertTrue(AIEndpointPolicy.isValidServerURL("http://nova-core8:11434"))
-        XCTAssertTrue(AIEndpointPolicy.isValidServerURL("https://openrouter.ai/api/v1"))
-        XCTAssertFalse(AIEndpointPolicy.isValidServerURL("file:///etc/passwd"))
-        XCTAssertFalse(AIEndpointPolicy.isValidServerURL("localhost:11434"))
-        XCTAssertFalse(AIEndpointPolicy.isValidServerURL(""))
-        XCTAssertTrue(AIEndpointPolicy.mayCarryKey(URL(string: "https://openrouter.ai/x")))
-        XCTAssertFalse(AIEndpointPolicy.mayCarryKey(URL(string: "http://openrouter.ai/x")))
-        XCTAssertFalse(AIEndpointPolicy.mayCarryKey(nil))
-        XCTAssertEqual(AIEndpointPolicy.normalized(" http://h:1/// "), "http://h:1")
+    func testBrainEndpointsMapToKitBackends() {
+        XCTAssertEqual(BrainRoute.baseURL(" http://h:11434/v1/chat/completions/ "), "http://h:11434")
+        XCTAssertEqual(BrainRoute.baseURL("https://openrouter.ai/api/v1/chat/completions", for: .openRouter), "https://openrouter.ai/api/v1")
+        XCTAssertEqual(BrainRoute.baseURL("http://h:11434/api/chat", for: .ollama), "http://h:11434")
+        XCTAssertEqual(BrainRoute.baseURL("http://h:1///"), "http://h:1")
+        XCTAssertEqual(BrainRoute.target(for: AIFixtures.openRouterBrain, gatewayBaseURL: "", gatewayModel: "chat"),
+                       BrainTarget(backend: .openRouter, baseURL: "https://openrouter.ai/api/v1", model: "anthropic/claude-sonnet-4.5"))
+        XCTAssertEqual(BrainRoute.target(for: .model(id: "qwen3:4b", endpoint: "http://nova-core8:11434/v1/chat/completions",
+                                                     backend: .ollama), gatewayBaseURL: "", gatewayModel: "chat")?.backend, .ollama)
+        XCTAssertEqual(BrainRoute.target(for: .model(id: "m", endpoint: "http://x:9/v1/chat/completions", backend: .openAICompatible),
+                                         gatewayBaseURL: "", gatewayModel: "chat")?.backend, .novaGateway)
+        XCTAssertEqual(BrainRoute.target(for: .gatewayClaude, gatewayBaseURL: "http://g:18792/", gatewayModel: "chat"),
+                       BrainTarget(backend: .novaGateway, baseURL: "http://g:18792", model: "chat"))
+        for local in [AIBrain.human, .ruleBased, .liveSession] {
+            XCTAssertNil(BrainRoute.target(for: local, gatewayBaseURL: "", gatewayModel: "chat"), "\(local)")
+        }
     }
 
+    func testURLPolicyForLegacyImport() {
+        XCTAssertTrue(AppAI.isServerURL("http://nova-core8:11434"))
+        XCTAssertTrue(AppAI.isServerURL("https://openrouter.ai/api/v1"))
+        XCTAssertFalse(AppAI.isServerURL("file:///etc/passwd"))
+        XCTAssertFalse(AppAI.isServerURL("localhost:11434"))
+        XCTAssertFalse(AppAI.isServerURL(""))
+    }
+
+    @MainActor
     func testStatusText() {
-        XCTAssertEqual(AIStatusText.line(enabled: false, active: .ollama), "AI off — built-in logic")
-        XCTAssertEqual(AIStatusText.line(enabled: true, active: nil), "No backend reachable — built-in logic")
-        XCTAssertEqual(AIStatusText.line(enabled: true, active: .novaGateway), "Active: Nova Gateway (reachable)")
+        let off = KitTest.ai(KitTest.settings { $0.enabled = false })
+        XCTAssertEqual(off.status.label, "AI off · built-in answers")
+        XCTAssertEqual(KitTest.ai().status.label, "AI not checked yet")
     }
 
     func testOnlyCloudBackendsNeedKeys() {
-        XCTAssertEqual(Set(LLMBackendType.allCases.filter(\.needsAPIKey)), [.openRouter, .openAI])
+        XCTAssertEqual(Set(NovaAIBackend.allCases.filter(\.requiresKey)), [.openRouter, .openAI])
+    }
+
+    func testGTNWConfiguration() {
+        let c = AppAI.configuration
+        XCTAssertEqual(c.appID, "gtnw")
+        XCTAssertEqual(c.retry.maxAttempts, 3, "three attempts per backend, as before 3.24")
+        XCTAssertEqual(c.defaultSettings.timeout, 30)
+        XCTAssertEqual(c.defaultSettings.model(for: .novaGateway), "chat")
+        XCTAssertEqual(c.defaultSettings.backend, .auto)
+        XCTAssertTrue(c.defaultSettings.enabled)
     }
 }
 
@@ -163,15 +178,12 @@ final class AIOptionsUnitTests: XCTestCase {
 
 final class AIOptionsSecurityTests: XCTestCase {
 
-    @MainActor override func setUp() async throws { AIFixtures.resetManager() }
-    @MainActor override func tearDown() async throws { AIFixtures.resetManager() }
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
 
     private func config(_ rec: RequestRecorder, key: String?) -> BrainConfig {
-        var c = BrainConfig()
-        c.transport = rec.transport(body: AIFixtures.chat(#"{"action":"WAIT"}"#))
-        c.retrySleep = { _ in }
-        c.openRouterKey = { key }
-        return c
+        AIFixtures.config(KitTest.engine(transport: rec.transport(body: AIFixtures.chat(#"{"action":"WAIT"}"#)),
+                                         keys: key.map { [.openRouter: $0] } ?? [:]))
     }
 
     /// The 3.22 bug: OpenRouter brains posted the world state with no key, got a 401 every turn.
@@ -184,6 +196,7 @@ final class AIOptionsSecurityTests: XCTestCase {
         XCTAssertEqual(req.value(forHTTPHeaderField: "Authorization"), "Bearer sk-or-test-123")
         XCTAssertEqual(req.value(forHTTPHeaderField: "X-Title"), "GTNW")
         XCTAssertEqual(req.url?.scheme, "https")
+        XCTAssertEqual(req.url?.absoluteString, "https://openrouter.ai/api/v1/chat/completions")
     }
 
     func testOpenRouterBrainWithoutKeySendsNothing() async {
@@ -194,19 +207,18 @@ final class AIOptionsSecurityTests: XCTestCase {
         XCTAssertTrue(rec.requests.isEmpty, "no key = the world state never leaves the Mac")
     }
 
-    func testOpenRouterKeyIsNeverSentOverHTTP() async {
+    func testOpenRouterKeyIsNeverSentOverHTTP() async throws {
         let rec = RequestRecorder()
         let downgraded = AIBrain.model(id: "x", endpoint: "http://openrouter.ai/api/v1/chat/completions", backend: .openRouter)
         let resp = await BrainClient.requestMove(AIFixtures.request, brain: downgraded, config: config(rec, key: "sk-or-test"))
         XCTAssertNil(resp)
         XCTAssertTrue(rec.requests.isEmpty)
-        XCTAssertNil(OpenAICompatibleRequest(endpoint: "http://example.com/v1", model: "m", systemPrompt: "s",
-                                             userPrompt: "u", apiKey: "k").makeURLRequest())
-        XCTAssertThrowsError(try AIBackendManager.makeChatRequest(url: "http://api.example.com/v1/chat/completions", model: "m",
-                                                                 messages: [], temperature: 0, maxTokens: 1,
-                                                                 headers: ["Authorization": "Bearer k"], timeout: 5)) {
-            XCTAssertEqual($0 as? AIBackendError, .insecureEndpoint)
-        }
+        // The kit refuses to build the request at all.
+        var s = KitTest.settings { $0.backend = .openAI }
+        s.setURL("http://api.example.com/v1", for: .openAI)
+        let e = KitTest.engine(keys: [.openAI: "k"], settings: s)
+        let c = try XCTUnwrap(e.candidates().first)
+        XCTAssertThrowsError(try e.chatRequest(c, NovaAIRequest(prompt: "x"), stream: false))
     }
 
     func testLocalAndGatewayBrainsSendNoAuthorization() async throws {
@@ -220,68 +232,97 @@ final class AIOptionsSecurityTests: XCTestCase {
         }
     }
 
-    func testKeychainRoundTripUsesTestService() {
-        XCTAssertTrue(AIKeyStore.servicePrefix.hasPrefix("com.jkoch.gtnw.tests."), "tests must never touch real items")
-        XCTAssertFalse(AIKeyStore.hasKey(.openRouter))
-        XCTAssertTrue(AIKeyStore.setKey("  sk-or-abc  ", for: .openRouter))
-        XCTAssertEqual(AIKeyStore.key(.openRouter), "sk-or-abc", "trimmed")
-        XCTAssertTrue(AIKeyStore.setKey("sk-or-def", for: .openRouter), "replace in place")
-        XCTAssertEqual(AIKeyStore.key(.openRouter), "sk-or-def")
-        XCTAssertTrue(AIKeyStore.setKey("", for: .openRouter), "empty deletes instead of storing \"\"")
-        XCTAssertNil(AIKeyStore.key(.openRouter))
-        XCTAssertNil(KeychainStore(service: AIKeyStore.store(.openRouter).service).get())
+    /// Keys round-trip through the key store under GTNW's own services (in memory here; the Keychain in the app).
+    func testKeyRoundTripUsesGTNWServices() {
+        let store = NovaAIMemoryKeyStore()
+        let keys = NovaAIKeys(configuration: AppAI.configuration, store: store)
+        XCTAssertFalse(keys.hasKey(for: .openRouter))
+        XCTAssertTrue(keys.setKey("  sk-or-abc  ", for: .openRouter))
+        XCTAssertEqual(keys.key(for: .openRouter), "sk-or-abc", "trimmed")
+        XCTAssertEqual(store.read(service: "com.jkoch.gtnw.openrouter", account: "apiKey"), "sk-or-abc")
+        XCTAssertTrue(keys.setKey("sk-or-def", for: .openRouter), "replace in place")
+        XCTAssertEqual(keys.key(for: .openRouter), "sk-or-def")
+        XCTAssertTrue(keys.setKey("", for: .openRouter), "empty deletes instead of storing \"\"")
+        XCTAssertNil(keys.key(for: .openRouter))
+        XCTAssertEqual(store.count, 0)
     }
 
     func testLegacyOpenAIKeyMigratesOnce() {
-        let legacy = KeychainStore(service: AIKeyStore.legacyService, account: AIKeyStore.legacyOpenAIAccount)
-        defer { legacy.delete() }
-        XCTAssertTrue(legacy.set("sk-legacy"))
-        AIKeyStore.migrateLegacyKeys()
-        XCTAssertEqual(AIKeyStore.key(.openAI), "sk-legacy")
-        XCTAssertNil(legacy.get(), "old item removed after the copy")
-        AIKeyStore.migrateLegacyKeys()   // idempotent
-        XCTAssertEqual(AIKeyStore.key(.openAI), "sk-legacy")
+        let store = NovaAIMemoryKeyStore()
+        XCTAssertTrue(store.write("sk-legacy", service: AppAI.legacyKeychainService, account: AppAI.legacyOpenAIAccount))
+        let keys = NovaAIKeys(configuration: AppAI.configuration, store: store)
+        AppAI.migrateLegacyKeys(keys)
+        XCTAssertEqual(keys.key(for: .openAI), "sk-legacy")
+        XCTAssertNil(store.read(service: AppAI.legacyKeychainService, account: AppAI.legacyOpenAIAccount),
+                     "old item removed after the verified copy")
+        AppAI.migrateLegacyKeys(keys)   // idempotent
+        XCTAssertEqual(keys.key(for: .openAI), "sk-legacy")
+    }
+
+    func testExistingGTNWKeychainItemsNeedNoMigration() {
+        // 3.23 wrote com.jkoch.gtnw.openrouter/openai with account apiKey — exactly the kit's names.
+        let store = NovaAIMemoryKeyStore()
+        _ = store.write("sk-or-323", service: "com.jkoch.gtnw.openrouter", account: "apiKey")
+        _ = store.write("sk-oa-323", service: "com.jkoch.gtnw.openai", account: "apiKey")
+        let keys = NovaAIKeys(configuration: AppAI.configuration, store: store)
+        AppAI.migrateLegacyKeys(keys)
+        XCTAssertEqual(keys.key(for: .openRouter), "sk-or-323")
+        XCTAssertEqual(keys.key(for: .openAI), "sk-oa-323")
+    }
+
+    @MainActor
+    func testPlaintextLegacyKeyLeavesUserDefaults() {
+        let (d, name) = KitTest.defaultsSuite()
+        defer { UserDefaults().removePersistentDomain(forName: name) }
+        d.set("sk-plain-322", forKey: "AIBackendManager_OpenAI_Key")
+        d.set("sk-plain-old", forKey: "AIBackend_OpenAI_Key")
+        d.set("goog", forKey: "AIBackendManager_GoogleCloud_Key")
+        let store = NovaAIMemoryKeyStore()
+        let ai = KitTest.ai(store: store)
+        AppAI.migrateLegacySettings(ai, defaults: d)
+        XCTAssertTrue(ai.hasAPIKey(for: .openAI))
+        XCTAssertNil(d.object(forKey: "AIBackendManager_OpenAI_Key"))
+        XCTAssertNil(d.object(forKey: "AIBackend_OpenAI_Key"))
+        XCTAssertNil(d.object(forKey: "AIBackendManager_GoogleCloud_Key"), "removed backends' secrets are deleted")
     }
 
     @MainActor
     func testKeysNeverLandInUserDefaults() {
-        let m = AIBackendManager.shared
-        m.setAPIKey("sk-or-defaults-probe", for: .openRouter)
-        m.saveSettings()
-        XCTAssertTrue(m.hasOpenRouterKey)
-        let dump = AIEndpointSettings.defaults.dictionaryRepresentation().values.map { "\($0)" }.joined()
+        let (d, name) = KitTest.defaultsSuite()
+        defer { UserDefaults().removePersistentDomain(forName: name) }
+        let ai = NovaAI(configuration: AppAI.configuration, storage: NovaAIUserDefaultsStorage(suiteName: name),
+                        keyStore: NovaAIMemoryKeyStore(), session: TransportURLProtocol.session(TransportURLProtocol.refuse))
+        XCTAssertTrue(ai.setAPIKey("sk-or-defaults-probe", for: .openRouter))
+        ai.settings.backend = .openRouter          // forces a settings save
+        XCTAssertTrue(ai.hasAPIKey(for: .openRouter))
+        let dump = d.dictionaryRepresentation().values.map { "\($0)" }.joined()
         XCTAssertFalse(dump.contains("sk-or-defaults-probe"))
-        XCTAssertFalse(String(describing: m).contains("sk-or-defaults-probe"))
+        XCTAssertFalse(String(describing: ai.settings).contains("sk-or-defaults-probe"))
     }
 
     func testSourceHasNoRemovedOrUnsafeBackends() throws {
-        let manager = try AIFixtures.source("Shared/Models/AIBackendManager.swift")
-        for gone in ["YOUR_PROJECT_ID", "googleCloud", "azureCognitive", "awsAI", "ibmWatson"] {
-            XCTAssertFalse(manager.contains(gone), "\(gone) is back in AIBackendManager.swift")
-        }
-        let keys = try AIFixtures.source("Shared/AI/AIKeyStore.swift")
-        XCTAssertTrue(keys.contains("\"com.jkoch.gtnw\""), "GTNW's own Keychain service")
-        XCTAssertFalse(keys.contains("aistudio"), "never another app's Keychain service")
-        // No AI key is read from the environment anywhere in the app.
+        let appAI = try AIFixtures.source("Shared/AI/AppAI.swift")
+        XCTAssertTrue(appAI.contains("appID = \"gtnw\""), "GTNW's own Keychain services (com.jkoch.gtnw.*)")
+        XCTAssertFalse(appAI.contains("aistudio"), "never another app's Keychain service")
         let e = FileManager.default.enumerator(at: AIFixtures.repoRoot.appendingPathComponent("Shared"), includingPropertiesForKeys: nil)
         while let url = e?.nextObject() as? URL {
             guard url.pathExtension == "swift" else { continue }
             let text = try String(contentsOf: url, encoding: .utf8)
-            XCTAssertFalse(text.contains("OPENAI_API_KEY") || text.contains("OPENROUTER_API_KEY"), url.lastPathComponent)
+            for gone in ["YOUR_PROJECT_ID", "googleCloud", "azureCognitive", "awsAI", "ibmWatson", "OPENAI_API_KEY", "OPENROUTER_API_KEY"] {
+                XCTAssertFalse(text.contains(gone), "\(gone) in \(url.lastPathComponent)")
+            }
         }
     }
 
     @MainActor
     func testAIOffSendsNothing() async {
-        let m = AIBackendManager.shared
         let rec = RequestRecorder()
-        m.httpTransport = rec.transport(body: #"{"response":"hi"}"#)
-        m.isOllamaAvailable = true
-        m.setAIEnabled(false)
-        XCTAssertNil(m.activeBackend)
-        do { _ = try await m.generate(prompt: "x"); XCTFail("must throw") } catch {
-            XCTAssertEqual(error as? AIBackendError, .noBackendAvailable)
+        let ai = KitTest.ai(KitTest.settings { $0.enabled = false }, transport: rec.transport(body: KitTest.ollama("hi")))
+        do { _ = try await GameAI.shared.generate(prompt: "x", ai: ai); XCTFail("must throw") } catch {
+            XCTAssertTrue(error is GameAIError)
         }
+        let line = await NovaCommentary.liveLine("x", system: "s", temperature: 0.5, maxTokens: 10, ai: ai)
+        XCTAssertNil(line)
         XCTAssertTrue(rec.requests.isEmpty)
     }
 }
@@ -290,61 +331,48 @@ final class AIOptionsSecurityTests: XCTestCase {
 
 final class AIOptionsRetryTests: XCTestCase {
 
-    @MainActor override func setUp() async throws { AIFixtures.resetManager() }
-    @MainActor override func tearDown() async throws { AIFixtures.resetManager() }
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
 
-    /// Auto: Ollama keeps failing → bounded retries (3), then the Nova Gateway answers.
+    /// Auto: Ollama keeps failing (503) → bounded retries (3), then the next reachable backend answers.
     @MainActor
     func testAutoFailsOverToNextReachableBackend() async throws {
-        let m = AIBackendManager.shared
         let ollama = RetryProbe(), gateway = RetryProbe(), sleeps = RetryProbe()
-        m.isOllamaAvailable = true
-        m.isNovaGatewayAvailable = true
-        m.determineActiveBackend()
-        XCTAssertEqual(m.activeBackend, .ollama)
-        m.retrySleep = sleeps.sleeper
-        m.httpTransport = { request in
+        let ai = KitTest.ai(transport: { request in
             if request.url?.port == 11434 {
                 ollama.hit()
                 return (Data(), Stub.response(503, url: request.url))
             }
-            gateway.hit()
-            return (Data(AIFixtures.chat("Nova here").utf8), Stub.response(200, url: request.url))
-        }
-        let text = try await m.generate(prompt: "status?")
+            if request.url?.port == 18792 {
+                gateway.hit()
+                return (Data(AIFixtures.chat("Nova here").utf8), Stub.response(200, url: request.url))
+            }
+            throw URLError(.cannotConnectToHost)
+        }, sleep: sleeps.sleeper)
+        let text = try await GameAI.shared.generate(prompt: "status?", ai: ai)
         XCTAssertEqual(text, "Nova here")
-        XCTAssertEqual(ollama.calls, RetryPolicy.network.maxAttempts)
+        XCTAssertEqual(ollama.calls, 3)
         XCTAssertEqual(gateway.calls, 1)
         XCTAssertEqual(sleeps.sleeps, [0.5, 1.0], "backoff only inside a backend, not between backends")
+        XCTAssertEqual(ai.status.activeBackend, .novaGateway)
     }
 
     @MainActor
     func testExplicitBackendDoesNotSwitchProvider() async {
-        let m = AIBackendManager.shared
         let probe = RetryProbe()
-        m.selectedBackend = .ollama
-        m.isOllamaAvailable = true
-        m.isNovaGatewayAvailable = true
-        m.determineActiveBackend()
-        m.retrySleep = probe.sleeper
-        m.httpTransport = Stub.transport(probe, script: [(500, "")])
-        do { _ = try await m.generate(prompt: "x"); XCTFail("must throw") } catch {
-            XCTAssertEqual(error as? HTTPStatusError, HTTPStatusError(statusCode: 500))
-        }
-        XCTAssertEqual(probe.calls, 3, "three attempts at Ollama, never a hop to the gateway")
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                            transport: Stub.transport(probe, script: [(500, "")]), sleep: probe.sleeper)
+        do { _ = try await GameAI.shared.generate(prompt: "x", ai: ai); XCTFail("must throw") } catch {}
+        XCTAssertEqual(probe.calls, 3, "three attempts at Ollama, never a hop to another provider")
     }
 
     @MainActor
     func testMissingKeyFailsFastWithoutRetryOrNetwork() async {
-        let m = AIBackendManager.shared
         let probe = RetryProbe()
-        m.selectedBackend = .openRouter
-        m.isOpenRouterAvailable = true     // stale flag; the key was removed since
-        m.determineActiveBackend()
-        m.httpTransport = Stub.transport(probe, script: [(200, "")])
-        m.retrySleep = probe.sleeper
-        do { _ = try await m.generate(prompt: "x"); XCTFail("must throw") } catch {
-            XCTAssertEqual(error as? AIBackendError, .missingAPIKey)
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .openRouter },
+                            transport: Stub.transport(probe, script: [(200, "")]), sleep: probe.sleeper)
+        do { _ = try await ai.complete(NovaAIRequest(prompt: "x")); XCTFail("must throw") } catch {
+            XCTAssertEqual(error as? NovaAIError, .missingKey(.openRouter))
         }
         XCTAssertEqual(probe.calls, 0)
         XCTAssertTrue(probe.sleeps.isEmpty)
@@ -352,10 +380,9 @@ final class AIOptionsRetryTests: XCTestCase {
 
     func testOpenRouterBrainRetriesRateLimit() async {
         let probe = RetryProbe()
-        var c = BrainConfig()
-        c.openRouterKey = { "sk-or-test" }
-        c.retrySleep = probe.sleeper
-        c.transport = Stub.transport(probe, script: [(429, ""), (429, ""), (200, AIFixtures.chat(#"{"action":"WAIT"}"#))])
+        let c = AIFixtures.config(KitTest.engine(
+            transport: Stub.transport(probe, script: [(429, ""), (429, ""), (200, AIFixtures.chat(#"{"action":"WAIT"}"#))]),
+            keys: [.openRouter: "sk-or-test"], sleep: probe.sleeper))
         let resp = await BrainClient.requestMove(AIFixtures.request, brain: AIFixtures.openRouterBrain, config: c)
         XCTAssertEqual(resp?.action, "WAIT")
         XCTAssertEqual(probe.calls, 3)
@@ -363,20 +390,31 @@ final class AIOptionsRetryTests: XCTestCase {
 
     func testOpenRouterUnauthorizedIsNotRetried() async {
         let probe = RetryProbe()
-        var c = BrainConfig()
-        c.openRouterKey = { "sk-or-wrong" }
-        c.retrySleep = probe.sleeper
-        c.transport = Stub.transport(probe, script: [(401, "")])
+        let c = AIFixtures.config(KitTest.engine(transport: Stub.transport(probe, script: [(401, "")]),
+                                                 keys: [.openRouter: "sk-or-wrong"], sleep: probe.sleeper))
         let resp = await BrainClient.requestMove(AIFixtures.request, brain: AIFixtures.openRouterBrain, config: c)
         XCTAssertNil(resp)
         XCTAssertEqual(probe.calls, 1, "a bad key can't be fixed by retrying")
     }
 
-    func testNewErrorsAreClassified() {
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.missingAPIKey))
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.insecureEndpoint))
-        XCTAssertFalse(AIBackendManager.isRetryable(AIBackendError.emptyResponse))
-        XCTAssertTrue(AIBackendManager.isRetryable(HTTPStatusError(statusCode: 429)))
+    func testErrorsAreClassified() {
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.missingKey(.openRouter)))
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.emptyResponse))
+        XCTAssertFalse(NovaAIRetry.isRetryable(NovaAIError.httpStatus(401)))
+        XCTAssertTrue(NovaAIRetry.isRetryable(NovaAIError.httpStatus(429)))
+        XCTAssertTrue(NovaAIRetry.isRetryable(NovaAIError.httpStatus(503)))
+        XCTAssertFalse(NovaAIRetry.isRetryable(URLError(.cannotConnectToHost)), "refused: fail over at once")
+    }
+
+    /// A rejected (junk) reply is re-asked once with the reason; a good second reply is used.
+    @MainActor
+    func testRejectedReplyIsReaskedOnce() async throws {
+        let probe = RetryProbe()
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                            transport: Stub.transport(probe, script: [(200, KitTest.ollama("!!! ???")), (200, KitTest.ollama("Moscow blinks."))]))
+        let text = try await GameAI.shared.generate(prompt: "x", ai: ai)
+        XCTAssertEqual(text, "Moscow blinks.")
+        XCTAssertEqual(probe.calls, 2)
     }
 }
 
@@ -384,8 +422,8 @@ final class AIOptionsRetryTests: XCTestCase {
 
 final class AIOptionsPerformanceTests: XCTestCase {
 
-    @MainActor override func setUp() async throws { AIFixtures.resetManager() }
-    @MainActor override func tearDown() async throws { AIFixtures.resetManager() }
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
 
     /// AI off: thirty countries on remote brains resolve locally — no calls, well under a second.
     @MainActor
@@ -396,7 +434,7 @@ final class AIOptionsPerformanceTests: XCTestCase {
         for id in ids { e.setBrain(.gatewayClaude, for: id) }
         let calls = RetryProbe()
         e.brainTransportOverride = { _, _ in calls.hit(); return MoveResponse(action: "WAIT") }
-        AIBackendManager.shared.setAIEnabled(false)
+        AppAI.shared.isEnabled = false
         let start = Date()
         await e.processAITurnsWithBrains()
         XCTAssertLessThan(Date().timeIntervalSince(start), 1.0)
@@ -410,21 +448,28 @@ final class AIOptionsPerformanceTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(start), 2.0)
     }
 
-    /// Probes use the short probe timeout; generation uses the request timeout (nothing waits on URLSession's 60 s).
+    /// Probes use the short probe timeout; generation uses the settings timeout (nothing waits on URLSession's 60 s).
     @MainActor
     func testRequestsCarryBoundedTimeouts() async throws {
-        let m = AIBackendManager.shared
         let rec = RequestRecorder()
-        m.httpTransport = rec.transport(body: #"{"models":[{"name":"llama3.2"}],"response":"ok"}"#)
-        m.probeTimeout = 2
-        m.requestTimeout = 20
-        m.probesNetwork = true
-        defer { m.probeTimeout = 3; m.requestTimeout = 30; m.probesNetwork = false }
-        await m.checkBackendAvailability()
-        XCTAssertTrue(rec.requests.allSatisfy { $0.timeoutInterval == 2 })
-        XCTAssertTrue(m.isOllamaAvailable)
-        _ = try await m.generate(prompt: "x")
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama; $0.timeout = 20 },
+                            transport: rec.transport(body: #"{"models":[{"name":"llama3.2"}],"message":{"content":"ok"}}"#))
+        await ai.refreshStatus()
+        XCTAssertTrue(ai.status.isReachable)
+        XCTAssertTrue(rec.requests.allSatisfy { $0.timeoutInterval == AppAI.configuration.probeTimeout })
+        _ = try await GameAI.shared.generate(prompt: "x", ai: ai)
         XCTAssertEqual(rec.requests.last?.timeoutInterval, 20)
+    }
+
+    /// Offline (every server refuses): an AI feature returns its fallback quickly, no hang.
+    @MainActor
+    func testOfflineFallbackIsFast() async {
+        let ai = KitTest.ai()
+        let start = Date()
+        let r = await GameAI.shared.text(prompt: "x", ai: ai, fallback: { "template" })
+        XCTAssertEqual(r.value, "template")
+        XCTAssertFalse(r.isAI)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2.0)
     }
 }
 
@@ -432,21 +477,19 @@ final class AIOptionsPerformanceTests: XCTestCase {
 
 final class AIOptionsIntegrationTests: XCTestCase {
 
-    @MainActor override func setUp() async throws { AIFixtures.resetManager() }
-    @MainActor override func tearDown() async throws { AIFixtures.resetManager() }
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
 
     @MainActor
     private func engine(_ transport: @escaping HTTPTransport, key: String?) -> GameEngine {
         let e = GameEngine()
         e.startNewGame(playerCountryID: "USA")
-        e.brainConfig.transport = transport
-        e.brainConfig.retrySleep = { _ in }
+        e.useKitTransport(transport, keys: key.map { [.openRouter: $0] } ?? [:])
         e.brainConfig.modelTimeout = 5
-        e.brainConfig.openRouterKey = { key }
         return e
     }
 
-    /// Engine → OpenRouter brain (with key) → HTTP → move → game state.
+    /// Engine → OpenRouter brain (with key) → kit → HTTP → move → game state.
     @MainActor
     func testOpenRouterBrainMoveReachesGameState() async throws {
         let rec = RequestRecorder()
@@ -468,47 +511,53 @@ final class AIOptionsIntegrationTests: XCTestCase {
         XCTAssertTrue(rec.requests.isEmpty)
     }
 
-    /// Manager → Ollama (stub) → sanitiser → caller.
+    /// Shared AI → Ollama (stub) → sanitiser → caller.
     @MainActor
-    func testManagerOutputIsSanitised() async throws {
-        let m = AIBackendManager.shared
-        m.isOllamaAvailable = true
-        m.determineActiveBackend()
-        m.httpTransport = RequestRecorder().transport(body: #"{"response":"<think>hmm</think> Moscow blinks.\u0007"}"#)
-        let text = try await m.generate(prompt: "x")
+    func testOutputIsSanitised() async throws {
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                            transport: RequestRecorder().transport(body: KitTest.ollama("<think>hmm</think> Moscow blinks.\u{07}")))
+        let text = try await GameAI.shared.generate(prompt: "x", ai: ai)
         XCTAssertEqual(text, "Moscow blinks.")
     }
 
     @MainActor
     func testEmptyReplyFailsOverInAuto() async throws {
-        let m = AIBackendManager.shared
-        m.isOllamaAvailable = true
-        m.isTinyLLMAvailable = true
-        m.determineActiveBackend()
-        m.httpTransport = { request in
-            if request.url?.port == 11434 { return (Data(#"{"response":"   "}"#.utf8), Stub.response(200, url: request.url)) }
-            return (Data(AIFixtures.chat("TinyLLM line").utf8), Stub.response(200, url: request.url))
-        }
-        let text = try await m.generate(prompt: "x")
-        XCTAssertEqual(text, "TinyLLM line")
+        let ai = KitTest.ai(transport: { request in
+            if request.url?.port == 11434 { return (Data(KitTest.ollama("   ").utf8), Stub.response(200, url: request.url)) }
+            if request.url?.port == 18792 { return (Data(AIFixtures.chat("Gateway line").utf8), Stub.response(200, url: request.url)) }
+            throw URLError(.cannotConnectToHost)
+        })
+        let text = try await GameAI.shared.generate(prompt: "x", ai: ai)
+        XCTAssertEqual(text, "Gateway line")
     }
 
     /// The Nova Gateway backend speaks the OpenAI-compatible route at the configured URL with the configured model.
     @MainActor
     func testNovaGatewayBackendUsesConfiguredURLAndModel() async throws {
-        let m = AIBackendManager.shared
         let rec = RequestRecorder()
-        m.selectedBackend = .novaGateway
-        m.novaGatewayURL = "http://nova-gw.local:18792/"
-        m.isNovaGatewayAvailable = true
-        m.determineActiveBackend()
-        m.httpTransport = rec.transport(body: AIFixtures.chat("ok"))
-        _ = try await m.generate(prompt: "x")
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .novaGateway; $0.setURL("http://nova-gw.local:18792/", for: .novaGateway) },
+                            transport: rec.transport(body: AIFixtures.chat("ok")))
+        _ = try await GameAI.shared.generate(prompt: "x", ai: ai)
         let req = try XCTUnwrap(rec.requests.first)
         XCTAssertEqual(req.url?.absoluteString, "http://nova-gw.local:18792/v1/chat/completions")
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: req.httpBody ?? Data()) as? [String: Any])
-        XCTAssertEqual(body["model"] as? String, m.novaGatewayModel)
+        XCTAssertEqual(body["model"] as? String, "chat")
         XCTAssertNil(req.value(forHTTPHeaderField: "Authorization"))
+    }
+
+    /// Terminal advice: AI answer when one is reachable, the built-in read otherwise.
+    @MainActor
+    func testTerminalAdviceUsesAIThenFallsBack() async {
+        let gs = GameState(playerCountryID: "USA")
+        let online = TerminalAdvisor(ai: KitTest.ai(KitTest.settings { $0.backend = .ollama },
+                                                    transport: RequestRecorder().transport(body: KitTest.ollama("HOLD AT DEFCON 3."))))
+        let advice = await online.getStrategicAdvice(situation: "what should I do", gameState: gs)
+        XCTAssertEqual(advice, "HOLD AT DEFCON 3.")
+        XCTAssertEqual(online.lastSource?.isAI, true)
+        let offline = TerminalAdvisor(ai: KitTest.ai())
+        let fallback = await offline.getStrategicAdvice(situation: "what should I do", gameState: gs)
+        XCTAssertEqual(fallback, TerminalAdvisor.builtInAdvice(gameState: gs))
+        XCTAssertEqual(offline.lastSource?.isAI, false)
     }
 }
 
@@ -516,8 +565,8 @@ final class AIOptionsIntegrationTests: XCTestCase {
 
 final class AIOptionsFunctionalTests: XCTestCase {
 
-    @MainActor override func setUp() async throws { AIFixtures.resetManager() }
-    @MainActor override func tearDown() async throws { AIFixtures.resetManager() }
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
 
     /// Turning AI off from the menu/settings: the game still plays a full turn, every brain acts rule-based.
     @MainActor
@@ -525,10 +574,10 @@ final class AIOptionsFunctionalTests: XCTestCase {
         let probe = RetryProbe()
         let e = GameEngine()
         e.startNewGame(playerCountryID: "USA")
-        e.brainConfig.transport = Stub.transport(probe, script: [(200, AIFixtures.declareWarOnUSA)])
+        e.useKitTransport(Stub.transport(probe, script: [(200, AIFixtures.declareWarOnUSA)]))
         e.setBrain(.gatewayClaude, for: "RUS")
-        AIBackendManager.shared.setAIEnabled(false)
-        XCTAssertFalse(AIEndpointSettings.aiEnabled, "the switch persists")
+        AppAI.shared.isEnabled = false
+        XCTAssertFalse(AppAI.shared.settings.enabled, "the switch persists in the settings")
         let turn = e.gameState?.turn ?? 0
         e.endTurn()
         let deadline = Date().addingTimeInterval(10)
@@ -541,76 +590,123 @@ final class AIOptionsFunctionalTests: XCTestCase {
     }
 
     @MainActor
-    func testTurningAIBackOnRestoresActiveBackend() {
-        let m = AIBackendManager.shared
-        m.isOllamaAvailable = true
-        m.setAIEnabled(false)
-        XCTAssertNil(m.activeBackend)
-        m.setAIEnabled(true)
-        XCTAssertEqual(m.activeBackend, .ollama)
+    func testTurningAIBackOnRestoresActiveBackend() async {
+        let ai = KitTest.ai(transport: { request in
+            if request.url?.port == 11434 { return (Data(#"{"models":[{"name":"m1"}]}"#.utf8), Stub.response(200, url: request.url)) }
+            throw URLError(.cannotConnectToHost)
+        })
+        await ai.refreshStatus()
+        XCTAssertEqual(ai.status.activeBackend, .ollama)
+        ai.isEnabled = false
+        XCTAssertNil(ai.status.activeBackend)
+        XCTAssertEqual(ai.status.state, .off)
+        ai.isEnabled = true
+        await ai.refreshStatus()
+        XCTAssertEqual(ai.status.activeBackend, .ollama)
     }
 
-    /// The Ollama URL is a real setting now: it reaches the manager, the brain model list and new brains.
+    /// The Ollama URL is a real setting: it reaches generation and the brains' model list.
     @MainActor
     func testOllamaURLSettingFlowsEverywhere() async throws {
-        let m = AIBackendManager.shared
-        m.ollamaBaseURL = "http://nova-core8:11434/"
-        m.saveSettings()
-        XCTAssertEqual(AIEndpointSettings.ollamaURL, "http://nova-core8:11434")
-        XCTAssertEqual(ModelRegistry.ollamaHost, "http://nova-core8:11434")
         let rec = RequestRecorder()
-        m.httpTransport = rec.transport(body: #"{"response":"ok"}"#)
-        m.isOllamaAvailable = true
-        m.determineActiveBackend()
-        _ = try await m.generate(prompt: "x")
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .ollama; $0.setURL("http://nova-core8:11434/", for: .ollama) },
+                            transport: rec.transport(body: #"{"models":[{"name":"qwen3:4b"}],"message":{"content":"ok"}}"#))
+        XCTAssertEqual(ai.settings.url(for: .ollama), "http://nova-core8:11434")
+        _ = try await GameAI.shared.generate(prompt: "x", ai: ai)
         XCTAssertEqual(rec.requests.first?.url?.host, "nova-core8")
+        let models = await ai.listModels(for: .ollama)
+        XCTAssertEqual(models, ["qwen3:4b"])
+        XCTAssertEqual(rec.requests.last?.url?.absoluteString, "http://nova-core8:11434/api/tags")
     }
 
-    func testInvalidStoredURLFallsBackToDefault() {
-        AIEndpointSettings.defaults.set("not a url", forKey: AIEndpointSettings.Keys.ollamaURL)
-        XCTAssertEqual(AIEndpointSettings.ollamaURL, AIEndpointSettings.ollamaDefault)
-    }
-
-    func testGatewayURLSettingReachesBrains() {
-        AIEndpointSettings.novaGatewayURL = "http://10.0.0.5:18792"
-        XCTAssertEqual(BrainConfig().gatewayEndpoint, "http://10.0.0.5:18792/v1/chat/completions")
-        var pinned = BrainConfig()
-        pinned.gatewayEndpoint = "http://pinned:1/v1/chat/completions"
-        XCTAssertEqual(pinned.gatewayEndpoint, "http://pinned:1/v1/chat/completions")
+    func testGatewayURLSettingReachesBrains() async throws {
+        let rec = RequestRecorder()
+        var s = KitTest.settings()
+        s.setURL("http://10.0.0.5:18792", for: .novaGateway)
+        var c = AIFixtures.config(KitTest.engine(transport: rec.transport(body: AIFixtures.chat(#"{"action":"WAIT"}"#)), settings: s))
+        _ = await BrainClient.requestMove(AIFixtures.request, brain: .gatewayClaude, config: c)
+        XCTAssertEqual(rec.requests.last?.url?.absoluteString, "http://10.0.0.5:18792/v1/chat/completions")
+        c.gatewayBaseURL = "http://pinned:1"
+        _ = await BrainClient.requestMove(AIFixtures.request, brain: .gatewayClaude, config: c)
+        XCTAssertEqual(rec.requests.last?.url?.absoluteString, "http://pinned:1/v1/chat/completions")
     }
 
     @MainActor
     func testSavedKeyMakesOpenRouterSelectable() {
-        let m = AIBackendManager.shared
-        m.selectedBackend = .openRouter
-        m.determineActiveBackend()
-        XCTAssertNil(m.activeBackend, "no key, not available")
-        m.setAPIKey("sk-or-func", for: .openRouter)
-        XCTAssertTrue(m.hasOpenRouterKey)
-        XCTAssertEqual(m.activeBackend, .openRouter)
-        m.setAPIKey("", for: .openRouter)
-        XCTAssertFalse(m.hasOpenRouterKey)
-        XCTAssertNil(m.activeBackend)
+        let ai = KitTest.ai(KitTest.settings { $0.backend = .openRouter })
+        XCTAssertTrue(ai.engine.candidates().isEmpty, "no key, not available")
+        XCTAssertTrue(ai.setAPIKey("sk-or-func", for: .openRouter))
+        XCTAssertTrue(ai.hasAPIKey(for: .openRouter))
+        XCTAssertEqual(ai.engine.candidates().map(\.backend), [.openRouter])
+        XCTAssertTrue(ai.setAPIKey("", for: .openRouter))
+        XCTAssertFalse(ai.hasAPIKey(for: .openRouter))
+        XCTAssertTrue(ai.engine.candidates().isEmpty)
     }
 
     @MainActor
     func testTestConnectionReportsOutcome() async {
-        let m = AIBackendManager.shared
-        m.setAIEnabled(false)
-        let off = await m.testConnection()
-        XCTAssertFalse(off)
-        XCTAssertEqual(m.lastTestResult, "AI is off — the game uses its built-in logic.")
-        m.setAIEnabled(true)
-        m.probesNetwork = true
-        defer { m.probesNetwork = false }
-        m.httpTransport = { request in
+        let ai = KitTest.ai(transport: { request in
             if request.url?.path == "/api/tags" { return (Data(#"{"models":[{"name":"m1"}]}"#.utf8), Stub.response(200, url: request.url)) }
-            if request.url?.port == 11434 { return (Data(#"{"response":"OK"}"#.utf8), Stub.response(200, url: request.url)) }
             throw URLError(.cannotConnectToHost)
-        }
-        let on = await m.testConnection()
-        XCTAssertTrue(on)
-        XCTAssertTrue(m.lastTestResult?.hasPrefix("Ollama answered") ?? false, m.lastTestResult ?? "nil")
+        })
+        let ok = await ai.testConnection(.ollama)
+        XCTAssertTrue(ok.reachable)
+        let down = await ai.testConnection(.tinyLLM)
+        XCTAssertFalse(down.reachable)
+        ai.isEnabled = false
+        await ai.refreshStatus()
+        XCTAssertEqual(ai.status.label, "AI off · built-in answers")
+    }
+
+    /// 3.23 settings (UserDefaults AIBackendManager_*) are imported once, then removed.
+    @MainActor
+    func testLegacySettingsImportOnce() {
+        let (d, name) = KitTest.defaultsSuite()
+        defer { UserDefaults().removePersistentDomain(forName: name) }
+        d.set("ollama", forKey: "AIBackendManager_SelectedBackend")
+        d.set("llama3.2:3b", forKey: "AIBackendManager_OllamaModel")
+        d.set("http://nova-core8:11434", forKey: "AIBackendManager_OllamaURL")
+        d.set(false, forKey: "AIBackendManager_AIEnabled")
+        d.set("http://gw.local:18792", forKey: "AIBackendManager_NovaGatewayURL")
+        d.set("http://tiny.local:8000", forKey: "AIBackendManager_TinyLLMServerURL")
+        d.set("not a url", forKey: "AIBackendManager_OpenWebUIServerURL")
+        d.set("openai/gpt-4o", forKey: "AIBackendManager_OpenRouterModel")
+        d.set("/opt/homebrew/bin/python3", forKey: "AIBackendManager_PythonPath")
+        let ai = KitTest.ai()
+        AppAI.migrateLegacySettings(ai, defaults: d)
+        let s = ai.settings
+        XCTAssertEqual(s.backend, .ollama)
+        XCTAssertFalse(s.enabled)
+        XCTAssertEqual(s.model(for: .ollama), "llama3.2:3b")
+        XCTAssertEqual(s.url(for: .ollama), "http://nova-core8:11434")
+        XCTAssertEqual(s.url(for: .novaGateway), "http://gw.local:18792")
+        XCTAssertEqual(s.url(for: .tinyLLM), "http://tiny.local:8000")
+        XCTAssertEqual(s.url(for: .openWebUI), NovaAIBackend.openWebUI.defaultURL, "an invalid stored URL is ignored")
+        XCTAssertEqual(s.model(for: .openRouter), "openai/gpt-4o")
+        for key in AppAI.legacyDefaultsKeys { XCTAssertNil(d.object(forKey: key), key) }
+        // Idempotent: a second launch changes nothing.
+        ai.settings.backend = .auto
+        AppAI.migrateLegacySettings(ai, defaults: d)
+        XCTAssertEqual(ai.settings.backend, .auto)
+    }
+
+    @MainActor
+    func testRemovedCloudSelectionBecomesAuto() {
+        let (d, name) = KitTest.defaultsSuite()
+        defer { UserDefaults().removePersistentDomain(forName: name) }
+        d.set("Google Cloud AI", forKey: "AIBackendManager_SelectedBackend")
+        d.set("mistral:latest", forKey: "AIBackendManager_OllamaModel")
+        let ai = KitTest.ai()
+        let report = AppAI.migrateLegacySettings(ai, defaults: d)
+        XCTAssertTrue(report.settingsImported)
+        XCTAssertEqual(ai.settings.backend, .auto, "a removed cloud backend becomes Auto")
+        XCTAssertEqual(ai.settings.model(for: .ollama), "mistral:latest")
+    }
+
+    func testBuiltInTerminalAdviceFollowsTheSituation() {
+        let gs = GameState(playerCountryID: "USA")
+        XCTAssertTrue(TerminalAdvisor.builtInAdvice(gameState: gs).hasPrefix("RECOMMEND"))
+        XCTAssertFalse(TerminalAdvisor.advicePrompt(situation: "what now", gameState: gs).isEmpty)
     }
 }
 
@@ -618,8 +714,8 @@ final class AIOptionsFunctionalTests: XCTestCase {
 
 final class AIOptionsFrameTests: XCTestCase {
 
-    @MainActor override func setUp() async throws { AIFixtures.resetManager() }
-    @MainActor override func tearDown() async throws { AIFixtures.resetManager() }
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
 
     @MainActor
     private func render<V: View>(_ view: V, _ w: CGFloat = 800, _ h: CGFloat = 900) -> CGImage? {
@@ -630,15 +726,20 @@ final class AIOptionsFrameTests: XCTestCase {
 
     @MainActor
     func testSettingsRendersOnAndOff() {
-        XCTAssertNotNil(render(AIBackendSettingsView()))
-        AIBackendManager.shared.setAIEnabled(false)
-        XCTAssertNotNil(render(AIBackendSettingsView()))
+        let ai = KitTest.ai()
+        XCTAssertNotNil(render(GTNWAISettingsView(ai: ai)))
+        ai.isEnabled = false
+        XCTAssertNotNil(render(GTNWAISettingsView(ai: ai)))
     }
 
     @MainActor
-    func testStatusLineAndMenuItemsRender() {
-        XCTAssertNotNil(render(AIStatusLine(manager: AIBackendManager.shared), 400, 40))
-        XCTAssertNotNil(render(VStack { AIStatusMenuItems() }, 400, 160))
+    func testStatusMenuItemsAndToolbarRender() {
+        let ai = KitTest.ai()
+        XCTAssertNotNil(render(VStack { AIStatusMenuItems(ai: ai) }, 400, 160))
+        XCTAssertNotNil(render(AIBackendToolbar(ai: ai), 500, 40))
+        XCTAssertNotNil(render(NovaAIStatusIndicator(ai: ai, checksOnAppear: false), 300, 30))
+        ai.isEnabled = false
+        XCTAssertNotNil(render(AIBackendToolbar(ai: ai), 500, 40))
     }
 
     @MainActor
@@ -646,8 +747,8 @@ final class AIOptionsFrameTests: XCTestCase {
         let e = GameEngine()
         e.startNewGame(playerCountryID: "USA")
         XCTAssertNotNil(render(BrainAssignmentView().environmentObject(e), 600, 600))
-        AIBackendManager.shared.setAPIKey("sk-or-frame", for: .openRouter)
-        AIBackendManager.shared.setAIEnabled(false)
+        AppAI.shared.setAPIKey("sk-or-frame", for: .openRouter)
+        AppAI.shared.isEnabled = false
         XCTAssertNotNil(render(BrainAssignmentView().environmentObject(e), 600, 600))
     }
 }

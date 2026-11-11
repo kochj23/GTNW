@@ -19,7 +19,8 @@ final class BrainPipelineIntegrationTests: XCTestCase {
     private func engine(retry: RetryPolicy = .network, probe: RetryProbe, transport: @escaping HTTPTransport) -> GameEngine {
         let e = GameEngine()
         e.startNewGame(playerCountryID: "USA")
-        e.brainConfig.transport = transport
+        e.brainConfig.transport = transport          // live-session bridge
+        e.useKitTransport(transport, sleep: probe.sleeper)   // model brains (NovaAIKit)
         e.brainConfig.retryPolicy = retry
         e.brainConfig.retrySleep = probe.sleeper
         e.brainConfig.modelTimeout = 5
@@ -53,7 +54,7 @@ final class BrainPipelineIntegrationTests: XCTestCase {
     func testTransientFailureIsRetriedAndMoveStillApplied() async throws {
         let probe = RetryProbe()
         let body = Self.chat(#"{"action":"DECLARE_WAR","target":"CHN"}"#)
-        let e = engine(probe: probe, transport: Stub.transport(probe, script: [(nil, ""), (503, ""), (200, body)]))
+        let e = engine(probe: probe, transport: Stub.transport(probe, script: [(502, ""), (503, ""), (200, body)]))
         e.setBrain(.gatewayClaude, for: "RUS")
 
         await e.processAITurnsWithBrains()
@@ -66,13 +67,26 @@ final class BrainPipelineIntegrationTests: XCTestCase {
     @MainActor
     func testPersistentFailureFallsBackToRuleBasedAfterRetries() async {
         let probe = RetryProbe()
+        let e = engine(probe: probe, transport: Stub.transport(probe, script: [(503, "")]))
+        e.setBrain(.gatewayClaude, for: "RUS")
+
+        await e.processAITurnsWithBrains()
+
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.contains("RUS"))
+        XCTAssertEqual(probe.calls, AppAI.configuration.retry.maxAttempts, "retried before falling back")
+    }
+
+    /// A refused connection is not worth retrying (the server is down): one attempt, then rule-based at once.
+    @MainActor
+    func testRefusedConnectionFallsBackWithoutRetry() async {
+        let probe = RetryProbe()
         let e = engine(probe: probe, transport: Stub.transport(probe, script: [(nil, "")]))
         e.setBrain(.gatewayClaude, for: "RUS")
 
         await e.processAITurnsWithBrains()
 
         XCTAssertTrue(e.lastTurnFallbackCountryIDs.contains("RUS"))
-        XCTAssertEqual(probe.calls, RetryPolicy.network.maxAttempts, "retried before falling back")
+        XCTAssertEqual(probe.calls, 1)
     }
 
     @MainActor
