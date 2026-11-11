@@ -5927,3 +5927,27 @@ final class PresidentPlayedTests: XCTestCase {
         XCTAssertTrue(ids.isSuperset(of: ["washington", "lincoln", "truman", "trump_second"]))
     }
 }
+
+final class ReturnToStartTests: XCTestCase {
+    // 3.22.5: losing (or winning) ends on the start screen, not in a default 2025 game.
+    @MainActor
+    func testFinishedGameReturnsToTheStartScreen() async throws {
+        let e = GameEngine()
+        let lincoln = try XCTUnwrap(Advisor.allAdministrations().first { $0.id == "lincoln" })
+        e.startNewGame(administration: lincoln)
+        let gs = try XCTUnwrap(e.gameState)
+        gs.gameOver = true
+        gs.gameOverReason = "Impeached"
+        e.showingVictoryScreen = true
+        e.finalScore = GameScore.calculate(from: gs, victoryType: nil)
+        e.returnToStartScreen()
+        XCTAssertFalse(e.showingVictoryScreen, "the result sheet closes first")
+        XCTAssertNil(e.crisisManager.activeCrisis)
+        XCTAssertNotNil(e.gameState, "the game view stays until the sheet has gone")
+        await Task.yield()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertNil(e.gameState, "back to the start screen (MainTabView shows ContentView when there is no game)")
+        XCTAssertNil(e.finalScore)
+        XCTAssertTrue(e.logMessages.isEmpty)
+    }
+}

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.5] - 2026-11-10 — Back to the start
+
+### Fixed
+- After a game ends (lost or won), New Game returns to the start screen so you choose the next era, president and
+  difficulty. It used to drop you straight into a default 2025 game. Closing the leaderboard opened from the result
+  screen also lands on the start screen instead of the finished game.
+
 ## [3.22.4] - 2026-11-10 — Presidents add up
 
 ### Fixed

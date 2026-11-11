@@ -1675,6 +1675,24 @@ class GameEngine: ObservableObject {
         }
     }
 
+    /// 3.22.5: after a finished game (lost or won), back to the start screen to choose the next era, president and
+    /// difficulty. "New Game" on the result screen used to drop straight into a default 2025 game instead.
+    /// The play session and game history were already recorded at game over.
+    func returnToStartScreen() {
+        showingVictoryScreen = false
+        showingLeaderboard = false
+        showingGameOver = false
+        crisisManager.activeCrisis = nil
+        crisisManager.pendingCrises = []
+        finalScore = nil
+        victoryType = nil
+        // Next run loop: let the result sheet finish dismissing before the game view it hangs from goes away.
+        DispatchQueue.main.async { [weak self] in
+            self?.gameState = nil
+            self?.logMessages = []
+        }
+    }
+
     // MARK: - Game Over
 
     /// Check for game over conditions

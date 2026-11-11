@@ -55,8 +55,7 @@ struct MainTabView: View {
                         victoryType: gameEngine.victoryType,
                         score: score,
                         onNewGame: {
-                            gameEngine.showingVictoryScreen = false
-                            gameEngine.startNewGame()
+                            gameEngine.returnToStartScreen()
                         },
                         onViewLeaderboard: {
                             gameEngine.showingVictoryScreen = false
@@ -66,7 +65,10 @@ struct MainTabView: View {
                     .interactiveDismissDisabled()  // Prevent accidental dismissal - must click button
                 }
             }
-            .sheet(isPresented: $gameEngine.showingLeaderboard) {
+            .sheet(isPresented: $gameEngine.showingLeaderboard, onDismiss: {
+                // Leaderboard opened from a finished game's result screen: then on to the start screen.
+                if gameEngine.gameState?.gameOver == true { gameEngine.returnToStartScreen() }
+            }) {
                 LeaderboardView()
                     .environmentObject(gameEngine)
             }
