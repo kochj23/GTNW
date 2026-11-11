@@ -59,6 +59,16 @@ struct KeychainStore {
     }
 
     var hasValue: Bool { !(get() ?? "").isEmpty }
+
+    /// True when an item exists. Reads attributes only, never the secret, so it can't raise a Keychain access
+    /// prompt (an ad hoc rebuild is a "new" app to the Keychain). GTNW never stores an empty secret.
+    var exists: Bool {
+        var query = baseQuery
+        query[kSecReturnAttributes as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: AnyObject?
+        return SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess
+    }
 }
 
 /// The two keys GTNW knows about, and where each one lives.
@@ -89,16 +99,18 @@ enum AIKeyStore {
     @discardableResult
     static func setKey(_ value: String, for slot: Slot) -> Bool { store(slot).set(value) }
 
-    static func hasKey(_ slot: Slot) -> Bool { key(slot) != nil }
+    /// Presence only (no secret read, no prompt). The secret itself is read when a request needs it.
+    static func hasKey(_ slot: Slot) -> Bool { store(slot).exists }
 
     /// One-time move of the legacy OpenAI key into `com.jkoch.gtnw.openai`. Reads the old item once, writes the new
     /// one, deletes the old one only after the write succeeded. Safe to call on every launch.
     static func migrateLegacyKeys() {
         let legacy = KeychainStore(service: legacyService, account: legacyOpenAIAccount)
-        guard let old = legacy.get(), !old.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        if !hasKey(.openAI) {
+        guard legacy.exists else { return }
+        let old = (legacy.get() ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !old.isEmpty && !hasKey(.openAI) {
             guard setKey(old, for: .openAI) else { return }
         }
-        legacy.delete()
+        legacy.delete()   // also clears the empty item pre-3.23 saveSettings() wrote
     }
 }

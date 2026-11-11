@@ -112,8 +112,15 @@ final class AIBackendManager: ObservableObject {
     // MARK: Init
 
     private init() {
-        AIKeyStore.migrateLegacyKeys()
         loadSettings()
+        // Keychain work stays off the main thread: a Keychain access prompt (e.g. after an ad hoc rebuild) must
+        // never block launch. Smoke runs skip it entirely.
+        if !CommandLine.arguments.contains("--launch-smoke") {
+            Task.detached(priority: .utility) {
+                AIKeyStore.migrateLegacyKeys()
+                await MainActor.run { AIBackendManager.shared.refreshKeyPresence(); AIBackendManager.shared.determineActiveBackend() }
+            }
+        }
         // Tests stay hermetic: no probing of the real machine under XCTest.
         if !AudioGate.underXCTest {
             Task { await checkBackendAvailability() }

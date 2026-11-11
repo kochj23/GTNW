@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Ollama URL was hard-coded to localhost; it is now a setting used by the AI backend, the brain model list and
   new Ollama brains. The Nova Gateway URL used by Gateway-Claude is a setting too.
 - MLX generation no longer blocks the main thread and no longer needs an unused "script path".
+- Launch no longer reads API keys on the main thread. It used to read nine Keychain items at startup, so after a
+  rebuild the Keychain access prompt froze the app (and `--launch-smoke` never exited). Key presence is now checked
+  without reading the secret; the one-time migration runs in the background and clears the empty items older
+  versions wrote.
 - The two 2× layout frame tests pin the display size, so they no longer fail on a Mac whose screen is under about
   2,200 points wide.
 
