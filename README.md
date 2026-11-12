@@ -1,7 +1,7 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-837-brightgreen)
+![Tests](https://img.shields.io/badge/tests-840-brightgreen)
 ![Version](https://img.shields.io/badge/version-3.24.0-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.0-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
@@ -61,8 +61,8 @@ Written by Jordan Koch.
 | **Elections** | The whole American election cycle with the law of each year: the decision to run, the King Caucus or the primaries (Iowa, New Hampshire, Super Tuesday), challengers from your own party, running mates, conventions, the fall campaign, debates, October surprises, the Electoral College, House contingent elections, contested counts, midterms, lame ducks and the 22nd Amendment | 3.21 |
 | **Peace** | Four peace victories (treaty network, alliance leadership, economic dominance, Nobel moments) and peace scoring | 3.16 |
 | **AI options** | A global Use AI switch, the shared backend ids (Ollama, MLX, TinyLLM, TinyChat, OpenWebUI, Nova Gateway, OpenRouter, OpenAI) with Auto failover, editable URLs, Keychain-only keys over https, status and Test Connection, sanitised replies, and OpenRouter brains that actually send their key (3.23); all of it now from the shared NovaAIKit package, with the drop-in settings screen and status indicator (3.24) | 3.23–3.24 |
-| **Watch AI vs AI** | A spectator mode: the computer plays your seat with the same per-country brains as everyone else and the turns run by themselves, with a speed control, pause, and taking the seat at any time; never recorded to play history | 3.25 |
-| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 837 tests in seven categories | 3.1–3.25 |
+| **Watch AI vs AI** | A spectator mode: the computer plays your seat with the same per-country brains as everyone else and the turns run by themselves, with a speed control, pause, and taking the seat at any time; recorded as "AI vs AI" for Nova's journal, never on your leaderboard (3.26) | 3.25–3.26 |
+| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 840 tests in seven categories | 3.1–3.26 |
 
 The sections below are grouped by theme; each feature notes the version that introduced it.
 
@@ -1178,22 +1178,25 @@ turns), **PAUSE / RESUME** and **TAKE THE SEAT**.
   doesn't answer, it plays rule-based, so spectating works with no AI at all.
 - **Decisions on the desk.** The seat takes each crisis or decision card's advised option (otherwise the likeliest to
   work) and settles surrender terms the way computer-run victors do. Election night and terms sheets don't pop up.
-- **Taking the seat.** The turns stop and the game is yours from that turn, recorded like a continued save.
+- **Taking the seat.** The turns stop, the watch session ends as `taken_over`, and the game is yours from that turn,
+  recorded like a continued save under your own name.
 - **The end.** A spectated game ends like any other: the result screen, then **NEW GAME** back to the start screen.
-- **Nothing is recorded.** No play session or events for Nova's game reporter, no `game_history` or leaderboard row,
-  no Hall of Infamy record, no end-game roast and no autosave over your own game.
+- **Recorded as AI vs AI (3.26.0).** A watch game is a play session like any other (events included), so Nova can
+  write it up, but its `player` is `AI vs AI` and its summary carries `spectator: true`, the `matchup` (each side's
+  brain with its NovaAIKit backend and model, or the rule-based engine) and `fallbacks` (how often the built-in AI
+  stood in for a side). It never reaches the leaderboard, `game_history`, the Hall of Infamy or the autosave.
 
 ```mermaid
 flowchart LR
-  NEW["New game screen<br/>WATCH AI VS AI"] --> SPEC["startSpectatorGame<br/>no play session"]
+  NEW["New game screen<br/>WATCH AI VS AI"] --> SPEC["startSpectatorGame<br/>watch session: player AI vs AI, spectator true"]
   SPEC --> LOOP{"Paused?"}
   LOOP -- no --> TURN["spectatorTurn<br/>answer the desk, then endTurn()"]
   TURN --> BRAINS["processAITurnsWithBrains<br/>every country, the seat included"]
   BRAINS --> OVER{"Game over?"}
   OVER -- no --> WAIT["wait the chosen delay"] --> LOOP
   LOOP -- yes --> WAIT
-  OVER -- yes --> RESULT["Result screen, nothing recorded<br/>NEW GAME: start screen"]
-  SPEC -. take the seat .-> MINE["Normal game from this turn<br/>new play session"]
+  OVER -- yes --> RESULT["Result screen, watch session closed<br/>no leaderboard, history or records"]
+  SPEC -. take the seat .-> MINE["Watch session ends taken_over<br/>his own session from this turn"]
 ```
 
 To reach a live session, GTNW POSTs a `MoveRequest` to `tools/gtnw_coordination_bridge.py`. The bridge stores it in
@@ -1447,7 +1450,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | Ordering a sized offensive (3.4.0) | Event `attack_ordered` (`action`, `target`, `target_name`, `troops` / `aircraft` / `warheads`, `aircraft_lost`, `scale`, `success`, `summary` such as "12 warheads") |
 | Claiming land / renaming a territory (3.3.0) | Event `claimed_land` (`land`, `name`, `game_date`) or `renamed_territory` (`land`, `old_name`, `name`, `game_date`) at once |
 | Game over | Event `game_over`; final upsert with `ended_at`, `outcome` (`victory`/`defeat`), `score` and the full summary. The `gtnw.game_history` row uses the session id, so they join (`history_id`) |
-| Watching AI vs AI (3.25.0) | Nothing at all: no session, no events, no `game_history` or leaderboard row. Taking the seat starts a new session from that turn, like loading a save |
+| Watching AI vs AI (3.26.0) | A normal session and events, but `player` = `AI vs AI` and summary keys `spectator` (true), `matchup` (`sides`: `side`, `kind` engine / model / npc, `backend`, `model`, `label`) and `fallbacks` (by country); no `game_history` or leaderboard row. Readers computing human stats exclude `summary->>'spectator' = 'true'`. Taking the seat closes it with outcome `taken_over` and starts a normal session from that turn |
 | Starting another game mid-game / quitting the app | The open session is closed as `abandoned` / `quit` (best effort; otherwise the reader's 30-minute idle rule ends it) |
 
 The summary uses the contract's GTNW keys (scenario, country, difficulty, turn length, dates, turns, won, victory type,
@@ -1461,16 +1464,16 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **837 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **840 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 
 | Category | Tests | What it covers |
 |----------|------:|----------------|
-| **Unit** | 219 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden, the starvation windows and the 1906 food laws, the civilian-tactic eras and the maximum extraction rate, the deception eras, the sea eras and the treaties the United States never joined, the record of the age; AI options (NovaAIKit): GTNW's configuration and Keychain names, legacy settings migration, brain routing to a pinned kit engine, the reply validator, the built-in terminal advice; Watch AI vs AI: the seat's brain in each mode |
+| **Unit** | 220 | Countries, GameState, DEFCON, eras and calendars, scoring and victory, Codable, brains and move parsing, popularity, budget and aid, combat and sizing, the era weapons catalog, resources and income, extraction and levies, rivalry and claim rates by era, peace targets, commentary templates and cleaning, Hall of Infamy rules, dirty-tactic era windows, legal status by treaty, discovery and tribunal odds, the incendiary eras and what can be hidden, the starvation windows and the 1906 food laws, the civilian-tactic eras and the maximum extraction rate, the deception eras, the sea eras and the treaties the United States never joined, the record of the age; AI options (NovaAIKit): GTNW's configuration and Keychain names, legacy settings migration, brain routing to a pinned kit engine, the reply validator, the built-in terminal advice; Watch AI vs AI: the seat's brain in each mode, the watch matchup |
 | **Functional** | 163 | Game lifecycle, war and treaties, surrender terms, fleets, claims and colonies, occupation and statehood, territory money, the era's wars breaking out, the race for land, era names and foundings, absorptions and restorations, each peace victory, Nova's lines and the Records screen, an early war-gas programme and what it delivers, covert versus open, burning towns, the scale a President orders, flamethrowers on a front, a starvation stance that bites and lapses, the embalmed-beef bargain, camps ending an insurgency, removal, internment and its redress, a pretext Congress accepts until it is exposed, counterfeiting, enemy uniforms, press gangs and hired regiments on top of the cap, the submarine and firebombing stances, the record firing on its real dates, abolition on the record; AI options: the game fully playable with AI off, the switch persisting, Ollama and gateway URLs reaching every caller, a saved key making OpenRouter selectable, Test Connection, every AI feature working with AI off and with every backend down; Watch AI vs AI: turns run, pause, resume and take the seat with AI off, game over back to the start screen, the seat answering its desk |
-| **Security** | 98 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire, no player action for slavery or genocide, computer-run powers kept to their era; AI options: OpenRouter brains send their Keychain key and nothing without one, no key over http, no key to local or gateway brains, Keychain items `com.jkoch.gtnw.*` (in-memory store under test), legacy key migration, no keys in defaults or the environment, AI off sends nothing, the shared AI hermetic under tests, no old AI client left in the sources; Watch AI vs AI: a spectated game to game over writes no play session or event, history, leaderboard, slot or record |
-| **Integration** | 61 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal, mines that keep killing, computer-run powers using the era's tactics; AI options: engine to OpenRouter brain to state, keyless brains offline, sanitised manager output, an empty reply failing over, the Nova Gateway route, a refused server falling back without retries; Watch AI vs AI: the seat's move through the brain pipeline into state |
+| **Security** | 99 | Input bounds, state integrity, hostile LLM output and replies, the loopback API, Games DB TLS and payload caps, the unscaled-font source guard, only-your-own-land rules, no anachronistic nation in any event generator, test hosts never writing real defaults or play rows, a dirty tactic aimed only where it can be, no anachronistic fire, no player action for slavery or genocide, computer-run powers kept to their era; AI options: OpenRouter brains send their Keychain key and nothing without one, no key over http, no key to local or gateway brains, Keychain items `com.jkoch.gtnw.*` (in-memory store under test), legacy key migration, no keys in defaults or the environment, AI off sends nothing, the shared AI hermetic under tests, no old AI client left in the sources; Watch AI vs AI: a watch game to game over is recorded only as player "AI vs AI" with the spectator flag and matchup, never in the leaderboard, history, a slot or the Hall of Infamy; the player field's bounds |
+| **Integration** | 62 | Engine to brain to HTTP to state; Games DB end to end with an in-memory remote; play history events; 200-turn simulations from 1789, 1850, 1913, 1950 and 2025 on every difficulty (Nightmare busiest); AI territories paying and revolting; crises when an ally is threatened; the live commentary backend; a defoliant bill twenty years on, a secret programme that leaks, a treaty-banned burning before a tribunal, mines that keep killing, computer-run powers using the era's tactics; AI options: engine to OpenRouter brain to state, keyless brains offline, sanitised manager output, an empty reply failing over, the Nova Gateway route, a refused server falling back without retries; Watch AI vs AI: the seat's move through the brain pipeline into state; taking the seat ends the watch session as taken_over and starts his |
 | **Performance** | 52 | Turn throughput, save/load, bounded logs and queues, unclaimed-land and peace-panel maths, the yearly era sync, and a full Nightmare end-turn in 2025 and in 1789 under one second with the whole 3.17 series in the loop (profiled at about 0.25 s and 0.02 s in Debug); AI options: an AI-off turn with thirty model brains makes no calls, bounded probe and request timeouts, a cheap sanitiser; Watch AI vs AI: ten spectated turns |
 | **Retry** | 83 | `RetryPolicy` and `Retry.run`; model brains (through NovaAIKit: 408, 429 and 5xx retried, three tries) and Games DB sync retry; every new save field decodes from older saves; a failed commentary backend leaves the template line; AI options: Auto fails over after bounded retries, an explicit backend never switches, a missing key or 401 fails fast, a 429 is retried; Watch AI vs AI: a silent seat brain falls back and the game goes on |
 | **Frame** | 58 | The real app as test host, offscreen renders in both skins, launch smoke; at 2× nothing truncates; a click sweep over every map outline in 1789, 1850, 1913, 1950 and 2025 (and around the new nations' dates) on the map and card grid; snapshots for each release in `Screenshots/<version>/`; AI options: Settings → AI, the status line and AI menu, the brains panel with and without a key; Watch AI vs AI: the SPECTATING bar in both skins |
@@ -1503,6 +1506,7 @@ tools/launch_smoke.sh /Applications/GTNW.app
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.26.0 | Nov 2026 | Watch games are recorded (WATCH-CONTRACT v2): player `AI vs AI`, `summary.spectator`, `matchup` and `fallbacks`, so Nova can journal them; taking the seat ends the watch session as `taken_over`; still never in the leaderboard, game history, Hall of Infamy or autosave |
 | 3.25.0 | Nov 2026 | Watch AI vs AI: a spectator mode on the new-game screen where the computer plays your seat with the per-country brains (rule-based with AI off) and the turns run themselves, with a SPECTATING bar, speed control, pause / resume and take-the-seat; spectated games never reach play history, results, records or autosave |
 | 3.24.0 | Nov 2026 | AI on NovaAIKit 1.0: the kit's settings screen and status indicator, Auto failover with a 60 s health skip, re-ask on a rejected reply, MLX over `mlx_lm.server`; brains, commentary and the WOPR terminal keep their prompts, validators and fallbacks; old settings and keys migrate once; GTNW's own AI client, key store and the python MLX/Ollama clients removed |
 | 3.23.0 | Nov 2026 | AI options: a global Use AI switch, the shared backend ids with Nova Gateway and OpenRouter, Auto failover, editable Ollama and gateway URLs, Keychain key fields (OpenRouter brains finally send their key, https only), status and Test Connection, sanitised replies; the never-working Google/Azure/AWS/IBM backends and dead AI code removed |

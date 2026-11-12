@@ -443,7 +443,7 @@ actor PostgresGameStore: GameStore {
 
     func upsertPlaySession(_ r: PlaySessionRecord) async throws {
         try StoreValidation.check(r)
-        let player = config.playerID, game = PlayHistory.game, summary = String(decoding: r.summary, as: UTF8.self)
+        let player = r.player ?? config.playerID, game = PlayHistory.game, summary = String(decoding: r.summary, as: UTF8.self)
         try await withConnection { conn in
             try await conn.query("""
                 INSERT INTO play.sessions (id, game, client, player, started_at, last_seen_at, ended_at, outcome, score, actions, summary)
