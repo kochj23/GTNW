@@ -201,6 +201,16 @@ struct ContentView: View {
                     .shadow(color: ModernColors.cyan.opacity(0.5), radius: 10)
             }
 
+            // 3.25.0: the computer plays this seat too; the world runs itself while you watch. Nothing is recorded.
+            Button {
+                gameEngine.startSpectatorGame(playerCountryID: selectedNation, difficulty: selectedDifficulty,
+                                              administration: selectedAdministration, turnLength: turnLength)
+            } label: {
+                Label("WATCH AI VS AI", systemImage: "eye")
+            }
+            .buttonStyle(ThemedButtonStyle(color: ModernColors.yellow))
+            .help("The computer plays \(nationName) as well and every turn runs by itself. Not saved to play history.")
+
             Spacer()
 
             // Warning

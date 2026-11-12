@@ -370,7 +370,8 @@ extension GameEngine {
     /// An open session for a previous game is closed as `abandoned` first.
     func beginPlaySession(resumedFromTurn: Int? = nil, now: Date = Date()) {
         endPlaySession(outcome: "abandoned", now: now)
-        guard let gs = gameState, !gs.gameOver else { playSession = nil; return }   // a finished save: nothing to play
+        // A finished save has nothing to play; a spectated game (3.25.0) is not his, so Nova never sees it.
+        guard let gs = gameState, !gs.gameOver, !spectating else { playSession = nil; return }
         let id = UUID()
         gs.shadow.playSessionID = id
         gs.shadow.playSessionStartedAt = now

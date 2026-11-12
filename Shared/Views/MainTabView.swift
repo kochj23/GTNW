@@ -73,12 +73,12 @@ struct MainTabView: View {
                     .environmentObject(gameEngine)
             }
             .sheet(item: Binding(
-                get: { gameEngine.warRoomOpen ? nil : gameEngine.gameState?.shadow.pendingSettlements.first },
+                get: { gameEngine.warRoomOpen || gameEngine.spectating ? nil : gameEngine.gameState?.shadow.pendingSettlements.first },
                 set: { _ in })) { s in
                 if let gs = gameEngine.gameState { SettlementSheet(gameState: gs, settlement: s).environmentObject(gameEngine) }
             }
             .sheet(item: Binding(
-                get: { gameEngine.gameState?.shadow.lastElection.flatMap { $0.date == electionShown ? nil : $0 } },
+                get: { gameEngine.spectating ? nil : gameEngine.gameState?.shadow.lastElection.flatMap { $0.date == electionShown ? nil : $0 } },
                 set: { if $0 == nil { electionShown = gameEngine.gameState?.shadow.lastElection?.date } })) { result in
                 ElectionNightView(result: result)
             }
@@ -111,6 +111,7 @@ struct MainTabView: View {
             #if os(macOS)
             // macOS draws TabView's strip natively at a fixed size; this bar uses the scaled fonts instead.
             VStack(spacing: 0) {
+                if gameEngine.spectating { SpectatorBar() }
                 GameTabBar(selection: $selectedTab)
                 tabContent(selectedTab, gameState)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -123,8 +124,35 @@ struct MainTabView: View {
                         .tag(tab.tag)
                 }
             }
+            .safeAreaInset(edge: .top) { if gameEngine.spectating { SpectatorBar() } }
             #endif
         }
+    }
+}
+
+/// 3.25.0: shown while watching AI vs AI. Speed, pause / resume, and taking over the seat.
+struct SpectatorBar: View {
+    @EnvironmentObject var gameEngine: GameEngine
+
+    var body: some View {
+        HStack(spacing: FontScale.of(14)) {
+            Text("👁 SPECTATING · AI VS AI")
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
+                .foregroundColor(.black)
+            Text(gameEngine.spectatorPaused ? "PAUSED" : "Turn \(gameEngine.gameState?.turn ?? 0) · not recorded")
+                .font(.scaled(size: 12, design: .monospaced))
+                .foregroundColor(.black.opacity(0.75))
+            Spacer()
+            ScaledSegmentedPicker(selection: $gameEngine.spectatorDelay,
+                                  options: GameEngine.spectatorSpeeds.map { ($0.delay, $0.label) })
+                .fixedSize()
+            Button(gameEngine.spectatorPaused ? "▶ RESUME" : "⏸ PAUSE") { gameEngine.spectatorPaused.toggle() }
+            Button("🎮 TAKE THE SEAT") { gameEngine.takeSeat() }
+        }
+        .font(.scaled(size: 12, design: .monospaced))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(GTNWColors.terminalAmber)
     }
 }
 

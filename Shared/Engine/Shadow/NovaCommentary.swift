@@ -309,7 +309,7 @@ enum HallOfInfamy {
 extension GameEngine {
     /// After the Shadow turn: update the Hall of Infamy; one ticker line (and a Nova remark) for what was broken.
     func processHallOfInfamy() {
-        guard let gs = gameState, !gs.isMultiplayer else { return }
+        guard let gs = gameState, !gs.isMultiplayer, !spectating else { return }
         var hall = HallOfInfamy.load()
         let before = hall
         let broken = HallOfInfamy.broken(gs, hall: hall)

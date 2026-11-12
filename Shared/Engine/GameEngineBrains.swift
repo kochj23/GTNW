@@ -36,11 +36,11 @@ extension GameEngine {
 
     // MARK: - Brain assignment
 
-    /// The brain driving a country. The player's own country is `.human`; every
+    /// The brain driving a country. The player's own country is `.human` (rule-based while spectating); every
     /// other unassigned country is `.ruleBased` (preserving existing behavior).
     func brain(for countryID: String) -> AIBrain {
         if let assigned = brainAssignments[countryID] { return assigned }
-        if let gs = gameState, gs.playerCountryID == countryID { return .human }
+        if let gs = gameState, gs.playerCountryID == countryID { return spectating ? .ruleBased : .human }
         return .ruleBased
     }
 
@@ -64,7 +64,8 @@ extension GameEngine {
         // brain request leaves the app.
         let aiOn = AppAI.shared.isEnabled
 
-        for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
+        // While spectating, the player's seat is just another country played by its brain.
+        for country in gameState.countries where (spectating || !country.isPlayerControlled) && !country.isDestroyed && !country.isTerritory {
             let assigned = brain(for: country.id)
             switch assigned {
             case .human:
@@ -143,6 +144,59 @@ extension GameEngine {
         }
         // Otherwise the leader's personality and anxieties pick the move (see CountryProfile.swift).
         executeWorldMove(PersonalityAI.choose(for: country, in: gs), for: country)
+    }
+
+    // MARK: - Spectator mode (3.25.0): "Watch AI vs AI"
+
+    /// Speed control: seconds between spectated turns.
+    static let spectatorSpeeds: [(label: String, delay: Double)] = [("Slow", 5), ("Normal", 2), ("Fast", 0.5), ("Max", 0)]
+
+    /// A new game the player only watches. The seat is played by its brain like every other country (Brains panel;
+    /// rule-based unless assigned, and rule-based whenever AI is off), and the turns run by themselves.
+    func startSpectatorGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal,
+                            administration: Administration? = nil, turnLength: TurnLength = TurnLength.defaultForNewGames()) {
+        startNewGame(playerCountryID: playerCountryID, difficulty: difficulty, administration: administration,
+                     turnLength: turnLength, spectate: true)
+        spectatorPaused = false
+        addLog("👁 SPECTATING: the computer plays \(playerCountryID) too. Nothing is recorded. Take the seat at any time.", type: .system)
+        spectatorLoop?.cancel()
+        spectatorLoop = Task { @MainActor [weak self] in
+            while !Task.isCancelled, let self, self.spectating, self.gameState?.gameOver == false {
+                if !self.spectatorPaused, !self.isProcessingAITurn { self.spectatorTurn() }
+                try? await Task.sleep(nanoseconds: UInt64(max(0.05, self.spectatorDelay) * 1_000_000_000))
+            }
+        }
+    }
+
+    /// One spectated turn: the seat answers what is on its desk (the advised option, else the likeliest to work;
+    /// surrender terms the way the computer settles them), then ends the turn as the player would.
+    func spectatorTurn() {
+        guard spectating, var gs = gameState, !gs.gameOver else { return }
+        while let crisis = crisisManager.activeCrisis {
+            let o = crisis.options
+            guard let pick = o.indices.first(where: { o[$0].advisorRecommendation != nil })
+                    ?? o.indices.max(by: { o[$0].successChance < o[$1].successChance }) else {
+                crisisManager.activeCrisis = nil
+                crisisManager.presentNextPending(gameState: gs)
+                continue
+            }
+            crisisManager.resolveCrisis(optionIndex: pick, gameState: &gs)
+        }
+        gameState = gs
+        for s in gs.shadow.pendingSettlements { settle(s.id, choice: .victorsModel) }
+        endTurn()
+    }
+
+    /// Take over the watched seat: the turns stop running themselves and the game is his from here on, logged
+    /// like a continued save (a new play session that notes the turn it picked up at).
+    func takeSeat() {
+        guard spectating else { return }
+        spectating = false
+        spectatorPaused = false
+        spectatorLoop?.cancel()
+        spectatorLoop = nil
+        beginPlaySession(resumedFromTurn: gameState?.turn)
+        addLog("🎮 You have the seat. The turn is yours.", type: .system)
     }
 
     // MARK: - Reversible / agency verbs

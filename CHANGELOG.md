@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.25.0] - 2026-11-12 — Watch AI vs AI
+
+### Added
+- **WATCH AI VS AI** on the new-game screen: the computer plays your seat too and the turns run by themselves. The
+  seat is driven by the same per-country brain system (`brain(for:)`, `processAITurnsWithBrains`, `BrainClient`):
+  rule-based unless the BRAINS panel gives it a model, and rule-based whenever Use AI is off or a brain doesn't answer.
+- A **SPECTATING** bar while watching: the turn, a speed control (Slow 5 s / Normal 2 s / Fast 0.5 s / Max), pause /
+  resume, and **TAKE THE SEAT**, which stops the loop and hands you the game from that turn.
+- The seat answers its own desk: crisis and decision cards take the advised option (else the likeliest to work) and
+  surrender terms are settled the computer's way; election-night and terms sheets stay closed while watching.
+- Game over shows the normal result screen and NEW GAME goes back to the start screen.
+
+### Privacy
+- A spectated game writes nothing to Nova Games play history (`play.sessions` / `play.events`), so Nova's game
+  reporter never reviews it; no `gtnw.game_history` or leaderboard row, no Hall of Infamy record, no end-game roast and
+  no autosave over slot 0. Taking the seat starts a new play session from that turn, like continuing a save.
+
+### Tests
+- `Spectator*Tests` in `GTNWTests/GameStorePlayTests.swift` across all seven categories, including a security test
+  that runs a spectated game to game over against the in-memory Games DB and finds no play session, event, history,
+  leaderboard, slot or record.
+
 ## [3.24.0] - 2026-11-11 — AI on NovaAIKit
 
 ### Changed

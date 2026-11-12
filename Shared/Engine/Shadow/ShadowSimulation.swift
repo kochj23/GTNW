@@ -54,6 +54,7 @@ extension GameEngine {
 
     /// Start a scenario from the scenario list.
     func startScenario(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal, turnLength: TurnLength? = nil, player: String = "USA") {
+        spectating = false
         gameState = ScenarioLoader.makeGameState(s, difficulty: difficulty, turnLength: turnLength, player: player)
         logMessages = []
         showingGameOver = false
@@ -1031,6 +1032,7 @@ extension GameEngine {
 
     func loadGame(slot: Int, manager: SaveManager = SaveManager()) throws {
         let gs = try manager.load(slot: slot)
+        spectating = false
         crisisManager.activeCrisis = nil
         showingGameOver = false
         gameState = gs

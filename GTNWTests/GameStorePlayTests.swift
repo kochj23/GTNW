@@ -834,3 +834,265 @@ final class PublicEditionTests: XCTestCase {
         XCTAssertFalse(service.local.pending.contains { $0.isPlayHistory }, "nothing queued for a DB that isn't there")
     }
 }
+
+// MARK: - 3.25.0: Watch AI vs AI (spectator mode)
+
+enum SpectatorFixtures {
+    /// A spectated game with the auto-run loop paused, so the test drives each turn itself.
+    @MainActor
+    static func paused(_ e: GameEngine, nation: String = "USA") {
+        e.startSpectatorGame(playerCountryID: nation, turnLength: .month)
+        e.spectatorPaused = true
+    }
+
+    /// Run `n` spectated turns, waiting for each turn's AI phase to finish.
+    @MainActor
+    static func turns(_ e: GameEngine, _ n: Int) async throws {
+        for _ in 0..<n {
+            e.spectatorTurn()
+            try await settle(e)
+        }
+    }
+
+    @MainActor
+    static func settle(_ e: GameEngine) async throws {
+        for _ in 0..<500 where e.isProcessingAITurn { try await Task.sleep(nanoseconds: 10_000_000) }
+    }
+
+    /// Wait (bounded) until `condition` holds.
+    @MainActor
+    static func until(_ seconds: Double = 10, _ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(seconds)
+        while !condition() && Date() < deadline { try await Task.sleep(nanoseconds: 20_000_000) }
+    }
+}
+
+final class SpectatorSecurityTests: XCTestCase {
+    /// Security (privacy): a spectated game, start to game over, writes nothing to Nova's play history
+    /// (play.sessions / play.events), no game_history or leaderboard row, no Hall of Infamy record, and no autosave.
+    @MainActor
+    func testSpectatedGameIsNeverRecorded() async throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        e.autosaveManager = service.local.saves
+        let hallBefore = HallOfInfamy.load()
+        let boardBefore = e.leaderboardManager.entries.count
+
+        SpectatorFixtures.paused(e)
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertNil(e.playSession, "no play session for a spectated game")
+        XCTAssertNil(gs.shadow.playSessionID)
+        try await SpectatorFixtures.turns(e, 3)
+        PlayFixtures.drama(gs)   // a FLASH and a strike: what would be events in a real game
+        e.playSessionTurnEnded()
+        gs.totalCasualties = 2_000_000_000
+        try await SpectatorFixtures.turns(e, 1)   // the real game-over path
+
+        XCTAssertTrue(gs.gameOver)
+        XCTAssertTrue(e.showingVictoryScreen, "the result screen still comes up")
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let sessions = await remote.playSessions
+        let events = await remote.playEvents
+        let counts = try await remote.counts()
+        XCTAssertTrue(sessions.isEmpty, "nothing in play.sessions")
+        XCTAssertTrue(events.isEmpty, "nothing in play.events")
+        XCTAssertEqual(counts.history, 0, "no game_history row")
+        XCTAssertEqual(counts.leaderboard, 0, "no leaderboard row")
+        XCTAssertEqual(counts.slots, 0, "no autosave of a game he didn't play")
+        XCTAssertFalse(service.local.pending.contains { $0.isPlayHistory })
+        XCTAssertEqual(e.leaderboardManager.entries.count, boardBefore)
+        XCTAssertEqual(HallOfInfamy.load().count, hallBefore.count)
+        XCTAssertEqual(HallOfInfamy.load().mapValues(\.value), hallBefore.mapValues(\.value))
+        XCTAssertTrue(gs.novaRoast.isEmpty, "no roast for a game nobody played")
+
+        // Control: the same engine's next ordinary game is recorded again.
+        e.returnToStartScreen()
+        try await SpectatorFixtures.until(2) { e.gameState == nil }
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        XCTAssertFalse(e.spectating)
+        XCTAssertNotNil(e.playSession)
+        _ = await service.syncNow()
+        let after = await remote.playSessions.count
+        XCTAssertEqual(after, 1)
+    }
+}
+
+final class SpectatorUnitTests: XCTestCase {
+    /// Unit: the seat is `.human` in a normal game and played by its brain while spectating.
+    @MainActor
+    func testSeatBrainFollowsTheMode() {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA", turnLength: .month)
+        XCTAssertEqual(e.brain(for: "USA"), .human)
+        SpectatorFixtures.paused(e)
+        XCTAssertTrue(e.spectating)
+        XCTAssertEqual(e.brain(for: "USA"), .ruleBased, "AI off or unassigned: the rule-based brain")
+        e.setBrain(.gatewayClaude, for: "USA")
+        XCTAssertEqual(e.brain(for: "USA"), .gatewayClaude, "the Brains panel picks the seat's brain")
+        e.spectatorLoop?.cancel()
+        XCTAssertEqual(GameEngine.spectatorSpeeds.map(\.label), ["Slow", "Normal", "Fast", "Max"])
+    }
+}
+
+final class SpectatorIntegrationTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Integration: the seat's move goes through the same brain pipeline as any other country's and lands in state.
+    @MainActor
+    func testSeatMoveFlowsThroughTheBrainPipeline() async throws {
+        let e = GameEngine()
+        SpectatorFixtures.paused(e)
+        defer { e.spectatorLoop?.cancel() }
+        e.setBrain(.gatewayClaude, for: "USA")
+        let asked = RetryProbe()
+        e.brainTransportOverride = { req, _ in
+            guard req.countryId == "USA" else { return nil }
+            asked.hit()
+            return MoveResponse(action: "DECLARE_WAR", target: "CHN", rationale: "spectator test")
+        }
+        await e.processAITurnsWithBrains()
+        XCTAssertEqual(asked.calls, 1, "the seat was asked for its move")
+        XCTAssertTrue(e.gameState?.getCountry(id: "USA")?.atWarWith.contains("CHN") ?? false)
+    }
+}
+
+final class SpectatorRetryTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Retry: a seat brain that never answers falls back to rule-based play, so the watched game keeps going.
+    @MainActor
+    func testSilentSeatBrainFallsBackAndTheGameGoesOn() async throws {
+        let e = GameEngine()
+        SpectatorFixtures.paused(e)
+        defer { e.spectatorLoop?.cancel() }
+        e.setBrain(.gatewayClaude, for: "USA")
+        e.brainTransportOverride = { _, _ in nil }   // timeout / no answer
+        let turn = try XCTUnwrap(e.gameState).turn
+        try await SpectatorFixtures.turns(e, 2)
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.contains("USA"))
+        XCTAssertEqual(e.gameState?.turn, turn + 2)
+    }
+}
+
+final class SpectatorFunctionalTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Functional, AI off: the turns run by themselves, pause holds them, resume restarts them, and taking the seat
+    /// stops them and makes it his game (a play session from that turn on).
+    @MainActor
+    func testRunsPausesResumesAndHandsOverTheSeatWithAIOff() async throws {
+        AppAI.shared.isEnabled = false
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let (e, _) = PlayFixtures.engine(dir, remote: nil)
+        let calls = RetryProbe()
+        e.brainTransportOverride = { _, _ in calls.hit(); return nil }
+        e.spectatorDelay = 0
+        e.startSpectatorGame(playerCountryID: "USA", turnLength: .month)
+        e.setBrain(.gatewayClaude, for: "USA")
+        let start = try XCTUnwrap(e.gameState).turn
+
+        try await SpectatorFixtures.until { (e.gameState?.turn ?? 0) >= start + 3 }
+        XCTAssertGreaterThanOrEqual(e.gameState?.turn ?? 0, start + 3, "turns advance with nobody at the keyboard")
+        XCTAssertEqual(calls.calls, 0, "AI off: the seat plays rule-based and nothing is sent")
+
+        e.spectatorPaused = true
+        try await Task.sleep(nanoseconds: 150_000_000)
+        try await SpectatorFixtures.settle(e)
+        let held = e.gameState?.turn
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(e.gameState?.turn, held, "paused")
+
+        e.spectatorPaused = false
+        try await SpectatorFixtures.until { (e.gameState?.turn ?? 0) > (held ?? 0) }
+        XCTAssertGreaterThan(e.gameState?.turn ?? 0, held ?? 0, "resumed")
+
+        e.takeSeat()
+        try await SpectatorFixtures.settle(e)
+        let mine = e.gameState?.turn
+        XCTAssertFalse(e.spectating)
+        XCTAssertNil(e.spectatorLoop)
+        XCTAssertEqual(e.brain(for: "USA"), .gatewayClaude, "his Brains-panel choice is kept but no longer drives the seat")
+        XCTAssertEqual(e.playSession?.resumedFromTurn, mine, "his game from here, logged like a continued save")
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(e.gameState?.turn, mine, "the turn waits for him now")
+    }
+
+    /// Functional: a spectated game that ends shows the result screen, stops the loop, and "New Game" goes back to
+    /// the start screen like any loss or win.
+    @MainActor
+    func testGameOverReturnsToTheStartScreen() async throws {
+        let e = GameEngine()
+        e.spectatorDelay = 0
+        e.startSpectatorGame(playerCountryID: "USA", turnLength: .month)
+        e.gameState?.totalCasualties = 2_000_000_000
+        try await SpectatorFixtures.until { e.gameState?.gameOver == true }
+        XCTAssertTrue(e.showingVictoryScreen)
+        let turn = e.gameState?.turn
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(e.gameState?.turn, turn, "nothing runs after game over")
+
+        e.returnToStartScreen()   // the result screen's NEW GAME
+        try await SpectatorFixtures.until(2) { e.gameState == nil }
+        XCTAssertNil(e.gameState, "back to the start screen")
+        XCTAssertFalse(e.spectating)
+    }
+
+    /// Functional: decisions on the seat's desk are taken for it (the advised option) so nothing waits on a click.
+    @MainActor
+    func testSeatAnswersItsDesk() async throws {
+        let e = GameEngine()
+        SpectatorFixtures.paused(e)
+        defer { e.spectatorLoop?.cancel() }
+        e.crisisManager.presentCrisis(RoastFixtures.card())
+        e.crisisManager.presentCrisis(RoastFixtures.card())
+        try await SpectatorFixtures.turns(e, 1)
+        XCTAssertEqual(e.crisisManager.crisisHistory.suffix(2).map(\.chosenOption), [1, 1], "the advised option, twice")
+    }
+}
+
+final class SpectatorPerformanceTests: XCTestCase {
+    /// Performance: ten spectated rule-based turns (seat included) well under the one-second-a-turn budget.
+    @MainActor
+    func testTenSpectatedTurnsAreQuick() async throws {
+        let e = GameEngine()
+        SpectatorFixtures.paused(e)
+        defer { e.spectatorLoop?.cancel() }
+        let turn = try XCTUnwrap(e.gameState).turn
+        let start = Date()
+        try await SpectatorFixtures.turns(e, 10)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 10)
+        XCTAssertEqual(e.gameState?.turn, turn + 10)
+    }
+}
+
+#if os(macOS)
+final class SpectatorFrameTests: XCTestCase {
+    /// UI state: the game renders with the SPECTATING bar in both skins, and the bar goes away with the seat.
+    @MainActor
+    func testSpectatingBarRendersAndLeavesWithTheSeat() throws {
+        let e = GameEngine()
+        SpectatorFixtures.paused(e)
+        defer { Theme.forced = nil; e.spectatorLoop?.cancel() }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let bar = NSHostingView(rootView: SpectatorBar().environmentObject(e))
+            bar.frame = NSRect(x: 0, y: 0, width: 1200, height: 40)
+            bar.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThan(bar.fittingSize.height, 0)
+            let root = MainTabView().environmentObject(e).environmentObject(ThemeManager.shared).frame(width: 1200, height: 800)
+            let renderer = ImageRenderer(content: root)
+            renderer.scale = 1
+            XCTAssertNotNil(renderer.cgImage, "spectated game failed to render in \(theme)")
+        }
+        e.takeSeat()
+        XCTAssertFalse(e.spectating, "the bar is shown only while spectating")
+    }
+}
+#endif
