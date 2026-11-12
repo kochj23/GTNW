@@ -58,16 +58,16 @@ struct ContentView: View {
 
             // Title (WOPR style)
             VStack(spacing: 10) {
-                Text("W.O.P.R")
+                Text(Brand.computerBadge())
                     .font(.scaled(size: 60, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.cyan)
                     .shadow(color: ModernColors.cyan.opacity(0.5), radius: 20)
 
-                Text("War Operation Plan Response")
+                Text(Brand.computerLongName())
                     .font(.scaled(size: 18, design: .monospaced))
                     .foregroundColor(ModernColors.yellow)
 
-                Text("GLOBAL THERMAL NUCLEAR WAR")
+                Text(Brand.gameTitle())
                     .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(ModernColors.statusCritical)
                     .shadow(color: ModernColors.statusCritical.opacity(0.5), radius: 10)
@@ -78,12 +78,12 @@ struct ContentView: View {
 
             // Quote from the movie
             VStack(spacing: 5) {
-                Text("\"Shall we play a game?\"")
+                Text(Brand.titleQuote().0)
                     .font(.scaled(size: 20, design: .monospaced))
                     .italic()
                     .foregroundColor(ModernColors.cyan)
 
-                Text("- WOPR, 1983")
+                Text(Brand.titleQuote().1)
                     .font(.scaled(size: 14, design: .monospaced))
                     .foregroundColor(ModernColors.yellow)
             }

@@ -412,7 +412,7 @@ struct UnifiedCommandCenter: View {
                         .font(.scaled(size: 36))
                         .foregroundColor(GTNWColors.neonPurple)
 
-                    Text("SHADOW PRESIDENT")
+                    Text(Edition.isPublic ? "PRESIDENTIAL ORDERS" : "SHADOW PRESIDENT")
                         .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                         .foregroundColor(GTNWColors.terminalGreen)
 

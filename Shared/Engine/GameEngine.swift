@@ -133,9 +133,7 @@ class GameEngine: ObservableObject {
         resetWorldWatch()
         beginPlaySession()
 
-        addLog("WOPR SYSTEM INITIALIZED", type: .system)
-        addLog("GREETINGS PROFESSOR FALKEN", type: .system)
-        addLog("SHALL WE PLAY A GAME?", type: .system)
+        for line in Brand.greeting() { addLog(line, type: .system) }
         addLog("", type: .system)
         addLog("Game started as \(playerCountryID)", type: .info)
         addLog("Difficulty: \(difficulty.rawValue)", type: .info)
@@ -1675,6 +1673,8 @@ class GameEngine: ObservableObject {
         }
     }
 
+    // MARK: - Game Over
+
     /// 3.22.5: after a finished game (lost or won), back to the start screen to choose the next era, president and
     /// difficulty. "New Game" on the result screen used to drop straight into a default 2025 game instead.
     /// The play session and game history were already recorded at game over.
@@ -1692,8 +1692,6 @@ class GameEngine: ObservableObject {
             self?.logMessages = []
         }
     }
-
-    // MARK: - Game Over
 
     /// Check for game over conditions
     private func checkGameOver() {

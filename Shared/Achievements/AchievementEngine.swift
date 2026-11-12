@@ -266,7 +266,7 @@ class AchievementEngine: ObservableObject {
             // Special Achievements
             Achievement(
                 id: "wopr_choice",
-                name: "WOPR's Choice",
+                name: Brand.secretEndingName(),
                 description: "Discover the secret ending",
                 category: .special,
                 requirement: 1,

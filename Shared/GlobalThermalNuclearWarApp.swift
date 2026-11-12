@@ -91,12 +91,14 @@ struct GlobalThermalNuclearWarApp: App {
                 }
                 Button(themes.isRetro ? "Switch to Modern Skin" : "Switch to Retro Skin") { themes.toggle() }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
-                Divider()
-                Toggle("Shadow President Art", isOn: Binding(get: { ShadowPack.shared.useRetroArt },
-                                                             set: { ShadowPack.shared.useRetroArt = $0 }))
-                Toggle("Sound Effects", isOn: Binding(get: { ShadowPack.shared.soundEnabled },
-                                                      set: { ShadowPack.shared.soundEnabled = $0 }))
-                Button("Reload Shadow Pack") { ShadowPack.shared.reload() }
+                if Brand.offersShadowPack() {
+                    Divider()
+                    Toggle("Shadow President Art", isOn: Binding(get: { ShadowPack.shared.useRetroArt },
+                                                                 set: { ShadowPack.shared.useRetroArt = $0 }))
+                    Toggle("Sound Effects", isOn: Binding(get: { ShadowPack.shared.soundEnabled },
+                                                          set: { ShadowPack.shared.soundEnabled = $0 }))
+                    Button("Reload Shadow Pack") { ShadowPack.shared.reload() }
+                }
             }
         }
         #endif
@@ -106,8 +108,13 @@ struct GlobalThermalNuclearWarApp: App {
             TabView {
                 ThemeSettingsView().tabItem { Label("Game", systemImage: "gamecontroller") }
                 AIBackendSettingsView().tabItem { Label("AI", systemImage: "cpu") }
-                ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
-                GameStoreSettingsView().tabItem { Label("Saves & DB", systemImage: "externaldrive.connected.to.line.below") }
+                // 3.22.1: the public edition has no Shadow President pack and no Games DB to set up.
+                if Brand.offersShadowPack() {
+                    ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
+                }
+                if !Edition.isPublic {
+                    GameStoreSettingsView().tabItem { Label("Saves & DB", systemImage: "externaldrive.connected.to.line.below") }
+                }
             }
             .font(.scaled(.body))
             .controlSize(FontScale.factor >= 1.5 ? .large : .regular)

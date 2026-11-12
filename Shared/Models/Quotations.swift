@@ -67,7 +67,7 @@ enum Quotations {
 
     // MARK: The library
 
-    static let all: [Quotation] = sacred + sciFi + military
+    static let all: [Quotation] = (sacred + sciFi + military).filter { Brand.allowsQuote(source: $0.source) }
 
     static let sacred: [Quotation] = [
         // 3.21.0 — elections and the consent of the governed.

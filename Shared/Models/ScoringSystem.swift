@@ -41,7 +41,7 @@ enum VictoryType: String, Codable, CaseIterable {
         case .peaceMaker:
             return "Twenty years without a war of your own or a nuclear weapon"
         case .secretEnding:
-            return "Discovered WOPR's backdoor - the only winning move is not to play"
+            return Brand.secretEndingBlurb()
         case .diplomaticVictory:
             return "Built a treaty network with 35% of the world's nations, at peace"
         case .economicVictory:

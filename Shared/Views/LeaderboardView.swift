@@ -16,7 +16,7 @@ struct LeaderboardView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("🏆 WOPR HIGH SCORES 🏆")
+                Text("🏆 \(Brand.computer()) HIGH SCORES 🏆")
                     .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 

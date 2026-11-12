@@ -92,7 +92,7 @@ class MLXManager: ObservableObject {
         defer { isProcessing = false }
 
         let prompt = """
-        You are WOPR, the AI from WarGames. Analyze this situation and provide strategic advice:
+        \(Edition.isPublic ? "You are SIGMA, the Situation Room's strategic war-gaming computer." : "You are WOPR, the AI from WarGames.") Analyze this situation and provide strategic advice:
 
         Situation: \(situation)
 
@@ -102,7 +102,7 @@ class MLXManager: ObservableObject {
         - Nuclear Powers: \(gameState.countries.filter { $0.nuclearWarheads > 0 }.count)
         - Total Casualties: \(gameState.totalCasualties)
 
-        Provide concise strategic advice in WOPR's voice (terminal-style, strategic, slightly ominous).
+        Provide concise strategic advice in \(Brand.computer())'s voice (terminal-style, strategic, slightly ominous).
         """
 
         let response = await callMLXPython(context: ["prompt": prompt])

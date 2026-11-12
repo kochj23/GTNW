@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the PUBLIC GTNW disk image: the full game with no Games DB, no core3 hand-off and no Nova banner
+# Build the PUBLIC disk image ("Situation Room", GTNW's public edition): the full game with no Games DB, no core3 hand-off and no Nova banner
 # (PUBLIC_EDITION), signed with Developer ID, notarized by Apple and stapled, so it opens on any Mac with no warning.
 #
 #   tools/make_public_dmg.sh            release: Developer ID + notarization (needs Xcode signed in to the team)
@@ -13,6 +13,7 @@ set -euo pipefail
 ADHOC=0
 [[ "${1:-}" == "--adhoc" ]] && ADHOC=1
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+APP_NAME="${APP_NAME:-Situation Room}"
 TEAM="${TEAM:-QRRCB8HB3W}"
 OUT="${OUT:-/Volumes/Data/xcode/binaries}"
 # Build on the internal disk: external volumes ignore ownership and the archive's chown step fails there.
@@ -23,17 +24,22 @@ cd "$ROOT"
 VERSION="$(xcodebuild -project GTNW.xcodeproj -scheme GTNW_macOS -showBuildSettings 2>/dev/null \
            | awk -F' = ' '/ MARKETING_VERSION /{print $2; exit}')"
 [[ -n "$VERSION" ]] || { log "could not read MARKETING_VERSION"; exit 1; }
-NAME="GTNW-$VERSION"; [[ $ADHOC == 1 ]] && NAME="$NAME-adhoc-TEST"
+NAME="${APP_NAME// /-}-$VERSION"; [[ $ADHOC == 1 ]] && NAME="$NAME-adhoc-TEST"
 log "version $VERSION, work dir $WORK"
 
 log "archiving the public edition"
 xcodebuild archive -project GTNW.xcodeproj -scheme GTNW_macOS -configuration Release \
   -destination 'generic/platform=macOS' -derivedDataPath "$WORK/dd" -archivePath "$WORK/GTNW.xcarchive" \
   'SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) PUBLIC_EDITION' EXCLUDED_SOURCE_FILE_NAMES=games-pg-ca.crt \
+  "INFOPLIST_KEY_CFBundleDisplayName=$APP_NAME" \
   -allowProvisioningUpdates > "$WORK/archive.log" 2>&1 || { tail -20 "$WORK/archive.log"; exit 1; }
 if find "$WORK/GTNW.xcarchive" -name 'games-pg-ca.crt' | grep -q .; then
   log "FAIL: the Games DB CA is still in the bundle"; exit 1
 fi
+
+# The generated Info.plist always takes CFBundleName from PRODUCT_NAME (which must stay GTNW: overrides reach the SPM
+# targets too), so rename the archived app here; the ad hoc sign and the Developer ID export both re-sign after this.
+/usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" "$WORK/GTNW.xcarchive/Products/Applications/GTNW.app/Contents/Info.plist"
 
 mkdir -p "$WORK/app"
 if [[ $ADHOC == 1 ]]; then
@@ -70,21 +76,21 @@ fi
 
 log "building the disk image"
 mkdir -p "$WORK/dmg"
-ditto "$WORK/app/GTNW.app" "$WORK/dmg/GTNW.app"
+ditto "$WORK/app/GTNW.app" "$WORK/dmg/$APP_NAME.app"   # the folder name is not part of the signature
 ln -s /Applications "$WORK/dmg/Applications"
 cat > "$WORK/dmg/Read Me.txt" <<EOF
-GTNW $VERSION
+$APP_NAME $VERSION
 
-Drag GTNW to Applications, then open it from there.
+Drag $APP_NAME to Applications, then open it from there.
 
-AI is optional. GTNW runs fine with no AI at all. To let an AI play the other countries and comment on your
-presidency, pick a backend in GTNW > Settings: Ollama or MLX on this Mac (free, private), or your own API key for
+AI is optional. $APP_NAME runs fine with no AI at all. To let an AI play the other countries and comment on your
+presidency, pick a backend in $APP_NAME > Settings: Ollama or MLX on this Mac (free, private), or your own API key for
 OpenAI, Google, Azure, AWS or IBM. Keys are kept in your Mac's keychain.
 
-Requires macOS 13 or later. For ages 17 and up: GTNW simulates nuclear war, political violence and historical
+Requires macOS 13 or later. For ages 17 and up: $APP_NAME simulates nuclear war, political violence and historical
 atrocities. It shows consequences and does not glorify war.
 EOF
-hdiutil create -volname "GTNW $VERSION" -srcfolder "$WORK/dmg" -format UDZO -ov "$WORK/$NAME.dmg" >/dev/null
+hdiutil create -volname "$APP_NAME $VERSION" -srcfolder "$WORK/dmg" -format UDZO -ov "$WORK/$NAME.dmg" >/dev/null
 
 if [[ $ADHOC == 0 ]]; then
   ID="$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')"
@@ -100,17 +106,19 @@ log "verifying the image"
 MNT="$(mktemp -d "$WORK/mnt.XXXXXX")"
 hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$WORK/$NAME.dmg" >/dev/null
 trap 'hdiutil detach -quiet "$MNT" 2>/dev/null || true' EXIT
-[[ -d "$MNT/GTNW.app" && -L "$MNT/Applications" ]] || { log "FAIL: image layout"; exit 1; }
-codesign --verify --deep --strict "$MNT/GTNW.app"
-if find "$MNT/GTNW.app" -name 'games-pg-ca.crt' | grep -q .; then log "FAIL: CA in the image"; exit 1; fi
+[[ -d "$MNT/$APP_NAME.app" && -L "$MNT/Applications" ]] || { log "FAIL: image layout"; exit 1; }
+codesign --verify --deep --strict "$MNT/$APP_NAME.app"
+[[ "$(/usr/libexec/PlistBuddy -c "Print :CFBundleName" "$MNT/$APP_NAME.app/Contents/Info.plist")" == "$APP_NAME" ]] \
+  || { log "FAIL: the app is not named $APP_NAME"; exit 1; }
+if find "$MNT/$APP_NAME.app" -name 'games-pg-ca.crt' | grep -q .; then log "FAIL: CA in the image"; exit 1; fi
 if [[ $ADHOC == 0 ]]; then
-  spctl -a -t exec -vv "$MNT/GTNW.app" 2>&1 | grep -q "Notarized Developer ID" \
-    || { spctl -a -t exec -vv "$MNT/GTNW.app"; log "FAIL: Gatekeeper does not accept the app"; exit 1; }
+  spctl -a -t exec -vv "$MNT/$APP_NAME.app" 2>&1 | grep -q "Notarized Developer ID" \
+    || { spctl -a -t exec -vv "$MNT/$APP_NAME.app"; log "FAIL: Gatekeeper does not accept the app"; exit 1; }
 fi
-"$ROOT/tools/launch_smoke.sh" "$MNT/GTNW.app" >&2
+"$ROOT/tools/launch_smoke.sh" "$MNT/$APP_NAME.app" >&2
 
 mkdir -p "$OUT"
 cp "$WORK/$NAME.dmg" "$OUT/"
-[[ -d /Volumes/NAS/binaries ]] && cp "$WORK/$NAME.dmg" /Volumes/NAS/binaries/
+[[ $ADHOC == 0 && -d /Volumes/NAS/binaries ]] && cp "$WORK/$NAME.dmg" /Volumes/NAS/binaries/
 shasum -a 256 "$OUT/$NAME.dmg"
 log "done: $OUT/$NAME.dmg"

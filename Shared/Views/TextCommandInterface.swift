@@ -62,7 +62,7 @@ struct TextCommandInterface: View {
     private var commandHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("💻 WOPR TERMINAL INTERFACE")
+                Text("💻 \(Brand.computer()) TERMINAL INTERFACE")
                     .font(GTNWFonts.heading())
                     .foregroundColor(GTNWColors.terminalGreen)
 
@@ -358,7 +358,7 @@ struct TextCommandInterface: View {
             Task {
                 let advice = await mlxManager.getStrategicAdvice(situation: input, gameState: gameState)
                 await MainActor.run {
-                    responseMessage = "WOPR ANALYSIS:\n\n\(advice)"
+                    responseMessage = "\(Brand.computer()) ANALYSIS:\n\n\(advice)"
                 }
             }
         } else {

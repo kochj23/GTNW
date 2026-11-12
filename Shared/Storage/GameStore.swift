@@ -26,6 +26,64 @@ enum Edition {
     #endif
 }
 
+/// Every name and line a player sees that differs between editions (3.22.1). Jordan's edition is GTNW with WOPR
+/// and its film homages; the public edition is "Situation Room" with its own computer, SIGMA, and its own lines,
+/// so nothing in a build given to strangers borrows from WarGames (1983) or Shadow President (1993).
+enum Brand {
+    static func gameName(isPublic: Bool = Edition.isPublic) -> String { isPublic ? "Situation Room" : "GTNW" }
+    static func gameTitle(isPublic: Bool = Edition.isPublic) -> String {
+        isPublic ? "SITUATION ROOM" : "GLOBAL THERMAL NUCLEAR WAR"
+    }
+    /// The machine that runs the war games.
+    static func computer(isPublic: Bool = Edition.isPublic) -> String { isPublic ? "SIGMA" : "WOPR" }
+    static func computerBadge(isPublic: Bool = Edition.isPublic) -> String { isPublic ? "S.I.G.M.A" : "W.O.P.R" }
+    static func computerLongName(isPublic: Bool = Edition.isPublic) -> String {
+        isPublic ? "Strategic Integrated Game Model Analyzer" : "War Operation Plan Response"
+    }
+    static func greeting(isPublic: Bool = Edition.isPublic) -> [String] {
+        isPublic ? ["SIGMA SYSTEM INITIALIZED", "GOOD EVENING, MR. PRESIDENT.", "THE WORLD IS WAITING FOR YOUR ORDERS."]
+                 : ["WOPR SYSTEM INITIALIZED", "GREETINGS PROFESSOR FALKEN", "SHALL WE PLAY A GAME?"]
+    }
+    /// The title screen's quotation and its source.
+    static func titleQuote(isPublic: Bool = Edition.isPublic) -> (String, String) {
+        isPublic ? ("\"The buck stops here.\"", "- Harry S. Truman") : ("\"Shall we play a game?\"", "- WOPR, 1983")
+    }
+    /// End-of-game lines: peace victory, other victory, defeat.
+    static func peaceLines(isPublic: Bool = Edition.isPublic) -> [String] {
+        isPublic ? ["\"EVERY WAR ENDS THE SAME WAY.\"", "\"NOBODY WINS. YOU KNEW THAT ALREADY.\""]
+                 : ["\"A STRANGE GAME.\"", "\"THE ONLY WINNING MOVE IS NOT TO PLAY.\""]
+    }
+    static func victoryLine(isPublic: Bool = Edition.isPublic) -> String {
+        isPublic ? "\"ANOTHER TERM, MR. PRESIDENT?\"" : "\"SHALL WE PLAY ANOTHER GAME?\""
+    }
+    /// The secret ending's opening and closing lines (the scenario run in between is the game's own).
+    static func secretOpening(isPublic: Bool = Edition.isPublic) -> [(String, Double, String)] {
+        isPublic ? [("GOOD EVENING, MR. PRESIDENT.", 0.5, "green"), ("", 0.3, "green"),
+                    ("FIFTY YEARS WITHOUT A WAR.", 0.8, "green"), ("", 0.3, "green"),
+                    ("LET ME CHECK YOUR WORK.", 1.0, "amber")]
+                 : [("GREETINGS, PROFESSOR FALKEN.", 0.5, "green"), ("", 0.3, "green"),
+                    ("SHALL WE PLAY A GAME?", 0.8, "green"), ("", 0.3, "green"),
+                    ("HOW ABOUT GLOBAL THERMONUCLEAR WAR?", 1.0, "amber")]
+    }
+    static func secretClosing(isPublic: Bool = Edition.isPublic) -> [(String, Double, String)] {
+        isPublic ? [("EVERY WAR ENDS THE SAME WAY.", 1.2, "green"), ("", 0.4, "green"),
+                    ("NOBODY WINS. YOU KNEW THAT ALREADY.", 1.5, "green")]
+                 : [("A STRANGE GAME.", 1.2, "green"), ("", 0.4, "green"),
+                    ("THE ONLY WINNING MOVE IS NOT TO PLAY.", 1.5, "green")]
+    }
+    static func secretEndingName(isPublic: Bool = Edition.isPublic) -> String { "\(computer(isPublic: isPublic))'s Choice" }
+    static func secretEndingBlurb(isPublic: Bool = Edition.isPublic) -> String {
+        isPublic ? "Fifty years of peace - SIGMA ran every war and found no winner"
+                 : "Discovered WOPR's backdoor - the only winning move is not to play"
+    }
+    /// The Shadow President art pack is built from a copy of that 1993 game: never offered in the public edition.
+    static func offersShadowPack(isPublic: Bool = Edition.isPublic) -> Bool { !isPublic }
+    /// Quotations from WarGames stay in Jordan's edition only.
+    static func allowsQuote(source: String, isPublic: Bool = Edition.isPublic) -> Bool {
+        !(isPublic && source.localizedCaseInsensitiveContains("WarGames"))
+    }
+}
+
 // MARK: - Records
 
 /// One save slot. Slot 0 is the autosave. `payload` is the JSON-encoded `GameState`.

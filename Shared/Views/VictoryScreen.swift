@@ -269,23 +269,23 @@ struct VictoryScreen: View {
     private func woprQuote() -> some View {
         VStack(spacing: 10) {
             if victoryType == .peaceMaker {
-                Text("\"A STRANGE GAME.\"")
+                Text(Brand.peaceLines()[0])
                     .font(.scaled(size: 24, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
-                Text("\"THE ONLY WINNING MOVE IS NOT TO PLAY.\"")
+                Text(Brand.peaceLines()[1])
                     .font(.scaled(size: 24, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
-                Text("- WOPR")
+                Text("- \(Brand.computer())")
                     .font(.scaled(size: 18, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             } else if victoryType != nil {
-                Text("\"SHALL WE PLAY ANOTHER GAME?\"")
+                Text(Brand.victoryLine())
                     .font(.scaled(size: 20, design: .monospaced))
                     .foregroundColor(AppSettings.terminalGreen)
 
-                Text("- WOPR")
+                Text("- \(Brand.computer())")
                     .font(.scaled(size: 16, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             } else {
@@ -293,7 +293,7 @@ struct VictoryScreen: View {
                     .font(.scaled(size: 20, design: .monospaced))
                     .foregroundColor(AppSettings.terminalRed)
 
-                Text("- WOPR")
+                Text("- \(Brand.computer())")
                     .font(.scaled(size: 16, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }
@@ -318,12 +318,7 @@ struct WOPRSecretEndingView: View {
     @State private var cursorVisible = true
 
     // WOPR's war scenario simulation — it runs every possible scenario and finds no winner
-    private let woprSequence: [(text: String, delay: Double, color: String)] = [
-        ("GREETINGS, PROFESSOR FALKEN.", 0.5, "green"),
-        ("", 0.3, "green"),
-        ("SHALL WE PLAY A GAME?", 0.8, "green"),
-        ("", 0.3, "green"),
-        ("HOW ABOUT GLOBAL THERMONUCLEAR WAR?", 1.0, "amber"),
+    private let woprSequence: [(text: String, delay: Double, color: String)] = Brand.secretOpening().map { ($0.0, $0.1, $0.2) } + [
         ("", 0.5, "green"),
         ("RUNNING SCENARIOS...", 0.3, "green"),
         ("", 0.2, "green"),
@@ -356,10 +351,7 @@ struct WOPRSecretEndingView: View {
         ("TOTAL SCENARIOS SIMULATED: 2,005", 0.3, "green"),
         ("SCENARIOS WITH A WINNER: 0", 0.5, "amber"),
         ("", 0.5, "green"),
-        ("A STRANGE GAME.", 1.2, "green"),
-        ("", 0.4, "green"),
-        ("THE ONLY WINNING MOVE IS NOT TO PLAY.", 1.5, "green"),
-    ]
+    ] + Brand.secretClosing().map { ($0.0, $0.1, $0.2) }
 
     var body: some View {
         ZStack {
@@ -368,10 +360,10 @@ struct WOPRSecretEndingView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // WOPR header
                 HStack {
-                    Text("W O P R")
+                    Text(Brand.computerBadge().replacingOccurrences(of: ".", with: " "))
                         .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen)
-                    Text("— WAR OPERATION PLAN RESPONSE")
+                    Text("— \(Brand.computerLongName().uppercased())")
                         .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen.opacity(0.6))
                     Spacer()

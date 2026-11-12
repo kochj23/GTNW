@@ -834,3 +834,40 @@ final class PublicEditionTests: XCTestCase {
         XCTAssertFalse(service.local.pending.contains { $0.isPlayHistory }, "nothing queued for a DB that isn't there")
     }
 }
+
+final class BrandTests: XCTestCase {
+    private static let borrowed = ["WOPR", "W.O.P.R", "FALKEN", "SHALL WE PLAY", "STRANGE GAME", "WARGAMES",
+                                   "GLOBAL THERMAL NUCLEAR WAR", "THERMONUCLEAR", "WAR OPERATION PLAN", "SHADOW PRESIDENT"]
+
+    private func publicLines() -> [String] {
+        [Brand.gameName(isPublic: true), Brand.gameTitle(isPublic: true), Brand.computer(isPublic: true),
+         Brand.computerBadge(isPublic: true), Brand.computerLongName(isPublic: true), Brand.titleQuote(isPublic: true).0,
+         Brand.titleQuote(isPublic: true).1, Brand.victoryLine(isPublic: true), Brand.secretEndingName(isPublic: true),
+         Brand.secretEndingBlurb(isPublic: true)]
+        + Brand.greeting(isPublic: true) + Brand.peaceLines(isPublic: true)
+        + Brand.secretOpening(isPublic: true).map(\.0) + Brand.secretClosing(isPublic: true).map(\.0)
+    }
+
+    /// Security (IP): nothing a public-edition player sees borrows from WarGames or Shadow President.
+    func testPublicEditionBorrowsNothing() {
+        for line in publicLines() {
+            for word in Self.borrowed {
+                XCTAssertFalse(line.uppercased().contains(word), "\(line) contains \(word)")
+            }
+        }
+        XCTAssertFalse(Brand.offersShadowPack(isPublic: true))
+        XCTAssertFalse(Brand.allowsQuote(source: "WOPR, WarGames (1983)", isPublic: true))
+        XCTAssertTrue(Brand.allowsQuote(source: "Sun Tzu", isPublic: true))
+    }
+
+    /// Functional: Jordan's edition is exactly what it was.
+    func testHomeEditionIsUnchanged() {
+        XCTAssertEqual(Brand.gameName(isPublic: false), "GTNW")
+        XCTAssertEqual(Brand.greeting(isPublic: false), ["WOPR SYSTEM INITIALIZED", "GREETINGS PROFESSOR FALKEN", "SHALL WE PLAY A GAME?"])
+        XCTAssertEqual(Brand.secretClosing(isPublic: false).last?.0, "THE ONLY WINNING MOVE IS NOT TO PLAY.")
+        XCTAssertTrue(Brand.offersShadowPack(isPublic: false))
+        XCTAssertTrue(Quotations.all.contains { $0.source.contains("WarGames") }, "the test build is Jordan's edition")
+        XCTAssertEqual(Brand.secretOpening(isPublic: true).count, Brand.secretOpening(isPublic: false).count,
+                       "the secret ending keeps its timing in both editions")
+    }
+}
