@@ -278,6 +278,7 @@ extension GameEngine {
 
         case .threatenNuke:
             modifyDiplomaticRelation(from: countryID, to: targetID!, by: -20)
+            watchCue("sfx.nuclear_threat")
             raiseDEFCON()
             if let t = getCountry(targetID!) {
                 addLog("\(country.flag) \(country.name) threatens \(t.flag) \(t.name) with nuclear strike!", type: .warning)
@@ -291,18 +292,8 @@ extension GameEngine {
         }
     }
 
-    /// Resolve a target token (ID or name, case-insensitive) to a living country ID.
+    /// Resolve a target token to another living country's ID (the shared `GameState.resolveCountry`).
     private func resolveMoveTarget(_ token: String, forCountry country: Country) -> String? {
-        guard let gameState = gameState else { return nil }
-        let needle = token.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !needle.isEmpty else { return nil }
-        let match = gameState.countries.first {
-            $0.id != country.id && !$0.isDestroyed &&
-            ($0.id.lowercased() == needle ||
-             $0.code.lowercased() == needle ||
-             $0.name.lowercased() == needle ||
-             $0.name.lowercased().contains(needle))
-        }
-        return match?.id
+        gameState?.resolveCountry(token, excluding: country.id)?.id
     }
 }

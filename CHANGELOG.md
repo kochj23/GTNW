@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.27.1] - 2026-11-12 — The right target, and sound in Watch mode
+
+### Fixed
+- **A nuke aimed at the Soviet Union hit Cyprus.** The AI move resolver took the first country in list order whose
+  id, code or name matched the target, *or whose name merely contained it*. In 1961 Cyprus comes before the Soviet
+  Union and "c-y-p-**rus**" contains "rus", so a model's `LAUNCH_NUKE` on `RUS` struck Cyprus (watch session
+  57f9ed0b, Kennedy 1961, Hard). One shared resolver, `GameState.resolveCountry`, now tries the exact id, then the
+  ISO code, then the exact name, then a known alias (USSR, SOV, UK, PRC, DPRK, ...), then a name word that starts
+  with the token, and only when exactly one country matches; a bare substring never matches. The model move
+  validator, the old text-command parser and the local API (`/api/assign-countries`, actions) all use it.
+- **Watch AI vs AI made no sound.** A normal game's sounds come from the player's own clicks (each Situation Room
+  action plays its pack sound); the seat in a watch game acts through the engine, so nothing played and a
+  ScreenCaptureKit recording got 0 audio buffers. Watch mode now plays the same ShadowPack sounds from the engine:
+  nuclear launch and detonation, war declarations, nuclear threats, the crisis alert when a crisis lands on the
+  seat's desk, and the turn tick. Repeats of one clip are held to one per 0.4 s at Max speed. Sound still obeys the
+  ShadowPack sound switch and the mute gate (`GTNW_MUTE=1`, `-GTNWMute YES`, XCTest). No pack installed means no
+  sound, as before.
+
+### Tests
+- Both fixes in all seven categories, including the regression: `LAUNCH_NUKE` on `RUS` in the 1961 scenario hits the
+  Soviet Union, directly and through the brain pipeline of a watch game. 868 tests, 0 failures.
+
 ## [3.27.0] - 2026-11-12 — Model vs model
 
 ### Added

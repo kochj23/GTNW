@@ -603,6 +603,33 @@ class GameState: ObservableObject, Codable {
         return countries.first { $0.id == id }
     }
 
+    /// Common short forms a model or a typed order uses that are not a country's id, ISO code or name.
+    static let countryAliases: [String: String] = [
+        "ussr": "RUS", "sov": "RUS", "su": "RUS", "soviet": "RUS", "russia": "RUS",
+        "us": "USA", "usa": "USA", "america": "USA", "uk": "GBR", "britain": "GBR", "great britain": "GBR",
+        "prc": "CHN", "china": "CHN", "dprk": "PRK", "north korea": "PRK", "rok": "KOR", "south korea": "KOR",
+    ]
+
+    /// 3.27.1: THE resolver from a free-text country token (a model's move target, a parsed order) to a country.
+    /// Exact id, then ISO code, then exact name, then a known alias, then a name word that STARTS with the token,
+    /// and the last only when exactly one country matches. Before 3.27.1 the AI move resolver took the first country
+    /// in array order whose id/code/name matched OR whose name merely CONTAINED the token, so "RUS" hit
+    /// "Cyprus" (c-y-p-RUS) before it ever reached the Soviet Union.
+    func resolveCountry(_ token: String, excluding excludedID: String? = nil, livingOnly: Bool = true) -> Country? {
+        let needle = token.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)).lowercased()
+        guard !needle.isEmpty else { return nil }
+        let pool = countries.filter { $0.id != excludedID && (!livingOnly || !$0.isDestroyed) }
+        if let c = pool.first(where: { $0.id.lowercased() == needle }) { return c }
+        if let c = pool.first(where: { $0.code.lowercased() == needle }) { return c }
+        if let c = pool.first(where: { $0.name.lowercased() == needle }) { return c }
+        if let id = Self.countryAliases[needle], let c = pool.first(where: { $0.id == id }) { return c }
+        let wordPrefix = pool.filter { c in
+            c.name.lowercased().split(whereSeparator: { !$0.isLetter }).contains { $0.hasPrefix(needle) }
+                || (needle.contains(" ") && c.name.lowercased().hasPrefix(needle))
+        }
+        return wordPrefix.count == 1 ? wordPrefix[0] : nil
+    }
+
     // MARK: - Historical Era Adjustment
 
     /// Adjust country data to match a historical year.

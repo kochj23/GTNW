@@ -82,6 +82,10 @@ class GameEngine: ObservableObject {
     /// Seconds between spectated turns (the speed control).
     @Published var spectatorDelay: Double = 2
     var spectatorLoop: Task<Void, Never>? = nil
+    /// 3.27.1: the sound cues Watch mode asked for, newest last (bounded; also what the tests read), and when each
+    /// sound id last played (so a Max-speed burst of wars does not stack the same clip).
+    var watchCues: [String] = []
+    var watchCueLastPlayed: [String: Date] = [:]
 
     /// An armed-but-not-yet-resolved nuclear launch, cancellable via `abortLaunch()`.
     @Published var pendingLaunch: PendingLaunch? = nil
@@ -455,7 +459,7 @@ class GameEngine: ObservableObject {
     }
 
     private func findCountryByName(_ name: String, in gameState: GameState) -> Country? {
-        return gameState.countries.first { $0.name.lowercased().contains(name.lowercased()) || $0.code.lowercased() == name.lowercased() }
+        return gameState.resolveCountry(name)
     }
 
     /// Enhanced AI with 40% attack rates (fallback when Ollama unavailable)
@@ -670,6 +674,8 @@ class GameEngine: ObservableObject {
             addLog("❌ \(attacker.name) doesn't have enough warheads!", type: .error)
             return
         }
+        watchCue("sfx.nuke_strike")                              // 3.27.1: Watch mode hears the launch...
+        watchCue("sfx.nuke_city", after: 1.5)                    // ...and the detonation
 
         // Calculate SDI interception if target has defensive system
         var interceptedWarheads = 0
@@ -807,6 +813,7 @@ class GameEngine: ObservableObject {
         guard let gameState = gameState else { return }
         guard let aggressorCountry = getCountry(aggressor),
               let defenderCountry = getCountry(defender) else { return }
+        watchCue("sfx.war\(Int.random(in: 1...5))")
 
         // Update countries
         if let aggressorIndex = gameState.countries.firstIndex(where: { $0.id == aggressor }) {

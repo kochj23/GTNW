@@ -288,11 +288,34 @@ extension GameEngine {
                 crisisManager.presentNextPending(gameState: gs)
                 continue
             }
+            watchCue("sfx.warning")   // 3.27.1: the alert a player hears when a crisis lands on the desk
             crisisManager.resolveCrisis(optionIndex: pick, gameState: &gs)
         }
         gameState = gs
         for s in gs.shadow.pendingSettlements { settle(s.id, choice: .victorsModel) }
+        watchCue("sfx.tick", volume: 0.4)   // the turn clock, the UI sound a player hears pressing End Turn
         endTurn()
+    }
+
+    /// 3.27.1: Watch mode plays the game's audio. A normal game's sounds come from the player's own clicks (each
+    /// Situation Room action plays its ShadowPack sound, the War Room plays its door, the map boops); the seat in a
+    /// watch game acts through the engine, so none of those fired and a watch game was all but silent (a
+    /// ScreenCaptureKit recording got 0 audio buffers). The engine now cues the same pack sounds while spectating:
+    /// nuclear launch and detonation, war declarations, nuclear threats, crisis alerts and the turn tick. Outside
+    /// Watch mode this is a no-op (the player's UI already plays them). Sound still obeys the ShadowPack sound
+    /// switch and AudioGate (muted under XCTest / GTNW_MUTE); the cue is recorded either way.
+    func watchCue(_ id: String, volume: Float = 1, after delay: Double = 0) {
+        guard spectating else { return }
+        watchCues.append(id)
+        if watchCues.count > 200 { watchCues.removeFirst(watchCues.count - 200) }
+        let now = Date()
+        if let last = watchCueLastPlayed[id], now.timeIntervalSince(last) < 0.4 { return }
+        watchCueLastPlayed[id] = now
+        if delay > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { ShadowPack.shared.play(id, volume: volume) }
+        } else {
+            ShadowPack.shared.play(id, volume: volume)
+        }
     }
 
     /// Take over the watched seat: the turns stop running themselves. The watch session ends as "taken_over" and

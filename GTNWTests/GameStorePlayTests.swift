@@ -1495,3 +1495,272 @@ final class ModelVsModelFrameTests: XCTestCase {
     }
 }
 #endif
+
+// MARK: - 3.27.1 the nuke on Cyprus + sound in Watch mode
+
+enum PatchFixtures {
+    /// Kennedy 1961 on Hard, the setup of watch session 57f9ed0b (USA qwen3:8b vs Soviet Union gemma3:27b).
+    @MainActor
+    static func kennedy(_ e: GameEngine, watch: Bool = false) {
+        if watch {
+            e.startSpectatorGame(playerCountryID: "USA", difficulty: .hard, administration: Advisor.kennedyAdministration(),
+                                 turnLength: .month)
+            e.spectatorPaused = true
+        } else {
+            e.startNewGame(playerCountryID: "USA", difficulty: .hard, administration: Advisor.kennedyAdministration(),
+                           turnLength: .month)
+        }
+    }
+}
+
+final class TargetResolutionUnitTests: XCTestCase {
+    /// Unit (regression, session 57f9ed0b): in 1961 Cyprus comes before the Soviet Union in the country list and
+    /// "cyprus" contains "rus". "RUS" must resolve to the Soviet Union by its id, never to Cyprus by substring.
+    @MainActor
+    func testRUSResolvesToTheSovietUnionNotCyprusIn1961() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e)
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertEqual(gs.currentYear, 1961)
+        XCTAssertEqual(gs.getCountry(id: "RUS")?.name, "Soviet Union")
+        let cyp = try XCTUnwrap(gs.countries.firstIndex { $0.id == "CYP" }, "Cyprus is independent in 1961")
+        let rus = try XCTUnwrap(gs.countries.firstIndex { $0.id == "RUS" })
+        XCTAssertLessThan(cyp, rus, "the ordering that made the old first-match resolver pick Cyprus")
+        for token in ["RUS", "rus", " Rus ", "USSR", "Soviet Union", "soviet"] {
+            XCTAssertEqual(gs.resolveCountry(token, excluding: "USA")?.id, "RUS", token)
+        }
+        XCTAssertEqual(gs.resolveCountry("Cyprus")?.id, "CYP")
+        XCTAssertEqual(gs.resolveCountry("CYP")?.id, "CYP")
+    }
+
+    /// Unit: exact id beats code beats name beats alias beats a unique name-word prefix; a bare substring or an
+    /// ambiguous prefix resolves to nothing.
+    @MainActor
+    func testResolverOrderAndNoSubstringMatches() throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertEqual(gs.resolveCountry("chn")?.id, "CHN")
+        XCTAssertEqual(gs.resolveCountry("UK")?.id, "GBR")
+        XCTAssertEqual(gs.resolveCountry("Cypr")?.id, "CYP", "a unique word prefix still works")
+        XCTAssertNil(gs.resolveCountry("yprus"), "no mid-word substring matches")
+        XCTAssertNil(gs.resolveCountry("South"), "ambiguous prefix (South Africa, South Korea, ...) is refused")
+        XCTAssertNil(gs.resolveCountry("   "))
+    }
+}
+
+final class TargetResolutionFunctionalTests: XCTestCase {
+    /// Functional (regression): LAUNCH_NUKE on RUS by the USA in the 1961 scenario hits the Soviet Union; Cyprus is
+    /// untouched.
+    @MainActor
+    func testLaunchNukeOnRUSIn1961HitsTheSovietUnion() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e)
+        let gs = try XCTUnwrap(e.gameState)
+        let cypPop = try XCTUnwrap(gs.getCountry(id: "CYP")).population
+        XCTAssertEqual(e.applyMove(MoveResponse(action: "LAUNCH_NUKE", target: "RUS", params: ["warheads": 2]), for: "USA"),
+                       .applied("LAUNCH_NUKE"))
+        let strike = try XCTUnwrap(gs.nuclearStrikes.last)
+        XCTAssertEqual(strike.attacker, "USA")
+        XCTAssertEqual(strike.target, "RUS")
+        XCTAssertFalse(gs.nuclearStrikes.contains { $0.target == "CYP" })
+        XCTAssertEqual(gs.getCountry(id: "CYP")?.population, cypPop)
+    }
+}
+
+final class TargetResolutionSecurityTests: XCTestCase {
+    /// Security: a model cannot aim at itself, at a destroyed country, or smuggle a target through junk text.
+    @MainActor
+    func testHostileTargetsAreRefused() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e)
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertNil(gs.resolveCountry("USA", excluding: "USA"))
+        XCTAssertNil(gs.resolveCountry("United States", excluding: "USA"))
+        let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "CYP" })
+        gs.countries[i].isDestroyed = true
+        XCTAssertNil(gs.resolveCountry("CYP"))
+        XCTAssertEqual(gs.resolveCountry("CYP", livingOnly: false)?.id, "CYP")
+        for junk in ["RUS<script>", String(repeating: "r", count: 5_000), "\u{0}", "*"] {
+            XCTAssertEqual(e.applyMove(MoveResponse(action: "LAUNCH_NUKE", target: junk), for: "USA"), .rejectedIllegal,
+                           String(junk.prefix(20)))
+        }
+        XCTAssertTrue(gs.nuclearStrikes.isEmpty)
+    }
+}
+
+final class TargetResolutionIntegrationTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Integration (regression, session 57f9ed0b): a watch game in 1961, the US seat on a model that answers
+    /// LAUNCH_NUKE RUS; through the brain pipeline the strike lands on the Soviet Union, and Watch mode cues the
+    /// launch and the detonation.
+    @MainActor
+    func testWatchGameModelNukeOnRUSHitsTheSovietUnionAndIsHeard() async throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel() }
+        e.setBrain(.kit(backend: "ollama", model: "qwen3:8b"), for: "USA")
+        e.brainTransportOverride = { req, brain in
+            guard case .kit = brain, req.countryId == "USA" else { return nil }
+            return MoveResponse(action: "LAUNCH_NUKE", target: "RUS", params: ["warheads": 3])
+        }
+        await e.processAITurnsWithBrains()
+        let strikes = try XCTUnwrap(e.gameState).nuclearStrikes.filter { $0.attacker == "USA" }
+        XCTAssertEqual(strikes.map(\.target), ["RUS"])
+        XCTAssertTrue(e.watchCues.contains("sfx.nuke_strike"))
+        XCTAssertTrue(e.watchCues.contains("sfx.nuke_city"))
+    }
+}
+
+final class TargetResolutionRetryTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Retry: a target that resolves to nothing (a fragment that once matched Cyprus) is re-asked with the reason;
+    /// the corrected RUS stands and hits the Soviet Union.
+    @MainActor
+    func testUnresolvedTargetIsReaskedAndTheCorrectionHitsRUS() async throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel() }
+        e.setBrain(.kit(backend: "ollama", model: "qwen3:8b"), for: "USA")
+        let calls = RetryProbe()
+        let errors = ErrorLog()
+        e.brainTransportOverride = { req, brain in
+            guard case .kit = brain, req.countryId == "USA" else { return nil }
+            errors.add(req.previousError)
+            return calls.hit() == 1 ? MoveResponse(action: "LAUNCH_NUKE", target: "yprus")
+                                    : MoveResponse(action: "LAUNCH_NUKE", target: "RUS", params: ["warheads": 1])
+        }
+        await e.processAITurnsWithBrains()
+        XCTAssertEqual(calls.calls, 2)
+        XCTAssertTrue((errors.all.last ?? nil)?.contains("needs the id") ?? false)
+        XCTAssertEqual(e.gameState?.nuclearStrikes.filter { $0.attacker == "USA" }.map(\.target), ["RUS"])
+        XCTAssertFalse(e.lastTurnFallbackCountryIDs.contains("USA"))
+    }
+}
+
+final class TargetResolutionPerformanceTests: XCTestCase {
+    /// Performance: the resolver runs for every model move; 20,000 lookups (hits, aliases, misses) stay cheap.
+    @MainActor
+    func testResolverIsCheap() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e)
+        let gs = try XCTUnwrap(e.gameState)
+        let tokens = ["RUS", "USSR", "Cyprus", "nowhere", "South", "chn"]
+        let start = Date()
+        for i in 0..<20_000 { _ = gs.resolveCountry(tokens[i % tokens.count], excluding: "USA") }
+        XCTAssertLessThan(Date().timeIntervalSince(start), 5)
+    }
+}
+
+final class WatchAudioFunctionalTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Functional: Watch mode cues the game's sounds the player would hear: the turn tick, war declarations,
+    /// nuclear threats, a launch and its detonation.
+    @MainActor
+    func testWatchModeCuesTheGameAudio() async throws {
+        AppAI.shared.isEnabled = false
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel() }
+        e.watchCues = []
+        try await SpectatorFixtures.turns(e, 1)
+        XCTAssertTrue(e.watchCues.contains("sfx.tick"), "the turn tick")
+        e.declareWar(aggressor: "RUS", defender: "TUR")
+        XCTAssertTrue(e.watchCues.contains { $0.hasPrefix("sfx.war") })
+        e.applyMove(MoveResponse(action: "THREATEN_NUKE", target: "USA"), for: "RUS")
+        XCTAssertTrue(e.watchCues.contains("sfx.nuclear_threat"))
+        e.launchNuclearStrike(from: "RUS", to: "USA", warheads: 1)
+        XCTAssertTrue(e.watchCues.contains("sfx.nuke_strike"))
+        XCTAssertTrue(e.watchCues.contains("sfx.nuke_city"))
+    }
+
+    /// Functional: a crisis on the seat's desk is answered with the alert a player hears.
+    @MainActor
+    func testCrisisOnTheDeskSoundsTheAlert() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel() }
+        e.crisisManager.presentCrisis(RoastFixtures.card())
+        e.watchCues = []
+        e.spectatorTurn()
+        XCTAssertTrue(e.watchCues.contains("sfx.warning"))
+    }
+}
+
+final class WatchAudioSecurityTests: XCTestCase {
+    /// Security: outside Watch mode the engine adds no sound (the player's own UI plays his), and under XCTest
+    /// AudioGate keeps every cue silent: no player is created, the attempt is only counted.
+    @MainActor
+    func testNoCuesInANormalGameAndSilentUnderTest() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e)
+        e.launchNuclearStrike(from: "RUS", to: "GBR", warheads: 1)
+        e.declareWar(aggressor: "RUS", defender: "TUR")
+        XCTAssertTrue(e.watchCues.isEmpty)
+
+        let w = GameEngine()
+        PatchFixtures.kennedy(w, watch: true)
+        defer { w.spectatorLoop?.cancel() }
+        let before = AudioGate.suppressed
+        w.launchNuclearStrike(from: "RUS", to: "GBR", warheads: 1)
+        XCTAssertTrue(AudioGate.muted)
+        XCTAssertGreaterThan(AudioGate.suppressed, before, "asked to play, held silent")
+    }
+}
+
+final class WatchAudioPerformanceTests: XCTestCase {
+    /// Performance: a Max-speed burst of cues is bounded and the same clip does not stack.
+    @MainActor
+    func testCueBurstIsBounded() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel() }
+        let before = AudioGate.suppressed
+        let start = Date()
+        for _ in 0..<5_000 { e.watchCue("sfx.war1") }
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2)
+        XCTAssertEqual(e.watchCues.count, 200, "bounded record")
+        XCTAssertLessThanOrEqual(AudioGate.suppressed - before, 6, "one clip per 0.4 s, not 5,000 players")
+    }
+}
+
+final class WatchAudioRetryTests: XCTestCase {
+    /// Retry: a sound the pack lacks (or the pack missing) is skipped and the watch game goes on.
+    @MainActor
+    func testMissingPackSoundDoesNotStopTheGame() async throws {
+        AppAI.shared.isEnabled = false
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel(); AIFixtures.resetShared() }
+        e.watchCue("sfx.no_such_sound")
+        let turn = try XCTUnwrap(e.gameState).turn
+        try await SpectatorFixtures.turns(e, 2)
+        XCTAssertEqual(e.gameState?.turn, turn + 2)
+        XCTAssertTrue(e.watchCues.contains("sfx.no_such_sound"))
+    }
+}
+
+#if os(macOS)
+final class WatchAudioFrameTests: XCTestCase {
+    /// UI state: the 1961 watch game's SPECTATING bar renders in both skins (the screen being recorded).
+    @MainActor
+    func testKennedyWatchBarRenders() throws {
+        let e = GameEngine()
+        PatchFixtures.kennedy(e, watch: true)
+        defer { e.spectatorLoop?.cancel(); Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let v = NSHostingView(rootView: SpectatorBar().environmentObject(e))
+            v.frame = NSRect(x: 0, y: 0, width: 900, height: 60)
+            v.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThan(v.fittingSize.height, 0, "watch bar failed in \(theme)")
+        }
+    }
+}
+#endif

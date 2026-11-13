@@ -413,12 +413,8 @@ class NovaAPIServer {
             var validated: [String: String] = [:]
             var unknown: [String] = []
             for (countryID, playerName) in assignments {
-                let found = gs.countries.contains { $0.id == countryID || $0.name.lowercased() == countryID.lowercased() }
-                if found {
-                    // Normalize to the canonical ID
-                    let canonical = gs.countries.first {
-                        $0.id == countryID || $0.name.lowercased() == countryID.lowercased()
-                    }?.id ?? countryID
+                // Normalize to the canonical ID (shared resolver: id, code, name, alias such as "USSR")
+                if let canonical = gs.resolveCountry(countryID, livingOnly: false)?.id {
                     validated[canonical] = playerName
                 } else {
                     unknown.append(countryID)
@@ -542,10 +538,7 @@ class NovaAPIServer {
         let playerID = gs.playerCountryID
 
         // Resolve country name or ID to ID
-        let targetID: String = {
-            if gs.countries.contains(where: { $0.id == target }) { return target }
-            return gs.countries.first { $0.name.lowercased() == target.lowercased() }?.id ?? target
-        }()
+        let targetID = gs.resolveCountry(target, livingOnly: false)?.id ?? target
 
         switch action.lowercased() {
         case "diplomacy", "improve_relations":
