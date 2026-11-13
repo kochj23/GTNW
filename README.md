@@ -28,6 +28,17 @@ Written by Jordan Koch.
 
 ---
 
+<!-- watch-it-play:start -->
+## Watch it play itself
+
+AI versus AI, narrated by Nova (an AI voice). Two local models play each other; the narration is written from the game's own record of what happened.
+
+| **Highlights:** [One AI fired 150 nukes. The other only threatened.](https://www.youtube.com/watch?v=x2kRzy0VTVo) | **Full game:** [Two AIs ran 14 turns. One ended the world.](https://www.youtube.com/watch?v=P97O7k9fjdE) |
+|---|---|
+| <a href="https://www.youtube.com/watch?v=x2kRzy0VTVo"><img src="https://img.youtube.com/vi/x2kRzy0VTVo/hqdefault.jpg" width="360" alt="One AI fired 150 nukes. The other only threatened."></a> | <a href="https://www.youtube.com/watch?v=P97O7k9fjdE"><img src="https://img.youtube.com/vi/P97O7k9fjdE/hqdefault.jpg" width="360" alt="Two AIs ran 14 turns. One ended the world."></a> |
+
+<!-- watch-it-play:end -->
+
 ## Contents
 
 - [The 3.x series at a glance](#the-3x-series-at-a-glance)
