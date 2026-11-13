@@ -71,6 +71,8 @@ class GameEngine: ObservableObject {
 
     /// Countries whose brain failed/timed out last turn and fell back to rule-based.
     @Published var lastTurnFallbackCountryIDs: Set<String> = []
+    /// Each model brain's current strategic intent (hold/build/diplomacy/hostile), for the per-turn switch cap.
+    var brainIntents: [String: String] = [:]
 
     /// 3.25.0 "Watch AI vs AI": the computer plays the player's seat too and the turns run by themselves
     /// (see GameEngineBrains.swift). 3.26.0: recorded as a watch session (player "AI vs AI", `summary.spectator`),

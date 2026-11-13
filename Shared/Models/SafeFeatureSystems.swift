@@ -52,8 +52,21 @@ class SafeDiplomacyService: ObservableObject {
     static let shared = SafeDiplomacyService()
 
     @Published var messages: [SafeDiplomaticMessage] = []
+    /// 3.27.0 chat gate: the turn each nation last sent a message (for its cooldown).
+    var lastSpoke: [String: Int] = [:]
+    /// At most this many diplomatic messages arrive in one turn.
+    static let maxMessagesPerTurn = 3
 
     private init() {}
+
+    /// 3.27.0: may a nation speak? Event (the situation's base chance) × probability (its character's chat rate),
+    /// with a per-nation cooldown and a per-turn cap (after Quake 3 BotChat_*: an event, a chance, a time gate).
+    static func chatGate(baseChance: Double, character: NationCharacter, lastSpoke: Int?, turn: Int,
+                         sentThisTurn: Int, roll: Double) -> Bool {
+        guard sentThisTurn < maxMessagesPerTurn else { return false }
+        if let last = lastSpoke, last <= turn, turn - last < character.chatCooldownTurns { return false }   // a new game resets
+        return roll < baseChance * character.chatRate
+    }
 
     nonisolated func generateMessage(from: String, content: String, turn: Int) {
         Task { @MainActor in
@@ -71,6 +84,7 @@ class SafeDiplomacyService: ObservableObject {
         let playerAtWar = !playerCountry.atWarWith.isEmpty
         let _ = playerCountry.nuclearWarheads < 50 && turn > 3  // rough proxy
         let playerHasSanctions = !playerCountry.economicSanctions.isEmpty
+        var sent = 0
 
         for country in countries where !country.isPlayerControlled && !country.isDestroyed {
             // 10% base chance — higher if country has reason to care
@@ -79,7 +93,11 @@ class SafeDiplomacyService: ObservableObject {
             let isAlly    = relationToPlayer > 60
             let messageChance = isHostile ? 0.20 : isAlly ? 0.05 : 0.08
 
-            guard Double.random(in: 0...1) < messageChance else { continue }
+            let character = NationCharacterTable.shared.character(for: country)
+            guard Self.chatGate(baseChance: messageChance, character: character, lastSpoke: lastSpoke[country.id],
+                                turn: turn, sentThisTurn: sent, roll: Double.random(in: 0..<1)) else { continue }
+            sent += 1
+            lastSpoke[country.id] = turn
 
             // Modern vs pre-modern tone
             let isModernEra = turn > 0   // use actual era, not turn count

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.27.0] - 2026-11-12 — Model vs model
+
+### Added
+- **Any Backend + Model…** in the BRAINS panel: any NovaAIKit 1.1.0 backend and model per nation (NovaAIKit's model
+  picker), e.g. the United States on Anthropic and Russia on xAI. Sent with the kit's per-request override to exactly
+  that backend and model, no failover. Cloud backends need their Keychain key; Settings → AI has the kit's
+  **Allow Nova** switch, and with it off nothing goes to Nova.
+- One validator (`validateMove`) for every automated driver. A refused answer is asked again with the reason, at most
+  2 times; then the built-in nation AI plays and `summary.fallbacks` counts it.
+- Ideas from id Software's released source (ideas only, GTNW's own code and data):
+  - Every model reply is a `brain_reply` play event (side, backend, model, attempt, latency, excerpt, hash, valid,
+    fallback); journals read the record and never call a model again (Quake III journaling).
+  - A seeded SplitMix64 gameplay RNG for nation AI and world politics, saved with the game; `summary.rng_seed`
+    (Doom P_Random vs M_Random). Cosmetic randomness stays on the system generator.
+  - `nation_characters.json`: default, ideology, country and difficulty blocks (aggression, risk, reaction, chat
+    rate and cooldown, think interval, temperament), used by the built-in AI and in a model brain's brief (Quake III
+    bot characters).
+  - Model thinking staggered (weekly on day-length turns), at most 16 model brains per turn, at most 4 changes of
+    course per turn, each logged as `brain_intent_switch` (Quake III think scheduling, MAX_NODESWITCHES).
+  - Diplomatic chatter gated by chance × chat rate, a per-nation cooldown and at most 3 messages a turn (BotChat).
+
+### Changed
+- NovaAIKit 1.1.0.
+- README: fixed a coalition diagram that didn't parse.
+
+### Tests
+- Model vs model and the id items in all seven categories: re-ask then fallback, corrected re-ask, no key / Allow
+  Nova off sends nothing, bounded reply events, matchup + seed + reply events recorded, per-turn caps and stagger,
+  RNG reproducibility, character table layering and clamping, the chat gate, and the brain sheet rendering.
+
 ## [3.26.0] - 2026-11-12 — Watch games are recorded
 
 ### Changed

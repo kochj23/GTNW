@@ -9,6 +9,7 @@
 
 import XCTest
 import SwiftUI
+import NovaAIKit
 #if os(macOS)
 import AppKit
 #endif
@@ -1171,6 +1172,326 @@ final class SpectatorFrameTests: XCTestCase {
         }
         e.takeSeat()
         XCTAssertFalse(e.spectating, "the bar is shown only while spectating")
+    }
+}
+#endif
+
+// MARK: - 3.27.0 model vs model + the id Software learnings
+
+enum ModelVsModelFixtures {
+    /// A paused watch game, every other automated country on the built-in AI so only the named brains are asked.
+    @MainActor
+    static func watch(_ e: GameEngine, brains: [String: AIBrain]) {
+        SpectatorFixtures.paused(e)
+        for (id, b) in brains { e.setBrain(b, for: id) }
+    }
+
+    static func table(_ json: String) -> NationCharacterTable { NationCharacterTable.load(Data(json.utf8)) }
+}
+
+final class ModelVsModelUnitTests: XCTestCase {
+    /// Unit: the gameplay RNG is reproducible from its seed and continues the same sequence after a save/load.
+    func testGameRNGIsReproducibleAndSurvivesSaveLoad() throws {
+        var a = GameRNG(seed: 42), b = GameRNG(seed: 42), c = GameRNG(seed: 43)
+        let seqA = (0..<8).map { _ in a.next() }
+        XCTAssertEqual(seqA, (0..<8).map { _ in b.next() })
+        XCTAssertNotEqual(seqA, (0..<8).map { _ in c.next() })
+        let saved = try JSONDecoder().decode(GameRNG.self, from: JSONEncoder().encode(a))
+        var resumed = saved
+        XCTAssertEqual(resumed.next(), a.next())
+        XCTAssertEqual(saved.seed, 42)
+    }
+
+    /// Unit: the one validator accepts a legal move with its resolved target and refuses illegal ones with a reason.
+    @MainActor
+    func testOneValidatorForEveryDriver() throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        guard case .success(let (action, target)) = e.validateMove(MoveResponse(action: " declare_war ", target: "CHN"), for: "USA")
+        else { return XCTFail("a legal war declaration was refused") }
+        XCTAssertEqual(action, .declareWar)
+        XCTAssertEqual(target, "CHN")
+        guard case .failure(let r1) = e.validateMove(MoveResponse(action: "NUKE_THE_MOON"), for: "USA") else { return XCTFail() }
+        XCTAssertTrue(r1.reason.contains("is not one of"))
+        guard case .failure(let r2) = e.validateMove(MoveResponse(action: "DECLARE_WAR", target: "ATLANTIS"), for: "USA") else { return XCTFail() }
+        XCTAssertTrue(r2.reason.contains("needs the id"))
+        guard case .failure = e.validateMove(MoveResponse(action: "WAIT"), for: "NOWHERE") else { return XCTFail() }
+    }
+
+    /// Unit: characters are data: default, then ideology, then country, difficulty multiplies; bad values clamp, a
+    /// broken file means the default.
+    func testNationCharacterTableLayersAndClamps() throws {
+        let gs = GameState(playerCountryID: "USA")
+        let rus = try XCTUnwrap(gs.getCountry(id: "RUS"))
+        let t = ModelVsModelFixtures.table(#"""
+        {"default": {"aggression": 1.2, "temperament": "calm"},
+         "countries": {"RUS": {"risk": 99, "thinkEveryTurns": 0, "temperament": "<b>bold</b>"}},
+         "difficulty": {"Hard": {"aggression": 2}}}
+        """#)
+        let c = t.character(for: rus, difficulty: .hard)
+        XCTAssertEqual(c.aggression, 2.4, accuracy: 1e-9)
+        XCTAssertEqual(c.risk, 3, "clamped")
+        XCTAssertEqual(c.thinkEveryTurns, 1, "clamped")
+        XCTAssertFalse(c.temperament.contains("<"))
+        XCTAssertEqual(ModelVsModelFixtures.table("not json").character(for: rus), NationCharacter())
+        XCTAssertTrue(NationCharacterTable.shared.character(for: rus).brief(rus.profile).hasPrefix("Character:"))
+    }
+
+    /// Unit: the chat gate: probability × chat rate, per-nation cooldown, per-turn cap, a new game resets.
+    func testChatGate() {
+        var ch = NationCharacter()
+        ch.chatCooldownTurns = 3
+        XCTAssertTrue(SafeDiplomacyService.chatGate(baseChance: 0.2, character: ch, lastSpoke: nil, turn: 5, sentThisTurn: 0, roll: 0.1))
+        XCTAssertFalse(SafeDiplomacyService.chatGate(baseChance: 0.2, character: ch, lastSpoke: nil, turn: 5, sentThisTurn: 0, roll: 0.3))
+        XCTAssertFalse(SafeDiplomacyService.chatGate(baseChance: 1, character: ch, lastSpoke: 4, turn: 5, sentThisTurn: 0, roll: 0))
+        XCTAssertTrue(SafeDiplomacyService.chatGate(baseChance: 1, character: ch, lastSpoke: 2, turn: 5, sentThisTurn: 0, roll: 0))
+        XCTAssertTrue(SafeDiplomacyService.chatGate(baseChance: 1, character: ch, lastSpoke: 40, turn: 1, sentThisTurn: 0, roll: 0))
+        XCTAssertFalse(SafeDiplomacyService.chatGate(baseChance: 1, character: ch, lastSpoke: nil, turn: 5,
+                                                     sentThisTurn: SafeDiplomacyService.maxMessagesPerTurn, roll: 0))
+        ch.chatRate = 0
+        XCTAssertFalse(SafeDiplomacyService.chatGate(baseChance: 1, character: ch, lastSpoke: nil, turn: 5, sentThisTurn: 0, roll: 0))
+    }
+
+    /// Unit: a kit brain saves and loads, and names its backend and model.
+    func testKitBrainCodableAndName() throws {
+        let b = AIBrain.kit(backend: NovaAIBackend.xAI.rawValue, model: "grok-4")
+        XCTAssertEqual(try JSONDecoder().decode(AIBrain.self, from: JSONEncoder().encode(b)), b)
+        XCTAssertTrue(b.needsRemoteMove)
+        XCTAssertTrue(b.displayName.contains("grok-4"))
+        XCTAssertNil(BrainRoute.target(for: b, gatewayBaseURL: "", gatewayModel: ""))
+    }
+}
+
+final class ModelVsModelRetryTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Retry: an invalid move is asked again with the error, at most 2 times, then the built-in AI plays and
+    /// `fallbacks` counts it once.
+    @MainActor
+    func testInvalidMoveIsReaskedTwiceThenTheBuiltInAIPlays() async throws {
+        let e = GameEngine()
+        ModelVsModelFixtures.watch(e, brains: ["RUS": .kit(backend: "xai", model: "grok-4")])
+        defer { e.spectatorLoop?.cancel() }
+        let calls = RetryProbe()
+        let errors = ErrorLog()
+        e.brainTransportOverride = { req, _ in
+            guard req.countryId == "RUS" else { return nil }
+            calls.hit()
+            errors.add(req.previousError)
+            return MoveResponse(action: "CONQUER_EVERYTHING")
+        }
+        await e.processAITurnsWithBrains()
+        XCTAssertEqual(calls.calls, 1 + GameEngine.maxReasks)
+        XCTAssertNil(errors.all.first ?? nil)
+        XCTAssertTrue((errors.all.last ?? nil)?.contains("is not one of") ?? false, "the re-ask carries the error")
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.contains("RUS"))
+        XCTAssertEqual(e.playSession?.fallbacks["RUS"], 1)
+    }
+
+    /// Retry: a model that gets it right on the re-ask stands; no fallback.
+    @MainActor
+    func testCorrectedMoveStands() async throws {
+        let e = GameEngine()
+        ModelVsModelFixtures.watch(e, brains: ["RUS": .kit(backend: "anthropic", model: "claude")])
+        defer { e.spectatorLoop?.cancel() }
+        let calls = RetryProbe()
+        e.brainTransportOverride = { req, _ in
+            guard req.countryId == "RUS" else { return nil }
+            return calls.hit() == 1 ? MoveResponse(action: "DECLARE_WAR", target: "ATLANTIS")
+                                    : MoveResponse(action: "DECLARE_WAR", target: "USA")
+        }
+        await e.processAITurnsWithBrains()
+        XCTAssertEqual(calls.calls, 2)
+        XCTAssertFalse(e.lastTurnFallbackCountryIDs.contains("RUS"))
+        XCTAssertTrue(e.gameState?.getCountry(id: "RUS")?.atWarWith.contains("USA") ?? false)
+    }
+}
+
+final class ModelVsModelSecurityTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Security: a cloud backend without its Keychain key sends nothing, and with Allow Nova off nothing goes to
+    /// Nova; the nation plays the built-in AI.
+    @MainActor
+    func testNoKeyOrNovaDisallowedSendsNothing() async throws {
+        let e = GameEngine()
+        ModelVsModelFixtures.watch(e, brains: ["RUS": .kit(backend: NovaAIBackend.anthropic.rawValue, model: "claude"),
+                                               "CHN": .kit(backend: NovaAIBackend.novaGateway.rawValue, model: "")])
+        defer { e.spectatorLoop?.cancel() }
+        let sent = RetryProbe()
+        e.brainConfig.engine = KitTest.engine(transport: { _ in sent.hit(); throw URLError(.cannotConnectToHost) },
+                                              settings: KitTest.settings { $0.allowNova = false })
+        await e.processAITurnsWithBrains()
+        XCTAssertEqual(sent.calls, 0, "nothing left the Mac")
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.isSuperset(of: ["RUS", "CHN"]))
+    }
+
+    /// Security: a model reply in the record is short, cleaned and hashed; a huge or hostile reply can't flood it.
+    @MainActor
+    func testBrainReplyEventIsBounded() async throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        ModelVsModelFixtures.watch(e, brains: ["RUS": .kit(backend: "ollama", model: "llama")])
+        defer { e.spectatorLoop?.cancel() }
+        e.brainTransportOverride = { _, _ in
+            MoveResponse(action: "WAIT", rationale: String(repeating: "<script>alert(1)</script>", count: 500))
+        }
+        await e.processAITurnsWithBrains()
+        _ = await service.syncNow()
+        let t = try XCTUnwrap(e.playSession)
+        let events = await remote.events(t.id)
+        let reply = try XCTUnwrap(events.first { $0.kind == "brain_reply" })
+        let d = PlayFixtures.detail(reply)
+        XCTAssertLessThanOrEqual((d["excerpt"] as? String)?.count ?? 999, 160)
+        XCTAssertEqual((d["reply_hash"] as? String)?.count, 16)
+    }
+}
+
+/// Collects the re-ask errors a stub brain saw.
+final class ErrorLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _all: [String?] = []
+    var all: [String?] { lock.withLock { _all } }
+    func add(_ s: String?) { lock.withLock { _all.append(s) } }
+}
+
+final class ModelVsModelIntegrationTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Integration: the US by one backend + model, Russia by another; the record has the matchup, the seed, and an
+    /// event per model reply (side, backend, model, latency, valid, fallback).
+    @MainActor
+    func testUSByOneModelRussiaByAnotherIsRecorded() async throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        ModelVsModelFixtures.watch(e, brains: ["USA": .kit(backend: "anthropic", model: "claude-opus"),
+                                               "RUS": .kit(backend: "xai", model: "grok-4")])
+        defer { e.spectatorLoop?.cancel() }
+        e.brainTransportOverride = { req, brain in
+            guard case .kit = brain else { return nil }
+            return req.countryId == "USA" ? MoveResponse(action: "BUILD_MILITARY", rationale: "deterrence")
+                                          : MoveResponse(action: "NOT_A_MOVE")
+        }
+        try await SpectatorFixtures.turns(e, 1)
+        e.playSessionTurnEnded()
+        _ = await service.syncNow()
+        let t = try XCTUnwrap(e.playSession)
+        let rowRow = await remote.playSessions[t.id]
+        let summary = PlayFixtures.summary(rowRow)
+        XCTAssertEqual((summary["rng_seed"] as? String)?.count, 16)
+        let sides = try XCTUnwrap((summary["matchup"] as? [String: Any])?["sides"] as? [[String: Any]])
+        let us = try XCTUnwrap(sides.first { $0["side"] as? String == "USA" })
+        XCTAssertEqual(us["kind"] as? String, "model")
+        XCTAssertEqual(us["backend"] as? String, "anthropic")
+        XCTAssertEqual(us["model"] as? String, "claude-opus")
+        XCTAssertEqual(sides.first { $0["side"] as? String == "RUS" }?["backend"] as? String, "xai")
+        XCTAssertEqual((summary["fallbacks"] as? [String: Any])?["RUS"] as? Int, 1)
+
+        let replies = await remote.events(t.id).filter { $0.kind == "brain_reply" }.map(PlayFixtures.detail)
+        let usR = try XCTUnwrap(replies.first { $0["side"] as? String == "USA" })
+        XCTAssertEqual(usR["valid"] as? Bool, true)
+        XCTAssertEqual(usR["fallback"] as? Bool, false)
+        XCTAssertEqual(usR["model"] as? String, "claude-opus")
+        XCTAssertNotNil(usR["latency_ms"] as? Int)
+        let ru = replies.filter { $0["side"] as? String == "RUS" }
+        XCTAssertEqual(ru.count, 1 + GameEngine.maxReasks, "every attempt is in the record")
+        XCTAssertEqual(ru.last?["fallback"] as? Bool, true)
+    }
+}
+
+final class ModelVsModelFunctionalTests: XCTestCase {
+    @MainActor override func setUp() async throws { AIFixtures.resetShared() }
+    @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
+
+    /// Functional: at most `maxBrainCallsPerTurn` brains think in a turn; the rest play the built-in controller
+    /// (not counted as fallbacks).
+    @MainActor
+    func testBrainCallsPerTurnAreCapped() async throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        let ids = try XCTUnwrap(e.gameState).countries.filter { !$0.isPlayerControlled && !$0.isDestroyed }.prefix(30).map(\.id)
+        XCTAssertGreaterThan(ids.count, GameEngine.maxBrainCallsPerTurn)
+        for id in ids { e.setBrain(.kit(backend: "ollama", model: "m"), for: id) }
+        let calls = RetryProbe()
+        e.brainTransportOverride = { _, _ in calls.hit(); return MoveResponse(action: "WAIT") }
+        await e.processAITurnsWithBrains()
+        XCTAssertEqual(calls.calls, GameEngine.maxBrainCallsPerTurn)
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.isEmpty)
+    }
+
+    /// Functional: course changes are capped per turn; a brain over the cap is told to hold its intent.
+    @MainActor
+    func testIntentSwitchesAreCapped() async throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        let ids = Array(try XCTUnwrap(e.gameState).countries.filter { !$0.isPlayerControlled && !$0.isDestroyed }.prefix(8).map(\.id))
+        for id in ids { e.setBrain(.kit(backend: "ollama", model: "m"), for: id); e.brainIntents[id] = "hold" }
+        let refused = ErrorLog()
+        e.brainTransportOverride = { req, _ in
+            if let err = req.previousError { refused.add(err); return MoveResponse(action: "WAIT") }
+            return MoveResponse(action: "BUILD_MILITARY")
+        }
+        await e.processAITurnsWithBrains()
+        let switched = ids.filter { e.brainIntents[$0] == "build" }
+        XCTAssertEqual(switched.count, GameEngine.maxIntentSwitchesPerTurn)
+        XCTAssertEqual(refused.all.count, ids.count - GameEngine.maxIntentSwitchesPerTurn)
+        XCTAssertTrue(refused.all.allSatisfy { $0?.contains("changed course") ?? false })
+        XCTAssertTrue(e.lastTurnFallbackCountryIDs.isEmpty, "holding course is a valid answer")
+    }
+
+    /// Functional: on day-length turns a model brain thinks once a game week, and the nations are staggered so the
+    /// calls spread over the week.
+    @MainActor
+    func testThinkTimesAreStaggered() throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        let gs = try XCTUnwrap(e.gameState)
+        gs.turnLength = .day
+        let ids = gs.countries.prefix(20).map(\.id)
+        for id in ids { XCTAssertEqual((0..<14).filter { e.brainThinks(id, turn: $0) }.count, 2, id) }
+        let firstTurns = Set(ids.compactMap { id in (0..<7).first { e.brainThinks(id, turn: $0) } })
+        XCTAssertGreaterThan(firstTurns.count, 2, "staggered, not all on the same day")
+    }
+}
+
+final class ModelVsModelPerformanceTests: XCTestCase {
+    /// Performance: the validator and the gameplay RNG are cheap enough to run for every nation every turn.
+    @MainActor
+    func testValidatorAndRNGAreCheap() {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        var rng = GameRNG(seed: 7)
+        let start = Date()
+        for i in 0..<2_000 { _ = e.validateMove(MoveResponse(action: i.isMultiple(of: 2) ? "WAIT" : "DECLARE_WAR", target: "CHN"), for: "USA") }
+        for _ in 0..<1_000_000 { _ = rng.next() }
+        XCTAssertLessThan(Date().timeIntervalSince(start), 3)
+    }
+}
+
+#if os(macOS)
+final class ModelVsModelFrameTests: XCTestCase {
+    /// UI state: the brain sheet renders with a model-vs-model assignment in both skins.
+    @MainActor
+    func testBrainSheetRendersWithKitBrains() throws {
+        let e = GameEngine()
+        e.startNewGame(playerCountryID: "USA")
+        e.setBrain(.kit(backend: "anthropic", model: "claude-opus"), for: "RUS")
+        defer { Theme.forced = nil }
+        for theme in GameTheme.allCases {
+            Theme.forced = theme
+            let v = NSHostingView(rootView: BrainAssignmentView().environmentObject(e))
+            v.frame = NSRect(x: 0, y: 0, width: 700, height: 700)
+            v.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThan(v.fittingSize.height, 0, "brain sheet failed in \(theme)")
+        }
+        XCTAssertEqual(e.brain(for: "RUS"), .kit(backend: "anthropic", model: "claude-opus"))
     }
 }
 #endif

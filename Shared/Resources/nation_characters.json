@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "about": "GTNW nation characters (3.27.0). Multipliers on the built-in nation AI and the brief a model brain gets. A default block, overrides by ideology and by country, and per-difficulty blocks; GTNW's own values. Missing keys fall back to the default block.",
+  "default": {
+    "aggression": 1.0,
+    "risk": 1.0,
+    "reaction": 1.0,
+    "chatRate": 1.0,
+    "chatCooldownTurns": 3,
+    "thinkEveryTurns": 1,
+    "temperament": "pragmatic"
+  },
+  "ideology": {
+    "Liberal Democracy": { "aggression": 0.95, "chatRate": 0.8, "temperament": "rules-based, coalition-minded" },
+    "Social Democracy": { "aggression": 0.9, "chatRate": 0.8, "temperament": "multilateral, trade first" },
+    "Developing Democracy": { "reaction": 1.05, "temperament": "fragile, inward-looking" },
+    "Constitutional Monarchy": { "aggression": 0.9, "temperament": "steady, alliance-minded" },
+    "Absolute Monarchy": { "reaction": 0.95, "temperament": "dynastic, cautious, buys security" },
+    "Communism": { "risk": 1.05, "temperament": "ideological, long horizon" },
+    "One-Party State": { "reaction": 1.05, "temperament": "controlling, transactional" },
+    "Nationalism": { "aggression": 1.05, "chatRate": 1.2, "temperament": "proud, grievance-driven" },
+    "Military Junta": { "aggression": 1.1, "reaction": 1.1, "temperament": "suspicious, quick to use force" },
+    "Theocracy": { "chatRate": 1.1, "temperament": "uncompromising" },
+    "Islamic Republic": { "risk": 1.05, "chatRate": 1.1, "temperament": "defiant, works through proxies" },
+    "Populism": { "reaction": 1.1, "chatRate": 1.3, "temperament": "loud, impulsive" },
+    "Expansionism": { "aggression": 1.15, "risk": 1.1, "temperament": "expansionist, opportunistic" }
+  },
+  "countries": {
+    "PRK": { "risk": 1.3, "chatRate": 1.5, "chatCooldownTurns": 2, "temperament": "brinkmanship, regime survival first" },
+    "CHE": { "aggression": 0.6, "chatRate": 0.5, "temperament": "armed neutral, mediator" },
+    "SWE": { "aggression": 0.8, "temperament": "neutral by habit, well armed" },
+    "ISR": { "reaction": 1.2, "temperament": "pre-emptive, survival first" },
+    "IRN": { "risk": 1.1, "temperament": "patient, works through proxies" },
+    "RUS": { "risk": 1.1, "temperament": "great-power pride, tests red lines" },
+    "CHN": { "aggression": 0.95, "reaction": 0.95, "temperament": "patient, long game, economic leverage" },
+    "IND": { "aggression": 0.9, "temperament": "strategic autonomy" },
+    "PAK": { "reaction": 1.1, "temperament": "India-focused, nuclear deterrent first" },
+    "CUB": { "chatRate": 1.3, "temperament": "defiant, ideological" },
+    "JPN": { "aggression": 0.7, "temperament": "pacifist constitution, alliance-dependent" },
+    "DEU": { "aggression": 0.8, "temperament": "economic power, cautious abroad" }
+  },
+  "difficulty": {
+    "Easy": { "reaction": 0.95, "chatRate": 0.8 },
+    "Normal": {},
+    "Hard": { "reaction": 1.05 },
+    "Nightmare": { "reaction": 1.1, "chatRate": 1.2 }
+  }
+}

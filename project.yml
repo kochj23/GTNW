@@ -7,7 +7,7 @@ options:
 packages:
   NovaAIKit:
     url: https://github.com/kochj23/NovaAIKit.git
-    from: 1.0.0
+    from: 1.1.0
 
 settings:
   base:

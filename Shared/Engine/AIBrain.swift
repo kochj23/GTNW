@@ -39,12 +39,15 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
     case liveSession
     case gatewayClaude
     case model(id: String, endpoint: String, backend: ModelBackend)
+    /// 3.27.0 model vs model: any NovaAIKit backend (`NovaAIBackend.rawValue`: ollama, anthropic, xai, gemini…)
+    /// and model, sent with the kit's per-request override (exactly that backend, no failover). "auto" = Settings.
+    case kit(backend: String, model: String)
 
     /// True for brains that require an LLM/session round-trip (vs. local logic).
     var needsRemoteMove: Bool {
         switch self {
         case .human, .ruleBased: return false
-        case .liveSession, .gatewayClaude, .model: return true
+        case .liveSession, .gatewayClaude, .model, .kit: return true
         }
     }
 
@@ -56,6 +59,9 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
         case .liveSession:   return "This Session (live)"
         case .gatewayClaude: return "Gateway-Claude"
         case .model(let id, _, _): return id
+        case .kit(let backend, let model):
+            let name = NovaAIBackend(rawValue: backend)?.displayName ?? backend
+            return model.isEmpty ? name : "\(name): \(model)"
         }
     }
 
@@ -70,6 +76,7 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
         case "ruleBased":     self = .ruleBased
         case "liveSession":   self = .liveSession
         case "gatewayClaude": self = .gatewayClaude
+        case "kit": self = .kit(backend: try c.decode(String.self, forKey: .backend), model: try c.decode(String.self, forKey: .id))
         case "model":
             self = .model(
                 id: try c.decode(String.self, forKey: .id),
@@ -87,6 +94,10 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
         case .ruleBased:     try c.encode("ruleBased", forKey: .kind)
         case .liveSession:   try c.encode("liveSession", forKey: .kind)
         case .gatewayClaude: try c.encode("gatewayClaude", forKey: .kind)
+        case .kit(let backend, let model):
+            try c.encode("kit", forKey: .kind)
+            try c.encode(backend, forKey: .backend)
+            try c.encode(model, forKey: .id)
         case .model(let id, let endpoint, let backend):
             try c.encode("model", forKey: .kind)
             try c.encode(id, forKey: .id)
@@ -159,8 +170,8 @@ enum BrainRoute {
     /// PURE: the kit backend/URL/model for a brain; nil for brains that never call a model.
     static func target(for brain: AIBrain, gatewayBaseURL: String, gatewayModel: String) -> BrainTarget? {
         switch brain {
-        case .human, .ruleBased, .liveSession:
-            return nil
+        case .human, .ruleBased, .liveSession, .kit:
+            return nil   // a kit brain is routed per request (see BrainClient.requestMove)
         case .gatewayClaude:
             return BrainTarget(backend: .novaGateway, baseURL: baseURL(gatewayBaseURL, for: .novaGateway), model: gatewayModel)
         case .model(let id, let endpoint, let backend):
@@ -231,7 +242,7 @@ enum BrainClient {
 
         Turn: \(request.turn)  Year: \(request.year)  DEFCON: \(request.defcon)
         legalActions: \(request.legalActions.joined(separator: ", "))
-
+        \(request.previousError.map { "Your last answer was rejected: \($0). Choose again from legalActions." } ?? "")
         Reply with the JSON move now.
         """
     }
@@ -253,14 +264,24 @@ enum BrainClient {
             let timeout = brain == .gatewayClaude ? config.gatewayTimeout : config.modelTimeout
             let engine = BrainRoute.engine(base, for: target, timeout: timeout)
             return await withMoveTimeout(timeout) { await modelMove(request, engine: engine) }
+        case .kit(let backend, let model):
+            // NovaAIKit 1.1.0: the request names its backend + model; the kit sends it exactly there (keys from the
+            // Keychain, https only, nothing for a cloud backend without a key, nothing to Nova when Allow Nova is off).
+            guard let engine = config.engine, let b = NovaAIBackend(rawValue: backend) else { return nil }
+            let pinned = b == .auto ? nil : b
+            return await withMoveTimeout(config.modelTimeout) {
+                await modelMove(request, engine: engine, backend: pinned, model: pinned == nil || model.isEmpty ? nil : model)
+            }
         }
     }
 
     /// One move from a model through NovaAIKit. OpenRouter needs its Keychain key and https: without either the kit
     /// sends nothing (the world state never leaves the Mac) and the country plays rule-based. The reply is
     /// validated by `MoveResponse.decode`; legality is checked by `applyMove`.
-    static func modelMove(_ request: MoveRequest, engine: NovaAIEngine) async -> MoveResponse? {
-        let req = NovaAIRequest(prompt: userPrompt(request), system: systemPrompt, temperature: 0.6, maxTokens: 250)
+    static func modelMove(_ request: MoveRequest, engine: NovaAIEngine, backend: NovaAIBackend? = nil,
+                          model: String? = nil) async -> MoveResponse? {
+        let req = NovaAIRequest(prompt: userPrompt(request), system: systemPrompt, temperature: 0.6, maxTokens: 250,
+                                backend: backend, model: model)
         guard let reply = try? await engine.complete(req) else { return nil }
         return MoveResponse.decode(fromText: reply.text)
     }

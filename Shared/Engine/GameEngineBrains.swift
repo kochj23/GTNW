@@ -58,7 +58,7 @@ extension GameEngine {
         lastTurnFallbackCountryIDs = []
 
         // Partition countries by brain on the main actor (reads state safely).
-        var remoteJobs: [(id: String, brain: AIBrain, request: MoveRequest)] = []
+        var remoteJobs: [(id: String, brain: AIBrain, request: MoveRequest)] = []   // `var`: thinkers only, below
         var ruleBasedIDs: [String] = []
         // Global "Use AI" switch: off means every automated country plays the built-in rule-based AI and no
         // brain request leaves the app.
@@ -81,53 +81,65 @@ extension GameEngine {
             }
         }
 
-        // Fire all remote brain calls CONCURRENTLY, off the main actor.
-        var responses: [String: MoveResponse] = [:]
-        if !remoteJobs.isEmpty {
-            addLog("🧠 Consulting \(remoteJobs.count) brain(s) concurrently…", type: .info)
-            var config = brainConfig
-            if config.engine == nil { config.engine = AppAI.shared.engine }
-            let override = brainTransportOverride
-            responses = await withTaskGroup(of: (String, MoveResponse?).self) { group in
-                for job in remoteJobs {
-                    group.addTask {
-                        let resp: MoveResponse?
-                        if let override {
-                            resp = await override(job.request, job.brain)
-                        } else {
-                            resp = await BrainClient.requestMove(job.request, brain: job.brain, config: config)
-                        }
-                        return (job.id, resp)
+        // 3.27.0 slow strategic layer (after Quake 3's staggered bot think times): a model brain thinks every N turns,
+        // staggered by nation, and at most `maxBrainCallsPerTurn` think in one turn; the others play the fast built-in
+        // controller this turn (not a fallback).
+        let thinking = remoteJobs.filter { brainThinks($0.id, turn: gameState.turn) }
+            .sorted { CountryProfile.stableUnit($0.id + "\(gameState.turn)") < CountryProfile.stableUnit($1.id + "\(gameState.turn)") }
+        let thinkingIDs = Set(thinking.prefix(Self.maxBrainCallsPerTurn).map(\.id))
+        ruleBasedIDs += remoteJobs.filter { !thinkingIDs.contains($0.id) }.map(\.id)
+        remoteJobs = remoteJobs.filter { thinkingIDs.contains($0.id) }
+
+        // Ask every thinking brain CONCURRENTLY, off the main actor. Every answer goes through the one validator;
+        // a refused answer is asked again with the reason, at most `maxReasks` times, then the built-in AI plays.
+        var accepted: [(id: String, response: MoveResponse)] = []
+        var intentSwitches = 0
+        var pending = remoteJobs
+        if !remoteJobs.isEmpty { addLog("🧠 Consulting \(remoteJobs.count) brain(s) concurrently…", type: .info) }
+        for attempt in 0...Self.maxReasks where !pending.isEmpty {
+            let answers = await askBrains(pending)
+            var again: [(id: String, brain: AIBrain, request: MoveRequest)] = []
+            for job in pending {
+                let (response, ms) = answers[job.id] ?? (nil, 0)
+                var reason: String? = response == nil ? "no answer" : nil
+                if let response {
+                    switch validateMove(response, for: job.id) {
+                    case .failure(let why): reason = why.reason
+                    case .success(let (action, _)):
+                        reason = intentRefusal(job.id, intent: action.intent, switches: &intentSwitches)
                     }
                 }
-                var out: [String: MoveResponse] = [:]
-                for await (id, resp) in group {
-                    if let resp { out[id] = resp }
-                }
-                return out
-            }
-        }
-
-        // Apply results on the main actor (mutations are serialized here).
-        for job in remoteJobs {
-            if let resp = responses[job.id] {
-                let outcome = applyMove(resp, for: job.id)
-                if outcome == .rejectedIllegal {
-                    // Bad/illegal answer — fall back so the country still acts.
-                    applyRuleBasedAction(for: job.id)
+                let last = response == nil || attempt == Self.maxReasks
+                logBrainReply(job.id, brain: job.brain, response: response, latencyMs: ms, attempt: attempt,
+                              refused: reason, fallback: reason != nil && last)
+                if reason == nil, let response {
+                    accepted.append((job.id, response))
+                } else if !last, let reason {
+                    var request = job.request
+                    request.previousError = reason
+                    again.append((job.id, job.brain, request))
+                } else {
+                    applyRuleBasedAction(for: job.id)          // swap the source: the built-in AI plays this turn
                     lastTurnFallbackCountryIDs.insert(job.id)
                 }
-            } else {
-                // Timeout / no answer — graceful fallback to rule-based AI.
-                applyRuleBasedAction(for: job.id)
-                lastTurnFallbackCountryIDs.insert(job.id)
+            }
+            pending = again
+        }
+
+        // Apply the accepted moves on the main actor (mutations are serialized here).
+        for (id, response) in accepted {
+            if applyMove(response, for: id) == .rejectedIllegal {   // legal but failed (e.g. peace refused)
+                applyRuleBasedAction(for: id)
+                lastTurnFallbackCountryIDs.insert(id)
+            } else if let action = MoveAction(rawValue: response.action.trimmingCharacters(in: .whitespaces).uppercased()) {
+                brainIntents[id] = action.intent
             }
         }
 
         // Rule-based countries resolve locally. Each acts about four times a game year (at most once a turn),
         // so shorter turns don't make the world more hyperactive.
         let actChance = aiActionProbability(gameState)
-        for id in ruleBasedIDs where Double.random(in: 0..<1) < actChance {
+        for id in ruleBasedIDs where Double.random(in: 0..<1, using: &gameState.rng) < actChance {
             applyRuleBasedAction(for: id)
         }
         // A watch session counts every built-in substitution for its matchup (WATCH-CONTRACT `fallbacks`).
@@ -137,18 +149,109 @@ extension GameEngine {
         }
     }
 
+    /// Every brain at most this many re-asks per turn (WATCH-CONTRACT: "re-asked up to 2 times").
+    static let maxReasks = 2
+    /// At most this many model brains think in one turn; the rest play the built-in controller.
+    static let maxBrainCallsPerTurn = 16
+    /// At most this many nations may change strategic intent in one turn (after Quake 3 MAX_NODESWITCHES).
+    static let maxIntentSwitchesPerTurn = 4
+
+    /// Does this nation's brain think this turn? Every `thinkEveryTurns` (from its character; at least weekly
+    /// game time on day-length turns), staggered by nation so the calls spread over the turns.
+    func brainThinks(_ id: String, turn: Int) -> Bool {
+        guard let gs = gameState, let c = gs.getCountry(id: id) else { return true }
+        let every = max(NationCharacterTable.shared.character(for: c, difficulty: gs.difficultyLevel).thinkEveryTurns,
+                        gs.turnLength == .day ? 7 : 1)
+        return (turn + Int(CountryProfile.stableUnit(id, salt: 31) * Double(every))) % every == 0
+    }
+
+    /// Nil when the move may stand; otherwise why it can't (the intent-switch cap for this turn).
+    func intentRefusal(_ id: String, intent: String, switches: inout Int) -> String? {
+        guard let old = brainIntents[id], old != intent else { return nil }
+        guard switches < Self.maxIntentSwitchesPerTurn else {
+            return "too many nations changed course this turn; hold your current intent (\(old))"
+        }
+        switches += 1
+        addLog("🧭 \(gameState?.getCountry(id: id)?.name ?? id) changes course: \(old) → \(intent)", type: .info)
+        logPlayEvent("brain_intent_switch", detail: ["side": id, "from": old, "to": intent, "turn": gameState?.turn ?? 0])
+        return nil
+    }
+
+    /// One round of brain calls, concurrently off the main actor: each answer with its latency in milliseconds.
+    @MainActor
+    private func askBrains(_ jobs: [(id: String, brain: AIBrain, request: MoveRequest)]) async -> [String: (MoveResponse?, Int)] {
+        var config = brainConfig
+        if config.engine == nil { config.engine = AppAI.shared.engine }
+        let override = brainTransportOverride
+        return await withTaskGroup(of: (String, MoveResponse?, Int).self) { group in
+            for job in jobs {
+                group.addTask {
+                    let t0 = Date()
+                    let resp: MoveResponse?
+                    if let override {
+                        resp = await override(job.request, job.brain)
+                    } else {
+                        resp = await BrainClient.requestMove(job.request, brain: job.brain, config: config)
+                    }
+                    return (job.id, resp, Int(Date().timeIntervalSince(t0) * 1000))
+                }
+            }
+            var out: [String: (MoveResponse?, Int)] = [:]
+            for await (id, resp, ms) in group { out[id] = (resp, ms) }
+            return out
+        }
+    }
+
+    /// The NovaAIKit backend id and model a brain's moves come from (nil for the built-in engine).
+    func brainSource(_ b: AIBrain) -> (backend: String?, model: String?) {
+        switch b {
+        case .kit(let backend, let model): return (backend, model.isEmpty ? nil : model)
+        case .liveSession: return ("live_session", nil)
+        default:
+            let t = BrainRoute.target(for: b, gatewayBaseURL: "", gatewayModel: brainConfig.gatewayModel)
+            return (t?.backend.rawValue, t?.model)
+        }
+    }
+
+    /// The record is the source of truth (after Quake 3's journal): every model reply is an event with its side,
+    /// source, latency, a short excerpt and a hash, and whether it stood or the built-in AI took over. A journal or
+    /// replay reads these; it never calls a model again.
+    func logBrainReply(_ id: String, brain: AIBrain, response: MoveResponse?, latencyMs: Int, attempt: Int,
+                       refused: String?, fallback: Bool) {
+        let src = brainSource(brain)
+        var d: [String: Any] = ["side": id, "backend": src.backend ?? NSNull(), "model": src.model.map(PlayHistory.text) ?? NSNull(),
+                                "attempt": attempt, "latency_ms": max(0, latencyMs), "valid": refused == nil,
+                                "fallback": fallback, "turn": gameState?.turn ?? 0]
+        if let refused { d["refused"] = PlayHistory.text(String(refused.prefix(200))) }
+        if let r = response {
+            let raw = "\(r.action)|\(r.target ?? "")|\(r.rationale ?? "")"
+            d["action"] = PlayHistory.text(String(r.action.prefix(40)))
+            if let t = r.target { d["target"] = PlayHistory.text(String(t.prefix(40))) }
+            d["excerpt"] = PlayHistory.text(String((r.rationale ?? "").prefix(160)))
+            d["reply_hash"] = String(format: "%016llx", Self.fnv1a(raw))
+        }
+        logPlayEvent("brain_reply", detail: d)
+    }
+
+    static func fnv1a(_ s: String) -> UInt64 {
+        var h: UInt64 = 0xcbf29ce484222325
+        for b in s.utf8 { h ^= UInt64(b); h = h &* 0x100000001b3 }
+        return h
+    }
+
     /// Fast built-in rule-based move for one country.
     func applyRuleBasedAction(for countryID: String) {
         guard let gs = gameState, let country = gs.getCountry(id: countryID) else { return }
         // Countries at war in the nuclear age may escalate; ruthless leaders far more readily.
         if !country.atWarWith.isEmpty, country.nuclearWarheads > 0, gs.defconLevel.rawValue <= 2,
            let enemy = country.atWarWith.first,
-           Double.random(in: 0..<1) < Double(country.profile.ambition) / 6 * 0.25 * gs.difficultyLevel.aiAggressionMultiplier {
+           Double.random(in: 0..<1, using: &gs.rng) < Double(country.profile.ambition) / 6 * 0.25 * gs.difficultyLevel.aiAggressionMultiplier
+               * NationCharacterTable.shared.character(for: country, difficulty: gs.difficultyLevel).risk {
             executeAIAction(.launchNuclearStrike(target: enemy, warheads: min(3, country.nuclearWarheads)), for: country, reason: nil)
             return
         }
         // Otherwise the leader's personality and anxieties pick the move (see CountryProfile.swift).
-        executeWorldMove(PersonalityAI.choose(for: country, in: gs), for: country)
+        executeWorldMove(PersonalityAI.choose(for: country, in: gs, roll: Double.random(in: 0..<1, using: &gs.rng)), for: country)
     }
 
     // MARK: - Spectator mode (3.25.0): "Watch AI vs AI"
@@ -210,11 +313,11 @@ extension GameEngine {
     func watchMatchup(_ gs: GameState, aiEnabled: Bool = true) -> [String: Any] {
         func side(_ id: String) -> [String: Any] {
             let b = brain(for: id)
-            let target = aiEnabled ? BrainRoute.target(for: b, gatewayBaseURL: "", gatewayModel: brainConfig.gatewayModel) : nil
-            let model = target != nil || (aiEnabled && b == .liveSession)
+            let model = aiEnabled && b.needsRemoteMove
+            let src: (backend: String?, model: String?) = model ? brainSource(b) : (nil, nil)
             let name = gs.getCountry(id: id)?.name ?? id
             return ["side": id, "kind": model ? "model" : "engine",
-                    "backend": target?.backend.rawValue ?? NSNull(), "model": target.map { PlayHistory.text($0.model) } ?? NSNull(),
+                    "backend": src.backend ?? NSNull(), "model": src.model.map(PlayHistory.text) ?? NSNull(),
                     "label": PlayHistory.text("\(name): \(model ? b.displayName : "GTNW rule-based AI")")]
         }
         let seat = gs.playerCountryID

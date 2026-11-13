@@ -314,6 +314,96 @@ enum AnxietyModel {
     }
 }
 
+// MARK: - Nation characters (3.27.0)
+
+/// A nation's character as data: multipliers on the built-in AI's choices plus the temperament a model brain is told.
+/// After Quake 3's bot characters (chars.h, BotLoadCachedCharacter): one bundled table, a default block, overrides
+/// and per-skill blocks, read by both the built-in AI and the LLM prompt. GTNW's own data and code.
+struct NationCharacter: Codable, Equatable, Sendable {
+    /// Weight on hostile moves (attack, threaten, covert action, rebels, condemn).
+    var aggression = 1.0
+    /// Weight on nuclear moves (build-up, threats, launching in a war).
+    var risk = 1.0
+    /// How strongly anxieties drive the choice.
+    var reaction = 1.0
+    /// Multiplier on diplomatic chatter (see `SafeDiplomacyService.chatGate`).
+    var chatRate = 1.0
+    /// Turns a nation stays quiet after it has spoken.
+    var chatCooldownTurns = 3
+    /// A model brain thinks every N turns (staggered by nation); the built-in AI plays the turns between.
+    var thinkEveryTurns = 1
+    var temperament = "pragmatic"
+
+    /// One line for a model brain's brief.
+    func brief(_ p: CountryProfile) -> String {
+        "Character: \(p.ambitionName), \(p.ethicName), \(p.ideology.rawValue); temperament \(temperament)"
+            + String(format: "; aggression x%.2f, nuclear risk x%.2f, reaction x%.2f.", aggression, risk, reaction)
+    }
+}
+
+/// The bundled `nation_characters.json`. Every field of every block is optional; values are clamped, so a bad file
+/// can't make a nation absurd, and a missing or unreadable file means every nation plays the default.
+struct NationCharacterTable: Codable, Sendable {
+    struct Block: Codable, Sendable {
+        var aggression, risk, reaction, chatRate: Double?
+        var chatCooldownTurns, thinkEveryTurns: Int?
+        var temperament: String?
+    }
+    var version = 1
+    var `default` = Block()
+    var ideology: [String: Block] = [:]
+    var countries: [String: Block] = [:]
+    var difficulty: [String: Block] = [:]
+
+    init() {}
+
+    /// Every top-level section is optional too.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
+        self.default = try c.decodeIfPresent(Block.self, forKey: .default) ?? Block()
+        ideology = try c.decodeIfPresent([String: Block].self, forKey: .ideology) ?? [:]
+        countries = try c.decodeIfPresent([String: Block].self, forKey: .countries) ?? [:]
+        difficulty = try c.decodeIfPresent([String: Block].self, forKey: .difficulty) ?? [:]
+    }
+
+    static let shared = load()
+
+    static func load(_ data: Data? = Bundle.main.url(forResource: "nation_characters", withExtension: "json")
+                        .flatMap { try? Data(contentsOf: $0) }) -> NationCharacterTable {
+        data.flatMap { try? JSONDecoder().decode(NationCharacterTable.self, from: $0) } ?? NationCharacterTable()
+    }
+
+    /// default, then the ideology's block, then the country's; the difficulty block multiplies the weights.
+    func character(for c: Country, difficulty: DifficultyLevel? = nil) -> NationCharacter {
+        var ch = NationCharacter()
+        for b in [self.default, ideology[c.profile.ideology.rawValue], countries[c.id]].compactMap({ $0 }) {
+            ch.aggression = b.aggression ?? ch.aggression
+            ch.risk = b.risk ?? ch.risk
+            ch.reaction = b.reaction ?? ch.reaction
+            ch.chatRate = b.chatRate ?? ch.chatRate
+            ch.chatCooldownTurns = b.chatCooldownTurns ?? ch.chatCooldownTurns
+            ch.thinkEveryTurns = b.thinkEveryTurns ?? ch.thinkEveryTurns
+            ch.temperament = b.temperament ?? ch.temperament
+        }
+        if let d = difficulty.flatMap({ self.difficulty[$0.rawValue] }) {
+            ch.aggression *= d.aggression ?? 1
+            ch.risk *= d.risk ?? 1
+            ch.reaction *= d.reaction ?? 1
+            ch.chatRate *= d.chatRate ?? 1
+            ch.chatCooldownTurns = d.chatCooldownTurns ?? ch.chatCooldownTurns
+            ch.thinkEveryTurns = d.thinkEveryTurns ?? ch.thinkEveryTurns
+        }
+        func clamp(_ v: Double) -> Double { v.isFinite ? min(3, max(0.25, v)) : 1 }
+        ch.aggression = clamp(ch.aggression); ch.risk = clamp(ch.risk); ch.reaction = clamp(ch.reaction)
+        ch.chatRate = ch.chatRate.isFinite ? min(3, max(0, ch.chatRate)) : 1
+        ch.chatCooldownTurns = min(50, max(0, ch.chatCooldownTurns))
+        ch.thinkEveryTurns = min(52, max(1, ch.thinkEveryTurns))
+        ch.temperament = String(ch.temperament.filter { $0.isLetter || $0.isNumber || " ,.-'".contains($0) }.prefix(80))
+        return ch
+    }
+}
+
 // MARK: - Personality-driven AI
 
 /// What a computer-run government decides to do with its turn.
@@ -336,7 +426,10 @@ enum PersonalityAI {
     /// Weighted choice of a move. `roll` in 0..<1 makes it deterministic for tests.
     static func choose(for c: Country, in gs: GameState, roll: Double = Double.random(in: 0..<1)) -> WorldMove {
         let p = c.profile
-        let a = p.anxieties
+        // 3.27.0: the nation's character (data) scales hostility, nuclear risk and how hard anxieties bite.
+        let ch = NationCharacterTable.shared.character(for: c, difficulty: gs.difficultyLevel)
+        var a = p.anxieties
+        for k in ThreatAnxieties.Kind.allCases { a[k] = a[k] * ch.reaction }
         let ambition = Double(p.ambition)          // 1…6
         let ethic = Double(p.ethic)                // 1…6
         let difficulty = gs.difficultyLevel.aiAggressionMultiplier
@@ -359,23 +452,23 @@ enum PersonalityAI {
         options.append((.internalReform, a.social / 18 + (ethic >= 4 ? 1 : 0)))
         options.append((.armsBuildup, 0.5 + a.military / 15 + ambition * 0.4))
         if c.nuclearWarheads > 0 || c.nuclearStatus == .developing, gs.currentYear >= 1945 {
-            options.append((.nuclearBuildup, a.nuclear / 25 + max(0, ambition - 3) * 0.5))
+            options.append((.nuclearBuildup, (a.nuclear / 25 + max(0, ambition - 3) * 0.5) * ch.risk))
         }
         if let f = friend, (c.diplomaticRelations[f.id] ?? 0) > 50 {
             options.append((.seekAlliance(f.id), 0.5 + a.military / 25 + a.nuclear / 30))
         }
         if let r = rival, (c.diplomaticRelations[r.id] ?? 0) < -20 {
-            options.append((.condemn(r.id), 1 + ambition * 0.4))
-            options.append((.covertAction(r.id), max(0, 7 - ethic) * 0.35 * difficulty + a.political / 40))
-            options.append((.supportRebels(r.id), max(0, 6 - ethic) * 0.25 * difficulty))
+            options.append((.condemn(r.id), (1 + ambition * 0.4) * ch.aggression))
+            options.append((.covertAction(r.id), (max(0, 7 - ethic) * 0.35 * difficulty + a.political / 40) * ch.aggression))
+            options.append((.supportRebels(r.id), max(0, 6 - ethic) * 0.25 * difficulty * ch.aggression))
             if c.nuclearWarheads > 0 {
-                options.append((.threaten(r.id), max(0, ambition - 3) * 0.4 * difficulty + a.nuclear / 50))
+                options.append((.threaten(r.id), (max(0, ambition - 3) * 0.4 * difficulty + a.nuclear / 50) * ch.aggression * ch.risk))
             }
         }
         if let w = weakEnemy, c.atWarWith.isEmpty {
             // War is the rare, ambition-driven option: ~0 for restrained leaders, real for ruthless ones.
             // 3.14.0: a floor of 0.4 so cautious monarchies still go to war sometimes.
-            options.append((.attack(w.id), (pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty))
+            options.append((.attack(w.id), (pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty * ch.aggression))
         }
 
         let total = options.reduce(0) { $0 + max(0, $1.1) }

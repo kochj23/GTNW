@@ -77,12 +77,14 @@ final class AIOptionsUnitTests: XCTestCase {
 
     func testCanonicalBackendIds() {
         XCTAssertEqual(NovaAIBackend.allCases.map(\.rawValue),
-                       ["auto", "ollama", "mlx", "tinyllm", "tinychat", "openwebui", "novagateway", "openrouter", "openai"])
+                       ["auto", "ollama", "mlx", "tinyllm", "tinychat", "openwebui", "novagateway", "openrouter", "openai",
+                        "anthropic", "gemini", "xai", "mistral", "deepseek", "meta"])   // NovaAIKit 1.1.0
         XCTAssertEqual(NovaAIBackend.autoOrder,
-                       [.ollama, .mlx, .tinyChat, .tinyLLM, .openWebUI, .novaGateway, .openRouter, .openAI])
+                       [.ollama, .mlx, .tinyChat, .tinyLLM, .openWebUI, .novaGateway, .openRouter, .openAI,
+                        .anthropic, .gemini, .xAI, .mistral, .deepSeek, .meta])
         XCTAssertFalse(NovaAIBackend.autoOrder.contains(.auto))
         XCTAssertTrue(NovaAIBackend.selectable.contains(.mlx), "MLX is offered on macOS")
-        XCTAssertEqual(NovaAIBackend.allCases.count, 9)
+        XCTAssertEqual(NovaAIBackend.allCases.count, 15)
     }
 
     func testOldDisplayNameSelectionsMigrate() {
@@ -160,7 +162,7 @@ final class AIOptionsUnitTests: XCTestCase {
     }
 
     func testOnlyCloudBackendsNeedKeys() {
-        XCTAssertEqual(Set(NovaAIBackend.allCases.filter(\.requiresKey)), [.openRouter, .openAI])
+        XCTAssertEqual(Set(NovaAIBackend.allCases.filter(\.requiresKey)), [.openRouter, .openAI, .anthropic, .gemini, .xAI, .mistral, .deepSeek, .meta])
     }
 
     func testGTNWConfiguration() {

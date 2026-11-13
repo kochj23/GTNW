@@ -27,6 +27,8 @@ struct MoveRequest: Codable, Equatable, Sendable {
     var defcon: Int
     var worldStateSummary: String
     var legalActions: [String]
+    /// 3.27.0: why the previous answer was refused, for the re-ask (at most `GameEngine.maxReasks` times).
+    var previousError: String? = nil
 }
 
 /// A brain's answer: which action to take, against whom, with what params.
@@ -102,6 +104,22 @@ enum MoveAction: String, CaseIterable, Sendable {
         default: return true
         }
     }
+
+    /// 3.27.0: the strategic intent a move expresses. A brain that changes intent is "switching course"; switches are
+    /// capped per turn and logged (after Quake 3's AI node switches and MAX_NODESWITCHES).
+    var intent: String {
+        switch self {
+        case .wait: return "hold"
+        case .buildMilitary, .buildNukes: return "build"
+        case .formAlliance, .improveRelations, .sueForPeace: return "diplomacy"
+        case .declareWar, .launchNuke, .threatenNuke: return "hostile"
+        }
+    }
+}
+
+/// Why `validateMove` refused a move (sent back to the brain on a re-ask).
+struct MoveRejection: Error, Equatable, Sendable {
+    var reason: String
 }
 
 /// Result of applying a MoveResponse — lets the turn loop decide whether to
@@ -167,6 +185,7 @@ extension GameEngine {
         Alignment: \(country.alignment.rawValue). Government: \(country.government.rawValue).
         Military: \(country.militaryStrength)/100. Nuclear warheads: \(country.nuclearWarheads). \
         Aggression: \(country.aggressionLevel)/100. Stability: \(country.stability)/100.
+        \(NationCharacterTable.shared.character(for: country, difficulty: gameState.difficultyLevel).brief(country.profile))
         At war with: \(wars.isEmpty ? "none" : wars.joined(separator: ", ")).
         Allies: \(allies.isEmpty ? "none" : allies.joined(separator: ", ")).
         World: DEFCON \(gameState.defconLevel.rawValue), \(gameState.activeWars.count) active wars.
@@ -184,29 +203,34 @@ extension GameEngine {
         )
     }
 
+    /// 3.27.0: THE validator for every automated driver's move (any model, Gateway-Claude, a live session). One move
+    /// type, one check; on failure the turn loop re-asks with the reason, then swaps the source to the built-in AI
+    /// (after Quake 3 BotInputToUserCommand: every driver produces the same command). Returns the action and the
+    /// resolved target, or why the move is refused.
+    func validateMove(_ response: MoveResponse, for countryID: String) -> Result<(MoveAction, String?), MoveRejection> {
+        guard let gameState = gameState, let country = gameState.getCountry(id: countryID) else {
+            return .failure(MoveRejection(reason: "unknown country \(countryID)"))
+        }
+        let legal = legalActions(for: country)
+        let verb = response.action.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard legal.contains(verb), let action = MoveAction(rawValue: verb) else {
+            return .failure(MoveRejection(reason: "\(PlayHistory.text(String(verb.prefix(40)))) is not one of \(legal.joined(separator: ", "))"))
+        }
+        guard action.requiresTarget else { return .success((action, nil)) }
+        guard let raw = response.target, let resolved = resolveMoveTarget(raw, forCountry: country) else {
+            return .failure(MoveRejection(reason: "\(verb) needs the id of another living country as target"))
+        }
+        return .success((action, resolved))
+    }
+
     /// Apply a brain's MoveResponse onto the engine's existing verbs. Rejects
     /// illegal actions (not in legalActions, or missing/invalid target).
     @discardableResult
     func applyMove(_ response: MoveResponse, for countryID: String) -> MoveApplication {
         guard let gameState = gameState,
-              let country = gameState.getCountry(id: countryID) else { return .rejectedIllegal }
-
-        let legal = Set(legalActions(for: country))
-        let verb = response.action.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-
-        guard legal.contains(verb), let action = MoveAction(rawValue: verb) else {
-            return .rejectedIllegal
-        }
-
-        // Resolve target if required.
-        var targetID: String? = nil
-        if action.requiresTarget {
-            guard let rawTarget = response.target,
-                  let resolved = resolveMoveTarget(rawTarget, forCountry: country) else {
-                return .rejectedIllegal
-            }
-            targetID = resolved
-        }
+              let country = gameState.getCountry(id: countryID),
+              case .success(let (action, targetID)) = validateMove(response, for: countryID) else { return .rejectedIllegal }
+        let verb = action.rawValue
 
         switch action {
         case .wait:

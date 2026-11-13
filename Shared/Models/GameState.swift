@@ -8,6 +8,27 @@
 import Foundation
 import SwiftUI
 
+/// Gameplay random numbers, separate from cosmetic ones (after Doom's split of P_Random for play from M_Random for
+/// menus). SplitMix64 (Steele, Lea & Flood 2014), written for GTNW: small, fast and reproducible from its seed; the
+/// state is saved with the game, so a loaded game continues the same sequence.
+struct GameRNG: RandomNumberGenerator, Codable, Equatable, Sendable {
+    let seed: UInt64
+    private(set) var state: UInt64
+
+    init(seed: UInt64) {
+        self.seed = seed
+        self.state = seed
+    }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
+    }
+}
+
 /// Represents the current state of the game
 class GameState: ObservableObject, Codable {
     @Published var turn: Int = 0
@@ -49,6 +70,9 @@ class GameState: ObservableObject, Codable {
 
     /// Shadow-President-style systems: popularity, elections, budget, aid, war fronts, scripted events.
     @Published var shadow = ShadowState()
+    /// 3.27.0: the gameplay RNG (nation AI, world politics), seeded per game; cosmetic randomness stays on the
+    /// system generator. The seed goes into the play summary (`rng_seed`).
+    var rng = GameRNG(seed: UInt64.random(in: 1...UInt64.max))
 
     var actionsPerTurn: Int { turnLength.actionsPerTurn }
     var actionsRemaining: Int { max(0, actionsPerTurn - actionsUsedThisTurn) }
@@ -298,6 +322,7 @@ class GameState: ObservableObject, Codable {
         case presidentsPlayed, warsStarted, warsWon, nukesLaunched, totalWarheadsLaunched, conflictsMediated
         case successfulCovertOps, spyNetworksEstablished, successfulCoups, sanctionsImposed, alliancesBroken
         case militaryActionsUsed, reachedDEFCON1
+        case rng   // 3.27.0
     }
 
     /// `boardYear` (3.12.0) builds the countries for that year instead of the administration's first year (a scenario
@@ -395,10 +420,12 @@ class GameState: ObservableObject, Codable {
         alliancesBroken = try c.decodeIfPresent(Int.self, forKey: .alliancesBroken) ?? 0
         militaryActionsUsed = try c.decodeIfPresent(Int.self, forKey: .militaryActionsUsed) ?? 0
         reachedDEFCON1 = try c.decodeIfPresent(Bool.self, forKey: .reachedDEFCON1) ?? false
+        rng = try c.decodeIfPresent(GameRNG.self, forKey: .rng) ?? GameRNG(seed: UInt64.random(in: 1...UInt64.max))
     }
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(rng, forKey: .rng)
         try c.encode(turn, forKey: .turn)
         try c.encode(defconLevel, forKey: .defconLevel)
         try c.encode(countries, forKey: .countries)

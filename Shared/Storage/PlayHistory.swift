@@ -277,6 +277,8 @@ enum PlaySummary {
             "in_progress": !gs.gameOver,
         ]
         if let r = session.resumedFromTurn { s["resumed_from_turn"] = r }
+        // 3.27.0: the gameplay RNG seed, so a run can be told apart and reproduced (after Doom's P_Random seed).
+        s["rng_seed"] = String(format: "%016llx", gs.rng.seed)
         if let p = sh.startSnapshot?.popularity ?? polls.first { s["popularity_start"] = PlayHistory.num(p) }
         if let peak = (polls + [sh.popularity]).filter(\.isFinite).max() { s["popularity_peak"] = PlayHistory.num(peak) }
         if let player {

@@ -21,6 +21,10 @@ struct BrainAssignmentView: View {
     /// Read off the main thread in `loadModels` (a Keychain read can prompt after an ad hoc rebuild).
     @State private var hasOpenRouterKey = false
     @ObservedObject private var ai = AppAI.shared
+    /// 3.27.0 model vs model: the country whose backend + model is being picked, and the picker's choice.
+    @State private var kitCountry: String?
+    @State private var kitBackend: NovaAIBackend = .ollama
+    @State private var kitModel = ""
 
     /// A small curated set of frontier models reachable via OpenRouter.
     private let frontierModels: [(label: String, id: String)] = [
@@ -63,6 +67,31 @@ struct BrainAssignmentView: View {
         }
         .frame(minWidth: FontScale.w(520), minHeight: FontScale.h(560))
         .onAppear(perform: loadModels)
+        .sheet(isPresented: Binding(get: { kitCountry != nil }, set: { if !$0 { kitCountry = nil } })) { kitSheet }
+    }
+
+    /// Any NovaAIKit backend + model for one country (e.g. the US on Anthropic, Russia on xAI). Cloud backends need
+    /// their key in Settings → AI; without it the country plays the built-in AI.
+    private var kitSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("\(kitCountry.flatMap { gameEngine.gameState?.getCountry(id: $0)?.name } ?? "") · backend + model")
+                .font(.scaled(size: 14, weight: .bold, design: .monospaced))
+            NovaAIModelPicker(ai: ai, title: "Brain", backend: $kitBackend, model: $kitModel)
+            HStack {
+                Spacer()
+                Button("Cancel") { kitCountry = nil }
+                Button("Assign") {
+                    if let id = kitCountry {
+                        gameEngine.setBrain(.kit(backend: kitBackend.rawValue,
+                                                 model: kitModel.trimmingCharacters(in: .whitespaces)), for: id)
+                    }
+                    kitCountry = nil
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+        .frame(minWidth: FontScale.w(420))
     }
 
     private var header: some View {
@@ -123,6 +152,10 @@ struct BrainAssignmentView: View {
             Button("Rule-Based AI") { gameEngine.setBrain(.ruleBased, for: countryID) }
             Button("This Session (live PvP)") { gameEngine.setBrain(.liveSession, for: countryID) }
             Button("Gateway-Claude (always-on)") { gameEngine.setBrain(.gatewayClaude, for: countryID) }
+            Button("Any Backend + Model…") {
+                if case .kit(let b, let m) = current { kitBackend = NovaAIBackend(rawValue: b) ?? .ollama; kitModel = m }
+                kitCountry = countryID
+            }
 
             if !localModels.isEmpty {
                 Menu("Local Models (Ollama)") {
@@ -175,6 +208,7 @@ struct BrainAssignmentView: View {
         case .liveSession: return "bolt.horizontal.circle.fill"
         case .gatewayClaude: return "brain.head.profile"
         case .model: return "server.rack"
+        case .kit: return "sparkles"
         }
     }
 
@@ -184,7 +218,7 @@ struct BrainAssignmentView: View {
         case .ruleBased: return GTNWColors.terminalGreen
         case .liveSession: return GTNWColors.neonPurple
         case .gatewayClaude: return GTNWColors.terminalAmber
-        case .model: return GTNWColors.terminalRed
+        case .model, .kit: return GTNWColors.terminalRed
         }
     }
 

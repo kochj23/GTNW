@@ -205,7 +205,7 @@ extension GameEngine {
         let spur = ExpansionModel.takenLastYear(gs, before: gs.currentDate) >= WorldPolitics.reactionThreshold(gs.difficultyLevel) ? 2.0 : 1.0
         let rate = WorldPolitics.claimRate(year: gs.currentYear) * act * spur
         var open = gs.unclaimedLandIDs.filter { $0 != Antarctica.id || gs.currentYear >= 1908 }.union(gs.indigenousLandIDs)
-        for p in WorldPolitics.powers(gs) where Double.random(in: 0..<1) < gs.scale.probability(annual: rate) {
+        for p in WorldPolitics.powers(gs) where Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: rate) {
             // Colonies of an enemy first; otherwise the nearest open land of a few.
             let enemyColony = gs.colonyLandIDs.first { gs.preState($0).map { p.atWarWith.contains($0.era.owner) } ?? false }
             let overseas = WorldPolitics.reachesOverseas(p.id, year: gs.currentYear)
@@ -229,7 +229,7 @@ extension GameEngine {
         let threshold = WorldPolitics.reactionThreshold(gs.difficultyLevel)
         guard taken >= threshold, gs.shadow.lastReaction.map({ GameCalendar.days(from: $0, to: gs.currentDate) >= 60 }) ?? true else { return }
         let act = WorldPolitics.activity(gs.difficultyLevel)
-        guard Double.random(in: 0..<1) < min(1, 0.5 * act) else { return }
+        guard Double.random(in: 0..<1, using: &gs.rng) < min(1, 0.5 * act) else { return }
         gs.shadow.lastReaction = gs.currentDate
         let rivals = WorldPolitics.powers(gs).filter { !$0.alliances.contains(me.id) }
         guard let lead = rivals.first else { return }
@@ -239,7 +239,7 @@ extension GameEngine {
         bumpWorld("diplomacy")
         let mine = gs.countries.filter { $0.territoryOf == me.id && !$0.isDestroyed }
         // Proxy revolt in a U.S. territory.
-        if let t = mine.randomElement(), let i = gs.countries.firstIndex(where: { $0.id == t.id }) {
+        if let t = mine.randomElement(using: &gs.rng), let i = gs.countries.firstIndex(where: { $0.id == t.id }) {
             gs.countries[i].profile.outcry = min(100, gs.countries[i].profile.outcry + 15)
             gs.countries[i].stability = max(0, gs.countries[i].stability - 8)
             gs.shadow.post("\(rivals.randomElement()?.name ?? lead.name) arms rebels in \(t.name).", date: gs.currentDate, severity: 2)
@@ -276,7 +276,7 @@ extension GameEngine {
         let act = WorldPolitics.activity(gs.difficultyLevel)
         for c in gs.liveCountries where c.id != gs.playerCountryID {
             for ally in c.alliances where ally != gs.playerCountryID && (c.diplomaticRelations[ally] ?? 0) < -10
-                && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.5 * act) {
+                && Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 0.5 * act) {
                 breakAlliance(c.id, ally)
             }
         }
@@ -287,11 +287,11 @@ extension GameEngine {
         guard let gs = gameState else { return }
         gs.shadow.treatyOffers.removeAll { GameCalendar.days(from: $0.date, to: gs.currentDate) > 92 }
         guard gs.shadow.treatyOffers.count < 3,
-              Double.random(in: 0..<1) < gs.scale.probability(annual: 1.5 * WorldPolitics.activity(gs.difficultyLevel)),
+              Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 1.5 * WorldPolitics.activity(gs.difficultyLevel)),
               let me = gs.getPlayerCountry() else { return }
         let offered = Set(gs.shadow.treatyOffers.map(\.from))
         let friends = gs.liveCountries.filter { $0.id != me.id && ($0.diplomaticRelations[me.id] ?? 0) > 30 && !offered.contains($0.id) }
-        guard let f = friends.randomElement() else { return }
+        guard let f = friends.randomElement(using: &gs.rng) else { return }
         let rel = f.diplomaticRelations[me.id] ?? 0
         let type: TreatyType = rel > 70 && !me.alliances.contains(f.id) ? .alliance : (rel > 50 ? .nonAggression : .tradeAgreement)
         gs.shadow.treatyOffers.append(TreatyOffer(from: f.id, type: type, date: gs.currentDate))
@@ -319,7 +319,7 @@ extension GameEngine {
             let income = ExpansionModel.annualIncome(gs.countries[i], in: gs) * gs.turnLength.yearFraction
             gs.countries[oi].gdp += income / 1000
             gs.shadow.worldStats["aiIncomeCents", default: 0] += Int((income * 100).rounded())
-            if gs.countries[i].profile.outcry > 70 && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.3) {
+            if gs.countries[i].profile.outcry > 70 && Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 0.3) {
                 var free = gs.countries[i]
                 free.territoryOf = nil
                 CombatModel.installChosenGovernment(.provisional, on: &free, by: gs.countries[oi])
@@ -641,10 +641,10 @@ extension GameEngine {
         guard !ids.isEmpty else { return }
         let rate = 0.25 * WorldPolitics.activity(gs.difficultyLevel)
         for w in gs.activeWars where w.aggressor != gs.playerCountryID {
-            guard Double.random(in: 0..<1) < gs.scale.probability(annual: rate),
+            guard Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: rate),
                   let a = gs.getCountry(id: w.aggressor), !a.isDestroyed, !a.isTerritory,
                   let di = gs.countries.firstIndex(where: { $0.id == w.defender }), !gs.countries[di].isDestroyed,
-                  let t = ids.randomElement().flatMap(DirtyTactics.tactic) else { continue }
+                  let t = ids.randomElement(using: &gs.rng).flatMap(DirtyTactics.tactic) else { continue }
             let d = gs.countries[di]
             // Effects on game stats only, a third of what the President's own order would do.
             gs.countries[di].gdp *= 0.985
