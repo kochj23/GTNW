@@ -35,7 +35,7 @@ final class TerminalAdvisor: ObservableObject {
         Situation: \(situation)
 
         Current Game State:
-        - DEFCON: \(gameState.defconLevel.rawValue)
+        - \(gameState.defconName): \(gameState.defconLevel.rawValue)
         - Active Wars: \(gameState.activeWars.count)
         - Nuclear Powers: \(gameState.countries.filter { $0.nuclearWarheads > 0 }.count)
         - Total Casualties: \(gameState.totalCasualties)
@@ -51,11 +51,11 @@ final class TerminalAdvisor: ObservableObject {
         let atWar = player?.atWarWith.count ?? 0
         let defcon = gameState.defconLevel.rawValue
         if defcon <= 2 && warheads > 0 {
-            return "RECOMMEND DEFENSIVE POSTURE. DEFCON \(defcon). EVERY LAUNCH INVITES A REPLY. THE ONLY WINNING MOVE IS NOT TO PLAY."
+            return "RECOMMEND DEFENSIVE POSTURE. \(gameState.defconName) \(defcon). EVERY LAUNCH INVITES A REPLY. THE ONLY WINNING MOVE IS NOT TO PLAY."
         } else if atWar > 0 {
             return "RECOMMEND DIPLOMATIC SOLUTION. \(atWar) ACTIVE CONFLICT(S). SEEK A CEASEFIRE BEFORE THE NEXT ESCALATION."
         } else {
-            return "RECOMMEND MAINTAIN STATUS QUO. DEFCON \(defcon). BUILD ALLIANCES, WATCH THE BORDERS."
+            return "RECOMMEND MAINTAIN STATUS QUO. \(gameState.defconName) \(defcon). BUILD ALLIANCES, WATCH THE BORDERS."
         }
     }
 

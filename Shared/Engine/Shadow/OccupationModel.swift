@@ -228,6 +228,12 @@ extension GameEngine {
         let states = Set(gs.shadow.statesAdmitted.map(\.id))
         for i in gs.countries.indices where gs.countries[i].territoryOf == gs.playerCountryID && !gs.countries[i].isDestroyed && !states.contains(gs.countries[i].id) {
             let c = gs.countries[i]
+            // 3.28.0: nobody lives there but our own people: no insurgency, no breakaway.
+            if Islands.uninhabited(c.id) {
+                gs.countries[i].profile.outcry = 0
+                gs.countries[i].stability = max(c.stability, 80)
+                continue
+            }
             let policy = gs.shadow.territoryPolicies[c.id] ?? TerritoryPolicy(since: gs.shadow.claimDates[c.id] ?? gs.currentDate)
             // No record (saves before 3.9.0): treat the territory as properly garrisoned.
             let garrison = gs.shadow.garrisons[c.id] ?? OccupationModel.neededGarrison(c)

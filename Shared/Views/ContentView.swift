@@ -347,7 +347,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 20) {
                 if let gameState = gameEngine.gameState {
                     // DEFCON Level
-                    defconDisplay(gameState.defconLevel)
+                    defconDisplay(gameState.defconLevel, name: gameState.defconName)
 
                     Divider().background(ModernColors.cyan)
 
@@ -421,9 +421,9 @@ struct ContentView: View {
 
     // MARK: - Components
 
-    private func defconDisplay(_ defcon: DefconLevel) -> some View {
+    private func defconDisplay(_ defcon: DefconLevel, name: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("DEFCON LEVEL")
+            Text("\(name) LEVEL")
                 .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(ModernColors.yellow)
 

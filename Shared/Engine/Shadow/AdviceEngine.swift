@@ -119,7 +119,7 @@ enum AdviceEngine {
                 if !atWar && target.militaryStrength > player.militaryStrength - 10 {
                     score -= 1; reasons.append("Their forces are nearly a match for ours. This would not be a short campaign.")
                 }
-                if gs.defconLevel.rawValue <= 2 { score -= 0.5; reasons.append("At DEFCON \(gs.defconLevel.rawValue), any shot could start something much bigger.") }
+                if gs.defconLevel.rawValue <= 2 { score -= 0.5; reasons.append("At \(gs.defconName) \(gs.defconLevel.rawValue), any shot could start something much bigger.") }
             case .nuclear:
                 score -= 3
                 if atWar && hawk > 85 && target.nuclearWarheads == 0 {

@@ -20,6 +20,7 @@ enum VictoryType: String, Codable, CaseIterable {
     case allianceLeader = "Leader of the Free World" // 1100 pts (3.16.0)
     case nobelPeace = "Nobel Laureate"               // 1300 pts (3.16.0)
     case prosperity = "The Good Life"                // 1400 pts (3.18.12)
+    case servedFullTerm = "Served Out Your Presidency" // 900 pts (3.28.0)
 
     var baseScore: Int {
         switch self {
@@ -33,6 +34,7 @@ enum VictoryType: String, Codable, CaseIterable {
         case .pyrrhicVictory: return 200
         case .allianceLeader: return 1100
         case .nobelPeace: return 1300
+        case .servedFullTerm: return 900
         }
     }
 
@@ -58,6 +60,8 @@ enum VictoryType: String, Codable, CaseIterable {
             return "Survived nuclear winter and rebuilt civilization"
         case .pyrrhicVictory:
             return "Won the war but at catastrophic cost"
+        case .servedFullTerm:
+            return "Served every day the Constitution allowed and handed over the keys in one piece"
         }
     }
 }
@@ -255,6 +259,14 @@ class VictoryChecker {
             return nil
         }
 
+        // 3.28.0: the presidency ran its course (term limit, or chose not to run). The best ending earned so far
+        // still wins; otherwise finishing the job is the victory.
+        if let ending = gameState.shadow.domesticEnding, ending.servedOut {
+            gameState.shadow.domesticEnding = nil
+            defer { gameState.shadow.domesticEnding = ending }
+            return checkVictory(gameState: gameState) ?? .servedFullTerm
+        }
+
         // 3.16.0: the world's own wars (the living world never sleeps) no longer block the peaceful endings; what
         // counts is the player's own record.
         let playerLaunchedNukes = gameState.nuclearStrikes.contains { $0.attacker == gameState.playerCountryID }
@@ -306,7 +318,7 @@ class VictoryChecker {
         }
 
         // Domestic endings: lost election, impeachment, assassination, civil war
-        if let ending = gameState.shadow.domesticEnding {
+        if let ending = gameState.shadow.domesticEnding, !ending.servedOut {
             return (true, ending.headline)
         }
 

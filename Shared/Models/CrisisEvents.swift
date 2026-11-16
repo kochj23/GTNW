@@ -140,6 +140,40 @@ struct CrisisOption: Identifiable, Codable {
     }
 }
 
+/// 3.28.0: cards are written from Washington's desk. Playing another nation, the American phrases become that
+/// nation's (no evacuating American citizens as the leader of France).
+enum NationWords {
+    static func replacements(for me: Country) -> [(String, String)] {
+        [("Evacuate American citizens", "Evacuate our citizens"), ("American citizens", "our citizens"),
+         ("AMERICANS", "OUR CITIZENS"), ("Every American", "Every one of our citizens"), ("Americans", "our citizens"),
+         ("the American flag", "our flag"), ("American aid", "Our aid"), ("American diplomacy", "our diplomacy"),
+         ("American forces", "Our forces"),
+         ("What will the United States do?", "What will \(me.name) do?"), ("the United States", me.name),
+         ("Washington", me.capital), ("the Rose Garden", me.capital), ("a Marine security detail", "a security detail"),
+         ("Marines", "troops")]
+    }
+
+    static func localize(_ text: String, for me: Country) -> String {
+        replacements(for: me).reduce(text) {
+            $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "(?![\\w.])", with: $1.1, options: .regularExpression)
+        }
+    }
+
+    static func localize(_ c: CrisisEvent, for me: Country) -> CrisisEvent {
+        var c = c
+        c.title = localize(c.title, for: me)
+        c.description = localize(c.description, for: me)
+        c.options = c.options.map { o in
+            var o = o
+            o.title = localize(o.title, for: me)
+            o.description = localize(o.description, for: me)
+            o.consequences.message = localize(o.consequences.message, for: me)
+            return o
+        }
+        return c
+    }
+}
+
 /// Consequences of a crisis decision
 struct CrisisConsequences: Codable {
     var relationshipChanges: [String: Int] = [:]  // Country ID -> change
@@ -160,6 +194,8 @@ struct CrisisConsequences: Codable {
     var ceasefireBetween: [String]? = nil
     /// The President's nation goes to war against this country.
     var joinWarAgainst: String? = nil
+    /// 3.28.0: the full war plan against this country (GameEngine.executeWarPlan): war, troops, blockade, allies.
+    var warPlanAgainst: String? = nil
     // 3.21.0 — the election cycle.
     /// Points of vote share gained or lost.
     var campaign: Double? = nil
@@ -172,7 +208,8 @@ struct CrisisConsequences: Codable {
          mutualRelations: [String: Int]? = nil, countryStability: [String: Int]? = nil,
          countryMilitary: [String: Int]? = nil, countryEconomy: [String: Int]? = nil,
          ceasefireBetween: [String]? = nil, joinWarAgainst: String? = nil,
-         campaign: Double? = nil, electionChoice: String? = nil) {
+         campaign: Double? = nil, electionChoice: String? = nil, warPlanAgainst: String? = nil) {
+        self.warPlanAgainst = warPlanAgainst
         self.campaign = campaign
         self.electionChoice = electionChoice
         self.relationshipChanges = relationshipChanges
@@ -209,6 +246,8 @@ class CrisisManager: ObservableObject {
     var onResolved: ((CrisisEvent, Int, Bool) -> Void)?
     /// 3.22.2: the game year, so every card is put into its era's words before the President sees it.
     var currentYear: (() -> Int?)?
+    /// 3.28.0: the President's nation, so cards written for the United States read right for any nation.
+    var playerNation: (() -> Country?)?
 
     /// Generate a random crisis event based on game state
     func generateRandomCrisis(gameState: GameState) -> CrisisEvent? {
@@ -1088,7 +1127,7 @@ class CrisisManager: ObservableObject {
         let holder = NationModel.leader(for: country, on: gameState.currentDate)
         // The record's titles and names can carry other realms and notes ("Emperor of Austria; King of Hungary",
         // "Sovereign (via the East India Company)"): the card keeps the first title and the bare name.
-        let short = { (t: String) in String(t.split(whereSeparator: { ";(".contains($0) }).first ?? Substring(t))
+        let short = { (t: String) in String(t.split(whereSeparator: { ";(/".contains($0) }).first ?? Substring(t))
             .trimmingCharacters(in: .whitespaces) }
         let leaderTitle = holder.generic ? EraWords.leaderTitles(y).randomElement()! : short(holder.title)
         let leaderName = holder.generic ? "\(country.name)'s \(leaderTitle.lowercased())" : short(holder.name)
@@ -1360,7 +1399,8 @@ class CrisisManager: ObservableObject {
 
     /// Present crisis to player
     func presentCrisis(_ crisis: CrisisEvent) {
-        let crisis = currentYear?().map { EraWords.localize(crisis, year: $0) } ?? crisis
+        var crisis = currentYear?().map { EraWords.localize(crisis, year: $0) } ?? crisis
+        if let me = playerNation?(), me.id != "USA" { crisis = NationWords.localize(crisis, for: me) }
         if activeCrisis != nil {
             // Queue it; the oldest waiting decision gives way when the desk is overflowing — but never an election
             // decision (3.21.0): those jump the queue, because the calendar won't wait.

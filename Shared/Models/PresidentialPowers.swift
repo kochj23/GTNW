@@ -61,7 +61,7 @@ enum ExecutiveOrderType: String, CaseIterable, Identifiable {
     var description: String {
         switch self {
         case .emergencyPowers:
-            return "Declare a national emergency, unlocking extra executive authority. Raises DEFCON by 1. +10 military strength for 3 turns."
+            return "Declare a national emergency, unlocking extra executive authority. Raises the alert level by 1. +10 military strength for 3 turns."
         case .domesticEconomy:
             return "Bypass Congress to direct economic stimulus. +15% GDP next turn. +8 public approval."
         case .civilRights:
@@ -192,9 +192,9 @@ enum AddressType: String, CaseIterable, Identifiable {
         case .warAddress:
             return "Address to military personnel. Boosts troop morale. +7 approval. +10 military effectiveness this turn."
         case .peaceInitiative:
-            return "Announce a peace initiative. +15 approval. +15 relations with all countries. May reduce DEFCON. Signals de-escalation."
+            return "Announce a peace initiative. +15 approval. +15 relations with all countries. May lower the alert level. Signals de-escalation."
         case .warningAddress:
-            return "Direct public warning to an adversary ('fire and fury'). +3 approval. -20 relations with target. Raises DEFCON by 1."
+            return "Direct public warning to an adversary ('fire and fury'). +3 approval. -20 relations with target. Raises the alert level by 1."
         }
     }
 }

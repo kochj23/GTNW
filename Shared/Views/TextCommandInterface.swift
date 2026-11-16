@@ -466,7 +466,7 @@ struct TextCommandInterface: View {
         ════════════════════════════════════════
 
         YOUR NATION: \(player.flag) \(player.name)
-        DEFCON LEVEL: \(gameState.defconLevel.rawValue) - \(gameState.defconLevel.description)
+        \(gameState.defconName) LEVEL: \(gameState.defconLabel)
 
         NUCLEAR CAPABILITIES:
         • Warheads: \(player.nuclearWarheads)

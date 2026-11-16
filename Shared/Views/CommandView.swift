@@ -44,7 +44,7 @@ struct CommandView: View {
         HStack {
             // DEFCON
             HStack(spacing: 8) {
-                Text("DEFCON")
+                Text(gameState.defconName)
                     .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
 
@@ -841,7 +841,7 @@ struct CovertOperationsMenu: View {
                     covertOpButton(
                         title: "📡 CYBER WARFARE",
                         subtitle: "Hack military and government systems",
-                        effect: "-15 military, -10 stability, +DEFCON",
+                        effect: "-15 military, -10 stability, +alert level",
                         color: AppSettings.terminalAmber
                     ) {
                         gameEngine.cyberWarfare(from: playerID, to: targetID)
@@ -1616,7 +1616,7 @@ struct ProhibitedWeaponsMenu: View {
                 Text("⚠️ CLASSIFICATION: TOP SECRET ⚠️")
                     .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(AppSettings.terminalRed)
-                Text("Detection will trigger international crisis and DEFCON escalation")
+                Text("Detection will trigger international crisis and escalation")
                     .font(.scaled(size: 11, design: .monospaced))
                     .foregroundColor(AppSettings.terminalAmber)
             }

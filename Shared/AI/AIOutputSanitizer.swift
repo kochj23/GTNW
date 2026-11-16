@@ -19,6 +19,12 @@ enum AIOutputSanitizer {
     /// PURE: clean model output. Returns nil when nothing usable is left.
     static func clean(_ raw: String, maxCharacters: Int = maxCharacters) -> String? {
         var s = raw
+        // 3.28.0: some reasoning models omit the opening <think> and only close it: everything before the last
+        // </think> is scratchpad.
+        if let close = s.range(of: "</think>", options: [.caseInsensitive, .backwards]),
+           s.range(of: "<think>", options: .caseInsensitive) == nil {
+            s = String(s[close.upperBound...])
+        }
         // Reasoning models wrap their scratchpad in <think>…</think>; drop it (and an unterminated one).
         while let open = s.range(of: "<think>", options: .caseInsensitive) {
             if let close = s.range(of: "</think>", options: .caseInsensitive, range: open.upperBound..<s.endIndex) {

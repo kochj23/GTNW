@@ -258,6 +258,7 @@ struct VictoryScreen: View {
         case .peaceMaker?, .nobelPeace?, .secretEnding?: return [.peace, .victory, .nuclear]
         case .diplomaticVictory?, .allianceLeader?: return [.diplomacy, .alliance, .victory]
         case .economicVictory?, .prosperity?: return [.economy, .peace]
+        case .servedFullTerm?: return [.election, .leadership, .peace]
         case .supremacy?, .survival?: return [.nuclear, .victory, .power]
         case .pyrrhicVictory?: return [.victory, .apocalypse, .defeat]
         case nil where [.lostElection, .termLimited, .retired, .deniedRenomination].contains(gameState.shadow.domesticEnding):
@@ -375,7 +376,7 @@ struct WOPRSecretEndingView: View {
                         .font(.scaled(size: 14, design: .monospaced))
                         .foregroundColor(AppSettings.terminalGreen.opacity(0.6))
                     Spacer()
-                    Text("\(gameState.currentDateLabel.uppercased()) | DEFCON \(gameState.defconLevel.rawValue)")
+                    Text("\(gameState.currentDateLabel.uppercased()) | \(gameState.defconName) \(gameState.defconLevel.rawValue)")
                         .font(.scaled(size: 12, design: .monospaced))
                         .foregroundColor(AppSettings.terminalAmber)
                 }

@@ -118,8 +118,9 @@ enum ExpansionModel {
         let held = gs.shadow.claimDates[c.id].map { GameCalendar.years(from: $0, to: gs.currentDate) } ?? 10
         // 3.13.1: the extraction rate and self-rule's share apply here, so every view shows the same figure.
         let share = gs.shadow.territoryPolicies[c.id]?.governance.incomeShare ?? 1
-        return base * rampUp(yearsHeld: held) * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
-            * rate(c.id, in: gs).incomeMultiplier * share
+        let built = gs.shadow.islandProjects[c.id, default: []].reduce(0) { $0 + $1.income }   // 3.28.0
+        return (base * rampUp(yearsHeld: held) * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
+            * rate(c.id, in: gs).incomeMultiplier + built) * share
     }
 
     /// The player's territories with their yearly income, highest first.

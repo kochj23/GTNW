@@ -18,6 +18,8 @@
 		09DCCE9CD5FEABEC8F5510A8 /* AdvicePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C809C1E54E2B35FFA722B3 /* AdvicePanel.swift */; };
 		0AF81EFA232DADCE28B225B6 /* ShadowPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B8FFED8139DFE067BA5221 /* ShadowPack.swift */; };
 		0CD5072A8BED2D2318681AF2 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
+		1A7E5C0028A0000000000002 /* Islands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0028A0000000000001 /* Islands.swift */; };
+		1A7E5C0028A0000000000003 /* Islands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0028A0000000000001 /* Islands.swift */; };
 		0CD5072A8BED2D2318681AF3 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
 		0CE9F626FF8F1B7F1D828879 /* ShadowSimulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3E55C52277C2CE8729F821 /* ShadowSimulation.swift */; };
 		0F4B5D2A37DF76925230F475 /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
@@ -206,6 +208,7 @@
 		AF28774C81756009FAC7CBC3 /* GameEngineBrains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */; };
 		B088BF301E57B3579BD571CD /* WorldWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D16FF1F735071CEC4584373 /* WorldWatch.swift */; };
 		B1049F1B49E379C0D930122E /* Scenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1E648FBDD7B264076FCFDA /* Scenarios.swift */; };
+		1A7E5C0028A0000000000012 /* Release328Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0028A0000000000011 /* Release328Tests.swift */; };
 		B122C634555F35D2F9A58FA7 /* GameStorePlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E3884FA806C06896E2D725 /* GameStorePlayTests.swift */; };
 		B15C2D44346545AF2C91BB42 /* PropagandaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77A18618B97CC2F0FBC4F8DA /* PropagandaEngine.swift */; };
 		B3A56622AE3C641209272325 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
@@ -312,6 +315,7 @@
 		07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalAdministrations_PreNuclear.swift; sourceTree = "<group>"; };
 		0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextCommandInterface.swift; sourceTree = "<group>"; };
 		0A3AFE577AA206EFC80AC0CE /* TheLivingRoom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TheLivingRoom.swift; sourceTree = "<group>"; };
+		1A7E5C0028A0000000000001 /* Islands.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Islands.swift; sourceTree = "<group>"; };
 		0CD5072A8BED2D2318681AF1 /* Coalitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Coalitions.swift; sourceTree = "<group>"; };
 		0D125C47BA1FCDB0CEAA7177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0D4F29FFBC9C4273E5CAE7FF /* PopularityModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PopularityModel.swift; sourceTree = "<group>"; };
@@ -369,6 +373,7 @@
 		60C2DF9147061D64BD249A28 /* SituationRoomView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SituationRoomView.swift; path = Shared/Views/SituationRoom/SituationRoomView.swift; sourceTree = SOURCE_ROOT; };
 		60D0B51B989A94270AE3580D /* AdvisorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorViews.swift; sourceTree = "<group>"; };
 		62C6F44451FD85866FECED4A /* ElectionCycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ElectionCycleTests.swift; path = GTNWTests/ElectionCycleTests.swift; sourceTree = SOURCE_ROOT; };
+		1A7E5C0028A0000000000011 /* Release328Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release328Tests.swift; sourceTree = "<group>"; };
 		65E3884FA806C06896E2D725 /* GameStorePlayTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameStorePlayTests.swift; sourceTree = "<group>"; };
 		683E810F11DA27011DB780CB /* CinematicEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CinematicEngine.swift; sourceTree = "<group>"; };
 		6A1C521C011A1B3B0E412D4D /* AIKitAdoptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIKitAdoptionTests.swift; sourceTree = "<group>"; };
@@ -595,6 +600,7 @@
 				D856B041446F1FA1E01777EB /* GTNWFrameTests.swift */,
 				5D467968FAB7262BA7A2FF54 /* GameStoreTests.swift */,
 				65E3884FA806C06896E2D725 /* GameStorePlayTests.swift */,
+				1A7E5C0028A0000000000011 /* Release328Tests.swift */,
 				D479F429932A825514F5FAF8 /* WorldWatchTests.swift */,
 				62C6F44451FD85866FECED4A /* ElectionCycleTests.swift */,
 				19B45E868695D0EB48133AB0 /* AIOptionsTests.swift */,
@@ -633,6 +639,7 @@
 				8FC212DF204E40116AA4FAF1 /* PreStateModel.swift */,
 				1423DF6B0861CDEC638BCAF1 /* AudioGate.swift */,
 				0CD5072A8BED2D2318681AF1 /* Coalitions.swift */,
+				1A7E5C0028A0000000000001 /* Islands.swift */,
 				9951D0B5068363882F271AF1 /* NationModel.swift */,
 				C70374C153C1243812D4FAF1 /* GroupActions.swift */,
 				14C825C7503C08B10B6DFAF1 /* Antarctica.swift */,
@@ -1130,6 +1137,7 @@
 				8FC212DF204E40116AA4FAF2 /* PreStateModel.swift in Sources */,
 				1423DF6B0861CDEC638BCAF2 /* AudioGate.swift in Sources */,
 				0CD5072A8BED2D2318681AF2 /* Coalitions.swift in Sources */,
+				1A7E5C0028A0000000000002 /* Islands.swift in Sources */,
 				9951D0B5068363882F271AF2 /* NationModel.swift in Sources */,
 				C70374C153C1243812D4FAF2 /* GroupActions.swift in Sources */,
 				14C825C7503C08B10B6DFAF2 /* Antarctica.swift in Sources */,
@@ -1193,6 +1201,7 @@
 				81A915F7F280AB6C24EE2A03 /* GTNWFrameTests.swift in Sources */,
 				634BF8435107BB2914F1ED7C /* GameStoreTests.swift in Sources */,
 				B122C634555F35D2F9A58FA7 /* GameStorePlayTests.swift in Sources */,
+				1A7E5C0028A0000000000012 /* Release328Tests.swift in Sources */,
 				8E9F944388DF59415EE024D9 /* WorldWatchTests.swift in Sources */,
 				1E92EEBCEBBEE47C62B71C60 /* ElectionCycleTests.swift in Sources */,
 				BD2DC27A8FDF47D3E0F799FE /* AIOptionsTests.swift in Sources */,
@@ -1285,6 +1294,7 @@
 				8FC212DF204E40116AA4FAF3 /* PreStateModel.swift in Sources */,
 				1423DF6B0861CDEC638BCAF3 /* AudioGate.swift in Sources */,
 				0CD5072A8BED2D2318681AF3 /* Coalitions.swift in Sources */,
+				1A7E5C0028A0000000000003 /* Islands.swift in Sources */,
 				9951D0B5068363882F271AF3 /* NationModel.swift in Sources */,
 				C70374C153C1243812D4FAF3 /* GroupActions.swift in Sources */,
 				14C825C7503C08B10B6DFAF3 /* Antarctica.swift in Sources */,
@@ -1490,7 +1500,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 63;
+				CURRENT_PROJECT_VERSION = 64;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
@@ -1503,7 +1513,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.27.1;
+				MARKETING_VERSION = 3.28.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1572,7 +1582,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 63;
+				CURRENT_PROJECT_VERSION = 64;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1591,7 +1601,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MARKETING_VERSION = 3.27.1;
+				MARKETING_VERSION = 3.28.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1610,7 +1620,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 63;
+				CURRENT_PROJECT_VERSION = 64;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1622,7 +1632,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.27.1;
+				MARKETING_VERSION = 3.28.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1640,7 +1650,7 @@
 				CODE_SIGN_ENTITLEMENTS = "GTNW Widget/GTNW_Widget.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 63;
+				CURRENT_PROJECT_VERSION = 64;
 				DEVELOPMENT_TEAM = QRRCB8HB3W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GTNW Widget/Info.plist";
@@ -1652,7 +1662,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.27.1;
+				MARKETING_VERSION = 3.28.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wopr.gtnw.macos.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

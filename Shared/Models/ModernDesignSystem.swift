@@ -261,6 +261,8 @@ extension View {
 
 struct DefconIndicator: View {
     let level: DefconLevel
+    var name = "DEFCON"
+    var label: String? = nil
     @State private var isPulsing = false
 
     var body: some View {
@@ -278,11 +280,11 @@ struct DefconIndicator: View {
                 .shadow(color: level.color, radius: isPulsing ? 20 : 10)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("DEFCON \(level.rawValue)")
+                Text("\(name) \(level.rawValue)")
                     .font(GTNWFonts.terminal(size: 28, weight: .bold))
                     .foregroundColor(level.color)
 
-                Text(level.description)
+                Text(label ?? level.description)
                     .font(GTNWFonts.caption())
                     .foregroundColor(GTNWColors.terminalAmber)
             }

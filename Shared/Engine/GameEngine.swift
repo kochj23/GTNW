@@ -102,8 +102,10 @@ class GameEngine: ObservableObject {
         // Initialize advisors
         advisors = Advisor.trumpCabinet()
         crisisManager.currentYear = { [weak self] in self?.gameState?.currentYear }
+        crisisManager.playerNation = { [weak self] in self?.gameState?.getPlayerCountry() }
         crisisManager.onResolved = { [weak self] crisis, option, worked in
             self?.logCrisisDecision(crisis, option: option, worked: worked)
+            if worked, let enemy = crisis.options[option].consequences.warPlanAgainst { self?.executeWarPlan(against: enemy) }
         }
 
         // Check the AI backends once (NovaAIKit) and log what the game will use. Not under XCTest: the shared AI is
@@ -663,6 +665,7 @@ class GameEngine: ObservableObject {
     /// Launch nuclear strike
     func launchNuclearStrike(from attackerID: String, to targetID: String, warheads: Int, type: WarheadType? = nil) {
         guard let gameState = gameState else { return }
+        gameState.flash([attackerID, targetID], .hostile)
         guard let attackerIndex = gameState.countries.firstIndex(where: { $0.id == attackerID }),
               let targetIndex = gameState.countries.firstIndex(where: { $0.id == targetID }) else { return }
 
@@ -813,7 +816,10 @@ class GameEngine: ObservableObject {
         guard let gameState = gameState else { return }
         guard let aggressorCountry = getCountry(aggressor),
               let defenderCountry = getCountry(defender) else { return }
+        // 3.28.0: already at war: nothing to declare (no second war record, no second DEFCON step).
+        if aggressorCountry.atWarWith.contains(defender) { return }
         watchCue("sfx.war\(Int.random(in: 1...5))")
+        gameState.flash([aggressor, defender], .hostile)
 
         // Update countries
         if let aggressorIndex = gameState.countries.firstIndex(where: { $0.id == aggressor }) {
@@ -850,6 +856,7 @@ class GameEngine: ObservableObject {
     func formAlliance(country1: String, country2: String) {
         guard let gameState = gameState else { return }
         guard let c1 = getCountry(country1), let c2 = getCountry(country2) else { return }
+        gameState.flash([country1, country2], .friendly)
 
         // Update countries
         if let index1 = gameState.countries.firstIndex(where: { $0.id == country1 }) {
@@ -1831,6 +1838,7 @@ class GameEngine: ObservableObject {
 
     /// Add log message
     func addLog(_ message: String, type: LogType) {
+        let message = gameState.map { EraWords.localizeAlert(message, year: $0.currentYear) } ?? message   // 3.28.0
         let logMessage = LogMessage(message: message, type: type, timestamp: Date())
         logMessages.append(logMessage)
 

@@ -113,7 +113,7 @@ struct UnifiedCommandCenter: View {
                 .font(.scaled(size: 18, weight: .bold))
             Text(resolving
                  ? "⏳ WORLD RESOLVING…"
-                 : "▶ YOUR TURN — \(gameState.currentDateLabel.uppercased()) · \(gameState.actionsRemaining) ACTION(S) LEFT · DEFCON \(gameState.defconLevel.rawValue)")
+                 : "▶ YOUR TURN — \(gameState.currentDateLabel.uppercased()) · \(gameState.actionsRemaining) ACTION(S) LEFT · \(gameState.defconName) \(gameState.defconLevel.rawValue)")
                 .font(.scaled(size: 15, weight: .heavy, design: .monospaced))
             Spacer()
         }
@@ -141,7 +141,7 @@ struct UnifiedCommandCenter: View {
 
                 // DEFCON Status (clickable)
                 Button(action: { showingDefconDetails = true }) {
-                    DefconIndicator(level: gameState.defconLevel)
+                    DefconIndicator(level: gameState.defconLevel, name: gameState.defconName, label: gameState.defconLabel)
                 }
                 .buttonStyle(.plain)
 
@@ -1113,7 +1113,7 @@ struct UnifiedCommandCenter: View {
         SITREP - \(gameState.currentDateLabel.uppercased())
         ══════════════════════════════════════
         NATION: \(player.flag) \(player.name)
-        DEFCON: \(gameState.defconLevel.rawValue)
+        \(gameState.defconName): \(gameState.defconLevel.rawValue)
         WARHEADS: \(player.nuclearWarheads)
         WARS: \(gameState.activeWars.count)
         CASUALTIES: \(gameState.totalCasualties.formatted())
@@ -1181,7 +1181,7 @@ struct DefconDetailView: View {
     var body: some View {
         VStack(spacing: 20) {
             HStack {
-                Text("🚨 DEFCON STATUS DETAILS")
+                Text("🚨 \(gameState.defconName) STATUS DETAILS")
                     .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(gameState.defconLevel.color)
                 Spacer()
@@ -1191,17 +1191,17 @@ struct DefconDetailView: View {
             .padding()
 
             VStack(alignment: .leading, spacing: 15) {
-                Text("CURRENT LEVEL: DEFCON \(gameState.defconLevel.rawValue)")
+                Text("CURRENT LEVEL: \(gameState.defconName) \(gameState.defconLevel.rawValue)")
                     .font(.scaled(size: 32, weight: .black, design: .monospaced))
                     .foregroundColor(gameState.defconLevel.color)
 
-                Text(gameState.defconLevel.description)
+                Text(gameState.defconLabel)
                     .font(.scaled(size: 16, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
 
                 Divider()
 
-                Text("DEFCON LEVELS EXPLAINED:")
+                Text("\(gameState.defconName) LEVELS EXPLAINED:")
                     .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber)
 
@@ -1219,7 +1219,7 @@ struct DefconDetailView: View {
                     .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalAmber)
 
-                Text("• Wars increase tension\n• Nuclear strikes raise DEFCON\n• Building nukes raises DEFCON\n• Peace over time lowers DEFCON")
+                Text(EraWords.localize("• Wars increase tension\n• Nuclear strikes raise DEFCON\n• Building nukes raises DEFCON\n• Peace over time lowers DEFCON", year: gameState.currentYear))
                     .font(.scaled(size: 13, design: .monospaced))
                     .foregroundColor(GTNWColors.terminalGreen)
             }

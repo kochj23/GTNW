@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.28.0] - 2026-11-16 — Islands, flashes and the war card
+
+### Added
+- **Small islands, each its own land.** Thirty-two islands: nine outlines that used to be drawn only as part of their
+  owner (Christmas and Cocos, Heard and McDonald, Pitcairn, Chagos/Diego Garcia, South Georgia, Kerguelen, Norfolk,
+  the Falklands, St Helena) and twenty-three new ringed dots (North Sentinel, Clipperton, Bouvet, Jan Mayen,
+  Svalbard, Wake, Midway, Johnston, Navassa, Howland and Baker, Palmyra, Easter Island, the Galápagos, Peter I,
+  Wrangel, the Spratlys, the Paracels, the Senkakus, Macquarie, the Aucklands, the Prince Edward Islands,
+  Minami-Torishima, Sable). Each is unheld until the year a power claimed it, then held by that power
+  (`Documentation/territories/data.py` → `TerritoryData.swift`; names and places in `Islands.swift`).
+  - An uninhabited, unclaimed island says so in its dossier, and **Plant the flag** always succeeds. It never revolts,
+    because the only people on it are yours.
+  - A held island is seized like a colony (war with its owner) or bought. The AI claims unheld islands and seizes
+    those of its enemies.
+  - **Develop** an island you hold: airstrip (1920+), naval station, military base (+2K garrison), farms, fishery,
+    radar station (1940+). Paid from discretionary funds, no action; income and military strength follow.
+  - Annexing a country brings its territories and islands with it.
+  - Tiny outlines and island dots answer a click within 10 points.
+- **Map flashes.** Both sides of an action between states blink: red when it is hostile (war, strikes, threats,
+  covert action, conquest) and green when it is friendly (alliances, aid, trade, courting, independence). The land a
+  disaster or world emergency hits blinks orange. Islands too small to see get a ring.
+- **The war card: war on either side.** When one country attacks another, the card offers **Declare war on** the
+  aggressor or the defender. The plan declares war, sends half the free troops to the other side's front, blockades
+  the enemy's ports (if it has a coast), calls in treaty allies, and asks for a coalition if an action is left. When
+  the United States is attacked: **Counterattack**, with the same plan.
+
+### Fixed
+- **A finished presidency was a defeat.** Two full terms ending under the 22nd Amendment (session 7a806b5e: 76%
+  approval, the party's nominee won 534 electoral votes) showed the defeat screen, because every domestic ending
+  counted as a loss. Reaching the term limit or choosing not to run is now the **Served Out Your Presidency** victory
+  (900 points), or any better victory earned by then.
+- **DEFCON before it existed.** The readiness meter is the ALERT level before 1959 in every view, log line, ticker
+  item, advisor line and model prompt; before 1945 its top level is total war, not nuclear war.
+- **Nova's ticker showed a model's reasoning** ("Hmm, the user wants me to roleplay as Nova…"). Reasoning models that
+  omit the opening `<think>` tag were cut off by the token cap mid-scratchpad. Replies that only close `</think>` are
+  trimmed after it, and lines that read as reasoning are dropped, so the template line stands.
+- **Playing another nation, the cards still spoke for Washington** ("Evacuate American citizens" as the leader of
+  France). Every crisis card now speaks for the President's nation: our citizens, our aid, its name and capital.
+- An assassination card in 1950 named Vietnam: French Indochina's leader record carries "… Indochinese Communist
+  Party / Vietnam Workers' Party", and the card shortened titles only at ";" and "(". It now also cuts at "/".
+- Declaring a war that already exists no longer adds a second war record and a second DEFCON step.
+
+### Tests
+- 14 new tests in all seven categories. 882 tests, 0 failures.
+
 ## [3.27.1] - 2026-11-12 — The right target, and sound in Watch mode
 
 ### Fixed

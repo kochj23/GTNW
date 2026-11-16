@@ -223,7 +223,7 @@ struct SituationTopBar: View {
                     .foregroundColor(GTNWColors.neonCyan)
             }
             divider
-            Text("DEFCON \(gameState.defconLevel.rawValue)")
+            Text("\(gameState.defconName) \(gameState.defconLevel.rawValue)")
                 .font(ThemeFont.mono(15, .bold))
                 .foregroundColor(Theme.isRetro ? EGA.black : .black)
                 .padding(.horizontal, 8).padding(.vertical, 3)
@@ -443,11 +443,16 @@ struct CountryDossier: View {
                     Text(verbatim: "Today: \(tpl?.name ?? id)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 }
             }
-            Text(st.era.kind == .colony ? "COLONY" : "PEOPLES NOT MODELLED AS A STATE")
+            let island = Islands.byID[id] != nil, empty = Islands.uninhabited(id)
+            Text(st.era.kind == .colony ? (island ? "ISLAND" : "COLONY") : (island ? (empty ? "UNINHABITED · UNCLAIMED" : "UNCLAIMED ISLAND") : "PEOPLES NOT MODELLED AS A STATE"))
                 .font(ThemeFont.mono(11, .bold)).foregroundColor(.black).padding(.horizontal, 6).padding(.vertical, 2)
                 .background(st.era.kind == .colony ? Color(white: 0.85) : VectorWorldMap.claimableColor)
             if st.era.kind == .colony, let owner {
-                Text(verbatim: "Held by \(owner.name) since \(st.era.from == 1789 ? "before 1789" : String(st.era.from)); historically independent or transferred \(st.era.extra).")
+                Text(verbatim: "Held by \(owner.name) since \(st.era.from == 1789 ? "before 1789" : String(st.era.from))"
+                     + (st.era.extra >= 9999 ? ". Seizing it means war with \(owner.name)." : "; historically independent or transferred \(st.era.extra)."))
+                    .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+            } else if empty {
+                Text(verbatim: "Nobody lives here and no nation has claimed it. An expedition simply plants the flag: no resistance, and no uprising later, because the only people on it will be ours. Once it is yours, develop it: airstrip, naval station, military base, farms, fishery, radar.")
                     .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
             } else {
                 Text(verbatim: "Home to its own peoples and rulers, whom the game does not model as a state. They will resist (strength \(st.era.extra)); taking their land brings unrest and, after 1945, condemnation.")
@@ -464,7 +469,7 @@ struct CountryDossier: View {
                 let defenders = st.era.kind == .colony ? owner.map(PreStateModel.garrison) ?? 1 : PreStateModel.resistanceTroops(st.era.extra)
                 let odds = PreStateModel.seizeOdds(troops: expedition, attackerStrength: me.militaryStrength, defenders: max(0.5, defenders),
                                                    defenderStrength: owner?.militaryStrength ?? 30)
-                Button(st.era.kind == .colony ? "SEIZE BY FORCE (\(Int(odds * 100))%)" : "TAKE BY FORCE (\(Int(odds * 100))%)") {
+                Button(st.era.kind == .colony ? "SEIZE BY FORCE (\(Int(odds * 100))%)" : empty ? "PLANT THE FLAG" : "TAKE BY FORCE (\(Int(odds * 100))%)") {
                     let ok = st.era.kind == .colony ? gameEngine.seizeColony(id, troops: expedition) : gameEngine.claimIndigenousLand(id, troops: expedition)
                     if ok == true { onSheet(.nameClaim) }
                 }
@@ -489,6 +494,26 @@ struct CountryDossier: View {
             }
         }
         .padding(8)
+    }
+
+    /// 3.28.0: what can be built on one of the President's islands (paid from discretionary funds, no action used).
+    private func islandDevelopment(_ c: Country) -> some View {
+        let built = gameState.shadow.islandProjects[c.id, default: []]
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(Islands.uninhabited(c.id) ? "DEVELOP · only our people live here, so it will not revolt" : "DEVELOP")
+                .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            ForEach(IslandProject.allCases) { p in
+                if built.contains(p) {
+                    Text("✓ \(p.title)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen)
+                } else if gameState.currentYear >= p.from {
+                    let problem = gameEngine.islandProjectProblem(p, on: c.id)
+                    Button(String(format: "BUILD %@ ($%.1fB)", p.title.uppercased(), p.cost)) { gameEngine.developIsland(c.id, p) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                        .disabled(problem != nil)
+                        .help(problem ?? p.blurb)
+                }
+            }
+        }
     }
 
     /// Unclaimed land (3.3.0): nobody to talk to, nobody to fight. One action sends an expedition to take it.
@@ -584,6 +609,7 @@ struct CountryDossier: View {
                                     .accessibilityLabel("Rename \(c.name)")
                             }
                         }
+                        if o == gameState.playerCountryID, Islands.byID[c.id] != nil { islandDevelopment(c) }
                     }
                     if !c.isPlayerControlled {
                         gauge("RELATIONS", Double(rel + 100) / 200, text: "\(rel)", good: true)

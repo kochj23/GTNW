@@ -33,6 +33,9 @@ struct GameRNG: RandomNumberGenerator, Codable, Equatable, Sendable {
 class GameState: ObservableObject, Codable {
     @Published var turn: Int = 0
     @Published var defconLevel: DefconLevel = .defcon5
+    /// 3.28.0: countries blinking on the map (both sides of an action between states, or where a disaster struck).
+    /// Display only: not saved.
+    @Published var mapFlashes: [MapFlash] = []
     @Published var countries: [Country]
     @Published var activeWars: [War]
     @Published var treaties: [Treaty]
@@ -132,6 +135,11 @@ class GameState: ObservableObject, Codable {
     }
     /// The in-game calendar year, derived from the current date.
     var currentYear: Int { GameCalendar.year(of: currentDate) }
+    /// 3.28.0: DEFCON exists from 1959. Before that the same meter is shown as the ALERT level, so a game set in
+    /// 1812 never talks about a readiness system that did not exist yet.
+    var defconName: String { currentYear >= 1959 ? "DEFCON" : "ALERT" }
+    /// "DEFCON 3 - Increased Readiness", era-worded ("Alert level 1 - TOTAL WAR" before 1945).
+    var defconLabel: String { EraWords.localize(defconLevel.description, year: currentYear) }
 
     /// Lands no country governs in this game (3.3.0): those the start year left without a country, minus any the
     /// President has since claimed (a claimed land becomes a country with the same id). Derived, so it survives
@@ -1315,6 +1323,23 @@ class GameState: ObservableObject, Codable {
     }
 }
 
+/// 3.28.0: a few seconds of blinking on the world map.
+struct MapFlash {
+    enum Tone { case hostile, friendly, disaster }
+    let ids: Set<String>
+    let tone: Tone
+    let until: Date
+}
+
+extension GameState {
+    /// Blink these countries on the map: red for a hostile act, green for a friendly one, orange for a disaster.
+    func flash(_ ids: [String], _ tone: MapFlash.Tone, seconds: TimeInterval = 6) {
+        let now = Date()
+        mapFlashes.removeAll { $0.until < now }
+        mapFlashes.append(MapFlash(ids: Set(ids.filter { !$0.isEmpty }), tone: tone, until: now.addingTimeInterval(seconds)))
+    }
+}
+
 /// DEFCON level (Defense Condition)
 enum DefconLevel: Int, Codable, CaseIterable {
     case defcon5 = 5 // Peacetime
@@ -1516,6 +1541,8 @@ enum EraWords {
         if y < 1937 { r.append(("Press Secretary", "Private Secretary")) }
         if y < 1952 { r.append(("NSA", spyService(y))) }
         if y < 1959 { r += [("DEFCON", "Alert level")] }
+        // 3.28.0: no nuclear war before Trinity; the top alert level means total war.
+        if y < 1945 { r += [("NUCLEAR WAR", "TOTAL WAR"), ("Nuclear war", "General war"), ("nuclear war", "general war")] }
         if y < 1945 { r += [("UN Security Council", "the great powers"), ("UN General Assembly", forum(y)),
                             ("the UN", "the powers"), ("UN", "international")] }
         if y < 1990 { r += [("cyber operation", "covert operation"), ("Cyber operation", "Covert operation")] }
@@ -1527,6 +1554,15 @@ enum EraWords {
         replacements(year).reduce(text) {
             $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "\\b", with: $1.1,
                                     options: .regularExpression)
+        }
+    }
+
+    /// 3.28.0: only the readiness words (DEFCON, nuclear war), for log and ticker lines.
+    static func localizeAlert(_ text: String, year: Int) -> String {
+        guard year < 1959, text.localizedCaseInsensitiveContains("DEFCON") || text.localizedCaseInsensitiveContains("nuclear war") else { return text }
+        let keys: Set<String> = ["DEFCON", "NUCLEAR WAR", "Nuclear war", "nuclear war"]
+        return replacements(year).filter { keys.contains($0.0) }.reduce(text) {
+            $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "\\b", with: $1.1, options: .regularExpression)
         }
     }
 

@@ -188,7 +188,7 @@ extension GameEngine {
         \(NationCharacterTable.shared.character(for: country, difficulty: gameState.difficultyLevel).brief(country.profile))
         At war with: \(wars.isEmpty ? "none" : wars.joined(separator: ", ")).
         Allies: \(allies.isEmpty ? "none" : allies.joined(separator: ", ")).
-        World: DEFCON \(gameState.defconLevel.rawValue), \(gameState.activeWars.count) active wars.
+        World: \(gameState.defconName) \(gameState.defconLevel.rawValue), \(gameState.activeWars.count) active wars.
         Nearby powers: \(neighbors.joined(separator: "; ")).
         """
 

@@ -35,7 +35,7 @@ struct AdvisorGridView: View {
 
                 // DEFCON indicator
                 if let gameState = gameEngine.gameState {
-                    DefconBadge(level: gameState.defconLevel)
+                    DefconBadge(level: gameState.defconLevel, name: gameState.defconName)
                 }
             }
             .padding()
@@ -507,10 +507,11 @@ struct WOPRButtonStyle: ButtonStyle {
 /// DEFCON badge
 struct DefconBadge: View {
     let level: DefconLevel
+    var name = "DEFCON"
 
     var body: some View {
         HStack(spacing: 4) {
-            Text("DEFCON:")
+            Text("\(name):")
                 .font(.scaled(.caption, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 

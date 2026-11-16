@@ -248,12 +248,14 @@ extension GameEngine {
         if crisisManager.activeCrisis == nil, Double.random(in: 0..<1) < gs.scale.probability(annual: 0.04),
            let disaster = crisisManager.createCrisis(type: .naturalDisaster, gameState: gs) {
             crisisManager.presentCrisis(disaster)
+            gs.flash(disaster.affectedCountries, .disaster)
             addLog("🌀 DISASTER: \(disaster.title)", type: .critical)
         }
         // 3.20.0: emergencies abroad (3.21.1: about four a game year, one a turn at most), each a decision (send aid, evacuate, sanction…).
         let emergencies = min(WorldWatch.maxEmergenciesPerTurn, gs.scale.integer(annual: WorldWatch.emergenciesPerYear))
         for _ in 0..<max(0, emergencies) {
             guard let e = crisisManager.createCrisis(type: .worldDisaster, gameState: gs) else { continue }
+            gs.flash(e.affectedCountries, .disaster)
             gs.shadow.post(e.title, date: gs.currentDate, severity: 2)
             // 3.21.1: a busy desk gets the news, not another decision.
             let waiting = crisisManager.pendingCrises.count + (crisisManager.activeCrisis == nil ? 0 : 1)
@@ -304,6 +306,11 @@ extension GameEngine {
         let flag = country.flag, name = country.name
         func tname(_ id: String) -> String { gs.getCountry(id: id)?.name ?? id }
         func againstUS(_ id: String) -> Bool { id == gs.playerCountryID }
+        switch move {   // 3.28.0: the map shows who did what to whom (wars flash in declareWar)
+        case .improveRelations(let t), .tradeTies(let t), .seekAlliance(let t): gs.flash([country.id, t], .friendly)
+        case .condemn(let t), .covertAction(let t), .supportRebels(let t), .threaten(let t): gs.flash([country.id, t], .hostile)
+        default: break
+        }
         switch move {
         case .wait:
             break
@@ -496,6 +503,11 @@ extension GameEngine {
             gs.shadow.ruthlessness += 15
             gs.shadow.expansionLog.append(gs.currentDate)
             gs.shadow.claimDates[loser.id] = gs.currentDate
+            // 3.28.0: its islands and other holdings come with it.
+            for i in gs.countries.indices where gs.countries[i].territoryOf == loser.id { gs.countries[i].territoryOf = owner.id }
+            for land in gs.colonyLandIDs.sorted() where gs.preState(land)?.era.owner == loser.id {
+                annexLand(land, troops: 1, stability: 60, outcry: 5)
+            }
             // 3.9.0: an occupation garrison, as much as is needed and free.
             gs.shadow.garrisons[loser.id] = max(1, min(OccupationModel.neededGarrison(loser), AttackSizing.freeTroops(gs)).rounded())
             let title = CombatModel.territoryTitle(ownerID: owner.id, ownerName: owner.name)
@@ -639,6 +651,35 @@ extension GameEngine {
         return true
     }
 
+    /// 3.28.0: the war card's "Declare war on X": war, troops on the move, a blockade, and a call to our allies.
+    func executeWarPlan(against enemy: String) {
+        guard let gs = gameState, let me = gs.getPlayerCountry(), let foe = gs.getCountry(id: enemy),
+              !foe.isDestroyed, enemy != me.id else { return }
+        declareWar(aggressor: me.id, defender: enemy)   // no-op if we're already at war
+        syncFronts()
+        // Troops: half of what's free goes to the victim's front; our own front against the enemy opened with the rest.
+        let free = AttackSizing.freeTroops(gs)
+        if free >= 2, let f = gs.shadow.fronts.first(where: { $0.status == .fighting && ($0.attacker == enemy || $0.defender == enemy)
+                                                             && $0.attacker != me.id && $0.defender != me.id }) {
+            let side = f.attacker == enemy ? f.defender : f.attacker
+            if commitTroops(frontID: f.id, side: side, thousands: (free / 2).rounded(.down)) {
+                addLog("🪖 \(Int((free / 2).rounded(.down)))K troops move to the front beside \(gs.getCountry(id: side)?.name ?? side).", type: .warning)
+            }
+        }
+        // Blockade, if the enemy has a coast.
+        if !NavalModel.isLandlocked(enemy) {
+            executeShadowPresidentAction(.navalBlockade, from: me.id, to: enemy)
+        } else {
+            addLog("⚓ \(foe.name) is landlocked: no blockade.", type: .info)
+        }
+        // Allies: treaty partners are called first (free); then a coalition is asked for if an action is left.
+        checkAndInvokeCollectiveDefense(aggressor: enemy, target: me.id)
+        if gs.actionsRemaining > 0, let c = requestCoalition(against: enemy) {
+            addLog("🤝 Coalition against \(foe.name): \(c.members.compactMap { gs.getCountry(id: $0)?.name }.joined(separator: ", ")).", type: .info)
+        }
+        logPlayEvent("war_plan", detail: ["enemy": enemy, "game_date": PlayHistory.day(gs.currentDate)])
+    }
+
     /// Commit (or recall, with a negative amount) U.S. troops to a front, on one side.
     @discardableResult
     func commitTroops(frontID: UUID, side: String, thousands: Double) -> Bool {
@@ -731,6 +772,7 @@ extension GameEngine {
     func sendAid(_ package: AidVector, to countryID: String) -> AidOutcome? {
         guard let gs = gameState, let ti = gs.countries.firstIndex(where: { $0.id == countryID }),
               let player = gs.getPlayerCountry() else { return nil }
+        gs.flash([player.id, countryID], .friendly)
         guard package.total <= gs.shadow.aidRemaining + 0.0001 else {
             return AidOutcome(reaction: .reject, accepted: AidVector(), returned: package.total, relationChange: 0,
                               message: String(format: "Not enough aid money left this year ($%.1fB).", gs.shadow.aidRemaining))
@@ -917,6 +959,7 @@ extension GameEngine {
         let popularityBefore = gs.shadow.popularity
         let warnings = MajorAction.isMajor(action) && AdvisorWarnings.enabled()
             ? advisorWarnings(for: .attack(action, target: targetID, size: size)) : []
+        gs.flash([gs.playerCountryID, targetID], action.isHostile ? .hostile : .friendly)
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size, warhead: warhead)
         reportActionOutcome(action, targetID: targetID, from: logStart)
         // Nuclear launches record their own fallout in launchNuclearStrike.

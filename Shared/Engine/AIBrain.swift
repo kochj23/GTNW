@@ -240,7 +240,7 @@ enum BrainClient {
         """
         \(request.worldStateSummary)
 
-        Turn: \(request.turn)  Year: \(request.year)  DEFCON: \(request.defcon)
+        Turn: \(request.turn)  Year: \(request.year)  \(request.year >= 1959 ? "DEFCON" : "Alert level"): \(request.defcon)
         legalActions: \(request.legalActions.joined(separator: ", "))
         \(request.previousError.map { "Your last answer was rejected: \($0). Choose again from legalActions." } ?? "")
         Reply with the JSON move now.

@@ -100,7 +100,7 @@ class NewsManager: ObservableObject {
         // DEFCON changes
         if gameState.defconLevel.rawValue <= 2 {
             addHeadline(
-                "World at \(gameState.defconLevel.description) - Nuclear war imminent",
+                EraWords.localize("World at \(gameState.defconLevel.description) - Nuclear war imminent", year: gameState.currentYear),
                 source: .bbc,
                 severity: .breaking,
                 turn: gameState.turn

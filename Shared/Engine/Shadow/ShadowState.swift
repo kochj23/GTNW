@@ -22,6 +22,9 @@ enum DomesticEnding: String, Codable, CaseIterable {
     // How leaders of other nations fall (3.11.0).
     case noConfidence, coup, revolution, partyCongress, juntaDecision, royalDismissal
 
+    /// 3.28.0: the presidency ran its full course (term limit or chose not to run): a finish, not a defeat.
+    var servedOut: Bool { self == .termLimited || self == .retired }
+
     var headline: String {
         switch self {
         case .lostElection: return "The voters have spoken. You lost the election."
@@ -141,6 +144,8 @@ struct ShadowState: Codable {
     /// Manpower and territories (3.9.0): drafts / mobilizations called, territory governance, states admitted.
     var mobilizations: [Mobilization] = []
     var territoryPolicies: [String: TerritoryPolicy] = [:]
+    /// 3.28.0: what the President has built on each island.
+    var islandProjects: [String: [IslandProject]] = [:]
     var statesAdmitted: [StatehoodRecord] = []
     /// Custom nation groups the President saved for group actions (3.10.0), by name.
     var savedGroups: [String: [String]] = [:]
@@ -226,7 +231,7 @@ struct ShadowState: Codable {
     var playSessionStartedAt: Date?
 
     mutating func post(_ text: String, date: Date, severity: Int = 0) {
-        ticker.append(TickerItem(date: date, text: text, severity: severity))
+        ticker.append(TickerItem(date: date, text: EraWords.localizeAlert(text, year: GameCalendar.year(of: date)), severity: severity))
         if ticker.count > 120 { ticker.removeFirst(ticker.count - 120) }
     }
 
@@ -241,7 +246,7 @@ struct ShadowState: Codable {
         case fronts, warLog, scenarioID, eventQueue, ticker, startSnapshot, advisorGrievances
         case playSessionID, playSessionStartedAt, pendingSettlements, aircraftLost, garrisons, fleetDeployments, wmdPrograms
         case expansionLog, claimDates, producing, resourceEarnings, impeachmentWarned, authorizations, warPowersClocks
-        case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions
+        case mobilizations, territoryPolicies, statesAdmitted, savedGroups, coalitions, islandProjects
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
         case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare, prosperousSince, satellites
         case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
@@ -290,6 +295,7 @@ struct ShadowState: Codable {
         warPowersClocks = try c.decodeIfPresent([String: WarPowersClock].self, forKey: .warPowersClocks) ?? [:]
         mobilizations = try c.decodeIfPresent([Mobilization].self, forKey: .mobilizations) ?? []
         territoryPolicies = try c.decodeIfPresent([String: TerritoryPolicy].self, forKey: .territoryPolicies) ?? [:]
+        islandProjects = try c.decodeIfPresent([String: [IslandProject]].self, forKey: .islandProjects) ?? [:]
         statesAdmitted = try c.decodeIfPresent([StatehoodRecord].self, forKey: .statesAdmitted) ?? []
         savedGroups = try c.decodeIfPresent([String: [String]].self, forKey: .savedGroups) ?? [:]
         coalitions = try c.decodeIfPresent([String: Coalition].self, forKey: .coalitions) ?? [:]

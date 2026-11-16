@@ -121,12 +121,22 @@ enum NovaCommentary {
 
     /// Clean an AI reply to one short, plain line; nil if nothing usable is left.
     static func clean(_ reply: String) -> String? {
+        guard let reply = AIOutputSanitizer.clean(reply), !isReasoning(reply) else { return nil }   // 3.28.0
         let line = reply.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         var s = line.trimmingCharacters(in: CharacterSet.whitespaces.union(CharacterSet(charactersIn: "\"“”'")))
         if s.lowercased().hasPrefix("nova:") { s = String(s.dropFirst(5)).trimmingCharacters(in: .whitespaces) }
         if s.contains("http") || s.contains("@") || s.contains("<") { return nil }
         s = PlayHistory.text(String(s.prefix(200)))
         return s.count >= 3 ? s : nil
+    }
+
+    /// 3.28.0: a reasoning model's scratchpad cut off by the token cap ("Hmm, the user wants me to roleplay as
+    /// Nova…") is not a line for the ticker. The template stands instead.
+    static func isReasoning(_ s: String) -> Bool {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let openers = ["hmm", "okay,", "ok,", "alright", "let me", "let's see", "the user", "i need to", "i should", "we need to", "first,", "so,"]
+        return openers.contains { t.hasPrefix($0) } || t.contains("the user") || t.contains("roleplay")
+            || t.contains("<think") || t.contains("</think")
     }
 
     /// The facts for the end-game roast: who, outcome, how long, how bloody, the score.

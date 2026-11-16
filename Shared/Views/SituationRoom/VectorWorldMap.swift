@@ -304,6 +304,44 @@ struct VectorWorldMap: View {
                         ctx.fill(Path(ellipseIn: CGRect(x: pt.x - r, y: pt.y - r, width: r * 2, height: r * 2)),
                                  with: .color(c.id == selectedCountryID ? EGA.lightRed : filter.color(c, player: player)))
                     }
+                    // 3.28.0: small islands nobody in the game owns yet (or another power holds), ringed so they're findable.
+                    for i in Islands.dots {
+                        guard let st = pre[i.id] else { continue }
+                        let pt = CGPoint(x: i.lon, y: -i.lat).applying(t)
+                        let r: CGFloat = i.id == selectedCountryID ? 5 : (i.id == hoverID ? 4.5 : 3.5)
+                        let fill = i.id == selectedCountryID ? EGA.lightRed
+                            : (st.era.kind == .colony ? byID[st.era.owner].map { filter.color($0, player: player) } ?? Self.claimableColor : Self.claimableColor)
+                        let dot = Path(ellipseIn: CGRect(x: pt.x - r, y: pt.y - r, width: r * 2, height: r * 2))
+                        ctx.fill(dot, with: .color(fill))
+                        ctx.stroke(dot, with: .color(borderColor), lineWidth: 1)
+                    }
+                }
+                // 3.28.0: who just did what to whom. Both sides of an action, or the land a disaster struck, blink.
+                // ponytail: the timeline idles (draws nothing) after the last flash expires until the next state change.
+                if !gameState.mapFlashes.isEmpty {
+                    TimelineView(.animation(minimumInterval: 1.0 / 8)) { tl in
+                        Canvas { ctx, _ in
+                            let live = gameState.mapFlashes.filter { $0.until > tl.date }
+                            guard !live.isEmpty, Int(tl.date.timeIntervalSinceReferenceDate * 3) % 2 == 0 else { return }
+                            func tone(_ ids: String...) -> MapFlash.Tone? { live.last { f in ids.contains { f.ids.contains($0) } }?.tone }
+                            func ring(_ center: CGPoint, _ color: Color) {
+                                ctx.stroke(Path(ellipseIn: CGRect(x: center.x - 9, y: center.y - 9, width: 18, height: 18)), with: .color(color), lineWidth: 2.5)
+                            }
+                            for s in data.shapes {
+                                let owner = WorldMapData.owner(of: s.id, in: present, year: gameState.currentYear) ?? s.id
+                                guard let f = tone(s.id, owner) else { continue }
+                                let path = s.path.applying(t), color = Self.flashColor(f)
+                                ctx.fill(path, with: .color(color.opacity(0.85)))
+                                ctx.stroke(path, with: .color(.white), lineWidth: 1.2)
+                                let b = path.boundingRect
+                                if b.width < 8 && b.height < 8 { ring(CGPoint(x: b.midX, y: b.midY), color) }   // islands too small to see
+                            }
+                            for c in gameState.countries where !hasShape(c.id) {
+                                if let f = tone(c.id) { ring(CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t), Self.flashColor(f)) }
+                            }
+                        }
+                    }
+                    .allowsHitTesting(false)
                 }
                 markers(transform: t, byID: byID, unclaimed: unclaimed)
                 preStateTags(transform: t, pre: pre)
@@ -322,6 +360,14 @@ struct VectorWorldMap: View {
     }
 
     // MARK: Drawing helpers
+
+    static func flashColor(_ tone: MapFlash.Tone) -> Color {
+        switch tone {
+        case .hostile: return Theme.isRetro ? EGA.lightRed : Color(red: 1.0, green: 0.2, blue: 0.2)
+        case .friendly: return Theme.isRetro ? EGA.lightGreen : Color(red: 0.25, green: 0.95, blue: 0.4)
+        case .disaster: return Theme.isRetro ? EGA.yellow : Color(red: 1.0, green: 0.6, blue: 0.1)
+        }
+    }
 
     private var oceanColor: Color { Theme.isRetro ? EGA.blue : Color(red: 0.02, green: 0.06, blue: 0.14) }
     private var borderColor: Color { Theme.isRetro ? EGA.yellow : Color.cyan.opacity(0.45) }
@@ -438,6 +484,10 @@ struct VectorWorldMap: View {
         let id = hoverID ?? selectedCountryID
         let text: String = {
             if let id, let st = pre[id] {
+                if Islands.byID[id] != nil {   // 3.28.0
+                    return st.era.kind == .colony ? "🏝️ \(st.label.uppercased()) — ISLAND"
+                        : "🏝️ \(st.label.uppercased()) — \(Islands.uninhabited(id) ? "UNINHABITED, UNCLAIMED" : "UNCLAIMED ISLAND")"
+                }
                 return st.era.kind == .colony ? "\(st.label.uppercased()) — COLONY" : "\(st.label.uppercased()) — PEOPLES NOT MODELLED AS A STATE"
             }
             if let id, unclaimed.contains(id) {
@@ -523,6 +573,11 @@ struct VectorWorldMap: View {
 
     private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>, pre: Set<String> = []) -> String? {
         let p = location.applying(t.inverted())
+        // 3.28.0: island dots first (several sit inside a bigger outline), within 10 points of the click.
+        let reach = 10 / max(abs(t.a), 0.0001)
+        let dots = Islands.dots.filter { pre.contains($0.id) || gameState.getCountry(id: $0.id) != nil }
+        if let d = dots.min(by: { hypot($0.lon - p.x, -$0.lat - p.y) < hypot($1.lon - p.x, -$1.lat - p.y) }),
+           hypot(d.lon - p.x, -d.lat - p.y) < reach { return d.id }
         for s in data.shapes where s.bounds.contains(p) && s.path.contains(p) {
             if let id = WorldMapData.selection(for: s.id, in: gameState, present: present, unclaimed: unclaimed) { return id }
         }
@@ -531,6 +586,11 @@ struct VectorWorldMap: View {
             hypot($0.coordinates.lon - p.x, -$0.coordinates.lat - p.y) < hypot($1.coordinates.lon - p.x, -$1.coordinates.lat - p.y)
         }
         if let n = near, hypot(n.coordinates.lon - p.x, -n.coordinates.lat - p.y) < 1.5 { return n.id }
+        // 3.28.0: outlines too small to hit exactly (Pitcairn, Norfolk…) answer a click within 10 points.
+        let tiny = data.shapes.filter { $0.bounds.width < reach && $0.bounds.height < reach }
+        if let s = tiny.min(by: { hypot($0.bounds.midX - p.x, $0.bounds.midY - p.y) < hypot($1.bounds.midX - p.x, $1.bounds.midY - p.y) }),
+           hypot(s.bounds.midX - p.x, s.bounds.midY - p.y) < reach,
+           let id = WorldMapData.selection(for: s.id, in: gameState, present: present, unclaimed: unclaimed) { return id }
         return nil
     }
 }

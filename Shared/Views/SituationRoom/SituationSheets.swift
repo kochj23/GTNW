@@ -797,7 +797,7 @@ struct AttackSizingPanel: View {
         }
         let hit = AttackSizing.worldHit(scale: m)
         parts.append(hit > 0 ? "World opinion −\(hit)" : "No extra world reaction")
-        if AttackSizing.escalates(scale: m) { parts.append("ESCALATION: DEFCON rises") }
+        if AttackSizing.escalates(scale: m) { parts.append("ESCALATION: alert level rises") }
         return parts.joined(separator: " · ")
     }
 }
@@ -2098,7 +2098,7 @@ struct TutorialSheet: View {
         ("CHOOSE A COURSE OF ACTION",
          "Pick a target, then climb the escalation ladder along the bottom — from a state visit to sanctions to the unthinkable. After every order, a result box tells you exactly what it did."),
         ("MIND THE HOME FRONT",
-         "The top bar tracks your approval, DEFCON, Congress and the budget. BUDGET, TACTICS, FACTBOOK and PEACE all live up there. Disasters and crises will land on your desk — how you answer moves the country."),
+         "The top bar tracks your approval, the alert level (DEFCON), Congress and the budget. BUDGET, TACTICS, FACTBOOK and PEACE all live up there. Disasters and crises will land on your desk — how you answer moves the country."),
         ("HOW YOU WIN",
          "By conquest, diplomacy, or the Nobel Peace Prize — or by \u{201C}The Good Life\u{201D}: eight years of high quality of life and approval on a lean military budget. End your turn to let the world move, and good luck."),
     ]

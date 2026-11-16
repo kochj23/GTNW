@@ -54,7 +54,7 @@ struct PreStateStatus: Hashable {
     let era: PreStateEra
     /// The owner is in the game (a colony that can be bought, seized or freed).
     let ownerPresent: Bool
-    var label: String { era.kind == .colony ? "\(era.name) (\(PreStateModel.ownerName(era.owner)))" : era.name }
+    var label: String { era.kind == .colony ? "\(era.name) (\(PreStateModel.ownerName(era.owner, from: era.from)))" : era.name }
 }
 
 enum PreStateModel {
@@ -65,8 +65,11 @@ enum PreStateModel {
         "GBR": "UK", "ESP": "Spain", "PRT": "Portugal", "FRA": "France", "NLD": "Netherlands", "RUS": "Russia",
         "TUR": "Ottoman Empire", "CHN": "China", "JPN": "Japan", "THA": "Siam", "AUT": "Austria", "DNK": "Denmark",
         "SWE": "Sweden", "OMN": "Oman", "DEU": "Germany", "IND": "British India", "AUS": "Australia", "PAK": "Pakistan", "HTI": "Haiti",
+        "USA": "U.S.", "NOR": "Norway", "CHL": "Chile", "ECU": "Ecuador", "MEX": "Mexico", "ARG": "Argentina",
+        "NZL": "New Zealand", "ZAF": "South Africa", "CAN": "Canada",
     ]
-    static func ownerName(_ id: String) -> String { ownerNames[id] ?? id }
+    /// `from`: the first year of the era, so India after 1947 isn't "British India".
+    static func ownerName(_ id: String, from year: Int = 0) -> String { id == "IND" && year >= 1947 ? "India" : ownerNames[id] ?? id }
 
     /// The era covering a land in a year; past the last era the last one holds (the game never re-creates a country).
     static func era(for land: String, year: Int) -> PreStateEra? {
@@ -165,7 +168,7 @@ extension GameState {
 extension GameEngine {
     /// Make a taken land a territory of the player, like a 3.3.0 claim. Returns the new territory.
     @discardableResult
-    private func annexLand(_ land: String, troops: Double, stability: Int, outcry: Double) -> Country? {
+    func annexLand(_ land: String, troops: Double, stability: Int, outcry: Double) -> Country? {
         guard let gs = gameState, let owner = gs.getPlayerCountry(), let t = PreStateModel.template(land),
               let oi = gs.countries.firstIndex(where: { $0.id == owner.id }) else { return nil }
         var c = CombatModel.claim(t, for: owner, troops: troops)
@@ -314,15 +317,18 @@ extension GameEngine {
         let strength = max(0, st.era.extra - Int((gs.shadow.resistanceBroken[land] ?? 0).rounded()))
         let resisters = PreStateModel.resistanceTroops(strength)
         let odds = PreStateModel.seizeOdds(troops: troops, attackerStrength: me.militaryStrength, defenders: max(0.5, resisters), defenderStrength: 30)
-        let won = roll < odds
+        // 3.28.0: an uninhabited island has nobody to resist; the landing simply plants the flag.
+        let empty = Islands.uninhabited(land)
+        let won = empty || roll < odds
         let pol = ExpansionModel.politics(year: gs.currentYear, nth: ExpansionModel.takenLastYear(gs, before: gs.currentDate) + 1)
         if won {
-            annexLand(land, troops: troops, stability: max(15, 50 - st.era.extra / 2), outcry: min(95, 30 + Double(st.era.extra)))
+            annexLand(land, troops: troops, stability: empty ? 90 : max(15, 50 - st.era.extra / 2), outcry: empty ? 0 : min(95, 30 + Double(st.era.extra)))
             gs.shadow.ruthlessness += pol.ruthlessness + Double(st.era.extra) / 10
             gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + pol.popularity)
             let world = Int((2 * pol.worldFactor + Double(st.era.extra) / 20).rounded())
             for c in gs.countries where c.id != me.id && !c.isTerritory && !c.isDestroyed { modifyDiplomaticRelation(from: c.id, to: me.id, by: -world) }
-            gs.shadow.post("\(me.name) takes \(st.label) by force. Its people do not accept it; resistance continues.", date: gs.currentDate, severity: 2)
+            gs.shadow.post(empty ? "An expedition plants the flag on uninhabited \(st.label). Nobody lives there; the only people on it are ours."
+                           : "\(me.name) takes \(st.label) by force. Its people do not accept it; resistance continues.", date: gs.currentDate, severity: 2)
         } else {
             gs.shadow.post("The expedition into \(st.label) is driven off by its people.", date: gs.currentDate, severity: 2)
         }

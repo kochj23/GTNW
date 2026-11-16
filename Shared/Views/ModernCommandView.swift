@@ -25,7 +25,7 @@ struct ModernCommandView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // DEFCON Status
-                        DefconIndicator(level: gameState.defconLevel)
+                        DefconIndicator(level: gameState.defconLevel, name: gameState.defconName, label: gameState.defconLabel)
                             .padding(.horizontal)
 
                         // Player Status

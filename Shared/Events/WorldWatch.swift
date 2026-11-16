@@ -49,6 +49,7 @@ enum WorldWatch {
             let war = gs.activeWars.last { Set([$0.aggressor, $0.defender]) == Set(ids) }
             let (agg, def) = war.map { $0.aggressor == a.id ? (a, b) : (b, a) } ?? (a.militaryStrength >= b.militaryStrength ? (a, b) : (b, a))
             headlines.append("⚔️ WAR: \(agg.name) and \(def.name) are at war.")
+            gs.flash([agg.id, def.id], .hostile)   // 3.28.0: covers wars that skip declareWar (collective defense)
             if let c = warCrisis(aggressor: agg, defender: def, gs: gs) {
                 decisions.append(((agg.isPlayerControlled || def.isPlayerControlled) ? 0 : 2, c))
             }
@@ -62,9 +63,11 @@ enum WorldWatch {
             if oldOwner == newOwner && !newOwner.isEmpty { continue }     // a territory's government follows its owner
             if newOwner.isEmpty == false, oldOwner != newOwner, let owner = gs.getCountry(id: newOwner) {
                 headlines.append("🏴 \(c.name) has fallen under the control of \(owner.name).")
+                gs.flash([c.id, owner.id], .hostile)
                 decisions.append((1, annexationCrisis(country: c, owner: owner, gs: gs)))
             } else if newOwner.isEmpty, !oldOwner.isEmpty {
                 headlines.append("🕊️ \(c.name) has regained its independence.")
+                gs.flash([c.id, oldOwner], .friendly)
                 decisions.append((3, liberationCrisis(country: c, formerOwner: gs.getCountry(id: oldOwner), gs: gs)))
             } else if oldGov != newGov {
                 headlines.append("⚖️ Change of power in \(c.name): \(oldGov) → \(newGov).")
@@ -135,6 +138,9 @@ enum WorldWatch {
                     CrisisOption(title: "Seek a UN-brokered ceasefire", description: "Take it to the Security Council before the shooting spreads",
                                  consequences: CrisisConsequences(approvalChange: -3, message: "The guns fall silent — for now.",
                                                                   ceasefireBetween: [a.id, d.id]), successChance: 0.35),
+                    CrisisOption(title: "Counterattack \(a.name)", description: "Troops to the front, a naval blockade, and every ally called in",
+                                 advisorRecommendation: "Secretary of Defense",
+                                 consequences: CrisisConsequences(approvalChange: 3, message: "The counterattack begins.", warPlanAgainst: a.id)),
                     CrisisOption(title: "Fight on as planned", description: "The War Room has the plans; let the generals work",
                                  consequences: CrisisConsequences(message: "The war goes on.")),
                 ])
@@ -153,12 +159,16 @@ enum WorldWatch {
                          consequences: CrisisConsequences(approvalChange: 3, message: "A ceasefire holds. The world credits American diplomacy.",
                                                           mutualRelations: [a.id: 3, d.id: 3], ceasefireBetween: [a.id, d.id]), successChance: 0.45),
         ]
-        if isAlly(gs, d.id) || relation(gs, d.id) >= 60 {
-            options.append(CrisisOption(title: "Go to war alongside \(d.name)", description: "Honor the commitment — American forces join the fight",
-                                        consequences: CrisisConsequences(approvalChange: -2, defconChange: -1,
-                                                                         message: "We are at war with \(a.name).",
-                                                                         mutualRelations: [d.id: 25], joinWarAgainst: a.id)))
-        }
+        // 3.28.0: either side can be ours. The plan: declare war, move troops, blockade, call in the allies.
+        let plan = "Declare war, move troops to the front, blockade its ports and ask our allies to join"
+        options.append(CrisisOption(title: "Declare war on \(a.name)", description: "Defend \(d.name). \(plan).",
+                                    advisorRecommendation: isAlly(gs, d.id) ? "Secretary of Defense" : nil,
+                                    consequences: CrisisConsequences(approvalChange: -2, message: "We are at war with \(a.name).",
+                                                                     mutualRelations: [d.id: 25], warPlanAgainst: a.id)))
+        options.append(CrisisOption(title: "Declare war on \(d.name)", description: "Side with \(a.name). \(plan).",
+                                    advisorRecommendation: isAlly(gs, a.id) ? "Secretary of Defense" : nil,
+                                    consequences: CrisisConsequences(approvalChange: -4, message: "We are at war with \(d.name).",
+                                                                     mutualRelations: [a.id: 25], warPlanAgainst: d.id)))
         if isAlly(gs, a.id) || relation(gs, a.id) >= 60 {
             options.append(CrisisOption(title: "Back our partner \(a.name)", description: "Quiet support: intelligence, spare parts, a veto at the UN",
                                         consequences: CrisisConsequences(approvalChange: -2, message: "\(a.name) knows who its friends are. Much of the world does not approve.",
