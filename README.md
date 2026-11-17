@@ -74,7 +74,10 @@ AI versus AI, narrated by Nova (an AI voice). Two local models play each other; 
 | **AI options** | A global Use AI switch, the shared backend ids (Ollama, MLX, TinyLLM, TinyChat, OpenWebUI, Nova Gateway, OpenRouter, OpenAI) with Auto failover, editable URLs, Keychain-only keys over https, status and Test Connection, sanitised replies, and OpenRouter brains that actually send their key (3.23); all of it now from the shared NovaAIKit package, with the drop-in settings screen and status indicator (3.24) | 3.23–3.24 |
 | **Watch AI vs AI** | A spectator mode: the computer plays your seat with the same per-country brains as everyone else and the turns run by themselves, with a speed control, pause, and taking the seat at any time; recorded as "AI vs AI" for Nova's journal, never on your leaderboard (3.26); model vs model, each nation on its own backend and model (3.27) | 3.25–3.27 |
 | **Small islands** | Thirty-two islands as lands of their own (North Sentinel, Christmas and Cocos, Clipperton, Svalbard, Wake, the Spratlys…): claim the unheld ones, seize held ones from their owner, develop them; empty islands never revolt; islands change hands with their owner | 3.28 |
-| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 889 tests in seven categories | 3.1–3.28 |
+| **Empire** | Land that pays from its real resources, three empire victories (Manifest Destiny, The Sun Never Sets, Every Rock), claim campaigns, your names on the map, a land market with rival bidders and auctions | 3.29 |
+| **Faith** | Theocracies of 57 faiths, each from its founding year: world religions, new religious movements, neopagan, African and diaspora, ancient and indigenous, East Asian | 3.29 |
+| **Realistic war** | Attacks only where a nation can reach (borders, navies, the era's bombers and missiles), wars of attrition with outside aid, a daily real-world brief from Nova's feeds for modern games, base rates from 800 historical wars | 3.29–3.30 |
+| **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 924 tests in seven categories | 3.1–3.30 |
 
 The sections below are grouped by theme; each feature notes the version that introduced it.
 
