@@ -268,3 +268,59 @@ final class Release3281UnclaimedTests: XCTestCase {
         XCTAssertNotNil(r.cgImage)
     }
 }
+
+/// 3.28.2: lands the player could not act on, and actions spent on nothing.
+final class Release3282ReachTests: XCTestCase {
+    /// Retry: an order that can't be carried out (a ceasefire with nobody at war) costs no action.
+    @MainActor
+    func testFailedOrderCostsNoAction() throws {
+        let (e, gs) = try R328.game(2025)
+        let used = gs.actionsUsedThisTurn
+        e.performAdvisedAction(.ceasefire, targetID: "CAN", advice: nil)
+        XCTAssertEqual(e.actionResult?.success, false)
+        XCTAssertEqual(gs.actionsUsedThisTurn, used)
+    }
+
+    /// Functional: the record's colonies of the player's own nation are the player's territories (Midway in 1900).
+    @MainActor
+    func testOwnColoniesAreTerritories() throws {
+        let (e, gs) = try R328.game(1900)
+        XCTAssertEqual(gs.getCountry(id: "MID")?.territoryOf, "USA")
+        XCTAssertNil(e.colonyTarget("MID"))
+        XCTAssertNil(gs.preState("MID"))
+    }
+
+    /// Integration: another power's territory can be bought, seized (war with the owner) or freed.
+    @MainActor
+    func testForeignTerritoryCanBeTakenBoughtOrFreed() throws {
+        func game() throws -> (GameEngine, GameState, String) {
+            let (e, gs) = try R328.game(2025)
+            let gbr = try XCTUnwrap(gs.getCountry(id: "GBR"))
+            let i = try XCTUnwrap(gs.countries.firstIndex { $0.id == "IRL" })
+            CombatModel.annex(&gs.countries[i], to: gbr)
+            return (e, gs, "IRL")
+        }
+        var (e, gs, id) = try game()
+        XCTAssertEqual(e.colonyTarget(id)?.owner.id, "GBR")
+        XCTAssertEqual(e.seizeColony(id, troops: 1, roll: 0), true)
+        XCTAssertEqual(gs.getCountry(id: id)?.territoryOf, "USA")
+        XCTAssertTrue(gs.getCountry(id: "GBR")?.atWarWith.contains("USA") ?? false)
+        (e, gs, id) = try game()
+        XCTAssertEqual(e.purchaseColony(id, roll: 0), true)
+        XCTAssertEqual(gs.getCountry(id: id)?.territoryOf, "USA")
+        (e, gs, id) = try game()
+        XCTAssertEqual(e.supportIndependence(id, roll: 0), true)
+        XCTAssertNil(gs.getCountry(id: id)?.territoryOf)
+        XCTAssertEqual(gs.countries.filter { $0.id == id }.count, 1)
+    }
+
+    /// Security: no colony deal on your own territory, and no expedition bigger than the free troops.
+    @MainActor
+    func testNoDealsWithYourselfOrPhantomTroops() throws {
+        let (e, gs) = try R328.game(1900)
+        XCTAssertNil(e.purchaseColony("MID", roll: 0))
+        XCTAssertNil(e.seizeColony("MID", troops: 1, roll: 0))
+        let gbrColony = PreStateModel.lands.first { gs.preState($0)?.era.owner == "GBR" }
+        if let land = gbrColony { XCTAssertNil(e.seizeColony(land, troops: AttackSizing.freeTroops(gs) + 100, roll: 0)) }
+    }
+}

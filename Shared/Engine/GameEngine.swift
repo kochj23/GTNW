@@ -1942,12 +1942,12 @@ extension GameEngine {
             return
         case .ceasefire, .peace:
             if !sueForPeace(from: playerID, to: targetID) {
-                addLog("ℹ️ No active war with \(getCountry(targetID)?.name ?? targetID) to end.", type: .info)
+                addLog("❌ No active war with \(getCountry(targetID)?.name ?? targetID) to end.", type: .error)
             }
             return
         case .leaveNATO:
             if !leaveAlliance(country: playerID, from: targetID) {
-                addLog("ℹ️ No alliance with \(getCountry(targetID)?.name ?? targetID) to leave.", type: .info)
+                addLog("❌ No alliance with \(getCountry(targetID)?.name ?? targetID) to leave.", type: .error)
             }
             return
         case .joinNATO, .mutualDefense, .defensivePact:

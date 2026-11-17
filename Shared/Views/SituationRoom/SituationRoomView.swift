@@ -476,26 +476,68 @@ struct CountryDossier: View {
                     if ok == true { onSheet(.nameClaim) }
                 }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
-                .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver)
-                if st.era.kind == .colony, let owner {
-                    let rel = owner.diplomaticRelations[me.id] ?? 0
-                    let price = PreStateModel.price(id, year: gameState.currentYear, relation: rel)
-                    let sale = PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: false)
-                    Button(String(format: "OFFER TO BUY: $%.1fB (%d%%)", price, Int(sale * 100))) { if gameEngine.purchaseColony(id) == true { onSheet(.nameClaim) } }
-                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
-                        .disabled(gameState.actionsRemaining == 0 || sale == 0)
-                    let revolt = PreStateModel.revoltOdds(year: gameState.currentYear, independence: st.era.extra,
-                                                          ownerAtWarWithPlayer: owner.atWarWith.contains(me.id), ownerStability: owner.stability)
-                    Button("BACK INDEPENDENCE ($2B, \(Int(revolt * 100))%)") { gameEngine.supportIndependence(id) }
-                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
-                        .disabled(gameState.actionsRemaining == 0)
+                .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver || expedition > free)
+                // 3.28.2: say why rather than a button that does nothing.
+                if expedition > free {
+                    Text(free < 1 ? "No free troops: every soldier is on a front or a garrison." : "Only \(Int(free))K free: lower the expedition.")
+                        .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalAmber)
                 }
+                if st.era.kind == .colony { colonyDeals(id) }
             }
             if gameState.playerCountryID == "USA" && !NavalModel.isLandlocked(id) && !NavalModel.fleets(in: gameState.currentYear).isEmpty {
                 Button("FLEET ORDERS") { onSheet(.fleet) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
             }
         }
         .padding(8)
+    }
+
+    /// 3.28.2: buy a colony or back its independence: a colony of the record or another power's territory.
+    @ViewBuilder
+    private func colonyDeals(_ id: String) -> some View {
+        if let me = gameState.getPlayerCountry(), let col = gameEngine.colonyTarget(id) {
+            let owner = col.owner
+            let rel = owner.diplomaticRelations[me.id] ?? 0
+            let price = PreStateModel.price(id, year: gameState.currentYear, relation: rel)
+            let atWar = owner.atWarWith.contains(me.id)
+            let sale = PreStateModel.saleOdds(relation: rel, atWar: atWar, historical: false)
+            Button(String(format: "OFFER TO BUY: $%.1fB (%d%%)", price, Int(sale * 100))) { if gameEngine.purchaseColony(id) == true { onSheet(.nameClaim) } }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+                .disabled(gameState.actionsRemaining == 0 || sale == 0)
+            if sale == 0 { Text("\(owner.name) won't sell while we are at war.").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalAmber) }
+            let revolt = PreStateModel.revoltOdds(year: gameState.currentYear, independence: col.independence,
+                                                  ownerAtWarWithPlayer: atWar, ownerStability: owner.stability)
+            Button("BACK INDEPENDENCE ($2B, \(Int(revolt * 100))%)") { gameEngine.supportIndependence(id) }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                .disabled(gameState.actionsRemaining == 0)
+        }
+    }
+
+    /// 3.28.2: another power's territory: seize it (war with the owner), buy it, or back its independence.
+    @ViewBuilder
+    private func foreignTerritoryActions(_ c: Country) -> some View {
+        if let me = gameState.getPlayerCountry(), let col = gameEngine.colonyTarget(c.id) {
+            let free = AttackSizing.freeTroops(gameState)
+            let defenders = PreStateModel.garrison(owner: col.owner)
+            let odds = PreStateModel.seizeOdds(troops: expedition, attackerStrength: me.militaryStrength, defenders: max(0.5, defenders),
+                                               defenderStrength: col.owner.militaryStrength)
+            Text(verbatim: "Held by \(col.owner.name). Seizing it means war with \(col.owner.name).")
+                .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                Button("−") { expedition = max(1, expedition - 1) }.buttonStyle(ThemedButtonStyle())
+                Text("\(Int(expedition))K").font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                Button("+") { expedition = min(max(1, free), expedition + 5) }.buttonStyle(ThemedButtonStyle())
+                Text("\(Int(free))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+            }
+            Button("SEIZE BY FORCE (\(Int(odds * 100))%)") { if gameEngine.seizeColony(c.id, troops: expedition) == true { onSheet(.nameClaim) } }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed, prominent: true))
+                .disabled(gameState.actionsRemaining == 0 || gameEngine.isProcessingAITurn || gameState.gameOver || expedition > free)
+            if expedition > free {
+                Text(free < 1 ? "No free troops: every soldier is on a front or a garrison." : "Only \(Int(free))K free: lower the expedition.")
+                    .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalAmber)
+            }
+            colonyDeals(c.id)
+        }
     }
 
     /// 3.28.0: what can be built on one of the President's islands (paid from discretionary funds, no action used).
@@ -612,6 +654,7 @@ struct CountryDossier: View {
                             }
                         }
                         if o == gameState.playerCountryID, Islands.byID[c.id] != nil { islandDevelopment(c) }
+                        if o != gameState.playerCountryID { foreignTerritoryActions(c) }   // 3.28.2
                     }
                     if !c.isPlayerControlled {
                         gauge("RELATIONS", Double(rel + 100) / 200, text: "\(rel)", good: true)

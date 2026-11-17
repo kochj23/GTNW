@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.28.2] - 2026-11-16 — Every land reachable, and no action spent on nothing
+
+### Fixed
+- **Other powers' territories can be acted on.** A colony that had become another power's territory (taken in a war,
+  absorbed, or claimed by a computer-run power: dozens within twenty years of play) offered nothing but a full war.
+  Its dossier now offers SEIZE BY FORCE (war with the owner), OFFER TO BUY and BACK INDEPENDENCE, like a colony of the
+  record.
+- **Your own colonies are yours.** The record's colonies of the player's own nation (Midway, Wake or Palmyra for the
+  United States; Canada or Australia for Britain in 1850) showed as foreign colonies to seize or buy from yourself.
+  They are now your territories from the start, or from the day the record hands them over.
+- **Clicks reach the land under the cursor.** Smaller lands are drawn and hit on top (Lesotho, Bhutan, Armenia,
+  Macau and San Marino were unreachable or hidden), and an island dot takes only a direct click, so Navassa no longer
+  takes clicks meant for Jamaica or Haiti.
+- **A failed order costs no action.** A ceasefire with nobody at war, a landlocked blockade or a nuke without warheads
+  used one of the turn's 1–4 actions; now only orders carried out count.
+- **SEIZE BY FORCE says why it can't.** With fewer free troops than the expedition, the button was enabled and did
+  nothing; it is now disabled with the reason, and OFFER TO BUY says when the owner won't sell during a war.
+
 ## [3.28.1] - 2026-11-16 — What the map is blinking about, and where the free land is
 
 ### Added

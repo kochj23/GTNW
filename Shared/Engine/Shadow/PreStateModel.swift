@@ -184,19 +184,80 @@ extension GameEngine {
         return c
     }
 
+    /// 3.28.2: a colony the President can seize, buy or free: a colony of the record (no country of its own yet), or a
+    /// land another power holds as a territory (taken in a war, absorbed, or claimed by a computer-run power).
+    struct ColonyTarget {
+        let label: String
+        let owner: Country
+        /// Historical independence year (9999 = none): drives revolt odds.
+        let independence: Int
+        /// The territory's index in `countries`, or nil for a colony of the record.
+        let territory: Int?
+    }
+
+    func colonyTarget(_ land: String) -> ColonyTarget? {
+        guard let gs = gameState else { return nil }
+        if let st = gs.preState(land), st.era.kind == .colony, let owner = gs.getCountry(id: st.era.owner),
+           owner.id != gs.playerCountryID {
+            return ColonyTarget(label: st.label, owner: owner, independence: st.era.extra, territory: nil)
+        }
+        guard let i = gs.countries.firstIndex(where: { $0.id == land }), let o = gs.countries[i].territoryOf, o != gs.playerCountryID,
+              !gs.countries[i].isDestroyed, let owner = gs.getCountry(id: o), !owner.isDestroyed else { return nil }
+        let era = PreStateModel.era(for: land, year: gs.currentYear)
+        return ColonyTarget(label: gs.countries[i].name, owner: owner,
+                            independence: era?.kind == .colony ? era!.extra : 9999, territory: i)
+    }
+
+    /// The colony becomes the President's: a colony of the record becomes a new territory; another power's territory
+    /// changes hands.
+    @discardableResult
+    func takeColony(_ land: String, _ col: ColonyTarget, troops: Double, stability: Int, outcry: Double) -> Bool {
+        guard let gs = gameState, let me = gs.getPlayerCountry() else { return false }
+        guard let i = col.territory else { return annexLand(land, troops: troops, stability: stability, outcry: outcry) != nil }
+        if let oi = gs.countries.firstIndex(where: { $0.id == col.owner.id }) { gs.countries[oi].alliances.remove(land) }
+        var c = gs.countries[i]
+        CombatModel.annex(&c, to: me)
+        c.stability = stability
+        var p = c.profile; p.outcry = outcry; c.profile = p
+        gs.countries[i] = c
+        if let pi = gs.countries.firstIndex(where: { $0.id == me.id }) {
+            gs.countries[pi].alliances.insert(land); gs.countries[pi].diplomaticRelations[land] = 100
+        }
+        gs.shadow.garrisons[land] = troops
+        gs.shadow.expansionLog.append(gs.currentDate)
+        gs.shadow.claimDates[land] = gs.currentDate
+        self.gameState = gs
+        return true
+    }
+
+    /// 3.28.2: a colony the record gives the President's own nation (Midway for the United States, Canada for Britain
+    /// in 1850) is the President's territory, not a foreign colony to seize or buy from himself. Not an expansion: no
+    /// spree, no claim date. Runs at the start and each turn, so a colony the record hands over mid-game arrives too.
+    func adoptOwnColonies() {
+        guard let gs = gameState else { return }
+        for land in PreStateModel.lands.sorted() {
+            guard let st = gs.preState(land), st.era.kind == .colony, st.era.owner == gs.playerCountryID else { continue }
+            let spree = gs.shadow.expansionLog.count
+            guard annexLand(land, troops: 0, stability: 80, outcry: 0) != nil else { continue }   // its own garrison, not ours
+            gs.shadow.expansionLog.removeLast(gs.shadow.expansionLog.count - spree)
+            gs.shadow.claimDates[land] = nil
+        }
+    }
+
     /// Seize a colony from its owner by force (one action). Opens a war with the owner if there isn't one; the
     /// colonial garrison fights the expedition. `roll` 0..<1 for tests.
     @discardableResult
     func seizeColony(_ land: String, troops: Double, roll: Double = Double.random(in: 0..<1), spendAction: Bool = true) -> Bool? {
-        guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, let st = gs.preState(land), st.era.kind == .colony,
-              let owner = gs.getCountry(id: st.era.owner), let me = gs.getPlayerCountry(),
-              troops.isFinite, troops >= 1, !spendAction || troops <= AttackSizing.freeTroops(gs) else { return nil }
+        guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, let st = colonyTarget(land),
+              let me = gs.getPlayerCountry(), troops.isFinite, troops >= 1,
+              !spendAction || troops <= AttackSizing.freeTroops(gs) else { return nil }
+        let owner = st.owner
         if !owner.atWarWith.contains(me.id) { declareWar(aggressor: me.id, defender: owner.id) }
         let odds = PreStateModel.seizeOdds(troops: troops, attackerStrength: me.militaryStrength,
                                            defenders: PreStateModel.garrison(owner: owner), defenderStrength: owner.militaryStrength)
         let won = roll < odds
         if won {
-            annexLand(land, troops: troops, stability: 40, outcry: 45)
+            takeColony(land, st, troops: troops, stability: 40, outcry: 45)
             let pol = ExpansionModel.politics(year: gs.currentYear, nth: ExpansionModel.takenLastYear(gs, before: gs.currentDate))
             gs.shadow.ruthlessness += pol.ruthlessness
             modifyDiplomaticRelation(from: owner.id, to: me.id, by: -40)
@@ -257,14 +318,14 @@ extension GameEngine {
     /// 0..<1 for tests. Returns whether the owner sold.
     @discardableResult
     func purchaseColony(_ land: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
-        guard let gs = gameState, gs.actionsRemaining > 0, let st = gs.preState(land), st.era.kind == .colony,
-              let owner = gs.getCountry(id: st.era.owner), let me = gs.getPlayerCountry() else { return nil }
+        guard let gs = gameState, gs.actionsRemaining > 0, let st = colonyTarget(land), let me = gs.getPlayerCountry() else { return nil }
+        let owner = st.owner
         let rel = owner.diplomaticRelations[me.id] ?? 0
         let price = PreStateModel.price(land, year: gs.currentYear, relation: rel)
         let sold = roll < PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: false)
         if sold {
             spendFunds(price)   // 3.13.1: paid from the spendable funds first
-            annexLand(land, troops: 1, stability: 60, outcry: 15)
+            takeColony(land, st, troops: 1, stability: 60, outcry: 15)
             gs.shadow.post(String(format: "%@ sells %@ for $%.1fB.", owner.name, st.label, price), date: gs.currentDate, severity: 2)
         } else {
             modifyDiplomaticRelation(from: owner.id, to: me.id, by: -3)
@@ -280,20 +341,24 @@ extension GameEngine {
     /// Back a colony's independence (one action, $2B). Success makes it a sovereign state allied to the player.
     @discardableResult
     func supportIndependence(_ land: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
-        guard let gs = gameState, gs.actionsRemaining > 0, let st = gs.preState(land), st.era.kind == .colony,
-              let owner = gs.getCountry(id: st.era.owner), let me = gs.getPlayerCountry(),
-              let pi = gs.countries.firstIndex(where: { $0.id == me.id }), let t = PreStateModel.template(land) else { return nil }
-        let odds = PreStateModel.revoltOdds(year: gs.currentYear, independence: st.era.extra,
+        guard let gs = gameState, gs.actionsRemaining > 0, let st = colonyTarget(land), let me = gs.getPlayerCountry(),
+              let pi = gs.countries.firstIndex(where: { $0.id == me.id }) else { return nil }
+        let owner = st.owner
+        let t = PreStateModel.template(land) ?? WorldCountriesDatabase.template(id: land)
+        guard st.territory != nil || t != nil else { return nil }
+        let odds = PreStateModel.revoltOdds(year: gs.currentYear, independence: st.independence,
                                             ownerAtWarWithPlayer: owner.atWarWith.contains(me.id), ownerStability: owner.stability)
         let won = roll < odds
         spendFunds(2)
         modifyDiplomaticRelation(from: owner.id, to: me.id, by: -30)
         if won {
-            var c = t.toCountry()
-            c.alliances.insert(me.id)
+            var c = st.territory.map { gs.countries[$0] } ?? t!.toCountry()
+            c.territoryOf = nil
+            c.alliances = [me.id]
             c.diplomaticRelations[me.id] = 70
             c.diplomaticRelations[owner.id] = -60
-            gs.countries.append(c)
+            if let i = st.territory { gs.countries[i] = c } else { gs.countries.append(c) }
+            if let oi = gs.countries.firstIndex(where: { $0.id == owner.id }) { gs.countries[oi].alliances.remove(land) }
             gs.countries[pi].alliances.insert(land)
             gs.countries[pi].diplomaticRelations[land] = 70
             gs.shadow.post("\(c.name) declares its independence from \(owner.name), with \(me.name)'s backing.", date: gs.currentDate, severity: 3)

@@ -50,6 +50,7 @@ extension GameEngine {
         for i in gs.advisors.indices { AdviceEngine.refreshRecommendation(advisorIndex: i, in: gs) }
         self.gameState = gs
         processCabinets()   // 3.12.2: historical leaders of the day from the start
+        adoptOwnColonies()   // 3.28.2
     }
 
     /// Start a scenario from the scenario list.
@@ -96,6 +97,7 @@ extension GameEngine {
         processTerritoryEconomy()   // after the poll, so its impeachment warning always precedes the next one
         processCabinets()
         processEraTransitions()   // 3.15.0
+        adoptOwnColonies()   // 3.28.2
         processAdvisorFates(scale: scale)
         processHallOfInfamy()
 
@@ -986,7 +988,8 @@ extension GameEngine {
         self.gameState = gs
         logPresidentialOrder(action, targetID: targetID, advice: advice, warnings: warnings, size: size, warhead: warhead,
                              popularityBefore: popularityBefore, report: actionResult, resignation: resignation)
-        completePlayerAction()
+        // 3.28.2: an order that couldn't be carried out (an ❌ line: no warheads, a landlocked blockade…) costs no action.
+        if actionResult?.success != false { completePlayerAction() }
     }
 
     /// Build the result pop-up from the log lines an action just wrote (3.18.11). The new lines ARE the outcome

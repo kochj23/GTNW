@@ -55,7 +55,8 @@ final class WorldMapData {
                 out.append(shape(c.id, c.name, c.rings))
             }
         }
-        shapes = out
+        // 3.28.2: largest first, so smaller lands (enclaves like San Marino, Lesotho) are drawn and hit on top.
+        shapes = out.sorted { $0.bounds.width * $0.bounds.height > $1.bounds.width * $1.bounds.height }
     }
 
     /// Successor-state outlines claimed by historical countries when the modern state isn't in the game.
@@ -588,14 +589,19 @@ struct VectorWorldMap: View {
 
     private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>, pre: Set<String> = []) -> String? {
         let p = location.applying(t.inverted())
-        // 3.28.0: island dots first (several sit inside a bigger outline), within 10 points of the click.
-        let reach = 10 / max(abs(t.a), 0.0001)
+        // 3.28.0: island dots. 3.28.2: a dot wins only on a direct hit (4 pt), so a dot near a coast (Navassa) no longer
+        // takes clicks meant for Jamaica or Haiti; in open sea it still answers within 10 points.
+        let scale = max(abs(t.a), 0.0001), reach = 10 / scale
         let dots = Islands.dots.filter { pre.contains($0.id) || gameState.getCountry(id: $0.id) != nil }
-        if let d = dots.min(by: { hypot($0.lon - p.x, -$0.lat - p.y) < hypot($1.lon - p.x, -$1.lat - p.y) }),
-           hypot(d.lon - p.x, -d.lat - p.y) < reach { return d.id }
-        for s in data.shapes where s.bounds.contains(p) && s.path.contains(p) {
+        let nearest = dots.min(by: { hypot($0.lon - p.x, -$0.lat - p.y) < hypot($1.lon - p.x, -$1.lat - p.y) })
+        let dotDistance = nearest.map { hypot($0.lon - p.x, -$0.lat - p.y) * scale } ?? .infinity
+        if let d = nearest, dotDistance < 4 { return d.id }
+        // 3.28.2: topmost first. Shapes are painted in order, so an enclave (Lesotho, Bhutan, Armenia, Macau) is drawn
+        // over its neighbour and must be hit before it.
+        for s in data.shapes.reversed() where s.bounds.contains(p) && s.path.contains(p) {
             if let id = WorldMapData.selection(for: s.id, in: gameState, present: present, unclaimed: unclaimed) { return id }
         }
+        if let d = nearest, dotDistance < 10 { return d.id }
         // Dots for shapeless countries.
         let near = gameState.countries.filter { !hasShape($0.id) }.min {
             hypot($0.coordinates.lon - p.x, -$0.coordinates.lat - p.y) < hypot($1.coordinates.lon - p.x, -$1.coordinates.lat - p.y)

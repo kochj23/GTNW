@@ -1946,7 +1946,7 @@ final class TerritoryWealthPlayHistoryTests: XCTestCase {
         let synced = await service.syncNow()
         XCTAssertTrue(synced)
         let events = await remote.events(id)
-        let ev = try XCTUnwrap(events.first { $0.kind == "territory_producing" })
+        let ev = try XCTUnwrap(events.first { $0.kind == "territory_producing" && PlayFixtures.detail($0)["land"] as? String == "ZMB" })
         XCTAssertEqual(PlayFixtures.detail(ev)["name"] as? String, "Gotit")
         XCTAssertTrue((PlayFixtures.detail(ev)["resources"] as? String)?.contains("copper") ?? false)
         XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasPrefix("Gotit is now producing copper") })
@@ -2478,7 +2478,8 @@ final class GroupActionTests: XCTestCase {
         let europe = engine.groupMembers(.region(.europe))
         XCTAssertTrue(europe.contains("FRA")); XCTAssertFalse(europe.contains("JPN"))
         XCTAssertEqual(engine.groupMembers(.custom(name: "x", ids: ["FRA", "ZZZ", "DEU"])), ["FRA", "DEU"], "unknown ids drop out")
-        XCTAssertTrue(engine.groupMembers(.territories).isEmpty)
+        // 3.28.2: only the record's own colonies (Midway, Wake…) are territories at the start.
+        XCTAssertTrue(engine.groupMembers(.territories).allSatisfy { Islands.byID[$0] != nil })
     }
 
     func testPlansSplitTheMoneyAndAddUp() throws {
@@ -3613,8 +3614,10 @@ final class MapSweepTests: XCTestCase {
                     XCTAssertTrue(present.contains(sel), "\(year) \(s.id): owner \(sel) not on the board")
                 }
                 XCTAssertTrue(cards.contains(sel), "\(year) \(s.id): no card for \(sel)")
-                // Offscreen click: the outline under an interior point selects something.
-                if let p = interior(s), let top = shapes.first(where: { $0.bounds.contains(p) && $0.path.contains(p) }) {
+                // Offscreen click: the outline under an interior point selects something. 3.28.2: the map hits the
+                // topmost outline (painted last), so an enclave such as Lesotho is reached rather than South Africa.
+                if let p = interior(s), let top = shapes.last(where: { $0.bounds.contains(p) && $0.path.contains(p) }) {
+                    if ["LSO", "BTN", "ARM", "SMR", "VAT"].contains(s.id) { XCTAssertEqual(top.id, s.id, "\(year): a click on \(s.id) reaches \(top.id)") }
                     XCTAssertNotNil(WorldMapData.selection(for: top.id, in: gs, present: present, unclaimed: unclaimed), "\(year) \(s.id): click finds nothing")
                 }
             }
