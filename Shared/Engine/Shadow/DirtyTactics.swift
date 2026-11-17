@@ -306,6 +306,31 @@ extension DirtyTactics {
                  + "it widely in Vietnam from the mid-1960s, where it was not then unlawful. It clears a position "
                  + "without levelling it — and it blurs the line between a police tool and poison gas.",
             target: .nation, canBeCovert: true, people: 6),
+        // 3.31.0: the research step of the covert behavioural-agents programme (CovertAgents.swift). Abstract by
+        // design: three agent classes and three vectors, decisions and consequences only.
+        DirtyTactic(
+            id: "covert_agents", group: .chemical, name: "Covert behavioural-agents programme",
+            from: CovertAgents.firstYear,
+            periods: [p(CovertAgents.firstYear, .restricted, "Restricted: the Nuremberg Code (1947) forbids experiments on people without their consent; no treaty yet names the practice."),
+                      p(1975, .treatyBanned, bwcNote),
+                      p(1997, .treatyBanned, cwcNote)],
+            blurb: "An intelligence-service research programme into agents that disorient, agitate or sedate a "
+                 + "population, of the kind the Church Committee (1975) and the Rockefeller Commission exposed at the "
+                 + "CIA's MKUltra. A year and $2B to stand up, with a running cost and a domestic leak risk; then "
+                 + "operations against a nation from its dossier. Everything it does fades, and nothing it does stays secret forever.",
+            target: .none, canBeCovert: true, people: 20),
+        // 3.31.0: the rung after it: an engineered pathogen (Outbreaks.swift). Abstract by design.
+        DirtyTactic(
+            id: "engineered_pathogen", group: .chemical, name: "Engineered pathogen programme",
+            from: CovertAgents.firstYear,
+            periods: [p(CovertAgents.firstYear, .restricted, genevaProtocolSignedNote),
+                      p(1975, .treatyBanned, bwcNote),
+                      p(2002, .treatyBanned, romeNote)],
+            blurb: "Two years and $6B to turn a biological arsenal into a disease built to spread through an enemy. "
+                 + "Needs the behavioural-agents programme and a biological capability. Released, it crosses borders "
+                 + "to allies and home; the laboratory itself can fail containment. A countermeasure programme limits "
+                 + "the blowback. After the Biological Weapons Convention (1975) it is among the gravest crimes there are.",
+            target: .none, canBeCovert: true, people: 30),
     ]
 }
 
@@ -720,6 +745,12 @@ extension GameEngine {
             return "\(t.name) belongs to an age that has passed."
         }
         if gs.shadow.tacticPrograms[id] != nil { return "\(t.name) is already under way." }
+        if id == "covert_agents", gs.shadow.agentProgramSince != nil { return "The programme is running: operations are ordered from a nation's dossier." }
+        if id == "engineered_pathogen" {
+            if gs.shadow.pathogenReadySince != nil { return "The pathogen is ready: a release is ordered from a nation's dossier." }
+            if gs.shadow.agentProgramSince == nil { return "The behavioural-agents programme must be running first." }
+            if !hasBiologicalCapability() { return "No biological capability: restart the biological weapons programme first." }
+        }
         switch t.target {
         case .none:
             break
@@ -988,6 +1019,7 @@ extension GameEngine {
         processHiredTroops()
         processTacticStances()
         processTacticAftermath()
+        processCovertAgents()   // 3.31.0
     }
 
     /// A programme delivers. Chemistry hands the Army a stockpile the weapons catalog then prices as usual (3.6.0);
@@ -1004,6 +1036,13 @@ extension GameEngine {
             gs.shadow.wmdPrograms[WMDKind.biological.rawValue] = WMDProgram(kind: .biological, started: p.started, ready: gs.currentDate,
                                                                             discovered: p.discovered)
             gs.shadow.post("The biological programme reports success. Its records are sealed.", date: gs.currentDate, severity: 2)
+        case "engineered_pathogen":
+            gs.shadow.pathogenReadySince = gs.currentDate   // 3.31.0
+            gs.shadow.post("The pathogen programme reports a weapon ready. Its laboratory is sealed.", date: gs.currentDate, severity: 2)
+        case "covert_agents":
+            gs.shadow.agentProgramSince = gs.currentDate   // 3.31.0
+            gs.shadow.post("The behavioural-agents programme reports ready for operations. Its files are compartmented.",
+                           date: gs.currentDate, severity: 2)
         default:
             break
         }
@@ -1115,6 +1154,10 @@ extension DirtyTactics {
             return "CS was synthesised in 1928 but did not enter military use until about 1959."
         case "thermobaric":
             return "Fuel-air explosives reach the battlefield from about 1969."
+        case "covert_agents":
+            return "No intelligence service ran such a programme before MKUltra was authorised in April 1953."
+        case "engineered_pathogen":
+            return "The agents programme it builds on begins in 1953."
         default:
             return "The technology and the organisation for it do not exist yet."
         }
@@ -1125,6 +1168,8 @@ extension DirtyTactics {
         switch t.id {
         case "chem_program": return 4
         case "human_subject_program": return 3
+        case "covert_agents": return 1   // 3.31.0
+        case "engineered_pathogen": return 2
         default: return nil
         }
     }
@@ -1133,6 +1178,8 @@ extension DirtyTactics {
         switch t.id {
         case "chem_program": return 12
         case "human_subject_program": return 8
+        case "covert_agents": return CovertAgents.programCost
+        case "engineered_pathogen": return 6
         default: return 0
         }
     }
@@ -1187,6 +1234,8 @@ extension DirtyTactics {
         case "contaminated_goods": return "A quartermaster's letters surface: the United States handed out infected stores\(at)."
         case "gas_resistance": return "Photographs of gassed villages\(at) reach the newspapers."
         case "human_subject_program": return "A defector's testimony exposes an American programme that experimented on prisoners."
+        case "covert_agents": return "Investigators trace a covert behavioural-agents operation\(at) to American intelligence."
+        case "engineered_pathogen": return "Scientists trace the outbreak\(at) to an American weapons laboratory."
         case "incendiary_shells": return "An agent is taken with a carpet bag of incendiary compound\(at); the papers have the rest."
         case "profiteer_contracts": return "The ration contracts are published in full. So are the names on the cheques."
         case "torture": return "Photographs from the interrogation rooms\(at) are published. There is no explaining them."

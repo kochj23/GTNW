@@ -636,6 +636,48 @@ struct CountryDossier: View {
         .padding(8)
     }
 
+    /// 3.31.0: outbreaks in this country, and the covert programmes' orders (agents, pathogen, countermeasures).
+    @ViewBuilder
+    private func covertPrograms(_ c: Country) -> some View {
+        ForEach(gameState.shadow.outbreaks.filter { $0.waves[c.id] != nil }) { o in
+            Text(verbatim: "OUTBREAK: \(o.name.uppercased()) · WEEK \(Int(o.waves[c.id] ?? 0)) OF \(Int(o.waveWeeks))")
+                .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.terminalRed).fixedSize(horizontal: false, vertical: true)
+        }
+        if gameState.shadow.agentOps.contains(where: { $0.target == c.id }) {
+            Text("UNEXPLAINED UNREST AND ILLNESS REPORTED").font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.terminalAmber)
+        }
+        if gameState.playerCountryID == "USA" {
+            HStack(spacing: 6) {
+                if !c.isPlayerControlled && gameState.shadow.agentProgramSince != nil {
+                    Menu("COVERT AGENTS") {
+                        ForEach(AgentClass.allCases) { a in
+                            Section(a.title) {
+                                ForEach(AgentVector.allCases) { v in
+                                    Button(v.title) { gameEngine.runAgentOperation(target: c.id, agent: a, vector: v) }
+                                        .disabled(gameEngine.agentProblem(target: c.id, agent: a, vector: v) != nil)
+                                }
+                            }
+                        }
+                    }
+                    .fixedSize().help("A covert behavioural-agents operation against \(c.name). Effects fade; exposure does not.")
+                }
+                if !c.isPlayerControlled && gameState.shadow.pathogenReadySince != nil {
+                    Button("RELEASE PATHOGEN") { gameEngine.releasePathogen(target: c.id) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed))
+                        .disabled(gameEngine.pathogenProblem(target: c.id) != nil)
+                        .help("It will not stay in \(c.name).")
+                }
+                if c.isPlayerControlled && gameState.shadow.countermeasureReady == nil
+                    && (gameState.shadow.pathogenReadySince != nil || gameState.shadow.tacticPrograms["engineered_pathogen"] != nil) {
+                    Button("COUNTERMEASURES") { gameEngine.startCountermeasure() }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+                        .disabled(gameState.actionsRemaining == 0)
+                        .help("A home countermeasure and vaccine programme: $3B, a year")
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var dossier: some View {
             if let c = country {
@@ -738,6 +780,7 @@ struct CountryDossier: View {
                         }
                     }
                     .padding(.top, 4)
+                    covertPrograms(c)   // 3.31.0
                 }
                 .padding(8)
             } else if let id = unclaimedID, let st = gameState.preState(id) {

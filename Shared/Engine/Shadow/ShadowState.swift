@@ -220,6 +220,17 @@ struct ShadowState: Codable {
     var lostOffers: Set<String> = []
     var empireAtStart: [String]?
     var worldBrief: WorldBriefState?
+    /// 3.31.0: the covert behavioural-agents programme (ready since this date; nil = none or shut down), its
+    /// operations still taking effect, and how many have been run.
+    var agentProgramSince: Date?
+    var agentOps: [AgentOperation] = []
+    var agentOpsRun = 0
+    /// 3.31.0: outbreaks under way (real and engineered), the engineered-pathogen programme (ready since), the home
+    /// countermeasure programme (ready on this date), and the intelligence posture against chemical terror (0–3).
+    var outbreaks: [Outbreak] = []
+    var pathogenReadySince: Date?
+    var countermeasureReady: Date?
+    var intelPosture: Double = 0
 
     // Scenario
     var scenarioID: String?
@@ -261,6 +272,7 @@ struct ShadowState: Codable {
         case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare, prosperousSince, satellites
         case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
         case renames, claimCampaign, landBids, lostOffers, empireAtStart, worldBrief
+        case agentProgramSince, agentOps, agentOpsRun, outbreaks, pathogenReadySince, countermeasureReady, intelPosture
     }
 
     init() {}
@@ -350,6 +362,13 @@ struct ShadowState: Codable {
         lostOffers = (try? c.decodeIfPresent(Set<String>.self, forKey: .lostOffers)) ?? []
         empireAtStart = try? c.decodeIfPresent([String].self, forKey: .empireAtStart)
         worldBrief = try? c.decodeIfPresent(WorldBriefState.self, forKey: .worldBrief)
+        agentProgramSince = try? c.decodeIfPresent(Date.self, forKey: .agentProgramSince)
+        agentOps = (try? c.decodeIfPresent([AgentOperation].self, forKey: .agentOps)) ?? []
+        agentOpsRun = (try? c.decodeIfPresent(Int.self, forKey: .agentOpsRun)) ?? 0
+        outbreaks = (try? c.decodeIfPresent([Outbreak].self, forKey: .outbreaks)) ?? []
+        pathogenReadySince = try? c.decodeIfPresent(Date.self, forKey: .pathogenReadySince)
+        countermeasureReady = try? c.decodeIfPresent(Date.self, forKey: .countermeasureReady)
+        intelPosture = (try? c.decodeIfPresent(Double.self, forKey: .intelPosture)) ?? 0
     }
 }
 

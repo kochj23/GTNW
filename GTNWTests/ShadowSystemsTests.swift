@@ -3653,15 +3653,19 @@ final class EraNationTests: XCTestCase {
 final class LivingWorldTests: XCTestCase {
 
     /// Run `turns` monthly turns of the real Shadow turn plus the rule-based AI, as `endTurn` does (minus the async).
-    static func simulate(year: Int, difficulty: DifficultyLevel, turns: Int = 200) -> (GameEngine, GameState) {
+    /// 3.31.0: seeded (the game's RNG and the AI's action rolls), so a comparison between difficulties can't flip
+    /// on a coin toss.
+    static func simulate(year: Int, difficulty: DifficultyLevel, turns: Int = 200, seed: UInt64 = 1789) -> (GameEngine, GameState) {
         let e = GameEngine()
         e.startNewGame(difficulty: difficulty, turnLength: .month, year: year)
         let gs = e.gameState!
+        gs.rng = GameRNG(seed: seed &+ UInt64(year))
+        var rolls = GameRNG(seed: seed &* 31 &+ UInt64(year))
         for _ in 0..<turns {
             gs.turn += 1
             e.processShadowTurn()
             let p = e.aiActionProbability(gs)
-            for c in gs.liveCountries where c.id != gs.playerCountryID && Double.random(in: 0..<1) < p { e.applyRuleBasedAction(for: c.id) }
+            for c in gs.liveCountries where c.id != gs.playerCountryID && Double.random(in: 0..<1, using: &rolls) < p { e.applyRuleBasedAction(for: c.id) }
         }
         return (e, gs)
     }

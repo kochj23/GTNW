@@ -96,6 +96,8 @@ extension GameEngine {
         processLandMarket()      // 3.29.0: rival bids, auctions, powers selling land they want rid of
         processClaimCampaign()   // 3.29.0: one flag (or a few) a turn until the campaign is done
         processWorldBrief()      // 3.29.0: real-world cyber news in modern games
+        processOutbreaks()       // 3.31.0: pandemics, real and engineered
+        processChemicalThreats() // 3.31.0: chemical terror and state attacks on civilians
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)

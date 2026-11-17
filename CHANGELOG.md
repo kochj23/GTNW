@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.31.0] - 2026-11-16 — Covert programmes and plagues
+
+Everything here is modelled as a decision and its consequences: no substance, organism, method or quantity appears
+anywhere in the game.
+
+### Added
+- **Covert behavioural-agents programme** (MKUltra-style, United States, from 1953). A domestic research programme
+  first (one action, $2B, a running cost, its own leak risk), then operations from a nation's dossier: an agent class
+  (disorienting, stimulant, sedative) × a vector (water, food, air from 1962). Effects are temporary and can spill over
+  to neighbours or allies; stimulants can backfire into the target lashing out. Discovery rises with the era and with
+  repeats; exposure brings a Church Committee–style scandal, Senate hearings, collapse abroad and, after the BWC (1975)
+  and CWC (1997), tribunal risk. Every operation counts in the Hall of Infamy. Rival powers may run it against the
+  player: "covert contamination suspected" (investigate / retaliate / keep it quiet).
+- **Engineered pathogen programme**, the next rung, gated by a biological capability. A release spreads turn by turn
+  along land borders, alliances and Factbook trade partners, to allies and home. A home countermeasure programme
+  ($3B, a year) limits the blowback; the programme can fail containment at home. Rivals can release one: an outbreak of
+  suspected deliberate origin (investigate / retaliate / accuse at the UN).
+- **Real pandemics on their dates**: cholera (1829, 1846, 1863), 1918 influenza, 1957, 1968, 2009 H1N1 and COVID-19,
+  whose origin (natural spillover or laboratory accident) is presented as unresolved. Responses by era: quarantine or
+  lockdown, travel bans, a vaccine programme (from 1945), aid abroad, or nothing. Games that start mid-pandemic begin
+  with it under way.
+- **Chemical terrorism** (from the 1990s), after the Tokyo subway attack: attacks on transit anywhere, the player's
+  country included, with medical / crackdown / intelligence-sharing / surveillance responses. Intelligence posture
+  lowers the odds at home. Never a player order.
+- **State chemical attacks on civilians**, after Halabja: computer-run governments facing insurgencies may attack
+  their own regions, with condemn / sanctions / aid / protection mission (1991+) / tribunal (1993+) / look-away
+  choices. Never a player order.
+- Halabja (16 March 1988) and the Tokyo subway attack (20 March 1995) in the record of the age.
+
+### Fixed
+- `LivingWorldTests.testTheWorldIsAliveInEveryEraAndDifficulty` is seeded (the game RNG and the AI action rolls), so
+  the difficulty comparison can no longer flip on a tie.
+
 ## [3.30.0] - 2026-11-16 — The historical record of war
 
 ### Added

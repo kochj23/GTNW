@@ -619,6 +619,9 @@ extension WorldPolitics {
         a("greif", "DEU", 1944, 1944, 6, "German commandos in American uniform are taken behind the Ardennes front."),
         a("khmer", "KHM", 1975, 1979, 20, "The Khmer Rouge empty Cambodia's cities. A quarter of the country will not survive it."),
         a("rwanda", "RWA", 1994, 1994, 18, "Rwanda's Hutu Power government organises the massacre of the Tutsi population."),
+        // 3.31.0: chemical weapons against civilians, by a state and by a cult.
+        a("halabja", "IRQ", 1988, 1988, 20, "On 16 March 1988, during the Anfal campaign against the Kurds, Iraqi forces attack the town of Halabja with chemical weapons. About five thousand civilians are killed."),
+        note("tokyo_subway", "", 1995, "On 20 March 1995 members of the Aum Shinrikyo cult release a nerve agent on the Tokyo subway. Thirteen people are killed and thousands are injured."),
     ]
 
     /// The era's dirty tactics a computer-run power might use in a war it is already fighting.

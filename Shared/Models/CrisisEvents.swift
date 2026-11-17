@@ -201,6 +201,8 @@ struct CrisisConsequences: Codable {
     var campaign: Double? = nil
     /// A campaign decision handled by `ElectionCycle.apply` ("retire", "debate|mock", "gamble|…").
     var electionChoice: String? = nil
+    /// 3.31.0: a decision for the simulation (see `ShadowChoice`).
+    var shadowChoice: String? = nil
 
     init(relationshipChanges: [String: Int] = [:], approvalChange: Int = 0,
          defconChange: Int = 0, economicImpact: Int = 0, militaryImpact: Int = 0,
@@ -248,6 +250,8 @@ class CrisisManager: ObservableObject {
     var currentYear: (() -> Int?)?
     /// 3.28.0: the President's nation, so cards written for the United States read right for any nation.
     var playerNation: (() -> Country?)?
+    /// 3.31.0: hands a card's `shadowChoice` back to the engine (outbreak responses, intelligence posture…).
+    var shadowChoice: ((String, GameState) -> Void)?
 
     /// Generate a random crisis event based on game state
     func generateRandomCrisis(gameState: GameState) -> CrisisEvent? {
@@ -1517,6 +1521,9 @@ class CrisisManager: ObservableObject {
         // 3.21.0: campaign decisions.
         if consequences.campaign != nil || consequences.electionChoice != nil {
             ElectionCycle.apply(consequences, to: gameState)
+        }
+        if let choice = consequences.shadowChoice {   // 3.31.0
+            if let hand = shadowChoice { hand(choice, gameState) } else { ShadowChoice.apply(choice, engine: nil, to: gameState) }
         }
 
         // Trigger war if needed

@@ -103,6 +103,7 @@ class GameEngine: ObservableObject {
         advisors = Advisor.trumpCabinet()
         crisisManager.currentYear = { [weak self] in self?.gameState?.currentYear }
         crisisManager.playerNation = { [weak self] in self?.gameState?.getPlayerCountry() }
+        crisisManager.shadowChoice = { [weak self] choice, gs in ShadowChoice.apply(choice, engine: self, to: gs) }
         crisisManager.onResolved = { [weak self] crisis, option, worked in
             self?.logCrisisDecision(crisis, option: option, worked: worked)
             if worked, let enemy = crisis.options[option].consequences.warPlanAgainst { self?.executeWarPlan(against: enemy) }
