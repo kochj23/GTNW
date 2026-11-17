@@ -600,6 +600,13 @@ class GameEngine: ObservableObject {
                 gameState.aiActionSummary.append("\(country.flag) \(country.name) 📢 condemns \(getCountry(targetID)?.name ?? targetID) (no way to strike it)")
                 break
             }
+            // 3.32.0: the cabinet weighs it before it orders it, and a cautious government with a workable cheaper
+            // instrument steps back. Obligated wars (an ally already in it) are not reconsidered here.
+            if country.id != gameState.playerCountryID, let t = getCountry(targetID),
+               !WarCouncil.obligated(country, t, in: gameState),
+               let d = deliberateWar(actor: country.id, target: targetID), d.chose != "war" {
+                break   // the deliberation is on the record; the war is not
+            }
             declareWar(aggressor: country.id, defender: targetID)
             if let target = getCountry(targetID) {
                 eventLogger.log("Declared war on \(target.name)", type: .war, country: country.name, turn: gameState.turn)
@@ -833,9 +840,12 @@ class GameEngine: ObservableObject {
               let defenderCountry = getCountry(defender) else { return }
         // 3.28.0: already at war: nothing to declare (no second war record, no second DEFCON step).
         if aggressorCountry.atWarWith.contains(defender) { return }
-        if !scripted, aggressor != gameState.playerCountryID, !WarCouncil.obligated(aggressorCountry, defenderCountry, in: gameState),
-           let d = deliberateWar(actor: aggressor, target: defender), d.chose != "war" {
-            return   // the council took the cheaper instrument; the deliberation is on the record
+        // The council's paper is written for every computer-run war, but a declaration that arrives here has already
+        // been decided — by the nation's own cabinet (executeAIAction, which asks the council first and can step
+        // back), by a revolt, an ally's treaty, a blockade that went too far. Nothing second-guesses an order at the
+        // moment it is carried out, so this records the reasoning and does not veto it.
+        if !scripted, aggressor != gameState.playerCountryID {
+            deliberateWar(actor: aggressor, target: defender, committed: true)
         }
         watchCue("sfx.war\(Int.random(in: 1...5))")
         gameState.flash([aggressor, defender], .hostile, "⚔️ \(aggressorCountry.name) declares war on \(defenderCountry.name)")

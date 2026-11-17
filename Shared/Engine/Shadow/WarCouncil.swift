@@ -386,11 +386,23 @@ enum WarCouncil {
 extension GameEngine {
     /// A computer-run nation's decision to attack, recorded before the first move. Returns the deliberation, whose
     /// `chose` says whether it went ahead. Only the deliberation is kept; the caller carries out the choice.
+    /// `committed`: the war has already been ordered (by the cabinet that just asked, by a treaty, by a revolt), so
+    /// the paper records what was weighed and reads "war" — the comparison with the cheaper instruments stays on it.
     @discardableResult
-    func deliberateWar(actor: String, target: String, roll: Double? = nil) -> WarDeliberation? {
+    func deliberateWar(actor: String, target: String, roll: Double? = nil, committed: Bool = false) -> WarDeliberation? {
         guard let gs = gameState, let a = gs.getCountry(id: actor), let d = gs.getCountry(id: target) else { return nil }
+        // One sitting per pair per turn: the cabinet does not write the same paper twice on its way to the same war.
+        if let last = gs.shadow.deliberations.last, last.actor == actor, last.target == target, last.turn == gs.turn {
+            return last
+        }
         let r = roll ?? Double.random(in: 0..<1, using: &gs.rng)
-        let dl = WarCouncil.deliberate(a, d, in: gs, roll: r)
+        var dl = WarCouncil.deliberate(a, d, in: gs, roll: r)
+        if committed, dl.chose != "war" {
+            dl.chose = "war"
+            dl.statement = dl.statement.replacingOccurrences(
+                of: "We hold off and take the cheaper instrument.",
+                with: "The order had already gone out. We go, and the cheaper instrument stays on the paper.")
+        }
         gs.shadow.deliberations.append(dl)
         if gs.shadow.deliberations.count > WarCouncil.keep { gs.shadow.deliberations.removeFirst() }
         if dl.chose == "war" {

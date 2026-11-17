@@ -586,6 +586,7 @@ final class Release332SecurityTests: XCTestCase {
     func testRecordsAreBoundedAndInputChecked() throws {
         let (e, gs) = try R329.game(1900)
         for _ in 0..<(WarCouncil.keep + 20) {
+            gs.turn += 1   // one sitting per pair per turn, so the record only grows as time passes
             e.deliberateWar(actor: "DEU", target: "FRA", roll: 0.9)
             e.stateCasus(actor: "DEU", target: "FRA", casus: .borderIncident, applyReaction: false)
         }

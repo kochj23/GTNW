@@ -539,6 +539,17 @@ extension GameEngine {
               let vi = gs.countries.firstIndex(where: { $0.id == s.victor }) else { self.gameState = gs; return false }
         let name = gs.countries[li].name
         var loser = gs.countries[li]
+        // 3.32.2: the terms the settlement leaves on paper — what was kept, paid and promised. Signed before the
+        // settlement is announced, so the headline the President reads last is the settlement itself, and the
+        // indemnity is figured on the country as it stood when it lost.
+        switch choice {
+        case .annex:
+            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false, territory: [s.loser])
+        case .government(let g):
+            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false, alliance: g == .clientState)
+        case .victorsModel:
+            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false)
+        }
         switch choice {
         case .annex:
             let owner = gs.countries[gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) ?? vi]
@@ -590,15 +601,6 @@ extension GameEngine {
             gs.shadow.post("A new government is installed in \(loser.capital).", date: gs.currentDate, severity: 3)
         }
         self.gameState = gs
-        // 3.32.2: the terms the settlement leaves on paper — what was kept, paid and promised.
-        switch choice {
-        case .annex:
-            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false, territory: [s.loser])
-        case .government(let g):
-            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false, alliance: g == .clientState)
-        case .victorsModel:
-            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false)
-        }
         return true
     }
 
