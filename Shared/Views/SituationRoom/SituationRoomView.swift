@@ -23,7 +23,7 @@ struct SituationRoomView: View {
     @State private var sheet: SituationSheet?
 
     enum SituationSheet: String, Identifiable {
-        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space, airCampaign
+        case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space, airCampaign, unclaimed
         var id: String { rawValue }
     }
 
@@ -74,6 +74,7 @@ struct SituationRoomView: View {
             case .peace: PeaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .statehood: StatehoodSheet(gameState: gameState).environmentObject(gameEngine)
             case .factbook: FactbookSheet(gameState: gameState)
+            case .unclaimed: UnclaimedLandsSheet(gameState: gameState) { selectedCountryID = $0; zoom = .country }
             case .tutorial: TutorialSheet()
             case .space: SpaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .airCampaign: AirCampaignSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -271,6 +272,7 @@ struct SituationTopBar: View {
             Button("PEACE") { onSheet(.peace) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))   // 3.16.0
             Button("TACTICS") { onSheet(.tactics) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))   // 3.17.0: dirty tactics
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy
+            Button("UNCLAIMED") { onSheet(.unclaimed) }.buttonStyle(ThemedButtonStyle(color: VectorWorldMap.claimableColor))   // 3.28.1
             Button("FACTBOOK") { onSheet(.factbook) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))   // 3.18.13: reference tab
             if gameState.currentYear >= GameEngine.spaceAgeYear {   // 3.18.16: Space Force (space age from 1957)
                 Button("SPACE") { onSheet(.space) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))

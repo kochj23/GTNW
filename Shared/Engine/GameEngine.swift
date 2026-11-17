@@ -665,7 +665,8 @@ class GameEngine: ObservableObject {
     /// Launch nuclear strike
     func launchNuclearStrike(from attackerID: String, to targetID: String, warheads: Int, type: WarheadType? = nil) {
         guard let gameState = gameState else { return }
-        gameState.flash([attackerID, targetID], .hostile)
+        gameState.flash([attackerID, targetID], .hostile,
+                        "☢️ \(getCountry(attackerID)?.name ?? attackerID) strikes \(getCountry(targetID)?.name ?? targetID)")
         guard let attackerIndex = gameState.countries.firstIndex(where: { $0.id == attackerID }),
               let targetIndex = gameState.countries.firstIndex(where: { $0.id == targetID }) else { return }
 
@@ -819,7 +820,7 @@ class GameEngine: ObservableObject {
         // 3.28.0: already at war: nothing to declare (no second war record, no second DEFCON step).
         if aggressorCountry.atWarWith.contains(defender) { return }
         watchCue("sfx.war\(Int.random(in: 1...5))")
-        gameState.flash([aggressor, defender], .hostile)
+        gameState.flash([aggressor, defender], .hostile, "⚔️ \(aggressorCountry.name) declares war on \(defenderCountry.name)")
 
         // Update countries
         if let aggressorIndex = gameState.countries.firstIndex(where: { $0.id == aggressor }) {
@@ -856,7 +857,7 @@ class GameEngine: ObservableObject {
     func formAlliance(country1: String, country2: String) {
         guard let gameState = gameState else { return }
         guard let c1 = getCountry(country1), let c2 = getCountry(country2) else { return }
-        gameState.flash([country1, country2], .friendly)
+        gameState.flash([country1, country2], .friendly, "🤝 \(c1.name) and \(c2.name) form an alliance")
 
         // Update countries
         if let index1 = gameState.countries.firstIndex(where: { $0.id == country1 }) {

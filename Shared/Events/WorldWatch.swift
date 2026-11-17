@@ -49,7 +49,7 @@ enum WorldWatch {
             let war = gs.activeWars.last { Set([$0.aggressor, $0.defender]) == Set(ids) }
             let (agg, def) = war.map { $0.aggressor == a.id ? (a, b) : (b, a) } ?? (a.militaryStrength >= b.militaryStrength ? (a, b) : (b, a))
             headlines.append("⚔️ WAR: \(agg.name) and \(def.name) are at war.")
-            gs.flash([agg.id, def.id], .hostile)   // 3.28.0: covers wars that skip declareWar (collective defense)
+            gs.flash([agg.id, def.id], .hostile, "⚔️ \(agg.name) and \(def.name) are at war")   // 3.28.0: covers wars that skip declareWar (collective defense)
             if let c = warCrisis(aggressor: agg, defender: def, gs: gs) {
                 decisions.append(((agg.isPlayerControlled || def.isPlayerControlled) ? 0 : 2, c))
             }
@@ -63,11 +63,11 @@ enum WorldWatch {
             if oldOwner == newOwner && !newOwner.isEmpty { continue }     // a territory's government follows its owner
             if newOwner.isEmpty == false, oldOwner != newOwner, let owner = gs.getCountry(id: newOwner) {
                 headlines.append("🏴 \(c.name) has fallen under the control of \(owner.name).")
-                gs.flash([c.id, owner.id], .hostile)
+                gs.flash([c.id, owner.id], .hostile, "🏴 \(owner.name) takes control of \(c.name)")
                 decisions.append((1, annexationCrisis(country: c, owner: owner, gs: gs)))
             } else if newOwner.isEmpty, !oldOwner.isEmpty {
                 headlines.append("🕊️ \(c.name) has regained its independence.")
-                gs.flash([c.id, oldOwner], .friendly)
+                gs.flash([c.id, oldOwner], .friendly, "🕊️ \(c.name) regains its independence")
                 decisions.append((3, liberationCrisis(country: c, formerOwner: gs.getCountry(id: oldOwner), gs: gs)))
             } else if oldGov != newGov {
                 headlines.append("⚖️ Change of power in \(c.name): \(oldGov) → \(newGov).")

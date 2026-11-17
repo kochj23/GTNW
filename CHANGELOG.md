@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.28.1] - 2026-11-16 — What the map is blinking about, and where the free land is
+
+### Added
+- **Flash captions.** Every blinking country now says what happened, in a steady caption at the map's lower left
+  ("⚔️ India declares war on Pakistan", "France arms rebels in Algeria", a disaster's headline). Up to four at a
+  time, eight seconds each, DEFCON-worded only from 1959.
+- **UNCLAIMED list** (Situation Room top bar). Every land no government holds this year: uninhabited islands first
+  (plant the flag), then open land such as Antarctica, inhabited islands and peoples' lands. SHOW selects it on the
+  map, where its dossier offers the claim. In a modern start no island is unclaimed; the list says so by omission.
+
+### Fixed
+- 3.28.0 exports were development-signed and would not open on Macs outside the provisioning profile; release
+  binaries are ad-hoc signed again, like 3.27.1.
+
 ## [3.28.0] - 2026-11-16 — Islands, flashes and the war card
 
 ### Added

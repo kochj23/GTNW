@@ -161,3 +161,38 @@ extension GameEngine {
         return true
     }
 }
+
+/// One land nobody governs, for the Situation Room's UNCLAIMED list (3.28.1).
+struct UnclaimedLand: Identifiable, Equatable {
+    enum Kind: Int, Comparable {
+        case emptyIsland, land, island, peoples
+        static func < (a: Kind, b: Kind) -> Bool { a.rawValue < b.rawValue }
+        var label: String {
+            switch self {
+            case .emptyIsland: return "Uninhabited island: plant the flag"
+            case .land: return "No government, no army"
+            case .island: return "Inhabited island: take by force"
+            case .peoples: return "Peoples' land: take by force"
+            }
+        }
+    }
+    let id: String
+    let name: String
+    let kind: Kind
+}
+
+extension GameState {
+    /// Every land no government in the game holds this year: unclaimed land (Antarctica and the rest), unheld islands,
+    /// and peoples' lands. The easiest to take come first.
+    var unclaimedLands: [UnclaimedLand] {
+        let plain = unclaimedLandIDs.map { id in
+            UnclaimedLand(id: id, name: id == Antarctica.id ? "Antarctica" : WorldCountriesDatabase.template(id: id)?.name ?? id, kind: .land)
+        }
+        let unheld = indigenousLandIDs.compactMap { id -> UnclaimedLand? in
+            guard let st = preState(id) else { return nil }
+            let kind: UnclaimedLand.Kind = Islands.byID[id] == nil ? .peoples : Islands.uninhabited(id) ? .emptyIsland : .island
+            return UnclaimedLand(id: id, name: st.era.name, kind: kind)
+        }
+        return (plain + unheld).sorted { ($0.kind, $0.name) < ($1.kind, $1.name) }
+    }
+}

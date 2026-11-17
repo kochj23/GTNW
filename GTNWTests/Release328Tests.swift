@@ -229,3 +229,42 @@ final class Release328FrameTests: XCTestCase {
     }
 }
 #endif
+
+/// 3.28.1: the UNCLAIMED list.
+final class Release3281UnclaimedTests: XCTestCase {
+    /// Functional: in 1800 the empty islands come first and North Sentinel (inhabited) is listed; in 2027 no island
+    /// is unclaimed but Antarctica still is.
+    @MainActor
+    func testUnclaimedListFollowsTheYear() throws {
+        let (_, early) = try R328.game(1800)
+        let list = early.unclaimedLands
+        XCTAssertEqual(list.first(where: { $0.id == "CPT" })?.kind, .emptyIsland)
+        XCTAssertEqual(list.first(where: { $0.id == "NSI" })?.kind, .island)
+        XCTAssertEqual(list.first?.kind, .emptyIsland)
+        XCTAssertEqual(list.map(\.kind), list.map(\.kind).sorted())
+        let (_, modern) = try R328.game(2027)
+        XCTAssertFalse(modern.unclaimedLands.contains { $0.kind == .emptyIsland || $0.kind == .island })
+        XCTAssertTrue(modern.unclaimedLands.contains { $0.id == Antarctica.id })
+    }
+
+    /// Unit: a flash carries what happened (DEFCON-era worded), and a declared war says who declared on whom.
+    @MainActor
+    func testFlashesSayWhatHappened() throws {
+        let (e, gs) = try R328.game()
+        gs.mapFlashes = []
+        e.declareWar(aggressor: "IND", defender: "PAK")
+        XCTAssertEqual(gs.mapFlashes.last?.text, "⚔️ India declares war on Pakistan")
+        let (_, old) = try R328.game(1900)
+        old.flash(["GBR"], .hostile, "DEFCON 2")
+        XCTAssertFalse(old.mapFlashes.last?.text.contains("DEFCON") ?? true)
+    }
+
+    /// Frame: the sheet renders.
+    @MainActor
+    func testUnclaimedSheetRenders() throws {
+        let (_, gs) = try R328.game(1800)
+        let r = ImageRenderer(content: UnclaimedLandsSheet(gameState: gs) { _ in }.frame(width: 560, height: 600))
+        r.scale = 1
+        XCTAssertNotNil(r.cgImage)
+    }
+}

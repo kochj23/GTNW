@@ -1329,14 +1329,17 @@ struct MapFlash {
     let ids: Set<String>
     let tone: Tone
     let until: Date
+    /// 3.28.1: what happened, shown on the map while it blinks.
+    var text = ""
 }
 
 extension GameState {
     /// Blink these countries on the map: red for a hostile act, green for a friendly one, orange for a disaster.
-    func flash(_ ids: [String], _ tone: MapFlash.Tone, seconds: TimeInterval = 6) {
+    func flash(_ ids: [String], _ tone: MapFlash.Tone, _ text: String = "", seconds: TimeInterval = 8) {
         let now = Date()
         mapFlashes.removeAll { $0.until < now }
-        mapFlashes.append(MapFlash(ids: Set(ids.filter { !$0.isEmpty }), tone: tone, until: now.addingTimeInterval(seconds)))
+        mapFlashes.append(MapFlash(ids: Set(ids.filter { !$0.isEmpty }), tone: tone, until: now.addingTimeInterval(seconds),
+                                  text: EraWords.localizeAlert(text, year: currentYear)))
     }
 }
 

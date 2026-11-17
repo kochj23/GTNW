@@ -2244,3 +2244,47 @@ struct AirCampaignSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
+
+/// Every land nobody governs this year (3.28.1). SHOW selects it on the map, where the dossier offers the claim.
+struct UnclaimedLandsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var gameState: GameState
+    let onShow: (String) -> Void
+
+    var body: some View {
+        let lands = gameState.unclaimedLands
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "flag")
+                Text("UNCLAIMED LANDS").font(ThemeFont.mono(16, .bold))
+                Spacer()
+                Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
+            }
+            .foregroundColor(GTNWColors.terminalAmber)
+            Text("Land no government holds in \(String(gameState.currentYear)). Islands held by another power are seized from them (war), so they aren't listed.")
+                .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 6) {
+                    ForEach(lands) { land in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(verbatim: land.name).font(ThemeFont.mono(12, .bold)).foregroundColor(.white)
+                                Text(land.kind.label).font(ThemeFont.mono(9)).foregroundColor(land.kind == .emptyIsland ? GTNWColors.terminalGreen : .gray)
+                            }
+                            Spacer()
+                            Button("SHOW") { onShow(land.id); dismiss() }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                        }
+                        .padding(6)
+                        .background(Color.white.opacity(0.04))
+                    }
+                }
+            }
+            HStack {
+                Text("\(lands.count) unclaimed").font(ThemeFont.mono(10)).foregroundColor(.gray)
+                Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle())
+            }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(560), height: FontScale.h(600))
+    }
+}

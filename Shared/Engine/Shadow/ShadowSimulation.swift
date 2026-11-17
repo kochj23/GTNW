@@ -248,14 +248,14 @@ extension GameEngine {
         if crisisManager.activeCrisis == nil, Double.random(in: 0..<1) < gs.scale.probability(annual: 0.04),
            let disaster = crisisManager.createCrisis(type: .naturalDisaster, gameState: gs) {
             crisisManager.presentCrisis(disaster)
-            gs.flash(disaster.affectedCountries, .disaster)
+            gs.flash(disaster.affectedCountries, .disaster, disaster.title)
             addLog("🌀 DISASTER: \(disaster.title)", type: .critical)
         }
         // 3.20.0: emergencies abroad (3.21.1: about four a game year, one a turn at most), each a decision (send aid, evacuate, sanction…).
         let emergencies = min(WorldWatch.maxEmergenciesPerTurn, gs.scale.integer(annual: WorldWatch.emergenciesPerYear))
         for _ in 0..<max(0, emergencies) {
             guard let e = crisisManager.createCrisis(type: .worldDisaster, gameState: gs) else { continue }
-            gs.flash(e.affectedCountries, .disaster)
+            gs.flash(e.affectedCountries, .disaster, e.title)
             gs.shadow.post(e.title, date: gs.currentDate, severity: 2)
             // 3.21.1: a busy desk gets the news, not another decision.
             let waiting = crisisManager.pendingCrises.count + (crisisManager.activeCrisis == nil ? 0 : 1)
@@ -307,8 +307,13 @@ extension GameEngine {
         func tname(_ id: String) -> String { gs.getCountry(id: id)?.name ?? id }
         func againstUS(_ id: String) -> Bool { id == gs.playerCountryID }
         switch move {   // 3.28.0: the map shows who did what to whom (wars flash in declareWar)
-        case .improveRelations(let t), .tradeTies(let t), .seekAlliance(let t): gs.flash([country.id, t], .friendly)
-        case .condemn(let t), .covertAction(let t), .supportRebels(let t), .threaten(let t): gs.flash([country.id, t], .hostile)
+        case .improveRelations(let t): gs.flash([country.id, t], .friendly, "\(name) courts \(tname(t))")
+        case .tradeTies(let t): gs.flash([country.id, t], .friendly, "\(name) signs a trade deal with \(tname(t))")
+        case .seekAlliance(let t): gs.flash([country.id, t], .friendly, "\(name) seeks an alliance with \(tname(t))")
+        case .condemn(let t): gs.flash([country.id, t], .hostile, "\(name) condemns \(tname(t))")
+        case .covertAction(let t): gs.flash([country.id, t], .hostile, "\(name) runs a covert operation against \(tname(t))")
+        case .supportRebels(let t): gs.flash([country.id, t], .hostile, "\(name) arms rebels in \(tname(t))")
+        case .threaten(let t): gs.flash([country.id, t], .hostile, "\(name) threatens \(tname(t))")
         default: break
         }
         switch move {
@@ -772,7 +777,7 @@ extension GameEngine {
     func sendAid(_ package: AidVector, to countryID: String) -> AidOutcome? {
         guard let gs = gameState, let ti = gs.countries.firstIndex(where: { $0.id == countryID }),
               let player = gs.getPlayerCountry() else { return nil }
-        gs.flash([player.id, countryID], .friendly)
+        gs.flash([player.id, countryID], .friendly, "🎁 \(player.name) sends aid to \(gs.countries[ti].name)")
         guard package.total <= gs.shadow.aidRemaining + 0.0001 else {
             return AidOutcome(reaction: .reject, accepted: AidVector(), returned: package.total, relationChange: 0,
                               message: String(format: "Not enough aid money left this year ($%.1fB).", gs.shadow.aidRemaining))
@@ -959,7 +964,8 @@ extension GameEngine {
         let popularityBefore = gs.shadow.popularity
         let warnings = MajorAction.isMajor(action) && AdvisorWarnings.enabled()
             ? advisorWarnings(for: .attack(action, target: targetID, size: size)) : []
-        gs.flash([gs.playerCountryID, targetID], action.isHostile ? .hostile : .friendly)
+        gs.flash([gs.playerCountryID, targetID], action.isHostile ? .hostile : .friendly,
+                 "\(gs.getPlayerCountry()?.name ?? "You"): \(action.rawValue) → \(gs.getCountry(id: targetID)?.name ?? targetID)")
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size, warhead: warhead)
         reportActionOutcome(action, targetID: targetID, from: logStart)
         // Nuclear launches record their own fallout in launchNuclearStrike.

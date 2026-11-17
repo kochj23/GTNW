@@ -320,6 +320,7 @@ struct VectorWorldMap: View {
                 // ponytail: the timeline idles (draws nothing) after the last flash expires until the next state change.
                 if !gameState.mapFlashes.isEmpty {
                     TimelineView(.animation(minimumInterval: 1.0 / 8)) { tl in
+                      ZStack(alignment: .bottomLeading) {
                         Canvas { ctx, _ in
                             let live = gameState.mapFlashes.filter { $0.until > tl.date }
                             guard !live.isEmpty, Int(tl.date.timeIntervalSinceReferenceDate * 3) % 2 == 0 else { return }
@@ -340,6 +341,20 @@ struct VectorWorldMap: View {
                                 if let f = tone(c.id) { ring(CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t), Self.flashColor(f)) }
                             }
                         }
+                        // 3.28.1: what the blinking means, steady (not blinking) until it expires.
+                        VStack(alignment: .leading, spacing: 3) {
+                            ForEach(Array(gameState.mapFlashes.filter { $0.until > tl.date && !$0.text.isEmpty }.suffix(4).enumerated()), id: \.offset) { _, f in
+                                HStack(spacing: 6) {
+                                    Circle().fill(Self.flashColor(f.tone)).frame(width: 8, height: 8)
+                                    Text(verbatim: f.text).font(ThemeFont.mono(11, .bold)).foregroundColor(.white).lineLimit(1)
+                                }
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(Color.black.opacity(0.75))
+                                .overlay(Rectangle().stroke(Self.flashColor(f.tone), lineWidth: 1))
+                            }
+                        }
+                        .padding(10)
+                      }
                     }
                     .allowsHitTesting(false)
                 }
