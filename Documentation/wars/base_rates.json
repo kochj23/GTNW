@@ -425,5 +425,455 @@
     }
    }
   }
+ },
+ "nations": {
+  "AUT": {
+   "1789-1815": {
+    "n": 9,
+    "as_initiator": 2,
+    "initiator_won": 0.0,
+    "lost": 0.56,
+    "median_months": 14.9
+   },
+   "1816-1870": {
+    "n": 5,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.4,
+    "median_months": 2.4
+   }
+  },
+  "CHN": {
+   "1871-1913": {
+    "n": 4,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 1.0,
+    "median_months": 5.4
+   },
+   "1914-1945": {
+    "n": 4,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.75,
+    "median_months": 35.0
+   },
+   "1946-1991": {
+    "n": 6,
+    "as_initiator": 5,
+    "initiator_won": 0.6,
+    "lost": 0.0,
+    "median_months": 2.0
+   }
+  },
+  "DEU": {
+   "1789-1815": {
+    "n": 6,
+    "as_initiator": 2,
+    "initiator_won": 0.5,
+    "lost": 0.5,
+    "median_months": 8.4
+   },
+   "1816-1870": {
+    "n": 4,
+    "as_initiator": 3,
+    "initiator_won": 1.0,
+    "lost": 0.0,
+    "median_months": 6.4
+   },
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 1.0,
+    "median_months": 51.4
+   }
+  },
+  "DNK": {
+   "1789-1815": {
+    "n": 4,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.5,
+    "median_months": 23.1
+   }
+  },
+  "EGY": {
+   "1946-1991": {
+    "n": 6,
+    "as_initiator": 2,
+    "initiator_won": 0.0,
+    "lost": 0.67,
+    "median_months": 4.2
+   }
+  },
+  "ESP": {
+   "1789-1815": {
+    "n": 8,
+    "as_initiator": 3,
+    "initiator_won": 0.33,
+    "lost": 0.25,
+    "median_months": 41.7
+   },
+   "1816-1870": {
+    "n": 3,
+    "as_initiator": 2,
+    "initiator_won": 0.5,
+    "lost": 0.67,
+    "median_months": 7.2
+   }
+  },
+  "FIN": {
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.67,
+    "median_months": 13.4
+   }
+  },
+  "FRA": {
+   "1789-1815": {
+    "n": 14,
+    "as_initiator": 6,
+    "initiator_won": 0.17,
+    "lost": 0.43,
+    "median_months": 29.1
+   },
+   "1816-1870": {
+    "n": 6,
+    "as_initiator": 4,
+    "initiator_won": 0.5,
+    "lost": 0.17,
+    "median_months": 7.2
+   },
+   "1914-1945": {
+    "n": 4,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.5,
+    "median_months": 37.5
+   },
+   "1946-1991": {
+    "n": 4,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.0,
+    "median_months": 6.5
+   }
+  },
+  "GBR": {
+   "1789-1815": {
+    "n": 14,
+    "as_initiator": 3,
+    "initiator_won": 0.33,
+    "lost": 0.43,
+    "median_months": 35.0
+   },
+   "1946-1991": {
+    "n": 4,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.0,
+    "median_months": 5.5
+   },
+   "1992-present": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.0,
+    "median_months": 2.5
+   }
+  },
+  "GRC": {
+   "1871-1913": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.33,
+    "median_months": 3.1
+   },
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.33,
+    "median_months": 51.4
+   }
+  },
+  "GTM": {
+   "1871-1913": {
+    "n": 3,
+    "as_initiator": 3,
+    "initiator_won": 0.67,
+    "lost": 0.33,
+    "median_months": 1.0
+   }
+  },
+  "IND": {
+   "1946-1991": {
+    "n": 4,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.5,
+    "median_months": 1.4
+   }
+  },
+  "IRQ": {
+   "1946-1991": {
+    "n": 4,
+    "as_initiator": 2,
+    "initiator_won": 0.0,
+    "lost": 0.75,
+    "median_months": 8.1
+   }
+  },
+  "ISR": {
+   "1946-1991": {
+    "n": 6,
+    "as_initiator": 3,
+    "initiator_won": 0.67,
+    "lost": 0.0,
+    "median_months": 2.7
+   }
+  },
+  "ITA": {
+   "1789-1815": {
+    "n": 6,
+    "as_initiator": 2,
+    "initiator_won": 0.0,
+    "lost": 1.0,
+    "median_months": 23.1
+   },
+   "1816-1870": {
+    "n": 6,
+    "as_initiator": 3,
+    "initiator_won": 0.67,
+    "lost": 0.17,
+    "median_months": 3.2
+   },
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 1.0,
+    "lost": 0.33,
+    "median_months": 51.4
+   }
+  },
+  "JOR": {
+   "1946-1991": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 1.0,
+    "median_months": 0.6
+   }
+  },
+  "JPN": {
+   "1871-1913": {
+    "n": 3,
+    "as_initiator": 2,
+    "initiator_won": 1.0,
+    "lost": 0.0,
+    "median_months": 8.1
+   },
+   "1914-1945": {
+    "n": 6,
+    "as_initiator": 4,
+    "initiator_won": 0.5,
+    "lost": 0.5,
+    "median_months": 34.2
+   }
+  },
+  "KHM": {
+   "1946-1991": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.33,
+    "median_months": 15.5
+   }
+  },
+  "PAK": {
+   "1946-1991": {
+    "n": 3,
+    "as_initiator": 2,
+    "initiator_won": 0.5,
+    "lost": 0.33,
+    "median_months": 1.6
+   }
+  },
+  "POL": {
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 1.0,
+    "lost": 0.0,
+    "median_months": 20.1
+   }
+  },
+  "PRT": {
+   "1789-1815": {
+    "n": 5,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.6,
+    "median_months": 40.2
+   }
+  },
+  "ROU": {
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 1,
+    "initiator_won": 1.0,
+    "lost": 0.33,
+    "median_months": 51.4
+   }
+  },
+  "RUS": {
+   "1789-1815": {
+    "n": 13,
+    "as_initiator": 3,
+    "initiator_won": 1.0,
+    "lost": 0.23,
+    "median_months": 18.9
+   },
+   "1871-1913": {
+    "n": 4,
+    "as_initiator": 2,
+    "initiator_won": 1.0,
+    "lost": 0.25,
+    "median_months": 6.1
+   },
+   "1914-1945": {
+    "n": 9,
+    "as_initiator": 5,
+    "initiator_won": 0.4,
+    "lost": 0.33,
+    "median_months": 13.4
+   }
+  },
+  "SLV": {
+   "1871-1913": {
+    "n": 4,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.75,
+    "median_months": 1.4
+   }
+  },
+  "SWE": {
+   "1789-1815": {
+    "n": 9,
+    "as_initiator": 2,
+    "initiator_won": 0.5,
+    "lost": 0.33,
+    "median_months": 18.9
+   }
+  },
+  "SYR": {
+   "1946-1991": {
+    "n": 5,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.6,
+    "median_months": 4.8
+   }
+  },
+  "THA": {
+   "1946-1991": {
+    "n": 3,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.67,
+    "median_months": 63.1
+   }
+  },
+  "TUR": {
+   "1789-1815": {
+    "n": 6,
+    "as_initiator": 2,
+    "initiator_won": 0.0,
+    "lost": 0.5,
+    "median_months": 41.0
+   },
+   "1871-1913": {
+    "n": 5,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.6,
+    "median_months": 6.0
+   },
+   "1914-1945": {
+    "n": 3,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.33,
+    "median_months": 41.2
+   }
+  },
+  "USA": {
+   "1946-1991": {
+    "n": 5,
+    "as_initiator": 1,
+    "initiator_won": 0.0,
+    "lost": 0.4,
+    "median_months": 37.1
+   },
+   "1992-present": {
+    "n": 3,
+    "as_initiator": 0,
+    "initiator_won": null,
+    "lost": 0.0,
+    "median_months": 2.5
+   }
+  },
+  "VNM": {
+   "1946-1991": {
+    "n": 6,
+    "as_initiator": 2,
+    "initiator_won": 0.5,
+    "lost": 0.17,
+    "median_months": 15.4
+   }
+  }
+ },
+ "stakes": {
+  "1789-1815": {
+   "n": 28,
+   "median_battle_deaths": 276900,
+   "share_decisive": 0.79,
+   "share_initiator_lost": 0.5
+  },
+  "1816-1870": {
+   "n": 20,
+   "median_battle_deaths": 6763,
+   "share_decisive": 0.95,
+   "share_initiator_lost": 0.25
+  },
+  "1871-1913": {
+   "n": 18,
+   "median_battle_deaths": 10039,
+   "share_decisive": 1.0,
+   "share_initiator_lost": 0.17
+  },
+  "1914-1945": {
+   "n": 19,
+   "median_battle_deaths": 28000,
+   "share_decisive": 0.95,
+   "share_initiator_lost": 0.47
+  },
+  "1946-1991": {
+   "n": 30,
+   "median_battle_deaths": 5946,
+   "share_decisive": 0.63,
+   "share_initiator_lost": 0.27
+  },
+  "1992-present": {
+   "n": 8,
+   "median_battle_deaths": 5121,
+   "share_decisive": 0.38,
+   "share_initiator_lost": 0.12
+  }
  }
 }

@@ -756,6 +756,53 @@ def cell(ws):
                               if any(w["initiator"] for w in ended) else None)}
 
 
+def nation_rates(wars):
+    """{country: {era: {n, as_initiator, initiator_won, median_months}}} for interstate wars — aggregates only, and
+    only where a nation fought at least three in the era. 3.32.2: Prussia 1806 and Brazil 2026 must not draw from
+    the same shelf."""
+    out = {}
+    inter = [w for w in wars if w["type"] == "interstate" and w["end"] and w["outcome"] != "ongoing"]
+    codes = sorted({c for w in inter for c in w["side_a"] + w["side_b"] if len(c) == 3 and c.isupper()})
+    for code in codes:
+        for era in ERA_LABELS:
+            ws = [w for w in inter if w["era"] == era and code in w["side_a"] + w["side_b"]]
+            if len(ws) < 3:
+                continue
+            started = [w for w in ws if w["initiator"] == code]
+            won = sum(1 for w in started
+                      if (w["outcome"] == "side_a_victory" and code in w["side_a"])
+                      or (w["outcome"] == "side_b_victory" and code in w["side_b"]))
+            lost = sum(1 for w in ws
+                       if (w["outcome"] == "side_a_victory" and code in w["side_b"])
+                       or (w["outcome"] == "side_b_victory" and code in w["side_a"]))
+            out.setdefault(code, {})[era] = {
+                "n": len(ws), "as_initiator": len(started),
+                "initiator_won": round(won / len(started), 2) if started else None,
+                "lost": round(lost / len(ws), 2),
+                "median_months": round(statistics.median([w["duration_months"] for w in ws]), 1)}
+    return out
+
+
+def stakes(wars):
+    """{era: {median_battle_deaths, share_decisive, share_initiator_lost}} for interstate wars: what this kind of
+    war cost, and how often the side that started it lost, in that century. Aggregates only."""
+    out = {}
+    for era in ERA_LABELS:
+        ws = [w for w in wars if w["type"] == "interstate" and w["era"] == era and w["end"] and w["outcome"] != "ongoing"]
+        if len(ws) < 3:
+            continue
+        deaths = [w["battle_deaths"] for w in ws if w.get("battle_deaths")]
+        started = [w for w in ws if w["initiator"]]
+        lost = sum(1 for w in started
+                   if (w["outcome"] == "side_a_victory" and w["initiator"] in w["side_b"])
+                   or (w["outcome"] == "side_b_victory" and w["initiator"] in w["side_a"]))
+        out[era] = {"n": len(ws),
+                    "median_battle_deaths": int(statistics.median(deaths)) if deaths else None,
+                    "share_decisive": round(sum(w["outcome"] in DECISIVE for w in ws) / len(ws), 2),
+                    "share_initiator_lost": round(lost / len(started), 2) if started else None}
+    return out
+
+
 def base_rates(wars):
     """{type: {era: {"all": cell, "even"|"lopsided"|"overwhelming": cell}}}; cells with fewer than 3 ended wars are
     left out."""
@@ -776,7 +823,9 @@ def base_rates(wars):
                        "shares), UCDP/PRIO Armed Conflict Dataset 26.1 and Conflict Termination v4 (CC BY 4.0), and a "
                        "hand-curated 1789-1815 list. Statistics only: no per-war records.",
             "buckets": "Stronger side's share of combined capability (COW CINC, interstate only): even < 0.65 <= lopsided < 0.9 <= overwhelming.",
-            "rates": out}
+            "rates": out,
+            "nations": nation_rates(wars),
+            "stakes": stakes(wars)}
 
 
 OPEN_FIELDS = ("id", "name", "type", "start", "end", "duration_months", "side_a", "side_b", "initiator", "outcome", "terms",

@@ -150,7 +150,7 @@ extension GameEngine {
             gs.shadow.firedRivalries.insert(r.key)
             if a.atWarWith.contains(b.id) { continue }
             breakAlliance(a.id, b.id)
-            declareWar(aggressor: a.id, defender: b.id)
+            declareWar(aggressor: a.id, defender: b.id, scripted: true)   // the record's own war, on its date
             bumpWorld("wars")
             gs.shadow.post("\(a.name) declares war on \(b.name).", date: gs.currentDate, severity: 2)
             logPlayEvent("world_war", detail: ["aggressor": a.id, "defender": b.id, "game_date": PlayHistory.day(gs.currentDate)])
@@ -531,7 +531,7 @@ extension GameEngine {
                 || gs.treaties.contains { $0.signatories.contains(me) && $0.signatories.contains(land) && [.alliance, .mutualDefense].contains($0.type) }
             if guaranteed {
                 gs.shadow.post("\(absorber.name) moves to annex \(target.name). \(target.name), under American protection, appeals to Washington.", date: gs.currentDate, severity: 3)
-                if !absorber.atWarWith.contains(land) { declareWar(aggressor: by, defender: land) }
+                if !absorber.atWarWith.contains(land) { declareWar(aggressor: by, defender: land, scripted: true) }
                 logPlayEvent("annexation_crisis", detail: ["land": land, "by": by, "game_date": PlayHistory.day(gs.currentDate)])
                 continue
             }

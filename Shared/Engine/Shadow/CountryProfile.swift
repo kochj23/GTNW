@@ -471,6 +471,19 @@ enum PersonalityAI {
             // 3.14.0: a floor of 0.4 so cautious monarchies still go to war sometimes.
             options.append((.attack(w.id), (pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty * ch.aggression))
         }
+        // 3.32.3: a nation's own habits. What worked for it once pulls it toward the same instrument again.
+        for (move, doctrine) in [(WorldMove.covertAction(rival?.id ?? c.id), Doctrine.covert),
+                                 (.attack(weakEnemy?.id ?? c.id), .rapidWar),
+                                 (.improveRelations(neutral?.id ?? c.id), .diplomacy)] {
+            let pull = Doctrines.pull(c.id, doctrine, in: gs)
+            guard pull > 0 else { continue }
+            switch move {
+            case .covertAction(let t) where t != c.id: options.append((.covertAction(t), pull))
+            case .attack(let t) where t != c.id && c.atWarWith.isEmpty: options.append((.attack(t), pull))
+            case .improveRelations(let t) where t != c.id: options.append((.improveRelations(t), pull))
+            default: break
+            }
+        }
         // 3.29.0: the real world's conflicts this week (the World Brief) pull the AI toward the same quarrels.
         options.append(contentsOf: WorldBriefModel.options(for: c, in: gs, difficulty: difficulty * ch.aggression))
 

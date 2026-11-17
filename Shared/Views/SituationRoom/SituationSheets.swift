@@ -403,6 +403,8 @@ struct SaveLoadView: View {
                     Button("LOAD") { run { try gameEngine.loadGame(slot: 0, manager: manager) }; dismiss() }.buttonStyle(ThemedButtonStyle())
                 }
             }
+            Text("ONE SITTING").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.neonCyan).padding(.top, 8)
+            OneSittingList { s in gameEngine.startOneSitting(s); dismiss() }   // 3.32.3
             Text("SCENARIOS").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.neonCyan).padding(.top, 8)
             ScenarioList { s in gameEngine.startScenario(s); dismiss() }
             if !message.isEmpty { Text(message).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalRed) }
@@ -414,6 +416,30 @@ struct SaveLoadView: View {
 
     private func run(_ f: () throws -> Void) {
         do { try f(); message = ""; slots = manager.list() } catch { message = "Failed: \(error.localizedDescription)" }
+    }
+}
+
+/// 3.32.3: a crisis sized for one evening — six to ten turns, then a scorecard and a debrief.
+struct OneSittingList: View {
+    let onStart: (OneSitting) -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ForEach(OneSitting.all) { s in
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: "\(s.title.uppercased())  ·  \(s.turns) \(s.turnLength.displayName.lowercased()) turns")
+                            .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                        Text(verbatim: s.goal).font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white.opacity(0.85))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    Button("PLAY") { onStart(s) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                }
+                .padding(6)
+                .themedPanel()
+            }
+        }
     }
 }
 
@@ -1699,7 +1725,7 @@ struct RecordsSheet: View {
     @ObservedObject var gameState: GameState
     var hall: [InfamyRecord: InfamyEntry] = HallOfInfamy.load()
     /// 3.29.0: Infamy | Names | Empire.
-    enum Tab: String, CaseIterable { case infamy = "INFAMY", names = "NAMES", empire = "EMPIRE" }
+    enum Tab: String, CaseIterable { case infamy = "INFAMY", names = "NAMES", empire = "EMPIRE", war = "WAR", fog = "FOG", legends = "LEGENDS" }
     @State var tab: Tab = .infamy
 
     var body: some View {
@@ -1713,6 +1739,9 @@ struct RecordsSheet: View {
             case .infamy: infamy
             case .names: names
             case .empire: empire
+            case .war: warRoomRecord
+            case .fog: fogPanel
+            case .legends: legends
             }
             HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
         }
@@ -1737,6 +1766,102 @@ struct RecordsSheet: View {
             }
             .padding(3).themedPanel(retroFill: EGA.black)
         }
+    }
+
+    /// 3.32.3: the debrief, and the chronicle the game writes for itself.
+    @ViewBuilder private var legends: some View {
+        HStack {
+            Text("THE RECORD WRITES ITSELF").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+            Spacer()
+            Button("EXPORT") { Legends.export(gameState) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
+        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Debrief.lines(gameState)) { d in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: d.title).font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                        Text(verbatim: d.body).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(3).themedPanel(retroFill: EGA.black)
+                }
+                if !gameState.shadow.sittingDebrief.isEmpty {
+                    Text("THE SITTING").font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                    ForEach(gameState.shadow.sittingDebrief, id: \.self) { line in
+                        Text(verbatim: line).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: FontScale.h(360))
+    }
+
+    /// 3.32.1: the fog panel — what we have not heard, said out loud, and how old the rest of it is.
+    @ViewBuilder private var fogPanel: some View {
+        Text("WHAT WE DO NOT KNOW").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+        let silence = Intelligence.silence(gameState)
+        if silence.isEmpty {
+            Text("Reports are current from every quarter of the world.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen)
+        }
+        ForEach(silence, id: \.self) { line in
+            Text(verbatim: line).font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        if !gameState.shadow.dispatches.isEmpty {
+            Text("ORDERS WITH NO WORD BACK").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
+            ForEach(gameState.shadow.dispatches) { d in
+                Text(verbatim: "\(d.label): sent \(GameCalendar.format(d.sent)), nothing expected before \(GameCalendar.format(d.due)).")
+                    .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        Text("WHAT WE HOLD, AND HOW OLD IT IS").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
+        let latest = gameState.shadow.intel.filter { $0.field == .army }.sorted { $0.asOfTurn > $1.asOfTurn }.prefix(10)
+        if latest.isEmpty {
+            Text("No reports at all. Nobody has told us anything yet.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+        }
+        ForEach(Array(latest)) { r in
+            Text(verbatim: r.line(name: gameState.getCountry(id: r.subject)?.name ?? r.subject, now: gameState.turn))
+                .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// 3.32.0: what governments said before their wars, in their own words, and the reasons they gave.
+    @ViewBuilder private var warRoomRecord: some View {
+        Text("WHY THEY WENT").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+        if gameState.shadow.deliberations.isEmpty && gameState.shadow.casusLog.isEmpty {
+            Text("No government has weighed a war yet.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(gameState.shadow.deliberations.suffix(6).reversed()) { d in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text(verbatim: "\(gameState.getCountry(id: d.actor)?.name ?? d.actor) → \(gameState.getCountry(id: d.target)?.name ?? d.target)")
+                                .font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            Spacer()
+                            Text(verbatim: d.chose == "war" ? "WENT" : "HELD OFF")
+                                .font(ThemeFont.mono(9, .bold)).foregroundColor(d.chose == "war" ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+                        }
+                        Text(verbatim: "Capability \(WarCouncil.pct(d.estimate.capability)) · their will \(WarCouncil.pct(d.estimate.resolve)) · confidence \(WarCouncil.pct(d.estimate.confidence)) · test: \(d.doneTest.kind.rawValue)")
+                            .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen)
+                        Text(verbatim: d.statement).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(3).themedPanel(retroFill: EGA.black)
+                }
+                if !gameState.shadow.casusLog.isEmpty {
+                    Text("STATED REASONS").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 4)
+                    ForEach(gameState.shadow.casusLog.suffix(8).reversed()) { c in
+                        Text(verbatim: "\(GameCalendar.format(c.date)): \(c.statement)\(c.supported ? "" : " (thin)")")
+                            .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: FontScale.h(360))
     }
 
     /// 3.29.0: progress toward the empire victories.

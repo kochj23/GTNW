@@ -780,7 +780,21 @@ struct CountryDossier: View {
                         }
                     }
                     .padding(.top, 4)
+                    if let line = gameEngine.intelLine(about: c.id) {   // 3.32.1: the age and reach of what we know
+                        Text(verbatim: line).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     covertPrograms(c)   // 3.31.0
+                    if !c.isPlayerControlled && !c.isTerritory {   // 3.32.0: the reason the United States would give
+                        let stated = gameState.shadow.statedCasus[c.id].flatMap(CasusBelli.init(rawValue:))
+                        Menu(stated.map { "REASON: \($0.title.uppercased())" } ?? "STATE A REASON FOR WAR") {
+                            ForEach(CasusBelli.allCases.filter { $0.available(year: gameState.currentYear) }) { cb in
+                                Button(cb.title) { gameEngine.statePlayerCasus(target: c.id, casus: cb) }
+                            }
+                        }
+                        .fixedSize()
+                        .help("A reason the era recognises costs less abroad than one nobody believes.")
+                    }
                 }
                 .padding(8)
             } else if let id = unclaimedID, let st = gameState.preState(id) {

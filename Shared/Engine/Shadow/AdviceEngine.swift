@@ -155,6 +155,13 @@ enum AdviceEngine {
             }
         }
 
+        // 3.32.3: the room's habits. A win tilts the recommendation toward doing it again — and says so, so the
+        // President can see the reason is "it worked in 1912" and not an argument about today.
+        if let doctrine = Doctrine.of(action), let rec = gs.shadow.doctrines[Doctrines.key(player.id, doctrine)] {
+            score += rec.pull
+            // First in the list: the room's reason for liking this is the one thing the President must see.
+            if let why = Doctrines.reason(doctrine, rec, year: gs.currentYear) { reasons.insert(why, at: 0) }
+        }
         let stance: AdviceStance = score >= 1 ? .approve : (score <= -1 ? .oppose : .caution)
         let opener: String
         switch stance {

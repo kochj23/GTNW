@@ -98,6 +98,11 @@ extension GameEngine {
         processWorldBrief()      // 3.29.0: real-world cyber news in modern games
         processOutbreaks()       // 3.31.0: pandemics, real and engineered
         processChemicalThreats() // 3.31.0: chemical terror and state attacks on civilians
+        checkWarDoneTests()      // 3.32.0: a war that has met (or failed) its own test goes to settlement
+        collectIntelligence()    // 3.32.1: reports with an age, a source and a reach
+        processDispatches()      // 3.32.1: orders sent before the telegraph, arriving at last
+        processPeaceTerms()      // 3.32.2: reparations paid, caps enforced, treaties eroding and breaking
+        checkOneSitting()        // 3.32.3: a one-sitting game's clock
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
@@ -160,7 +165,7 @@ extension GameEngine {
             case .massTroops:
                 bumpAnxiety(t, .military, 25)
             case .invade:
-                if let a = e.actor, !(actor?.atWarWith.contains(t) ?? true) { declareWar(aggressor: a, defender: t) }
+                if let a = e.actor, !(actor?.atWarWith.contains(t) ?? true) { declareWar(aggressor: a, defender: t, scripted: true) }
             case .strike:
                 if let a = e.actor {
                     if let ti = gs.countries.firstIndex(where: { $0.id == t }) {
@@ -502,14 +507,23 @@ extension GameEngine {
                 CombatModel.installGovernment(on: &loser, by: gs.countries[ai])
                 gs.countries[di] = loser
                 gs.shadow.post("\(dName) surrenders to \(aName). A new government is installed in \(gs.countries[di].capital).", date: gs.currentDate, severity: 3)
+                self.gameState = gs
+                writePeaceTerms(victor: f.attacker, loser: f.defender, negotiated: false)   // 3.32.2
             }
             if f.attacker == player || f.usSide == f.attacker { gs.warsWon += 1; gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 6) }
+            // 3.32.3: a war won in a season teaches the room that wars are won in a season.
+            self.gameState = gs
+            recordDoctrine(.rapidWar, actor: f.attacker, won: true,
+                           days: GameCalendar.days(from: f.startDate, to: gs.currentDate),
+                           note: "the war on \(dName) was won")
         } else {
             gs.countries[ai].stability = max(0, gs.countries[ai].stability - 15)
             gs.countries[ai].profile.outcry = min(100, gs.countries[ai].profile.outcry + 15)
             gs.shadow.post("\(aName)'s offensive collapses; its forces withdraw from \(dName).", date: gs.currentDate, severity: 2)
             if f.defender == player || f.usSide == f.defender { gs.warsWon += 1; gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 4) }
             if f.attacker == player { gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 15) }
+            self.gameState = gs
+            recordDoctrine(.rapidWar, actor: f.attacker, won: false, note: "the offensive against \(dName) failed")
         }
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(verdict == .attackerWon ? "\(dName) surrendered to \(aName)" : "\(aName) withdrew from \(dName)").")
         ShadowPack.shared.play(verdict == .attackerWon ? "sfx.war6" : "sfx.negotiation")
@@ -576,6 +590,15 @@ extension GameEngine {
             gs.shadow.post("A new government is installed in \(loser.capital).", date: gs.currentDate, severity: 3)
         }
         self.gameState = gs
+        // 3.32.2: the terms the settlement leaves on paper — what was kept, paid and promised.
+        switch choice {
+        case .annex:
+            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false, territory: [s.loser])
+        case .government(let g):
+            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false, alliance: g == .clientState)
+        case .victorsModel:
+            writePeaceTerms(victor: s.victor, loser: s.loser, negotiated: false)
+        }
         return true
     }
 
@@ -593,6 +616,9 @@ extension GameEngine {
     @discardableResult
     /// `spendAction: false` when the landing is part of an order already paid for (a 3.5.0 amphibious fleet).
     func claimLand(_ id: String, troops: Double = AttackSizing.expeditionStandard, spendAction: Bool = true) -> Bool {
+        // 3.32.1: before the telegraph an order to a distant shore can go out with no word coming back. It costs
+        // no action (the 3.28.2 rule) and is carried out when the dispatch finally arrives.
+        if spendAction, dispatchGoesDark(land: id, kind: "claim_land", troops: troops) { return true }
         guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, gs.unclaimedLandIDs.contains(id),
               troops.isFinite, troops >= 1, troops <= max(AttackSizing.expeditionStandard, AttackSizing.freeTroops(gs)),
               let land = WorldCountriesDatabase.template(id: id), let owner = gs.getPlayerCountry(),
@@ -1029,6 +1055,10 @@ extension GameEngine {
             }
         }
         self.gameState = gs
+        if let d = Doctrine.of(action) {   // 3.32.3: what worked becomes what the room recommends
+            recordDoctrine(d, actor: gs.playerCountryID, won: actionResult?.success != false,
+                           note: "\(action.rawValue.lowercased()) against \(gs.getCountry(id: targetID)?.name ?? targetID)")
+        }
         logPresidentialOrder(action, targetID: targetID, advice: advice, warnings: warnings, size: size, warhead: warhead,
                              popularityBefore: popularityBefore, report: actionResult, resignation: resignation)
         // 3.28.2: an order that couldn't be carried out (an ❌ line: no warheads, a landlocked blockade…) costs no action.

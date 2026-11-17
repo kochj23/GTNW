@@ -231,6 +231,27 @@ struct ShadowState: Codable {
     var pathogenReadySince: Date?
     var countermeasureReady: Date?
     var intelPosture: Double = 0
+    /// 3.32.0: what governments said before their wars (kept verbatim for the post-game column), the stated
+    /// justifications, the test each war declared before its first move (by "attacker>defender"), and the reason
+    /// the President has stated for a war he has not declared yet.
+    var deliberations: [WarDeliberation] = []
+    var casusLog: [CasusRecord] = []
+    var doneTests: [String: WarDoneTest] = [:]
+    var statedCasus: [String: String] = [:]
+    /// 3.32.1: the President's intelligence reports (snapshots with an age and a source), the figure about each
+    /// nation's army that is in general circulation, and orders sent before the telegraph that have not been heard
+    /// from.
+    var intel: [IntelReport] = []
+    var worldIntel: [String: IntelReport] = [:]
+    var dispatches: [PendingDispatch] = []
+    /// 3.32.2: the paper each war left behind — what was kept, paid and promised, and how long it held.
+    var peaceTerms: [PeaceTerms] = []
+    /// 3.32.3: what each government has learnt works ("USA:blockade" → its record), the one-sitting game under
+    /// way, and the debrief it ended with.
+    var doctrines: [String: DoctrineRecord] = [:]
+    var sittingID: String?
+    var sittingTurns: Int?
+    var sittingDebrief: [String] = []
 
     // Scenario
     var scenarioID: String?
@@ -273,6 +294,8 @@ struct ShadowState: Codable {
         case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
         case renames, claimCampaign, landBids, lostOffers, empireAtStart, worldBrief
         case agentProgramSince, agentOps, agentOpsRun, outbreaks, pathogenReadySince, countermeasureReady, intelPosture
+        case deliberations, casusLog, doneTests, statedCasus, intel, worldIntel, dispatches, peaceTerms
+        case doctrines, sittingID, sittingTurns, sittingDebrief
     }
 
     init() {}
@@ -369,6 +392,18 @@ struct ShadowState: Codable {
         pathogenReadySince = try? c.decodeIfPresent(Date.self, forKey: .pathogenReadySince)
         countermeasureReady = try? c.decodeIfPresent(Date.self, forKey: .countermeasureReady)
         intelPosture = (try? c.decodeIfPresent(Double.self, forKey: .intelPosture)) ?? 0
+        deliberations = (try? c.decodeIfPresent([WarDeliberation].self, forKey: .deliberations)) ?? []
+        casusLog = (try? c.decodeIfPresent([CasusRecord].self, forKey: .casusLog)) ?? []
+        doneTests = (try? c.decodeIfPresent([String: WarDoneTest].self, forKey: .doneTests)) ?? [:]
+        statedCasus = (try? c.decodeIfPresent([String: String].self, forKey: .statedCasus)) ?? [:]
+        intel = (try? c.decodeIfPresent([IntelReport].self, forKey: .intel)) ?? []
+        worldIntel = (try? c.decodeIfPresent([String: IntelReport].self, forKey: .worldIntel)) ?? [:]
+        dispatches = (try? c.decodeIfPresent([PendingDispatch].self, forKey: .dispatches)) ?? []
+        peaceTerms = (try? c.decodeIfPresent([PeaceTerms].self, forKey: .peaceTerms)) ?? []
+        doctrines = (try? c.decodeIfPresent([String: DoctrineRecord].self, forKey: .doctrines)) ?? [:]
+        sittingID = try? c.decodeIfPresent(String.self, forKey: .sittingID)
+        sittingTurns = try? c.decodeIfPresent(Int.self, forKey: .sittingTurns)
+        sittingDebrief = (try? c.decodeIfPresent([String].self, forKey: .sittingDebrief)) ?? []
     }
 }
 

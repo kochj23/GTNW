@@ -54,6 +54,9 @@ struct VictoryScreen: View {
                 // Statistics
                 statsDisplay()
 
+                // 3.32.3: the counterfactual debrief — what was decided, what almost happened, what was believed.
+                debriefDisplay()
+
                 // Buttons
                 HStack(spacing: 20) {
                     Button(action: onViewLeaderboard) {
@@ -215,6 +218,30 @@ struct VictoryScreen: View {
         .padding()
         .background(Color.black.opacity(0.3))
         .border(AppSettings.terminalAmber, width: 1)
+    }
+
+    /// 3.32.3: the debrief, from what the game recorded.
+    @ViewBuilder private func debriefDisplay() -> some View {
+        let lines = Debrief.lines(gameState)
+        if !lines.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("DEBRIEF")
+                    .font(.scaled(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(AppSettings.terminalAmber)
+                ForEach(lines) { d in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: d.title)
+                            .font(.scaled(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundColor(AppSettings.terminalGreen)
+                        Text(verbatim: d.body)
+                            .font(.scaled(size: 11, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.85))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.horizontal, 40)
+        }
     }
 
     private func novaRoastView() -> some View {

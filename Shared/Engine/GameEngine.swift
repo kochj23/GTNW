@@ -823,13 +823,20 @@ class GameEngine: ObservableObject {
         checkMAD()
     }
 
-    /// Declare war between countries
-    func declareWar(aggressor: String, defender: String) {
+    /// Declare war between countries. 3.32.0: a computer-run nation deliberates first (WarCouncil) and may step
+    /// back; every declaration states a reason and declares the test by which it will call the war finished.
+    /// `scripted` is for wars the record itself fought (a scenario's events, a historical rivalry, an absorption):
+    /// they are not deliberated and the world does not react twice to their reasons.
+    func declareWar(aggressor: String, defender: String, scripted: Bool = false) {
         guard let gameState = gameState else { return }
         guard let aggressorCountry = getCountry(aggressor),
               let defenderCountry = getCountry(defender) else { return }
         // 3.28.0: already at war: nothing to declare (no second war record, no second DEFCON step).
         if aggressorCountry.atWarWith.contains(defender) { return }
+        if !scripted, aggressor != gameState.playerCountryID, !WarCouncil.obligated(aggressorCountry, defenderCountry, in: gameState),
+           let d = deliberateWar(actor: aggressor, target: defender), d.chose != "war" {
+            return   // the council took the cheaper instrument; the deliberation is on the record
+        }
         watchCue("sfx.war\(Int.random(in: 1...5))")
         gameState.flash([aggressor, defender], .hostile, "⚔️ \(aggressorCountry.name) declares war on \(defenderCountry.name)")
 
@@ -842,6 +849,11 @@ class GameEngine: ObservableObject {
         }
 
         if aggressor == gameState.playerCountryID { gameState.shadow.playerWarsStarted += 1 }   // 3.16.0
+        self.gameState = gameState
+        stateCasus(actor: aggressor, target: defender,
+                   casus: CasusBelli(rawValue: gameState.shadow.statedCasus[defender] ?? ""), applyReaction: !scripted)
+        gameState.shadow.statedCasus.removeValue(forKey: defender)
+        ensureDoneTest(actor: aggressor, target: defender)
 
         // Create war
         let war = War(aggressor: aggressor, defender: defender, startTurn: gameState.turn)
