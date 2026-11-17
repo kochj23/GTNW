@@ -77,6 +77,7 @@ AI versus AI, narrated by Nova (an AI voice). Two local models play each other; 
 | **Empire** | Land that pays from its real resources, three empire victories (Manifest Destiny, The Sun Never Sets, Every Rock), claim campaigns, your names on the map, a land market with rival bidders and auctions | 3.29 |
 | **Faith** | Theocracies of 57 faiths, each from its founding year: world religions, new religious movements, neopagan, African and diaspora, ancient and indigenous, East Asian | 3.29 |
 | **Realistic war** | Attacks only where a nation can reach (borders, navies, the era's bombers and missiles), wars of attrition with outside aid, a daily real-world brief from Nova's feeds for modern games, base rates from 800 historical wars | 3.29–3.30 |
+| **Covert programmes and plagues** | An MKUltra-style covert agent programme (hallucinogenic, stimulant or depressant agents by water, food or air), an engineered pandemic that spreads along real borders and trade and can come home, real pandemics on their dates from the cholera waves to COVID-19, chemical terrorism (Tokyo 1995) and state chemical attacks (Halabja 1988) as crises; all abstract, no substances or methods | 3.31 |
 | **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 940 tests in seven categories | 3.1–3.31 |
 
 The sections below are grouped by theme; each feature notes the version that introduced it.
