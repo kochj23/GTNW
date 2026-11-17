@@ -1,0 +1,429 @@
+{
+ "generated_by": "Documentation/wars/build.py",
+ "sources": "Aggregates of Correlates of War (Inter-, Extra-, Intra-, Non-State War Data; NMC v7 for capability shares), UCDP/PRIO Armed Conflict Dataset 26.1 and Conflict Termination v4 (CC BY 4.0), and a hand-curated 1789-1815 list. Statistics only: no per-war records.",
+ "buckets": "Stronger side's share of combined capability (COW CINC, interstate only): even < 0.65 <= lopsided < 0.9 <= overwhelming.",
+ "rates": {
+  "interstate": {
+   "1789-1815": {
+    "all": {
+     "n": 28,
+     "median_months": 26.1,
+     "q1_months": 7.4,
+     "q3_months": 45.5,
+     "decisive": 0.79,
+     "negotiated": 0.18,
+     "initiator_won": 0.25
+    }
+   },
+   "1816-1870": {
+    "all": {
+     "n": 20,
+     "median_months": 6.8,
+     "q1_months": 3.6,
+     "q3_months": 15.4,
+     "decisive": 0.95,
+     "negotiated": 0.0,
+     "initiator_won": 0.7
+    },
+    "even": {
+     "n": 3,
+     "median_months": 4.0,
+     "q1_months": 2.6,
+     "q3_months": 5.7,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.67
+    },
+    "lopsided": {
+     "n": 12,
+     "median_months": 9.8,
+     "q1_months": 5.5,
+     "q3_months": 16.6,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.67
+    },
+    "overwhelming": {
+     "n": 5,
+     "median_months": 5.3,
+     "q1_months": 5.1,
+     "q3_months": 5.6,
+     "decisive": 0.8,
+     "negotiated": 0.0,
+     "initiator_won": 0.8
+    }
+   },
+   "1871-1913": {
+    "all": {
+     "n": 18,
+     "median_months": 3.4,
+     "q1_months": 1.9,
+     "q3_months": 9.1,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.83
+    },
+    "even": {
+     "n": 7,
+     "median_months": 2.8,
+     "q1_months": 1.4,
+     "q3_months": 12.2,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.86
+    },
+    "lopsided": {
+     "n": 7,
+     "median_months": 6.0,
+     "q1_months": 2.0,
+     "q3_months": 8.7,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.86
+    },
+    "overwhelming": {
+     "n": 4,
+     "median_months": 3.4,
+     "q1_months": 2.9,
+     "q3_months": 4.9,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.75
+    }
+   },
+   "1914-1945": {
+    "all": {
+     "n": 19,
+     "median_months": 13.4,
+     "q1_months": 3.5,
+     "q3_months": 29.8,
+     "decisive": 0.95,
+     "negotiated": 0.05,
+     "initiator_won": 0.47
+    },
+    "even": {
+     "n": 3,
+     "median_months": 3.5,
+     "q1_months": 2.6,
+     "q3_months": 8.8,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.67
+    },
+    "lopsided": {
+     "n": 10,
+     "median_months": 28.0,
+     "q1_months": 7.4,
+     "q3_months": 48.8,
+     "decisive": 1.0,
+     "negotiated": 0.0,
+     "initiator_won": 0.3
+    },
+    "overwhelming": {
+     "n": 6,
+     "median_months": 5.9,
+     "q1_months": 3.7,
+     "q3_months": 11.9,
+     "decisive": 0.83,
+     "negotiated": 0.17,
+     "initiator_won": 0.67
+    }
+   },
+   "1946-1991": {
+    "all": {
+     "n": 30,
+     "median_months": 4.7,
+     "q1_months": 1.0,
+     "q3_months": 13.1,
+     "decisive": 0.63,
+     "negotiated": 0.23,
+     "initiator_won": 0.37
+    },
+    "even": {
+     "n": 4,
+     "median_months": 5.1,
+     "q1_months": 3.6,
+     "q3_months": 27.8,
+     "decisive": 0.5,
+     "negotiated": 0.5,
+     "initiator_won": 0.25
+    },
+    "lopsided": {
+     "n": 14,
+     "median_months": 3.2,
+     "q1_months": 1.1,
+     "q3_months": 13.1,
+     "decisive": 0.57,
+     "negotiated": 0.29,
+     "initiator_won": 0.29
+    },
+    "overwhelming": {
+     "n": 12,
+     "median_months": 6.0,
+     "q1_months": 0.9,
+     "q3_months": 10.1,
+     "decisive": 0.75,
+     "negotiated": 0.08,
+     "initiator_won": 0.5
+    }
+   },
+   "1992-present": {
+    "all": {
+     "n": 8,
+     "median_months": 2.4,
+     "q1_months": 1.6,
+     "q3_months": 5.7,
+     "decisive": 0.38,
+     "negotiated": 0.25,
+     "initiator_won": 0.25
+    },
+    "lopsided": {
+     "n": 4,
+     "median_months": 8.7,
+     "q1_months": 2.1,
+     "q3_months": 19.1,
+     "decisive": 0.5,
+     "negotiated": 0.5,
+     "initiator_won": 0.25
+    },
+    "overwhelming": {
+     "n": 3,
+     "median_months": 2.5,
+     "q1_months": 1.9,
+     "q3_months": 2.5,
+     "decisive": 0.33,
+     "negotiated": 0.0,
+     "initiator_won": 0.33
+    }
+   }
+  },
+  "colonial": {
+   "1789-1815": {
+    "all": {
+     "n": 12,
+     "median_months": 36.5,
+     "q1_months": 15.2,
+     "q3_months": 114.9,
+     "decisive": 0.92,
+     "negotiated": 0.08,
+     "initiator_won": 0.45
+    }
+   },
+   "1816-1870": {
+    "all": {
+     "n": 59,
+     "median_months": 12.8,
+     "q1_months": 4.2,
+     "q3_months": 26.5,
+     "decisive": 0.9,
+     "negotiated": 0.07,
+     "initiator_won": 0.41
+    }
+   },
+   "1871-1913": {
+    "all": {
+     "n": 66,
+     "median_months": 10.1,
+     "q1_months": 5.4,
+     "q3_months": 25.6,
+     "decisive": 0.86,
+     "negotiated": 0.06,
+     "initiator_won": 0.38
+    }
+   },
+   "1914-1945": {
+    "all": {
+     "n": 16,
+     "median_months": 12.2,
+     "q1_months": 6.9,
+     "q3_months": 19.9,
+     "decisive": 0.81,
+     "negotiated": 0.19,
+     "initiator_won": 0.06
+    }
+   },
+   "1946-1991": {
+    "all": {
+     "n": 18,
+     "median_months": 68.2,
+     "q1_months": 14.1,
+     "q3_months": 109.8,
+     "decisive": 0.67,
+     "negotiated": 0.06,
+     "initiator_won": 0.11
+    }
+   },
+   "1992-present": {
+    "all": {
+     "n": 3,
+     "median_months": 35.4,
+     "q1_months": 18.2,
+     "q3_months": 135.8,
+     "decisive": 0.67,
+     "negotiated": 0.33,
+     "initiator_won": 0.0
+    }
+   }
+  },
+  "civil": {
+   "1789-1815": {
+    "all": {
+     "n": 4,
+     "median_months": 31.4,
+     "q1_months": 20.7,
+     "q3_months": 56.3,
+     "decisive": 0.75,
+     "negotiated": 0.25,
+     "initiator_won": 0.0
+    }
+   },
+   "1816-1870": {
+    "all": {
+     "n": 94,
+     "median_months": 7.8,
+     "q1_months": 1.7,
+     "q3_months": 18.8,
+     "decisive": 0.88,
+     "negotiated": 0.05,
+     "initiator_won": 0.09
+    }
+   },
+   "1871-1913": {
+    "all": {
+     "n": 58,
+     "median_months": 7.8,
+     "q1_months": 2.5,
+     "q3_months": 12.4,
+     "decisive": 0.83,
+     "negotiated": 0.09,
+     "initiator_won": 0.19
+    }
+   },
+   "1914-1945": {
+    "all": {
+     "n": 51,
+     "median_months": 9.4,
+     "q1_months": 4.1,
+     "q3_months": 15.5,
+     "decisive": 0.84,
+     "negotiated": 0.1,
+     "initiator_won": 0.2
+    }
+   },
+   "1946-1991": {
+    "all": {
+     "n": 81,
+     "median_months": 18.9,
+     "q1_months": 4.3,
+     "q3_months": 41.8,
+     "decisive": 0.72,
+     "negotiated": 0.14,
+     "initiator_won": 0.23
+    }
+   },
+   "1992-present": {
+    "all": {
+     "n": 43,
+     "median_months": 19.4,
+     "q1_months": 6.0,
+     "q3_months": 46.8,
+     "decisive": 0.26,
+     "negotiated": 0.4,
+     "initiator_won": 0.1
+    }
+   }
+  },
+  "internationalized_civil": {
+   "1816-1870": {
+    "all": {
+     "n": 9,
+     "median_months": 11.0,
+     "q1_months": 8.7,
+     "q3_months": 63.5,
+     "decisive": 0.89,
+     "negotiated": 0.0,
+     "initiator_won": 0.11
+    }
+   },
+   "1871-1913": {
+    "all": {
+     "n": 5,
+     "median_months": 12.8,
+     "q1_months": 12.2,
+     "q3_months": 37.1,
+     "decisive": 0.8,
+     "negotiated": 0.2,
+     "initiator_won": 0.0
+    }
+   },
+   "1914-1945": {
+    "all": {
+     "n": 12,
+     "median_months": 20.6,
+     "q1_months": 3.2,
+     "q3_months": 30.9,
+     "decisive": 0.92,
+     "negotiated": 0.0,
+     "initiator_won": 0.0
+    }
+   },
+   "1946-1991": {
+    "all": {
+     "n": 40,
+     "median_months": 26.5,
+     "q1_months": 11.6,
+     "q3_months": 58.3,
+     "decisive": 0.45,
+     "negotiated": 0.33,
+     "initiator_won": 0.05
+    }
+   },
+   "1992-present": {
+    "all": {
+     "n": 29,
+     "median_months": 31.9,
+     "q1_months": 11.1,
+     "q3_months": 46.2,
+     "decisive": 0.55,
+     "negotiated": 0.28,
+     "initiator_won": 0.08
+    }
+   }
+  },
+  "nonstate": {
+   "1816-1870": {
+    "all": {
+     "n": 45,
+     "median_months": 14.9,
+     "q1_months": 9.6,
+     "q3_months": 31.1,
+     "decisive": 0.78,
+     "negotiated": 0.11,
+     "initiator_won": 0.36
+    }
+   },
+   "1871-1913": {
+    "all": {
+     "n": 6,
+     "median_months": 11.4,
+     "q1_months": 8.1,
+     "q3_months": 38.0,
+     "decisive": 0.83,
+     "negotiated": 0.0,
+     "initiator_won": 0.33
+    }
+   },
+   "1946-1991": {
+    "all": {
+     "n": 8,
+     "median_months": 12.6,
+     "q1_months": 10.0,
+     "q3_months": 18.1,
+     "decisive": 0.38,
+     "negotiated": 0.12,
+     "initiator_won": 0.25
+    }
+   }
+  }
+ }
+}

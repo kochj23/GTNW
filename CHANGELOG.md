@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.30.0] - 2026-11-16 — The historical record of war
+
+### Added
+- **War base rates and open records.** `Documentation/wars/build.py` now also writes `base_rates.json` (aggregate
+  statistics only: median/IQR duration and outcome shares by war type × era × capability ratio, from the Correlates
+  of War data, UCDP and the curated 1789–1815 list) and `open_wars.json` (per-war records only from UCDP, CC BY 4.0,
+  with attribution, and the curated list). Both ship in the app. Correlates of War files and `wars.json` stay local
+  (COW forbids redistribution).
+- **AI brains see history.** Move requests and the decision prompt carry the era's base rate
+  ("Interstate wars 1946–1991: median 4.7 months; 23% ended in a ceasefire or settlement…").
+- **Missing historical wars.** Interstate wars from the open records that the rivalries table lacked (the
+  Quasi-War, the Gunboat War, the Finnish War…) break out on their dates when both sides exist in the era.
+
+### Changed
+- **Attrition calibrated to the record.** The surrender floor is the era's upper-quartile interstate war length for
+  the strength ratio (13–78 weeks, still scaled by difficulty) and stalemates past the era's median length settle
+  with the era's negotiated share. Randomness stays; Russia–Ukraine still lasts past 24 months in most seeds.
+
+### Sources
+- Correlates of War Project (Sarkees & Wayman 2010; Dixon & Sarkees 2016; NMC v7): aggregate base rates only.
+- UCDP/PRIO Armed Conflict Dataset 26.1 and UCDP Conflict Termination Dataset v4, CC BY 4.0, https://ucdp.uu.se.
+
 ## [3.29.0] - 2026-11-16 — The empire release
 
 ### Added

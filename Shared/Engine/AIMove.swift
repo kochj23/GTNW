@@ -189,7 +189,7 @@ extension GameEngine {
         At war with: \(wars.isEmpty ? "none" : wars.joined(separator: ", ")).
         Allies: \(allies.isEmpty ? "none" : allies.joined(separator: ", ")).
         World: \(gameState.defconName) \(gameState.defconLevel.rawValue), \(gameState.activeWars.count) active wars.
-        Nearby powers: \(neighbors.joined(separator: "; ")).
+        Nearby powers: \(neighbors.joined(separator: "; ")).\(HistoricalWars.line(year: gameState.currentYear).map { "\nHistory: \($0)" } ?? "")
         """
 
         return MoveRequest(

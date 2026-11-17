@@ -442,10 +442,11 @@ extension GameEngine {
                     let o = AttritionModel.week(&f, attacker: a, defender: d, in: gs,
                                                 rolls: (Double.random(in: 0..<1, using: &gs.rng), Double.random(in: 0..<1, using: &gs.rng)))
                     gs.totalCasualties += Int((o.attackerLosses + o.defenderLosses) * 300 + o.civilianLosses * 1000)
-                    let verdict = AttritionModel.verdict(&f, year: gs.currentYear, difficulty: gs.difficultyLevel)
+                    let share = AttritionModel.strongerShare(a, d)   // 3.30.0: the historical base rate for this ratio
+                    let verdict = AttritionModel.verdict(&f, year: gs.currentYear, difficulty: gs.difficultyLevel, strongerShare: share)
                     gs.shadow.fronts[i] = f
                     if verdict != .fighting { resolveFront(index: i, verdict: verdict); break }
-                    if Double.random(in: 0..<1, using: &gs.rng) < AttritionModel.ceasefireChance(f),
+                    if Double.random(in: 0..<1, using: &gs.rng) < AttritionModel.ceasefireChance(f, year: gs.currentYear, strongerShare: share),
                        !WorldPolitics.rivalries.contains(where: { $0.war && Set([$0.a, $0.b]) == Set([f.attacker, f.defender]) && $0.from <= gs.currentYear && gs.currentYear <= $0.to }) {
                         makePeace(f.attacker, f.defender)
                         gs.shadow.fronts[i].status = .ceasefire

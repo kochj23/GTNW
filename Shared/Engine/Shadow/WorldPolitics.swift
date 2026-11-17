@@ -37,7 +37,17 @@ enum WorldPolitics {
 
     /// The era's enmities and wars (board ids: DEU stands for Prussia / the German states before 1871, TUR for the
     /// Ottoman Empire, CHN for the Qing).
-    static let rivalries: [Rivalry] = [
+    /// 3.30.0: the recorded rivalries plus the open record's interstate wars (UCDP, the curated 1789–1815 list) for
+    /// pairs the table lacks; a war fires only when both sides exist in the era.
+    static let rivalries: [Rivalry] = {
+        var out = recorded
+        for p in HistoricalWars.openPairs() where !out.contains(where: { Set([$0.a, $0.b]) == Set([p.a, p.b]) && $0.from <= p.to && p.from <= $0.to }) {
+            out.append(w(p.a, p.b, p.from, p.to))
+        }
+        return out
+    }()
+
+    static let recorded: [Rivalry] = [
         w("RUS", "TUR", 1787, 1792), w("RUS", "SWE", 1788, 1790),
         w("FRA", "AUT", 1792, 1797), w("DEU", "FRA", 1792, 1795), w("FRA", "GBR", 1793, 1802), w("FRA", "ESP", 1793, 1795),
         w("FRA", "NLD", 1793, 1795), w("AUT", "FRA", 1799, 1801), w("RUS", "FRA", 1799, 1800), w("GBR", "FRA", 1803, 1814),

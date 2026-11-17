@@ -345,6 +345,7 @@ class GameEngine: ObservableObject {
         - Turn: \(gameState.turn)
         - Wars: \(gameState.activeWars.count)
         - Other nations: \(otherCountries)
+        \(HistoricalWars.line(year: gameState.currentYear).map { "- History: \($0)" } ?? "")
 
         Choose ONE action (respond ONLY in this exact format):
         ACTION: [WAIT / BUILD_MILITARY / BUILD_NUKES / ATTACK [country] / NUKE [country] / ALLY [country]] | REASON: [brief reason]

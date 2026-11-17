@@ -1,0 +1,1383 @@
+{
+ "attribution": "UCDP records: Uppsala Conflict Data Program, UCDP/PRIO Armed Conflict Dataset version 26.1 (Davies, Pettersson & Öberg; Gleditsch et al. 2002) and UCDP Conflict Termination Dataset v4 (Kreutz 2010), licensed CC BY 4.0, https://ucdp.uu.se. Curated records: GTNW, from the references in each record's notes.",
+ "wars": [
+  {
+   "id": "curated-northwest-indian-war",
+   "name": "Northwest Indian War",
+   "type": "colonial",
+   "start": "1786",
+   "end": "1795-08-03",
+   "duration_months": 109.1,
+   "side_a": [
+    "USA"
+   ],
+   "side_b": [
+    "non-state:Western Confederacy"
+   ],
+   "initiator": null,
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Greenville: most of present-day Ohio ceded to the United States.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-russo-turkish-1787",
+   "name": "Russo-Turkish War (1787-1792)",
+   "type": "interstate",
+   "start": "1787",
+   "end": "1792-01-09",
+   "duration_months": 52.8,
+   "side_a": [
+    "RUS"
+   ],
+   "side_b": [
+    "TUR"
+   ],
+   "initiator": "TUR",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Jassy: Ottomans recognise the annexation of Crimea and cede Yedisan (Ochakov) up to the Dniester.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-russo-swedish-1788",
+   "name": "Russo-Swedish War (1788-1790)",
+   "type": "interstate",
+   "start": "1788",
+   "end": "1790-08-14",
+   "duration_months": 25.4,
+   "side_a": [
+    "SWE"
+   ],
+   "side_b": [
+    "RUS",
+    "DNK"
+   ],
+   "initiator": "SWE",
+   "outcome": "stalemate",
+   "terms": "Treaty of Varala: status quo ante bellum.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-austro-turkish-1788",
+   "name": "Austro-Turkish War (1788-1791)",
+   "type": "interstate",
+   "start": "1788-02-09",
+   "end": "1791-08-04",
+   "duration_months": 41.8,
+   "side_a": [
+    "AUT"
+   ],
+   "side_b": [
+    "TUR"
+   ],
+   "initiator": "AUT",
+   "outcome": "compromise",
+   "terms": "Treaty of Sistova: Austria returns Belgrade and most conquests; small gain at Old Orsova.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-mysore-3",
+   "name": "Third Anglo-Mysore War",
+   "type": "colonial",
+   "start": "1790",
+   "end": "1792-03-18",
+   "duration_months": 20.6,
+   "side_a": [
+    "GBR"
+   ],
+   "side_b": [
+    "non-state:Kingdom of Mysore"
+   ],
+   "initiator": "non-state:Kingdom of Mysore",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Seringapatam: Tipu Sultan cedes about half of Mysore's territory to the East India Company and its allies (Marathas, Hyderabad).",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-haitian-revolution",
+   "name": "Haitian Revolution",
+   "type": "colonial",
+   "start": "1791-08-22",
+   "end": "1804-01-01",
+   "duration_months": 148.3,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "non-state:Saint-Domingue revolutionaries"
+   ],
+   "initiator": "non-state:Saint-Domingue revolutionaries",
+   "outcome": "side_b_victory",
+   "terms": "Independence of Haiti proclaimed 1 Jan 1804; slavery abolished.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-first-coalition",
+   "name": "War of the First Coalition",
+   "type": "interstate",
+   "start": "1792-04-20",
+   "end": "1797-10-17",
+   "duration_months": 65.9,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "AUT",
+    "DEU",
+    "GBR",
+    "ESP",
+    "NLD",
+    "ITA",
+    "PRT"
+   ],
+   "initiator": "FRA",
+   "outcome": "side_a_victory",
+   "terms": "Peace of Basel (1795) takes Prussia and Spain out; Treaty of Campo Formio: Austria cedes the Austrian Netherlands (Belgium) to France and recognises the Cisalpine Republic, receives Venice. Britain fights on.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-polish-russian-1792",
+   "name": "Polish-Russian War of 1792",
+   "type": "interstate",
+   "start": "1792-05-18",
+   "end": "1792-07-24",
+   "duration_months": 2.2,
+   "side_a": [
+    "RUS"
+   ],
+   "side_b": [
+    "POL"
+   ],
+   "initiator": "RUS",
+   "outcome": "side_a_victory",
+   "terms": "King Stanislaw joins the Targowica Confederation; Constitution of 3 May annulled; Second Partition of Poland (1793) by Russia and Prussia.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-vendee",
+   "name": "War in the Vendee",
+   "type": "civil",
+   "start": "1793",
+   "end": "1796-03-29",
+   "duration_months": 36.5,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "non-state:Vendean royalists"
+   ],
+   "initiator": "non-state:Vendean royalists",
+   "outcome": "side_a_victory",
+   "terms": "Royalist armies destroyed; Charette executed March 1796; later Chouannerie flare-ups.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-kosciuszko-uprising",
+   "name": "Kosciuszko Uprising",
+   "type": "interstate",
+   "start": "1794-03-24",
+   "end": "1794-11-16",
+   "duration_months": 7.8,
+   "side_a": [
+    "RUS",
+    "DEU"
+   ],
+   "side_b": [
+    "POL"
+   ],
+   "initiator": "POL",
+   "outcome": "side_a_victory",
+   "terms": "Third Partition of Poland (1795) among Russia, Prussia and Austria; the Commonwealth ceases to exist.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-spanish-1796",
+   "name": "Anglo-Spanish War (1796-1802)",
+   "type": "interstate",
+   "start": "1796",
+   "end": "1802-03-25",
+   "duration_months": 65.2,
+   "side_a": [
+    "ESP",
+    "FRA"
+   ],
+   "side_b": [
+    "GBR"
+   ],
+   "initiator": "ESP",
+   "outcome": "side_b_victory",
+   "terms": "Peace of Amiens: Spain cedes Trinidad to Britain; Minorca returned to Spain.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-second-coalition",
+   "name": "War of the Second Coalition",
+   "type": "interstate",
+   "start": "1798",
+   "end": "1802-03-25",
+   "duration_months": 40.2,
+   "side_a": [
+    "FRA",
+    "ESP"
+   ],
+   "side_b": [
+    "AUT",
+    "RUS",
+    "GBR",
+    "TUR",
+    "ITA",
+    "PRT"
+   ],
+   "initiator": "ITA",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Luneville (1801): Austria confirms Campo Formio, left bank of the Rhine to France. Peace of Amiens (1802): Britain returns most conquests except Trinidad and Ceylon.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-irish-rebellion-1798",
+   "name": "Irish Rebellion of 1798",
+   "type": "civil",
+   "start": "1798-05-24",
+   "end": "1798",
+   "duration_months": 3.7,
+   "side_a": [
+    "GBR"
+   ],
+   "side_b": [
+    "non-state:United Irishmen",
+    "FRA"
+   ],
+   "initiator": "non-state:United Irishmen",
+   "outcome": "side_a_victory",
+   "terms": "Rebellion crushed; led to the Act of Union 1800 (United Kingdom of Great Britain and Ireland, 1 Jan 1801).",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-egypt-syria-1798",
+   "name": "French campaign in Egypt and Syria",
+   "type": "interstate",
+   "start": "1798-07-01",
+   "end": "1801-09-02",
+   "duration_months": 38.0,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "TUR",
+    "GBR"
+   ],
+   "initiator": "FRA",
+   "outcome": "side_b_victory",
+   "terms": "French army capitulates at Alexandria; Egypt restored to Ottoman rule.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-quasi-war",
+   "name": "Quasi-War",
+   "type": "interstate",
+   "start": "1798-07-07",
+   "end": "1800-09-30",
+   "duration_months": 26.8,
+   "side_a": [
+    "USA"
+   ],
+   "side_b": [
+    "FRA"
+   ],
+   "initiator": "FRA",
+   "outcome": "compromise",
+   "terms": "Convention of 1800 (Mortefontaine): ends the 1778 Franco-American alliance; no reparations.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-mysore-4",
+   "name": "Fourth Anglo-Mysore War",
+   "type": "colonial",
+   "start": "1799",
+   "end": "1799-05-04",
+   "duration_months": 2.6,
+   "side_a": [
+    "GBR"
+   ],
+   "side_b": [
+    "non-state:Kingdom of Mysore"
+   ],
+   "initiator": "GBR",
+   "outcome": "side_a_victory",
+   "terms": "Seringapatam stormed, Tipu Sultan killed; Wodeyar dynasty restored as a Company client; territory partitioned.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-first-barbary",
+   "name": "First Barbary War",
+   "type": "colonial",
+   "start": "1801-05-10",
+   "end": "1805-06-10",
+   "duration_months": 49.0,
+   "side_a": [
+    "USA",
+    "SWE"
+   ],
+   "side_b": [
+    "non-state:Regency of Tripoli"
+   ],
+   "initiator": "non-state:Regency of Tripoli",
+   "outcome": "compromise",
+   "terms": "Treaty with Tripoli: prisoners of the USS Philadelphia ransomed for $60,000; tribute ends.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-war-of-oranges",
+   "name": "War of the Oranges",
+   "type": "interstate",
+   "start": "1801-05-20",
+   "end": "1801-06-06",
+   "duration_months": 0.6,
+   "side_a": [
+    "ESP",
+    "FRA"
+   ],
+   "side_b": [
+    "PRT"
+   ],
+   "initiator": "ESP",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Badajoz: Olivenza ceded to Spain; Portugal closes its ports to British shipping.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-maratha-2",
+   "name": "Second Anglo-Maratha War",
+   "type": "colonial",
+   "start": "1803",
+   "end": "1805",
+   "duration_months": 24.0,
+   "side_a": [
+    "GBR"
+   ],
+   "side_b": [
+    "non-state:Maratha Confederacy"
+   ],
+   "initiator": "GBR",
+   "outcome": "side_a_victory",
+   "terms": "Treaties of Deogaon and Surji-Anjangaon: Company gains Delhi, Agra, the Orissa coast and much of the Doab.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-third-coalition",
+   "name": "War of the Third Coalition",
+   "type": "interstate",
+   "start": "1803-05-18",
+   "end": "1805-12-26",
+   "duration_months": 31.3,
+   "side_a": [
+    "FRA",
+    "ESP"
+   ],
+   "side_b": [
+    "GBR",
+    "AUT",
+    "RUS",
+    "SWE",
+    "ITA"
+   ],
+   "initiator": "GBR",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Pressburg: Austria cedes Venetia to the Kingdom of Italy and Tyrol to Bavaria; Holy Roman Empire dissolved 1806. Trafalgar (Oct 1805) gives Britain naval supremacy.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-russo-persian-1804",
+   "name": "Russo-Persian War (1804-1813)",
+   "type": "interstate",
+   "start": "1804",
+   "end": "1813-10-24",
+   "duration_months": 111.8,
+   "side_a": [
+    "RUS"
+   ],
+   "side_b": [
+    "IRN"
+   ],
+   "initiator": "RUS",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Gulistan: Persia cedes Dagestan, eastern Georgia and most of present-day Azerbaijan to Russia.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-first-serbian-uprising",
+   "name": "First Serbian Uprising",
+   "type": "civil",
+   "start": "1804-02-14",
+   "end": "1813-10-07",
+   "duration_months": 115.7,
+   "side_a": [
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:Serbian revolutionaries"
+   ],
+   "initiator": "non-state:Serbian revolutionaries",
+   "outcome": "side_a_victory",
+   "terms": "Ottoman reconquest of the Belgrade Pashalik; Karadjordje flees to Austria.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-spanish-1804",
+   "name": "Anglo-Spanish War (1804-1808)",
+   "type": "interstate",
+   "start": "1804-12-12",
+   "end": "1808",
+   "duration_months": 43.1,
+   "side_a": [
+    "ESP",
+    "FRA"
+   ],
+   "side_b": [
+    "GBR"
+   ],
+   "initiator": "ESP",
+   "outcome": "unclear",
+   "terms": "Ended when the Spanish rising against Napoleon (1808) brought Spain into alliance with Britain; British invasions of the Rio de la Plata (1806-07) repulsed.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-russo-turkish-1806",
+   "name": "Russo-Turkish War (1806-1812)",
+   "type": "interstate",
+   "start": "1806",
+   "end": "1812-05-28",
+   "duration_months": 65.4,
+   "side_a": [
+    "RUS"
+   ],
+   "side_b": [
+    "TUR"
+   ],
+   "initiator": "TUR",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Bucharest: Bessarabia ceded to Russia; Serbian autonomy promised.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-fourth-coalition",
+   "name": "War of the Fourth Coalition",
+   "type": "interstate",
+   "start": "1806-10-09",
+   "end": "1807-07-09",
+   "duration_months": 9.0,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "DEU",
+    "RUS",
+    "GBR",
+    "SWE"
+   ],
+   "initiator": "DEU",
+   "outcome": "side_a_victory",
+   "terms": "Treaties of Tilsit: Prussia loses about half its territory (Duchy of Warsaw and Kingdom of Westphalia created); Russia joins the Continental System.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-turkish-1807",
+   "name": "Anglo-Turkish War (1807-1809)",
+   "type": "interstate",
+   "start": "1807",
+   "end": "1809-01-05",
+   "duration_months": 22.7,
+   "side_a": [
+    "GBR"
+   ],
+   "side_b": [
+    "TUR"
+   ],
+   "initiator": "GBR",
+   "outcome": "side_b_victory",
+   "terms": "Treaty of the Dardanelles; the British Alexandria expedition (1807) had withdrawn.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-gunboat-war",
+   "name": "Gunboat War (Anglo-Danish War)",
+   "type": "interstate",
+   "start": "1807-08-16",
+   "end": "1814-01-14",
+   "duration_months": 77.0,
+   "side_a": [
+    "GBR",
+    "SWE"
+   ],
+   "side_b": [
+    "DNK"
+   ],
+   "initiator": "GBR",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Kiel: Denmark cedes Norway to Sweden and Heligoland to Britain.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-finnish-war",
+   "name": "Finnish War (Russo-Swedish War 1808-1809)",
+   "type": "interstate",
+   "start": "1808-02-21",
+   "end": "1809-09-17",
+   "duration_months": 18.9,
+   "side_a": [
+    "RUS"
+   ],
+   "side_b": [
+    "SWE"
+   ],
+   "initiator": "RUS",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Fredrikshamn: Sweden cedes Finland and the Aland Islands to Russia (Grand Duchy of Finland).",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-dano-swedish-1808",
+   "name": "Dano-Swedish War (1808-1809)",
+   "type": "interstate",
+   "start": "1808-03-14",
+   "end": "1809-12-10",
+   "duration_months": 20.9,
+   "side_a": [
+    "DNK"
+   ],
+   "side_b": [
+    "SWE"
+   ],
+   "initiator": "DNK",
+   "outcome": "stalemate",
+   "terms": "Treaty of Jonkoping: status quo ante bellum.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-peninsular-war",
+   "name": "Peninsular War",
+   "type": "interstate",
+   "start": "1808-05-02",
+   "end": "1814-04-17",
+   "duration_months": 71.5,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "ESP",
+    "PRT",
+    "GBR"
+   ],
+   "initiator": "FRA",
+   "outcome": "side_b_victory",
+   "terms": "French driven from Iberia; Treaty of Valencay (Dec 1813) restores Ferdinand VII.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-spanish-american-independence",
+   "name": "Spanish American wars of independence (South America)",
+   "type": "colonial",
+   "start": "1809",
+   "end": "1826-01-23",
+   "duration_months": 198.8,
+   "side_a": [
+    "ESP"
+   ],
+   "side_b": [
+    "non-state:South American patriots"
+   ],
+   "initiator": "non-state:South American patriots",
+   "outcome": "side_b_victory",
+   "terms": "Independence of Gran Colombia, Peru, Bolivia, Chile, the United Provinces of the Rio de la Plata and Paraguay; last royalist garrison (Callao) surrenders Jan 1826.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-fifth-coalition",
+   "name": "War of the Fifth Coalition",
+   "type": "interstate",
+   "start": "1809-04-10",
+   "end": "1809-10-14",
+   "duration_months": 6.1,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "AUT",
+    "GBR"
+   ],
+   "initiator": "AUT",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Schonbrunn: Austria cedes Salzburg, the Illyrian Provinces and western Galicia; joins the Continental System.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-mexican-independence",
+   "name": "Mexican War of Independence",
+   "type": "colonial",
+   "start": "1810-09-16",
+   "end": "1821-09-27",
+   "duration_months": 132.4,
+   "side_a": [
+    "ESP"
+   ],
+   "side_b": [
+    "non-state:Mexican insurgents"
+   ],
+   "initiator": "non-state:Mexican insurgents",
+   "outcome": "side_b_victory",
+   "terms": "Treaty of Cordoba: independence of Mexico (First Mexican Empire).",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-ottoman-wahhabi",
+   "name": "Ottoman-Wahhabi War",
+   "type": "colonial",
+   "start": "1811",
+   "end": "1818-09-15",
+   "duration_months": 86.5,
+   "side_a": [
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:Emirate of Diriyah (First Saudi State)"
+   ],
+   "initiator": "TUR",
+   "outcome": "side_a_victory",
+   "terms": "Diriyah taken and destroyed; the First Saudi State ends.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-war-of-1812",
+   "name": "War of 1812",
+   "type": "interstate",
+   "start": "1812-06-18",
+   "end": "1815-02-17",
+   "duration_months": 32.0,
+   "side_a": [
+    "USA"
+   ],
+   "side_b": [
+    "GBR"
+   ],
+   "initiator": "USA",
+   "outcome": "stalemate",
+   "terms": "Treaty of Ghent (signed 24 Dec 1814, ratified 17 Feb 1815): status quo ante bellum.",
+   "battle_deaths": 3800,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-french-invasion-of-russia",
+   "name": "French invasion of Russia",
+   "type": "interstate",
+   "start": "1812-06-24",
+   "end": "1812-12-14",
+   "duration_months": 5.7,
+   "side_a": [
+    "FRA",
+    "AUT",
+    "DEU",
+    "ITA",
+    "other:Duchy of Warsaw"
+   ],
+   "side_b": [
+    "RUS"
+   ],
+   "initiator": "FRA",
+   "outcome": "side_b_victory",
+   "terms": "Grande Armee destroyed; Prussia (Dec 1812, Tauroggen) and later Austria change sides.",
+   "battle_deaths": 550000,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-sixth-coalition",
+   "name": "War of the Sixth Coalition",
+   "type": "interstate",
+   "start": "1813-03-03",
+   "end": "1814-05-30",
+   "duration_months": 14.9,
+   "side_a": [
+    "FRA",
+    "DNK",
+    "ITA"
+   ],
+   "side_b": [
+    "RUS",
+    "DEU",
+    "AUT",
+    "GBR",
+    "SWE",
+    "ESP",
+    "PRT"
+   ],
+   "initiator": "DEU",
+   "outcome": "side_b_victory",
+   "terms": "Napoleon abdicates and is exiled to Elba; First Treaty of Paris returns France to its 1792 borders.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-creek-war",
+   "name": "Creek War",
+   "type": "colonial",
+   "start": "1813-07-27",
+   "end": "1814-08-09",
+   "duration_months": 12.4,
+   "side_a": [
+    "USA"
+   ],
+   "side_b": [
+    "non-state:Red Stick Creeks"
+   ],
+   "initiator": "non-state:Red Stick Creeks",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Fort Jackson: the Creek Nation cedes about 23 million acres in Alabama and Georgia.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-swedish-norwegian-1814",
+   "name": "Swedish-Norwegian War (1814)",
+   "type": "interstate",
+   "start": "1814-07-26",
+   "end": "1814-08-14",
+   "duration_months": 0.6,
+   "side_a": [
+    "SWE"
+   ],
+   "side_b": [
+    "NOR"
+   ],
+   "initiator": "SWE",
+   "outcome": "side_a_victory",
+   "terms": "Convention of Moss: Norway enters a personal union with Sweden but keeps its constitution.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-anglo-nepalese",
+   "name": "Anglo-Nepalese War",
+   "type": "colonial",
+   "start": "1814-11-01",
+   "end": "1816-03-04",
+   "duration_months": 16.1,
+   "side_a": [
+    "GBR"
+   ],
+   "side_b": [
+    "NPL"
+   ],
+   "initiator": "GBR",
+   "outcome": "side_a_victory",
+   "terms": "Treaty of Sugauli: Nepal cedes Sikkim, Kumaon, Garhwal and most of the Terai.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-neapolitan-war",
+   "name": "Neapolitan War",
+   "type": "interstate",
+   "start": "1815-03-15",
+   "end": "1815-05-20",
+   "duration_months": 2.2,
+   "side_a": [
+    "ITA"
+   ],
+   "side_b": [
+    "AUT"
+   ],
+   "initiator": "ITA",
+   "outcome": "side_b_victory",
+   "terms": "Treaty of Casalanza: Murat deposed; Bourbon Ferdinand restored in Naples.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-seventh-coalition",
+   "name": "War of the Seventh Coalition (Hundred Days)",
+   "type": "interstate",
+   "start": "1815-03-20",
+   "end": "1815-07-08",
+   "duration_months": 3.6,
+   "side_a": [
+    "FRA"
+   ],
+   "side_b": [
+    "GBR",
+    "DEU",
+    "AUT",
+    "RUS",
+    "NLD",
+    "SWE"
+   ],
+   "initiator": "FRA",
+   "outcome": "side_b_victory",
+   "terms": "Napoleon defeated at Waterloo and exiled to St Helena; Second Treaty of Paris (Nov 1815): France loses further border territory, pays 700 million francs indemnity, occupied for up to five years.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-second-serbian-uprising",
+   "name": "Second Serbian Uprising",
+   "type": "civil",
+   "start": "1815-04-23",
+   "end": "1817",
+   "duration_months": 26.3,
+   "side_a": [
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:Serbian revolutionaries"
+   ],
+   "initiator": "non-state:Serbian revolutionaries",
+   "outcome": "compromise",
+   "terms": "Serbia gains autonomy under Milos Obrenovic (Principality of Serbia, 1817; formalised 1830).",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "curated-second-barbary",
+   "name": "Second Barbary War",
+   "type": "colonial",
+   "start": "1815-06-17",
+   "end": "1815-07-03",
+   "duration_months": 0.5,
+   "side_a": [
+    "USA"
+   ],
+   "side_b": [
+    "non-state:Regency of Algiers"
+   ],
+   "initiator": "USA",
+   "outcome": "side_a_victory",
+   "terms": "Treaty with Algiers: tribute and ransom payments by the U.S. end; captives released.",
+   "battle_deaths": null,
+   "source": "curated",
+   "era": "1789-1815"
+  },
+  {
+   "id": "ucdp-374-2009",
+   "name": "Rwanda: FDLR-FOCA (2009-2012)",
+   "type": "internationalized_civil",
+   "start": "2009-02-16",
+   "end": "2012-12-02",
+   "duration_months": 45.5,
+   "side_a": [
+    "RWA",
+    "COD"
+   ],
+   "side_b": [
+    "non-state:FDLR-FOCA"
+   ],
+   "initiator": null,
+   "outcome": "unclear",
+   "terms": "UCDP termination: low activity (fighting fell below 25 battle deaths a year).",
+   "battle_deaths": 2218,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-283-2011",
+   "name": "DR Congo (Zaire): APCLS, CNPSC (2011-2014)",
+   "type": "civil",
+   "start": "2011-08-31",
+   "end": "2014-04-30",
+   "duration_months": 32.0,
+   "side_a": [
+    "COD",
+    "TZA",
+    "MWI",
+    "ZAF"
+   ],
+   "side_b": [
+    "non-state:CNPSC",
+    "non-state:M23",
+    "non-state:UPCP",
+    "UGA",
+    "RWA",
+    "non-state:APCLS",
+    "non-state:Forces of Paul Joseph Mukungubila"
+   ],
+   "initiator": null,
+   "outcome": "unclear",
+   "terms": "How it ended is not coded in the UCDP Conflict Termination Dataset v4-2024.",
+   "battle_deaths": 2282,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-234-2014",
+   "name": "Israel: Hamas, PIJ (2014-2014)",
+   "type": "civil",
+   "start": "2014-07-07",
+   "end": "2014-12-24",
+   "duration_months": 5.6,
+   "side_a": [
+    "ISR"
+   ],
+   "side_b": [
+    "non-state:Hamas",
+    "non-state:PIJ"
+   ],
+   "initiator": null,
+   "outcome": "ceasefire",
+   "terms": "Egyptian-brokered open-ended ceasefire (26 Aug 2014) ends the Gaza war.",
+   "battle_deaths": 2378,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-354-2015",
+   "name": "Turkey: PKK (2015-)",
+   "type": "civil",
+   "start": "2015-07-30",
+   "end": null,
+   "duration_months": 125.1,
+   "side_a": [
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:PKK"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 6670,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-13902-2015",
+   "name": "Turkey: IS (2015-2017)",
+   "type": "civil",
+   "start": "2015-11-14",
+   "end": "2017-09-06",
+   "duration_months": 21.7,
+   "side_a": [
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:IS"
+   ],
+   "initiator": null,
+   "outcome": "unclear",
+   "terms": "UCDP termination: low activity (fighting fell below 25 battle deaths a year).",
+   "battle_deaths": 1883,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-14275-2016",
+   "name": "Philippines: IS (2016-2024)",
+   "type": "civil",
+   "start": "2016-06-01",
+   "end": "2024-10-23",
+   "duration_months": 100.7,
+   "side_a": [
+    "PHL"
+   ],
+   "side_b": [
+    "non-state:IS"
+   ],
+   "initiator": null,
+   "outcome": "unclear",
+   "terms": "How it ended is not coded in the UCDP Conflict Termination Dataset v4-2024.",
+   "battle_deaths": 2168,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-283-2016",
+   "name": "DR Congo (Zaire): AFC, CRP (2016-)",
+   "type": "civil",
+   "start": "2016-08-08",
+   "end": null,
+   "duration_months": 112.8,
+   "side_a": [
+    "COD",
+    "TZA",
+    "MWI",
+    "ZAF",
+    "KEN",
+    "NPL",
+    "UKR",
+    "UGA",
+    "BDI",
+    "SSD",
+    "BGD",
+    "IDN",
+    "SWE",
+    "AGO"
+   ],
+   "side_b": [
+    "non-state:Kamuina Nsapu",
+    "non-state:RNL",
+    "non-state:CNPSC",
+    "non-state:M23",
+    "non-state:MNR",
+    "non-state:CMC",
+    "non-state:UPLC",
+    "non-state:APCLS",
+    "RWA",
+    "non-state:FABB",
+    "non-state:Mayi Mayi Kyandenga",
+    "non-state:AFC",
+    "non-state:CRP"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 11141,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-14609-2018",
+   "name": "Iran vs Israel (2018-)",
+   "type": "interstate",
+   "start": "2018-04-29",
+   "end": null,
+   "duration_months": 92.1,
+   "side_a": [
+    "IRN"
+   ],
+   "side_b": [
+    "ISR",
+    "USA"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 2863,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-360-2018",
+   "name": "Burkina Faso: JNIM (2018-)",
+   "type": "internationalized_civil",
+   "start": "2018-05-22",
+   "end": null,
+   "duration_months": 91.3,
+   "side_a": [
+    "BFA",
+    "MLI",
+    "FRA",
+    "NER",
+    "CIV",
+    "GHA",
+    "TGO",
+    "TCD"
+   ],
+   "side_b": [
+    "non-state:JNIM"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 12290,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-11346-2019",
+   "name": "Libya: Forces of the House of Representatives (2019-2020)",
+   "type": "internationalized_civil",
+   "start": "2019-02-21",
+   "end": "2020-10-31",
+   "duration_months": 20.3,
+   "side_a": [
+    "LBY",
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:Forces of the House of Representatives",
+    "SDN",
+    "ARE"
+   ],
+   "initiator": null,
+   "outcome": "ceasefire",
+   "terms": "UCDP termination: ceasefire agreement.",
+   "battle_deaths": 2256,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-309-2020",
+   "name": "Sudan: RSF, SFA, SPLM/A-North (2020-)",
+   "type": "civil",
+   "start": "2020-06-01",
+   "end": null,
+   "duration_months": 67.0,
+   "side_a": [
+    "SDN"
+   ],
+   "side_b": [
+    "non-state:SLM/A",
+    "non-state:RSF",
+    "non-state:SPLM/A-North",
+    "non-state:SFA"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 28836,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-388-2020",
+   "name": "Azerbaijan: Republic of Artsakh (2020-2023)",
+   "type": "internationalized_civil",
+   "start": "2020-07-16",
+   "end": "2023-12-04",
+   "duration_months": 40.6,
+   "side_a": [
+    "AZE",
+    "TUR"
+   ],
+   "side_b": [
+    "non-state:Republic of Artsakh",
+    "ARM"
+   ],
+   "initiator": null,
+   "outcome": "side_a_victory",
+   "terms": "UCDP termination: victory for side A.",
+   "battle_deaths": 8348,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-267-2020",
+   "name": "Ethiopia: GLF, TPLF (2020-2022)",
+   "type": "internationalized_civil",
+   "start": "2020-11-04",
+   "end": "2022-11-27",
+   "duration_months": 24.7,
+   "side_a": [
+    "ETH",
+    "ERI"
+   ],
+   "side_b": [
+    "non-state:TPLF",
+    "non-state:GLF"
+   ],
+   "initiator": null,
+   "outcome": "peace_agreement",
+   "terms": "Pretoria Agreement (2 Nov 2022): permanent cessation of hostilities between the Ethiopian government and the TPLF.",
+   "battle_deaths": 307607,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-222-2021",
+   "name": "Myanmar (Burma): NUG, PSLF (2021-)",
+   "type": "civil",
+   "start": "2021-05-03",
+   "end": null,
+   "duration_months": 56.0,
+   "side_a": [
+    "MMR"
+   ],
+   "side_b": [
+    "non-state:NUG",
+    "non-state:PSLF",
+    "non-state:CNF",
+    "non-state:PNLO"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 6272,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-234-2021",
+   "name": "Israel: Hamas, Palestinian Mujahideen Movement, PIJ, PRC (2021-)",
+   "type": "civil",
+   "start": "2021-05-10",
+   "end": null,
+   "duration_months": 55.7,
+   "side_a": [
+    "ISR"
+   ],
+   "side_b": [
+    "non-state:Hamas",
+    "non-state:PIJ",
+    "non-state:Fatah",
+    "non-state:Palestinian Mujahideen Movement",
+    "YEM",
+    "non-state:PRC"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 63171,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-13243-2022",
+   "name": "Russia (Soviet Union) vs Ukraine (2022-)",
+   "type": "interstate",
+   "start": "2022-02-24",
+   "end": null,
+   "duration_months": 46.2,
+   "side_a": [
+    "RUS",
+    "PRK"
+   ],
+   "side_b": [
+    "UKR"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 372588,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-16069-2023",
+   "name": "Ethiopia: Fano (2023-)",
+   "type": "civil",
+   "start": "2023-06-27",
+   "end": null,
+   "duration_months": 30.2,
+   "side_a": [
+    "ETH"
+   ],
+   "side_b": [
+    "non-state:Fano"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 7281,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-426-2023",
+   "name": "Israel: Hezbollah (2023-)",
+   "type": "civil",
+   "start": "2023-10-18",
+   "end": null,
+   "duration_months": 26.4,
+   "side_a": [
+    "ISR"
+   ],
+   "side_b": [
+    "non-state:Hezbollah"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 4838,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  },
+  {
+   "id": "ucdp-381-2024",
+   "name": "Haiti: Viv Ansanm (2024-)",
+   "type": "internationalized_civil",
+   "start": "2024-03-06",
+   "end": null,
+   "duration_months": 21.8,
+   "side_a": [
+    "HTI",
+    "BHS",
+    "KEN",
+    "JAM",
+    "BLZ",
+    "GTM",
+    "SLV"
+   ],
+   "side_b": [
+    "non-state:Viv Ansanm"
+   ],
+   "initiator": null,
+   "outcome": "ongoing",
+   "terms": null,
+   "battle_deaths": 1428,
+   "source": "UCDP-ACD",
+   "era": "1992-present"
+  }
+ ]
+}

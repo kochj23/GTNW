@@ -645,10 +645,18 @@ enum AttritionModel {
     /// field armies met in a few decisive battles, 0.7.
     static func lossScale(year: Int) -> Double { year < 1900 ? 0.7 : 0.4 }
 
-    /// Weeks of fighting before an attacker can force a surrender: a year in the modern era, half that before 1914;
-    /// harder AIs press a little faster (Easy ×1.2 … Nightmare ×0.8).
-    static func minimumWeeks(year: Int, difficulty: DifficultyLevel) -> Int {
-        let base = year < 1914 ? 26.0 : 52.0
+    /// The stronger side's share of the two force pools (the dataset's capability-ratio bucket).
+    static func strongerShare(_ a: Country, _ d: Country) -> Double {
+        let pa = CombatModel.forcePool(a), pd = CombatModel.forcePool(d)
+        return max(pa, pd) / max(0.001, pa + pd)
+    }
+
+    /// Weeks of fighting before an attacker can force a surrender. 3.30.0: the historical upper-quartile length of
+    /// interstate wars of the era and strength ratio (Documentation/wars base rates), 13–78 weeks; without them a
+    /// year in the modern era, half that before 1914. Harder AIs press a little faster (Easy ×1.2 … Nightmare ×0.8).
+    static func minimumWeeks(year: Int, difficulty: DifficultyLevel, strongerShare: Double? = nil) -> Int {
+        let base = HistoricalWars.interstate(year: year, strongerShare: strongerShare).map { min(78, max(13, $0.q3_months * 4.35)) }
+            ?? (year < 1914 ? 26.0 : 52.0)
         let k: Double
         switch difficulty {
         case .easy: k = 1.2
@@ -721,19 +729,23 @@ enum AttritionModel {
 
     /// The verdict for a war of attrition: the attacker only wins once the defender has collapsed (under 5% of its
     /// army) or after the minimum weeks with half of them decisive; until then a breaking defender rallies.
-    static func verdict(_ f: inout WarFront, year: Int, difficulty: DifficultyLevel) -> FrontStatus {
+    static func verdict(_ f: inout WarFront, year: Int, difficulty: DifficultyLevel, strongerShare: Double? = nil) -> FrontStatus {
         let v = CombatModel.verdict(f)
         guard v == .attackerWon else { return v }
-        let weeks = minimumWeeks(year: year, difficulty: difficulty)
+        let weeks = minimumWeeks(year: year, difficulty: difficulty, strongerShare: strongerShare)
         let collapsed = f.defenderTroops < f.defenderInitial * 0.05
         if collapsed || (f.battles >= weeks && (f.decisiveWeeks ?? 0) >= weeks / 2) { return .attackerWon }
         f.defenderWill = max(f.defenderWill, 0.2)   // the line holds: the defender rallies
         return .fighting
     }
 
-    /// Chance a week that a long stalemate (two years, momentum within ±0.5) ends in a negotiated ceasefire:
-    /// about one in five a year.
-    static func ceasefireChance(_ f: WarFront) -> Double {
-        f.battles > 104 && abs(f.attackerMomentum) < 0.5 ? 0.004 : 0
+    /// Chance a week that a stalemate (momentum within ±0.5) ends in a negotiated ceasefire. 3.30.0: past the era's
+    /// historical median length, the share of its wars that ended negotiated spread over that median (so about that
+    /// share end so by twice the median); without base rates, about one in five a year after two years.
+    static func ceasefireChance(_ f: WarFront, year: Int = 2000, strongerShare: Double? = nil) -> Double {
+        guard abs(f.attackerMomentum) < 0.5 else { return 0 }
+        guard let r = HistoricalWars.interstate(year: year, strongerShare: strongerShare) else { return f.battles > 104 ? 0.004 : 0 }
+        let median = max(4, r.median_months * 4.35)
+        return Double(f.battles) > median ? min(0.05, r.negotiated / median) : 0
     }
 }

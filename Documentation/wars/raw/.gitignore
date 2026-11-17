@@ -1,0 +1,8 @@
+# Correlates of War files: COW's terms forbid redistributing the datasets to third parties without written
+# permission (see ../SOURCES.md). Keep them local; `python3 -I build.py --fetch` re-downloads them.
+Inter-StateWarData_v4.0.csv
+Extra-StateWarData_v4.0.csv
+Intra-State-Wars-v5.1.zip
+Non-StateWarData_v4.0.csv
+States2024.zip
+NMCv7.zip
