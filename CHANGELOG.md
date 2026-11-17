@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.32.0] - 2026-11-17 — Why they went
+
+The herd's review notes, built in the order they overlapped. Everything below is assembled from numbers the rules
+already used; nothing is written for the occasion.
+
+### Added
+- **Visible, fallible pre-war reasoning.** Before a computer-run nation attacks it forms and records three estimates
+  (its share of the balance of force, the target's will to fight, its confidence in its own information), a
+  pre-mortem (what must be true, what would break it, what off-ramp survives the first bad turn) and the cheaper
+  instruments priced in the same numbers — buying the land, buying a colony, backing an independence, a claim
+  campaign, pressure short of war. Nations are wrong for reasons they state: stale intelligence, mirror-imaging,
+  domestic pressure, a soft ally promise. A cautious government with a workable alternative steps back, and the
+  record says what it stepped back from. The President's wars get the same paper. Kept verbatim on the game record
+  (Records → WAR) and quoted by the debrief and the chronicle.
+- **Casus belli.** Every declaration states an era-appropriate reason, checked against the facts on the board. A
+  thin or invented one costs standing with every nation, approval and ruthlessness; a strong one warms the actor's
+  allies. The President states his own before he orders the war (dossier → STATE A REASON FOR WAR).
+- **A stated war-termination test.** Every war declares one before its first move — ground held, a treaty signed, or
+  a cost ceiling — checked each turn. Met or failed, the war goes to settlement rather than grinding on, which
+  closes the hole the 3.30 attrition model opened.
+- **Intelligence with an age and a reach.** Figures are reports with an as-of turn, a source and that source's blind
+  spot; governments decide on the last report they have. A war opened on a months-old, wrong figure is visible and
+  counted. A FOG panel says the absence out loud ("no reports from the Pacific in 4 turns"), and before the
+  telegraph an order to a distant shore can come back UNKNOWN — a third outcome beside success and failure, costing
+  no action and resolving when the dispatch arrives.
+- **Survivorship in the war record.** `base_rates.json` now carries, per cell, the share of wars the initiator won;
+  per-nation shelves for the 30 nations with a record of their own; and each era's stakes (median battle deaths,
+  how often the side that began such a war lost). The AI's prompt line says it out loud — "these are the wars that
+  were fought, not the ones wisely declined". Statistics only; no COW rows are redistributed.
+- **Peace and settlement.** What was kept, paid and promised, and how long the paper held: territory, an indemnity
+  in instalments out of the loser's output, a cap on the beaten army for a term, an alliance term, and a term of
+  years. Terms erode as the loser recovers, as unrest grows and as instalments fall due, and can be repudiated —
+  which costs the breaker its standing everywhere.
+- **One sitting.** Eight crises sized for an evening (Thirteen Days, the Airlift, Desert Shield, Pusan, the day
+  after 9/11, after Pearl Harbor, Able Archer, Blackout): six to ten turns at the crisis's own pace, then the
+  scorecard against history and the debrief. The crisis, not the century.
+- **Doctrines that become habits.** A win is remembered and tilts the next recommendation toward the same
+  instrument, including when none of the conditions that made it work still hold — and the cabinet says so ("it
+  worked in 1912; that was 29 years ago, and a different world"). Computer-run powers form the same habits.
+- **A counterfactual debrief**, at the end and on demand: the three decisions that bent the timeline most, the
+  crisis that almost happened (a government that weighed war on you and stepped back), and what the cabinet
+  believed set against what was true.
+- **Legends.** The presidency as a readable chronicle, exportable as Markdown, built from the record: why they went,
+  the peace, the record of the age, what was done quietly, plague, and the debrief.
+
+### Changed
+- `declareWar` deliberates for computer-run aggressors, states a reason and declares a done-test. Wars the record
+  itself fought (a scenario's events, a historical rivalry, an absorption) are marked scripted: never talked out of,
+  and the world does not react to their reasons twice.
+
 ## [3.31.0] - 2026-11-16 — Covert programmes and plagues
 
 Everything here is modelled as a decision and its consequences: no substance, organism, method or quantity appears
