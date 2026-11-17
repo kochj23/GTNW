@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.26.0] - 2026-11-12 — Watch games are recorded
+
+### Changed
+- Watch AI vs AI games are now recorded to Nova Games play history (WATCH-CONTRACT v2) so Nova can journal them:
+  `play.sessions.player` = `AI vs AI` (never a person), `summary.spectator = true`, `summary.matchup.sides` (the
+  seat, every nation with a non-rule-based brain, and the rule-based world; each with `kind`, the NovaAIKit `backend`
+  and `model`, and a `label`) and `summary.fallbacks` (built-in AI substitutions by country). Events as for any game.
+- TAKE THE SEAT ends the watch session with outcome `taken_over` and starts a normal session from that turn.
+- Watch games still never reach the leaderboard, `gtnw.game_history`, the Hall of Infamy or the autosave.
+- `PlaySessionRecord.player` (optional; nil = the store's player id), bounded 1–64 characters like the DB.
+
+### Tests
+- The spectator security test flipped: a watch game is recorded as `AI vs AI` with the spectator flag and matchup and
+  kept out of his records. New: take-over in the Games DB, the matchup, fallback counts, the player field's bounds.
+
 ## [3.25.0] - 2026-11-12 — Watch AI vs AI
 
 ### Added

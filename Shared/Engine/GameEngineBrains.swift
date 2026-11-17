@@ -130,6 +130,11 @@ extension GameEngine {
         for id in ruleBasedIDs where Double.random(in: 0..<1) < actChance {
             applyRuleBasedAction(for: id)
         }
+        // A watch session counts every built-in substitution for its matchup (WATCH-CONTRACT `fallbacks`).
+        if let t = playSession, t.spectator, t.game === gameState {
+            t.aiEnabled = aiOn
+            for id in lastTurnFallbackCountryIDs { t.fallbacks[id, default: 0] += 1 }
+        }
     }
 
     /// Fast built-in rule-based move for one country.
@@ -158,7 +163,7 @@ extension GameEngine {
         startNewGame(playerCountryID: playerCountryID, difficulty: difficulty, administration: administration,
                      turnLength: turnLength, spectate: true)
         spectatorPaused = false
-        addLog("👁 SPECTATING: the computer plays \(playerCountryID) too. Nothing is recorded. Take the seat at any time.", type: .system)
+        addLog("👁 SPECTATING: the computer plays \(playerCountryID) too (recorded as AI vs AI). Take the seat at any time.", type: .system)
         spectatorLoop?.cancel()
         spectatorLoop = Task { @MainActor [weak self] in
             while !Task.isCancelled, let self, self.spectating, self.gameState?.gameOver == false {
@@ -187,16 +192,37 @@ extension GameEngine {
         endTurn()
     }
 
-    /// Take over the watched seat: the turns stop running themselves and the game is his from here on, logged
-    /// like a continued save (a new play session that notes the turn it picked up at).
+    /// Take over the watched seat: the turns stop running themselves. The watch session ends as "taken_over" and
+    /// the game is his from here on, logged like a continued save (a new play session from this turn).
     func takeSeat() {
         guard spectating else { return }
+        endPlaySession(outcome: "taken_over")
         spectating = false
         spectatorPaused = false
         spectatorLoop?.cancel()
         spectatorLoop = nil
         beginPlaySession(resumedFromTurn: gameState?.turn)
         addLog("🎮 You have the seat. The turn is yours.", type: .system)
+    }
+
+    /// `summary.matchup` for a watch session: the seat, every nation given a brain other than rule-based, and the
+    /// rest of the world. `backend` / `model` are the NovaAIKit ids a model brain is pinned to (null otherwise).
+    func watchMatchup(_ gs: GameState, aiEnabled: Bool = true) -> [String: Any] {
+        func side(_ id: String) -> [String: Any] {
+            let b = brain(for: id)
+            let target = aiEnabled ? BrainRoute.target(for: b, gatewayBaseURL: "", gatewayModel: brainConfig.gatewayModel) : nil
+            let model = target != nil || (aiEnabled && b == .liveSession)
+            let name = gs.getCountry(id: id)?.name ?? id
+            return ["side": id, "kind": model ? "model" : "engine",
+                    "backend": target?.backend.rawValue ?? NSNull(), "model": target.map { PlayHistory.text($0.model) } ?? NSNull(),
+                    "label": PlayHistory.text("\(name): \(model ? b.displayName : "GTNW rule-based AI")")]
+        }
+        let seat = gs.playerCountryID
+        let others = brainAssignments.filter { $0.key != seat && $0.value != .ruleBased && $0.value != .human }
+            .keys.filter { gs.getCountry(id: $0)?.isDestroyed == false }.sorted().prefix(16)
+        return ["sides": [side(seat)] + others.map(side)
+                + [["side": "world", "kind": "npc", "backend": NSNull(), "model": NSNull(),
+                    "label": "Every other nation: GTNW rule-based AI"]]]
     }
 
     // MARK: - Reversible / agency verbs

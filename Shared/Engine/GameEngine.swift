@@ -73,7 +73,8 @@ class GameEngine: ObservableObject {
     @Published var lastTurnFallbackCountryIDs: Set<String> = []
 
     /// 3.25.0 "Watch AI vs AI": the computer plays the player's seat too and the turns run by themselves
-    /// (see GameEngineBrains.swift). A spectated game is nobody's: no play history, results, records or autosave.
+    /// (see GameEngineBrains.swift). 3.26.0: recorded as a watch session (player "AI vs AI", `summary.spectator`),
+    /// never in the leaderboard, game history, Hall of Infamy or autosave.
     @Published var spectating = false
     @Published var spectatorPaused = false
     /// Seconds between spectated turns (the speed control).
@@ -1765,13 +1766,15 @@ class GameEngine: ObservableObject {
 
     /// Leaderboard + game history + scenario progress for a finished game.
     func recordGameOver(_ gameState: GameState, score: GameScore, victory: VictoryType?) {
-        guard !spectating else { return }   // nobody played it: no leaderboard, history or roast
-        let name = PlaySummary.president(gameState) ?? "The President"
-        let entry = leaderboardManager.addEntry(playerName: name, score: score)
         // The game_history row shares the play session's id (a fresh UUID when no session is running).
         let id = finishPlaySession(score: score, victory: victory) ?? UUID()
-        store?.recordGameOver(result: .make(from: gameState, score: score, victory: victory, id: id),
-                              leaderboard: LeaderboardRecord(entry: entry))
+        // 3.26.0: a watch game is in play history (spectator) but never in the leaderboard or game history.
+        if !spectating {
+            let name = PlaySummary.president(gameState) ?? "The President"
+            let entry = leaderboardManager.addEntry(playerName: name, score: score)
+            store?.recordGameOver(result: .make(from: gameState, score: score, victory: victory, id: id),
+                                  leaderboard: LeaderboardRecord(entry: entry))
+        }
         generateEndGameRoast(gameState, score: score, victory: victory)
     }
 

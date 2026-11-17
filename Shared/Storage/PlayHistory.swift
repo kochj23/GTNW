@@ -29,6 +29,8 @@ struct PlaySessionRecord: Codable, Equatable, Sendable {
     var actions: Int
     /// A JSON object (the GTNW summary keys of the play contract).
     var summary: Data
+    /// `play.sessions.player`; nil = the store's player id. Watch games (3.26.0) are "AI vs AI", never a person.
+    var player: String? = nil
 }
 
 /// One notable moment, `play.events` (session_id, seq) is the idempotency key.
@@ -82,6 +84,9 @@ enum PlayHistory {
     static func num(_ d: Double, places: Double = 10) -> Double { d.isFinite ? (d * places).rounded() / places : 0 }
 
     /// Serialize a JSON object, or nil if it isn't one (never raises).
+    /// `play.sessions.player` for a watch game (WATCH-CONTRACT v2): never a person, never in a human's stats.
+    static let spectatorPlayer = "AI vs AI"
+
     static func json(_ object: [String: Any]) -> Data? {
         guard JSONSerialization.isValidJSONObject(object) else { return nil }
         return try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
@@ -204,7 +209,8 @@ extension StoreValidation {
               (s.outcome?.count ?? 0) <= 64,
               (s.score.map { $0.isFinite && abs($0) <= 1e12 } ?? true),
               (0...PlayHistory.maxActions).contains(s.actions),
-              PlayHistory.isJSONObject(s.summary, max: PlayHistory.maxSummaryBytes)
+              PlayHistory.isJSONObject(s.summary, max: PlayHistory.maxSummaryBytes),
+              (s.player.map { (1...64).contains($0.count) } ?? true)
         else { throw GameStoreError.invalid("play session out of bounds") }
     }
 
@@ -237,7 +243,7 @@ enum PlaySummary {
     /// Everything the reporter may quote about this session, from the game as it stands now.
     /// `score`/`victory` are set at game over (`historyID` = the game_history row).
     static func build(_ gs: GameState, session: Session, score: GameScore? = nil, victory: VictoryType? = nil,
-                      historyID: UUID? = nil) -> Data {
+                      historyID: UUID? = nil, extra: [String: Any] = [:]) -> Data {
         let sh = gs.shadow
         let player = gs.getPlayerCountry()
         let polls = sh.polls.map(\.popularity).filter(\.isFinite)
@@ -297,6 +303,7 @@ enum PlaySummary {
             ["turn": $0.turn, "attacker": $0.attacker, "target": $0.target, "warheads": $0.warheadsUsed,
              "casualties": $0.casualties] as [String: Any]
         }
+        s.merge(extra) { $1 }
         // The narrative lists, longest first to go if the whole thing would be over the 64 KB cap.
         var polls60 = Array(sh.polls.suffix(60)), ticker60 = Array(sh.ticker.filter { $0.severity >= 1 }.suffix(60))
         var log40 = Array(sh.warLog.suffix(40))
@@ -312,7 +319,7 @@ enum PlaySummary {
             ticker60 = Array(ticker60.suffix(ticker60.count / 2))
             log40 = Array(log40.suffix(log40.count / 2))
         }
-        return PlayHistory.json(["in_progress": !gs.gameOver, "turns": gs.turn]) ?? Data("{}".utf8)
+        return PlayHistory.json(["in_progress": !gs.gameOver, "turns": gs.turn].merging(extra) { $1 }) ?? Data("{}".utf8)
     }
 }
 
@@ -335,6 +342,12 @@ final class PlaySessionTracker {
     var strikesSeen: Int
     var ended = false
     var stats = PlayStats()
+    /// 3.26.0 watch game (AI vs AI): recorded as player "AI vs AI" with `summary.spectator`, `matchup`, `fallbacks`.
+    var spectator = false
+    /// Times a brain's move was missing or invalid and the built-in AI played instead, by country id.
+    var fallbacks: [String: Int] = [:]
+    /// Use AI was on at the last turn (off: every model brain played rule-based).
+    var aiEnabled = true
     /// Last turn's readings, for the swing events (3.22.0).
     var lastPopularity: Double
     var lastDefcon: Int
@@ -370,12 +383,12 @@ extension GameEngine {
     /// An open session for a previous game is closed as `abandoned` first.
     func beginPlaySession(resumedFromTurn: Int? = nil, now: Date = Date()) {
         endPlaySession(outcome: "abandoned", now: now)
-        // A finished save has nothing to play; a spectated game (3.25.0) is not his, so Nova never sees it.
-        guard let gs = gameState, !gs.gameOver, !spectating else { playSession = nil; return }
+        guard let gs = gameState, !gs.gameOver else { playSession = nil; return }   // a finished save: nothing to play
         let id = UUID()
         gs.shadow.playSessionID = id
         gs.shadow.playSessionStartedAt = now
         let t = PlaySessionTracker(id: id, startedAt: now, gs: gs, resumedFromTurn: resumedFromTurn)
+        t.spectator = spectating
         playSession = t
         guard store?.remote != nil else { return }
         sendPlaySession(gs, t, now: now)
@@ -562,14 +575,17 @@ extension GameEngine {
 
     private func sendPlaySession(_ gs: GameState, _ t: PlaySessionTracker, now: Date,
                                  ended: (String, GameScore, VictoryType?)? = nil, closing: String? = nil) {
+        let watch: [String: Any] = t.spectator
+            ? ["spectator": true, "matchup": watchMatchup(gs, aiEnabled: t.aiEnabled), "fallbacks": t.fallbacks] : [:]
         let summary = PlaySummary.build(gs, session: t.summarySession, score: ended?.1, victory: ended?.2,
-                                        historyID: ended == nil ? nil : t.id)
+                                        historyID: ended == nil ? nil : t.id, extra: watch)
         let finished = ended != nil || closing != nil
         let r = PlaySessionRecord(id: t.id, client: PlayHistory.client, startedAt: t.startedAt,
                                   lastSeenAt: max(now, t.startedAt), endedAt: finished ? max(now, t.startedAt) : nil,
                                   outcome: ended?.0 ?? closing,
                                   score: ended.map { Double($0.1.finalScore) },
-                                  actions: min(max(0, gs.turn - t.startTurn), PlayHistory.maxActions), summary: summary)
+                                  actions: min(max(0, gs.turn - t.startTurn), PlayHistory.maxActions), summary: summary,
+                                  player: t.spectator ? PlayHistory.spectatorPlayer : nil)
         store?.playSessionUpdated(r)
     }
 

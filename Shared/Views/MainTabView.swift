@@ -139,7 +139,7 @@ struct SpectatorBar: View {
             Text("👁 SPECTATING · AI VS AI")
                 .font(.scaled(size: 14, weight: .bold, design: .monospaced))
                 .foregroundColor(.black)
-            Text(gameEngine.spectatorPaused ? "PAUSED" : "Turn \(gameEngine.gameState?.turn ?? 0) · not recorded")
+            Text(gameEngine.spectatorPaused ? "PAUSED" : "Turn \(gameEngine.gameState?.turn ?? 0) · AI vs AI")
                 .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(.black.opacity(0.75))
             Spacer()

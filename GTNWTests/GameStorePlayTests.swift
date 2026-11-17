@@ -868,10 +868,11 @@ enum SpectatorFixtures {
 }
 
 final class SpectatorSecurityTests: XCTestCase {
-    /// Security (privacy): a spectated game, start to game over, writes nothing to Nova's play history
-    /// (play.sessions / play.events), no game_history or leaderboard row, no Hall of Infamy record, and no autosave.
+    /// Security / privacy (WATCH-CONTRACT v2): a watch game to game over is in play history as player "AI vs AI" with
+    /// `summary.spectator = true` and its matchup, but never under his name, and never in the leaderboard,
+    /// game history, Hall of Infamy or autosave.
     @MainActor
-    func testSpectatedGameIsNeverRecorded() async throws {
+    func testWatchGameIsRecordedAsAIvsAIAndKeptOutOfHisRecords() async throws {
         let dir = StoreFixtures.tempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
         let remote = InMemoryGameStore()
@@ -882,10 +883,11 @@ final class SpectatorSecurityTests: XCTestCase {
 
         SpectatorFixtures.paused(e)
         let gs = try XCTUnwrap(e.gameState)
-        XCTAssertNil(e.playSession, "no play session for a spectated game")
-        XCTAssertNil(gs.shadow.playSessionID)
+        let t = try XCTUnwrap(e.playSession, "a watch game has a play session")
+        XCTAssertTrue(t.spectator)
+        XCTAssertEqual(gs.shadow.playSessionID, t.id)
         try await SpectatorFixtures.turns(e, 3)
-        PlayFixtures.drama(gs)   // a FLASH and a strike: what would be events in a real game
+        PlayFixtures.drama(gs)
         e.playSessionTurnEnded()
         gs.totalCasualties = 2_000_000_000
         try await SpectatorFixtures.turns(e, 1)   // the real game-over path
@@ -894,29 +896,49 @@ final class SpectatorSecurityTests: XCTestCase {
         XCTAssertTrue(e.showingVictoryScreen, "the result screen still comes up")
         let synced = await service.syncNow()
         XCTAssertTrue(synced)
-        let sessions = await remote.playSessions
-        let events = await remote.playEvents
+        let rowRow = await remote.playSessions[t.id]
+        let row = try XCTUnwrap(rowRow)
+        XCTAssertEqual(row.player, "AI vs AI", "never a person's name")
+        XCTAssertEqual(row.outcome, "defeat", "the outcome from the game's point of view")
+        XCTAssertNotNil(row.endedAt)
+        let summary = PlayFixtures.summary(row)
+        XCTAssertEqual(summary["spectator"] as? Bool, true)
+        let sides = try XCTUnwrap((summary["matchup"] as? [String: Any])?["sides"] as? [[String: Any]])
+        XCTAssertEqual(sides.first?["side"] as? String, "USA")
+        XCTAssertEqual(sides.first?["kind"] as? String, "engine")
+        XCTAssertNotNil(summary["fallbacks"] as? [String: Any])
+        let events = await remote.events(t.id)
+        XCTAssertTrue(events.contains { $0.kind == "game_start" })
+        XCTAssertTrue(events.contains { $0.kind == "game_over" }, "events are recorded as for normal games")
         let counts = try await remote.counts()
-        XCTAssertTrue(sessions.isEmpty, "nothing in play.sessions")
-        XCTAssertTrue(events.isEmpty, "nothing in play.events")
         XCTAssertEqual(counts.history, 0, "no game_history row")
         XCTAssertEqual(counts.leaderboard, 0, "no leaderboard row")
-        XCTAssertEqual(counts.slots, 0, "no autosave of a game he didn't play")
-        XCTAssertFalse(service.local.pending.contains { $0.isPlayHistory })
+        XCTAssertEqual(counts.slots, 0, "no autosave over his own game")
         XCTAssertEqual(e.leaderboardManager.entries.count, boardBefore)
-        XCTAssertEqual(HallOfInfamy.load().count, hallBefore.count)
-        XCTAssertEqual(HallOfInfamy.load().mapValues(\.value), hallBefore.mapValues(\.value))
-        XCTAssertTrue(gs.novaRoast.isEmpty, "no roast for a game nobody played")
+        XCTAssertEqual(HallOfInfamy.load().mapValues(\.value), hallBefore.mapValues(\.value), "no Hall of Infamy record")
 
-        // Control: the same engine's next ordinary game is recorded again.
+        // Control: his next ordinary game is his, with no spectator flag.
         e.returnToStartScreen()
         try await SpectatorFixtures.until(2) { e.gameState == nil }
         e.startNewGame(playerCountryID: "USA", turnLength: .month)
-        XCTAssertFalse(e.spectating)
-        XCTAssertNotNil(e.playSession)
+        let mine = try XCTUnwrap(e.playSession)
+        XCTAssertFalse(mine.spectator)
         _ = await service.syncNow()
-        let after = await remote.playSessions.count
-        XCTAssertEqual(after, 1)
+        let normalRow = await remote.playSessions[mine.id]
+        let normal = try XCTUnwrap(normalRow)
+        XCTAssertNil(normal.player, "the store's own player id")
+        XCTAssertNil(PlayFixtures.summary(normal)["spectator"])
+    }
+
+    /// Security: the player field is bounded like the DB's check (1...64 characters).
+    func testPlayerFieldIsBounded() {
+        var r = PlayFixtures.session()
+        r.player = PlayHistory.spectatorPlayer
+        XCTAssertNoThrow(try StoreValidation.check(r))
+        r.player = ""
+        XCTAssertThrowsError(try StoreValidation.check(r))
+        r.player = String(repeating: "x", count: 65)
+        XCTAssertThrowsError(try StoreValidation.check(r))
     }
 }
 
@@ -934,6 +956,28 @@ final class SpectatorUnitTests: XCTestCase {
         XCTAssertEqual(e.brain(for: "USA"), .gatewayClaude, "the Brains panel picks the seat's brain")
         e.spectatorLoop?.cancel()
         XCTAssertEqual(GameEngine.spectatorSpeeds.map(\.label), ["Slow", "Normal", "Fast", "Max"])
+    }
+
+    /// Unit: the matchup names each side's brain with its NovaAIKit backend and model, and the rule-based world.
+    @MainActor
+    func testMatchupNamesEachSide() throws {
+        let e = GameEngine()
+        SpectatorFixtures.paused(e)
+        defer { e.spectatorLoop?.cancel() }
+        e.setBrain(.model(id: "qwen3:4b", endpoint: "http://127.0.0.1:11434/v1/chat/completions", backend: .ollama), for: "USA")
+        e.setBrain(.gatewayClaude, for: "RUS")
+        let gs = try XCTUnwrap(e.gameState)
+        let sides = try XCTUnwrap(e.watchMatchup(gs)["sides"] as? [[String: Any]])
+        XCTAssertEqual(sides.map { $0["side"] as? String }, ["USA", "RUS", "world"])
+        XCTAssertEqual(sides[0]["kind"] as? String, "model")
+        XCTAssertEqual(sides[0]["backend"] as? String, "ollama")
+        XCTAssertEqual(sides[0]["model"] as? String, "qwen3:4b")
+        XCTAssertEqual(sides[1]["backend"] as? String, "novagateway")
+        XCTAssertEqual(sides[2]["kind"] as? String, "npc")
+        let off = try XCTUnwrap(e.watchMatchup(gs, aiEnabled: false)["sides"] as? [[String: Any]])
+        XCTAssertEqual(off[0]["kind"] as? String, "engine", "Use AI off: the seat really plays rule-based")
+        XCTAssertTrue(off[0]["backend"] is NSNull)
+        XCTAssertNotNil(PlayHistory.json(e.watchMatchup(gs)), "serialisable for the summary")
     }
 }
 
@@ -960,6 +1004,39 @@ final class SpectatorIntegrationTests: XCTestCase {
     }
 }
 
+final class SpectatorTakeOverIntegrationTests: XCTestCase {
+    /// Integration: TAKE THE SEAT ends the watch session as "taken_over" and starts his own session from that turn,
+    /// with no spectator flag; both rows reach the Games DB.
+    @MainActor
+    func testTakeOverEndsTheWatchSessionAndStartsHis() async throws {
+        let dir = StoreFixtures.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let remote = InMemoryGameStore()
+        let (e, service) = PlayFixtures.engine(dir, remote: remote)
+        SpectatorFixtures.paused(e)
+        let watch = try XCTUnwrap(e.playSession)
+        try await SpectatorFixtures.turns(e, 2)
+        e.takeSeat()
+        let mine = try XCTUnwrap(e.playSession)
+        XCTAssertNotEqual(mine.id, watch.id)
+        XCTAssertFalse(mine.spectator)
+        XCTAssertEqual(mine.resumedFromTurn, e.gameState?.turn)
+        let synced = await service.syncNow()
+        XCTAssertTrue(synced)
+        let wRow = await remote.playSessions[watch.id]
+        let w = try XCTUnwrap(wRow)
+        XCTAssertEqual(w.outcome, "taken_over")
+        XCTAssertNotNil(w.endedAt)
+        XCTAssertEqual(w.player, "AI vs AI")
+        XCTAssertEqual(PlayFixtures.summary(w)["spectator"] as? Bool, true)
+        let hRow = await remote.playSessions[mine.id]
+        let h = try XCTUnwrap(hRow)
+        XCTAssertNil(h.player)
+        XCTAssertNil(h.endedAt)
+        XCTAssertNil(PlayFixtures.summary(h)["spectator"])
+    }
+}
+
 final class SpectatorRetryTests: XCTestCase {
     @MainActor override func setUp() async throws { AIFixtures.resetShared() }
     @MainActor override func tearDown() async throws { AIFixtures.resetShared() }
@@ -976,6 +1053,7 @@ final class SpectatorRetryTests: XCTestCase {
         try await SpectatorFixtures.turns(e, 2)
         XCTAssertTrue(e.lastTurnFallbackCountryIDs.contains("USA"))
         XCTAssertEqual(e.gameState?.turn, turn + 2)
+        XCTAssertEqual(e.playSession?.fallbacks["USA"], 2, "summary.fallbacks counts each substitution")
     }
 }
 
