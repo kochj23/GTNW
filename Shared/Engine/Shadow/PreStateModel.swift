@@ -287,19 +287,27 @@ extension GameEngine {
         guard let gs = gameState, gs.playerCountryID == "USA" else { return [] }
         return PreStateModel.acquisitions.filter { a in
             gs.currentYear >= a.from && gs.currentYear < a.to && !gs.shadow.acquired.contains(a.id) && gs.getCountry(id: a.owner) != nil
+                && !gs.shadow.lostOffers.contains(a.id) && !gs.shadow.landBids.contains { $0.acquisition == a.id }   // 3.29.0
         }
     }
 
     /// Accept a historical offer (one action): the land (if it has an outline) becomes U.S. land and its value is added
     /// as income from then on.
+    /// 3.29.0: `rivalRoll` < the era's rival chance brings a rival bidder (a price war); nil = the land market's own
+    /// roll (none under tests).
     @discardableResult
-    func acceptAcquisition(_ id: String) -> Bool {
+    func acceptAcquisition(_ id: String, rivalRoll: Double? = nil) -> Bool {
         guard let gs = gameState, gs.actionsRemaining > 0, let a = openAcquisitions().first(where: { $0.id == id }),
               let owner = gs.getCountry(id: a.owner), let me = gs.getPlayerCountry() else { return false }
         let rel = owner.diplomaticRelations[me.id] ?? 0
         guard PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: true) >= 1 else {
             gs.shadow.post("\(owner.name) withdraws the offer: the two nations are at war.", date: gs.currentDate, severity: 1)
             self.gameState = gs
+            return false
+        }
+        if let r = rivalRoll ?? (LandMarket.enabled ? Double.random(in: 0..<1) : nil),
+           openPriceWar(land: a.land, acquisition: a.id, owner: owner.id, label: "the \(a.name)", price: max(1, a.value * 5), roll: r) != nil {
+            completePlayerAction()
             return false
         }
         gs.shadow.acquired.insert(a.id)
@@ -317,12 +325,19 @@ extension GameEngine {
     /// Negotiate to buy a colony (one action): price from value and relations, paid out of national output. `roll`
     /// 0..<1 for tests. Returns whether the owner sold.
     @discardableResult
-    func purchaseColony(_ land: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+    func purchaseColony(_ land: String, roll: Double = Double.random(in: 0..<1), rivalRoll: Double? = nil) -> Bool? {
         guard let gs = gameState, gs.actionsRemaining > 0, let st = colonyTarget(land), let me = gs.getPlayerCountry() else { return nil }
         let owner = st.owner
         let rel = owner.diplomaticRelations[me.id] ?? 0
         let price = PreStateModel.price(land, year: gs.currentYear, relation: rel)
         let sold = roll < PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: false)
+        // 3.29.0: a rival power may bid against the President: a price war he can raise once.
+        if sold, let r = rivalRoll ?? (LandMarket.enabled ? Double.random(in: 0..<1) : nil),
+           openPriceWar(land: land, acquisition: nil, owner: owner.id, label: st.label, price: price, roll: r) != nil {
+            self.gameState = gs
+            completePlayerAction()
+            return false
+        }
         if sold {
             spendFunds(price)   // 3.13.1: paid from the spendable funds first
             takeColony(land, st, troops: 1, stability: 60, outcry: 15)

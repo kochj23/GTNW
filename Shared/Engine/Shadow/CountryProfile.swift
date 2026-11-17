@@ -226,7 +226,7 @@ struct CountryProfile: Codable, Hashable {
     static func ideologyFor(_ c: Country, jitter: Double) -> LeaderIdeology {
         switch c.government {
         case .communist: return .communism
-        case .theocracy: return c.region == .middleEast ? .islamicRepublic : .theocracy
+        case .theocracy: return (c.faith.map(\.isIslamic) ?? (c.region == .middleEast)) ? .islamicRepublic : .theocracy   // 3.29.0
         case .military: return .militaryJunta
         case .monarchy:
             return c.region == .middleEast ? .absoluteMonarchy : .constitutionalMonarchy
@@ -443,7 +443,8 @@ enum PersonalityAI {
         // 3.14.0: harder AIs pick fights sooner and against closer matches (Nightmare: relations < −20, up to 1.2×).
         let hostile = -40 + (difficulty - 1) * 20
         let weakEnemy = others.filter { Double(c.diplomaticRelations[$0.id] ?? 0) < hostile && !c.alliances.contains($0.id) && !$0.isTerritory
-                                         && Double($0.militaryStrength) < Double(c.militaryStrength) * (0.8 + 0.2 * difficulty) }
+                                         && Double($0.militaryStrength) < Double(c.militaryStrength) * (0.8 + 0.2 * difficulty)
+                                         && Reach.canReach(c.id, $0.id, in: gs) }   // 3.29.0: only what it can get at
             .min { $0.militaryStrength < $1.militaryStrength }
 
         var options: [(WorldMove, Double)] = [(.wait, 6 / max(0.5, difficulty))]
@@ -470,6 +471,8 @@ enum PersonalityAI {
             // 3.14.0: a floor of 0.4 so cautious monarchies still go to war sometimes.
             options.append((.attack(w.id), (pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty * ch.aggression))
         }
+        // 3.29.0: the real world's conflicts this week (the World Brief) pull the AI toward the same quarrels.
+        options.append(contentsOf: WorldBriefModel.options(for: c, in: gs, difficulty: difficulty * ch.aggression))
 
         let total = options.reduce(0) { $0 + max(0, $1.1) }
         guard total > 0 else { return .wait }

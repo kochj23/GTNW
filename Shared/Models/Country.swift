@@ -159,6 +159,9 @@ struct Country: Identifiable, Codable, Hashable {
     /// Optional so saves from before 3.2.0 load as sovereign.
     var territoryOf: String? = nil
 
+    /// 3.29.0: the state faith of a theocracy proclaimed in this game (nil = none drawn; see `stateFaith`).
+    var faith: Faith? = nil
+
     // NOTE: CIA World Factbook data is accessed via country.factbook (WorldFactbookRecord)
     // This keeps the Codable-compliant Country struct lean; Factbook data is static reference.
 
@@ -181,7 +184,7 @@ struct Country: Identifiable, Codable, Hashable {
         case cyberAttacksReceived, cyberAttacksLaunched, isUnderCyberAttack
         case activeWeaponPrograms, deployedProhibitedWeapons, hasABMSystem
         case hasMIRVTechnology, hasMobileLaunchers, hasASATWeapons, treatyViolations
-        case leaderProfile, territoryOf
+        case leaderProfile, territoryOf, faith
     }
 
     // Initializer

@@ -48,6 +48,12 @@ enum WorldWatch {
             // The aggressor is whoever the war record says; otherwise the stronger side.
             let war = gs.activeWars.last { Set([$0.aggressor, $0.defender]) == Set(ids) }
             let (agg, def) = war.map { $0.aggressor == a.id ? (a, b) : (b, a) } ?? (a.militaryStrength >= b.militaryStrength ? (a, b) : (b, a))
+            // 3.29.0: a war neither side can physically fight (collective defence half a world away) is a formality:
+            // a headline, never a decision card like "Afghanistan attacks Paraguay".
+            if !agg.isPlayerControlled && !def.isPlayerControlled && !Reach.canReach(agg.id, def.id, in: gs) && !Reach.canReach(def.id, agg.id, in: gs) {
+                headlines.append("📜 \(agg.name) and \(def.name) are formally at war, with no way to reach each other.")
+                continue
+            }
             headlines.append("⚔️ WAR: \(agg.name) and \(def.name) are at war.")
             gs.flash([agg.id, def.id], .hostile, "⚔️ \(agg.name) and \(def.name) are at war")   // 3.28.0: covers wars that skip declareWar (collective defense)
             if let c = warCrisis(aggressor: agg, defender: def, gs: gs) {

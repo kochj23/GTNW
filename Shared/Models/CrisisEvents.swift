@@ -742,7 +742,10 @@ class CrisisManager: ObservableObject {
     }
 
     private func createCyberAttackCrisis(gameState: GameState) -> CrisisEvent? {
-        guard let enemy = gameState.liveCountries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
+        // 3.29.0: in a modern game the real world's cyber actors this week (the World Brief) are the suspects.
+        let briefed = WorldBriefModel.cyberActor(gameState).flatMap { gameState.getCountry(id: $0) }
+        guard let enemy = briefed ?? gameState.liveCountries.filter({ !$0.isPlayerControlled }).randomElement() else { return nil }
+        let realWorld = briefed.flatMap { gameState.shadow.worldBrief?.headlines[$0.id] }.map { "\nIn the news this week: \($0)\n" } ?? ""
 
         return CrisisEvent(
             type: .cyberAttack,
@@ -756,7 +759,7 @@ class CrisisManager: ObservableObject {
             Status: Partial penetration achieved
             Risk: Unauthorized launch possible
 
-            NSA\(gameState.currentYear >= 2010 ? " and Cyber Command" : "") responding.
+            NSA\(gameState.currentYear >= 2010 ? " and Cyber Command" : "") responding.\(realWorld)
             """,
             affectedCountries: [enemy.id],
             turn: gameState.turn,

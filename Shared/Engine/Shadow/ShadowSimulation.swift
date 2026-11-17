@@ -51,6 +51,8 @@ extension GameEngine {
         self.gameState = gs
         processCabinets()   // 3.12.2: historical leaders of the day from the start
         adoptOwnColonies()   // 3.28.2
+        gameState?.shadow.empireAtStart = gameState.map(EmpireModel.baseline)   // 3.29.0: goals met at the start don't count
+        requestWorldBrief()   // 3.29.0: modern games read the real world's week (background, never blocks)
     }
 
     /// Start a scenario from the scenario list.
@@ -91,6 +93,9 @@ extension GameEngine {
         processOccupation()
         processAntarctica()
         processPreState()
+        processLandMarket()      // 3.29.0: rival bids, auctions, powers selling land they want rid of
+        processClaimCampaign()   // 3.29.0: one flag (or a few) a turn until the campaign is done
+        processWorldBrief()      // 3.29.0: real-world cyber news in modern games
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
@@ -221,7 +226,13 @@ extension GameEngine {
                 gs.countries[i].profile.outcry = 30
                 gs.countries[i].stability = 45
                 gs.countries[i].government = new.isDemocratic ? .republic : .military
-                gs.shadow.post("Government falls in \(c.name); the new regime proclaims \(new.rawValue).", date: gs.currentDate, severity: 2)
+                if new == .theocracy || new == .islamicRepublic {
+                    // 3.29.0: clerics of any faith (or of the old gods) can take power, not only Islamic ones.
+                    let faith = proclaimTheocracy(i)
+                    gs.shadow.post("Government falls in \(c.name); \(faith.proclamation(of: gs.countries[i].name))", date: gs.currentDate, severity: 2)
+                } else {
+                    gs.shadow.post("Government falls in \(c.name); the new regime proclaims \(new.rawValue).", date: gs.currentDate, severity: 2)
+                }
             }
         }
         for (id, kind) in spikes.prefix(4) {
@@ -305,6 +316,10 @@ extension GameEngine {
 
     func executeWorldMove(_ move: WorldMove, for country: Country) {
         guard let gs = gameState, let i = gs.countries.firstIndex(where: { $0.id == country.id }) else { return }
+        // 3.29.0: no war on a nation it can't get at (no border, no coast and navy, no bombers or missiles in range).
+        if case .attack(let t) = move, !Reach.canReach(country.id, t, in: gs) {
+            return executeWorldMove(Reach.fallback(for: country, against: t), for: country)
+        }
         let flag = country.flag, name = country.name
         func tname(_ id: String) -> String { gs.getCountry(id: id)?.name ?? id }
         func againstUS(_ id: String) -> Bool { id == gs.playerCountryID }
@@ -411,7 +426,7 @@ extension GameEngine {
         }
     }
 
-    private func processCombat(from: Date, to: Date) {
+    func processCombat(from: Date, to: Date) {
         guard let gs = gameState else { return }
         let days = Double(max(1, GameCalendar.days(from: from, to: to)))
         var weeks = Int(days / 7)
@@ -421,6 +436,23 @@ extension GameEngine {
             for _ in 0..<weeks {
                 var f = gs.shadow.fronts[i]
                 guard let a = gs.getCountry(id: f.attacker), let d = gs.getCountry(id: f.defender) else { break }
+                // 3.29.0: two computer-run nations of comparable size fight a war of attrition (AttritionModel).
+                if !f.involvesUS, f.attacker != gs.playerCountryID, f.defender != gs.playerCountryID,
+                   !AttritionModel.isMismatch(attacker: a, defender: d) {
+                    let o = AttritionModel.week(&f, attacker: a, defender: d, in: gs,
+                                                rolls: (Double.random(in: 0..<1, using: &gs.rng), Double.random(in: 0..<1, using: &gs.rng)))
+                    gs.totalCasualties += Int((o.attackerLosses + o.defenderLosses) * 300 + o.civilianLosses * 1000)
+                    let verdict = AttritionModel.verdict(&f, year: gs.currentYear, difficulty: gs.difficultyLevel)
+                    gs.shadow.fronts[i] = f
+                    if verdict != .fighting { resolveFront(index: i, verdict: verdict); break }
+                    if Double.random(in: 0..<1, using: &gs.rng) < AttritionModel.ceasefireChance(f),
+                       !WorldPolitics.rivalries.contains(where: { $0.war && Set([$0.a, $0.b]) == Set([f.attacker, f.defender]) && $0.from <= gs.currentYear && gs.currentYear <= $0.to }) {
+                        makePeace(f.attacker, f.defender)
+                        gs.shadow.fronts[i].status = .ceasefire
+                        break
+                    }
+                    continue
+                }
                 let o = CombatModel.battle(f, attackerStrength: a.militaryStrength, defenderStrength: d.militaryStrength,
                                            rolls: (Double.random(in: 0..<1), Double.random(in: 0..<1)))
                 let usLoss = CombatModel.apply(o, to: &f, date: to)
@@ -527,10 +559,16 @@ extension GameEngine {
             gs.countries[li] = loser
             if g == .clientState { gs.countries[vi].alliances.insert(loser.id) }
             gs.countries[vi].diplomaticRelations[loser.id] = loser.diplomaticRelations[s.victor] ?? 0
-            gs.shadow.post("A new government is installed in \(loser.capital): \(name) becomes a \(g.title.lowercased()).", date: gs.currentDate, severity: 3)
+            if g == .theocracy {   // 3.29.0: clerics of a faith drawn for the land
+                let faith = proclaimTheocracy(li)
+                gs.shadow.post("A new government is installed in \(loser.capital): \(faith.proclamation(of: name))", date: gs.currentDate, severity: 3)
+            } else {
+                gs.shadow.post("A new government is installed in \(loser.capital): \(name) becomes a \(g.title.lowercased()).", date: gs.currentDate, severity: 3)
+            }
             gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(name) — \(g.title) installed.")
         case .victorsModel:
             CombatModel.installGovernment(on: &loser, by: gs.countries[vi])
+            if loser.government == .theocracy { loser.faith = gs.countries[vi].stateFaith }   // 3.29.0: the victor's faith
             gs.countries[li] = loser
             gs.shadow.post("A new government is installed in \(loser.capital).", date: gs.currentDate, severity: 3)
         }
@@ -650,6 +688,8 @@ extension GameEngine {
         let old = gs.countries[i].name
         guard name != old else { return true }
         gs.countries[i].name = name
+        gs.shadow.renames.append(RenameRecord(land: id, from: old, to: name, date: gs.currentDate))   // 3.29.0: the Names tab
+        if gs.shadow.renames.count > 500 { gs.shadow.renames.removeFirst(gs.shadow.renames.count - 500) }
         gs.shadow.post("\(old) is renamed \(name) by order of the President.", date: gs.currentDate, severity: 1)
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(old) renamed \(name).")
         logPlayEvent("renamed_territory", detail: ["land": id, "old_name": PlayHistory.text(old), "name": PlayHistory.text(name),

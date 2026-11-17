@@ -220,6 +220,10 @@ extension GameEngine {
         guard let raw = response.target, let resolved = resolveMoveTarget(raw, forCountry: country) else {
             return .failure(MoveRejection(reason: "\(verb) needs the id of another living country as target"))
         }
+        // 3.29.0: wars and strikes only where the country can physically get at the target.
+        if action == .declareWar || action == .launchNuke, !Reach.canReach(countryID, resolved, in: gameState) {
+            return .failure(MoveRejection(reason: "\(country.name) cannot reach \(gameState.getCountry(id: resolved)?.name ?? resolved): no border, no navy in range, no bomber or missile that reaches"))
+        }
         return .success((action, resolved))
     }
 

@@ -259,6 +259,7 @@ struct VictoryScreen: View {
         case .diplomaticVictory?, .allianceLeader?: return [.diplomacy, .alliance, .victory]
         case .economicVictory?, .prosperity?: return [.economy, .peace]
         case .servedFullTerm?: return [.election, .leadership, .peace]
+        case .manifestDestiny?, .sunNeverSets?, .everyRock?: return [.power, .victory, .economy]   // 3.29.0
         case .supremacy?, .survival?: return [.nuclear, .victory, .power]
         case .pyrrhicVictory?: return [.victory, .apocalypse, .defeat]
         case nil where [.lostElection, .termLimited, .retired, .deniedRenomination].contains(gameState.shadow.domesticEnding):

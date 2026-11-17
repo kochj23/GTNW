@@ -74,7 +74,7 @@ struct SituationRoomView: View {
             case .peace: PeaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .statehood: StatehoodSheet(gameState: gameState).environmentObject(gameEngine)
             case .factbook: FactbookSheet(gameState: gameState)
-            case .unclaimed: UnclaimedLandsSheet(gameState: gameState) { selectedCountryID = $0; zoom = .country }
+            case .unclaimed: UnclaimedLandsSheet(gameState: gameState, engine: gameEngine) { selectedCountryID = $0; zoom = .country }
             case .tutorial: TutorialSheet()
             case .space: SpaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .airCampaign: AirCampaignSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
@@ -115,6 +115,7 @@ struct SituationRoomView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 }).frame(minWidth: FontScale.w(900))
             }
+            worldBriefLine
             NewsTicker(items: gameState.shadow.ticker)
         }
     }
@@ -138,7 +139,17 @@ struct SituationRoomView: View {
                     .frame(width: FontScale.w(300))
             }
             ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 })
+            worldBriefLine
             NewsTicker(items: gameState.shadow.ticker)
+        }
+    }
+
+    /// 3.29.0: the real world's week in a modern game (only when a brief was applied).
+    @ViewBuilder private var worldBriefLine: some View {
+        if let b = gameState.shadow.worldBrief {
+            Text(verbatim: WorldBriefModel.line(b, in: gameState).uppercased())
+                .font(ThemeFont.mono(9, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(1).truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -261,6 +272,9 @@ struct SituationTopBar: View {
             Button("GROUP") { onSheet(.group) }.buttonStyle(ThemedButtonStyle())
             if let offer = gameEngine.openAcquisitions().first {   // 3.13.0: a historical purchase in its window
                 Button("OFFER: \(offer.name.uppercased())") { onSheet(.offers) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+            } else if !gameState.shadow.landBids.isEmpty {   // 3.29.0: price wars, auctions, offers to sell
+                Button("LAND MARKET (\(gameState.shadow.landBids.count))") { onSheet(.offers) }
+                    .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
             }
             if let t = gameState.shadow.treatyOffers.first {   // 3.14.0: a nation offers a treaty
                 Button("TREATY: \((gameState.getCountry(id: t.from)?.name ?? t.from).uppercased())") { onSheet(.treaties) }
@@ -634,7 +648,7 @@ struct CountryDossier: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Text(c.name.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.terminalAmber).lineLimit(2)
                             Text("\(c.region.rawValue) · \(p.ideology.rawValue)").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
-                            Text(c.government.rawValue.uppercased()).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                            Text(c.governmentLine.uppercased()).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                             if let leader = gameState.shadow.leaderNames[c.id] {   // 3.12.2: the historical leader of the day
                                 Text(verbatim: leader).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(2)
                             }
@@ -653,6 +667,10 @@ struct CountryDossier: View {
                                     .accessibilityLabel("Rename \(c.name)")
                             }
                         }
+                        // 3.29.0: what the land yields (Factbook resources, farmland, coast)
+                        Text(String(format: "LAND $%.2fB/YR · %@", ExpansionModel.landYield(c, in: gameState),
+                                    ExpansionModel.landResources(c.id, year: gameState.currentYear).map(\.rawValue).joined(separator: ", ").uppercased()))
+                            .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen).fixedSize(horizontal: false, vertical: true)
                         if o == gameState.playerCountryID, Islands.byID[c.id] != nil { islandDevelopment(c) }
                         if o != gameState.playerCountryID { foreignTerritoryActions(c) }   // 3.28.2
                     }

@@ -261,7 +261,7 @@ extension GameEngine {
             if !a.alliances.contains(b.id) { formAlliance(country1: a.id, country2: b.id) }
             gs.shadow.post("\(a.name) and \(b.name) form a coalition against the United States.", date: gs.currentDate, severity: 3)
             bumpWorld("diplomacy")
-            if act >= 1.5, !a.atWarWith.contains(me.id) {
+            if act >= 1.5, !a.atWarWith.contains(me.id), Reach.canReach(a.id, me.id, in: gs) {   // 3.29.0
                 declareWar(aggressor: a.id, defender: me.id)
                 bumpWorld("wars")
                 gs.shadow.post("\(a.name) declares war on the United States.", date: gs.currentDate, severity: 3)
@@ -393,16 +393,29 @@ extension GameEngine {
                 gs.shadow.eraDiverged.insert(c.id)   // someone other than history changed its government
                 continue
             }
-            guard h.name != c.name || h.government != c.government || h.flag != c.flag else { continue }
-            gs.countries[i].name = h.name
+            // 3.29.0: a theocracy history founds (Iran 1979) keeps history's faith; drawn faiths come from revolutions
+            // and settlements, not the timeline.
+            if h.government == .theocracy && c.government != .theocracy && c.faith == nil {
+                gs.countries[i].faith = Faith.historical(for: c.id)
+            } else if h.government != .theocracy && c.government == .theocracy && h.government != c.government {
+                gs.countries[i].faith = nil
+            }
+            let faith = h.government == .theocracy ? gs.countries[i].faith : nil
+            let styled = faith.map { FaithNames.styled(h.name, faith: $0) } ?? h.name
+            guard styled != c.name || h.government != c.government || h.flag != c.flag else { continue }
+            if let f = faith, c.government != .theocracy {
+                gs.countries[i].profile.ideology = f.isIslamic ? .islamicRepublic : .theocracy
+                gs.shadow.post("\(c.name): \(f.proclamation(of: c.name))", date: gs.currentDate, severity: 1)
+            }
+            gs.countries[i].name = styled
             gs.countries[i].government = h.government
             gs.countries[i].flag = h.flag
             gs.countries[i].alignment = h.alignment
             gs.shadow.eraGovernment[c.id] = h.government.rawValue
-            if h.name != c.name {
-                gs.shadow.post("\(c.name) becomes \(h.name).", date: gs.currentDate, severity: 1)
+            if styled != c.name {
+                gs.shadow.post("\(c.name) becomes \(styled).", date: gs.currentDate, severity: 1)
                 gs.shadow.worldStats["transitions", default: 0] += 1
-                logPlayEvent("era_transition", detail: ["country": c.id, "from": PlayHistory.text(c.name), "to": PlayHistory.text(h.name),
+                logPlayEvent("era_transition", detail: ["country": c.id, "from": PlayHistory.text(c.name), "to": PlayHistory.text(styled),
                                                         "game_date": PlayHistory.day(gs.currentDate)])
             }
         }

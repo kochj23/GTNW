@@ -119,7 +119,9 @@ enum ExpansionModel {
         // 3.13.1: the extraction rate and self-rule's share apply here, so every view shows the same figure.
         let share = gs.shadow.territoryPolicies[c.id]?.governance.incomeShare ?? 1
         let built = gs.shadow.islandProjects[c.id, default: []].reduce(0) { $0 + $1.income }   // 3.28.0
-        return (base * rampUp(yearsHeld: held) * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
+        // 3.29.0: the land itself pays (Factbook resources, farmland, coast), and more the longer it is developed.
+        let land = landYield(c, in: gs) * maturity(yearsHeld: held)
+        return ((base + land) * rampUp(yearsHeld: held) * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
             * rate(c.id, in: gs).incomeMultiplier + built) * share
     }
 

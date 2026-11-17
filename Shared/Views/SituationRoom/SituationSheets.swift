@@ -1034,6 +1034,10 @@ struct ResourcesSheet: View {
             Text(String(format: "TOTAL $%.1fB A YEAR · EARNED SO FAR $%.1fB · APPROVAL +%.1f FROM PROSPERITY", total,
                         gameState.shadow.resourceEarnings, ExpansionModel.prosperityBonus(incomePerYear: total)))
                 .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            // 3.29.0: what the land itself yields (Factbook resources, farmland, coast) at full production
+            Text(String(format: "LAND YIELD $%.1fB A YEAR AT FULL PRODUCTION · RISES WITH YEARS HELD",
+                        rows.reduce(0) { $0 + ExpansionModel.landYield($1.country, in: gameState) }))
+                .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
             if !strategic.isEmpty {
                 Text("STRATEGIC: " + strategic.map { k in
                     switch k {
@@ -1619,6 +1623,33 @@ struct AcquisitionSheet: View {
                 }
                 .padding(6).themedPanel()
             }
+            // 3.29.0: the land market: price wars (raise once), auctions (bid once) and offers to sell
+            if !gameState.shadow.landBids.isEmpty {
+                Text("LAND MARKET").font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 4)
+            }
+            ForEach(gameState.shadow.landBids) { b in
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: "\(b.kind == .priceWar ? "PRICE WAR" : (b.kind == .auction ? "AUCTION" : "OFFER")): \(b.label.uppercased())")
+                            .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                        Text(verbatim: b.kind == .offer
+                             ? String(format: "%@ asks $%.1fB · until %@", gameState.getCountry(id: b.owner)?.name ?? b.owner, b.price, GameCalendar.format(b.deadline))
+                             : String(format: "%@ bids $%.1fB · your raise $%.1fB · closes %@", b.rival.flatMap { gameState.getCountry(id: $0)?.name } ?? "Reserve",
+                                      b.rivalPrice, LandMarket.raise(b), GameCalendar.format(b.deadline)))
+                            .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    if b.kind == .offer {
+                        Button("ACCEPT") { gameEngine.acceptLandOffer(b.id) }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true)).disabled(gameState.actionsRemaining == 0)
+                    } else {
+                        Button(b.kind == .auction ? "BID" : "RAISE") { gameEngine.raiseBid(b.id) }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
+                    }
+                    Button(b.kind == .offer ? "DECLINE" : "WALK AWAY") { gameEngine.walkAway(b.id) }.buttonStyle(ThemedButtonStyle())
+                }
+                .padding(6).themedPanel()
+            }
             HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
         }
         .padding(16)
@@ -1667,9 +1698,67 @@ struct RecordsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var gameState: GameState
     var hall: [InfamyRecord: InfamyEntry] = HallOfInfamy.load()
+    /// 3.29.0: Infamy | Names | Empire.
+    enum Tab: String, CaseIterable { case infamy = "INFAMY", names = "NAMES", empire = "EMPIRE" }
+    @State var tab: Tab = .infamy
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                ForEach(Tab.allCases, id: \.self) { t in
+                    Button(t.rawValue) { tab = t }.buttonStyle(ThemedButtonStyle(color: tab == t ? GTNWColors.terminalAmber : GTNWColors.neonCyan, prominent: tab == t))
+                }
+            }
+            switch tab {
+            case .infamy: infamy
+            case .names: names
+            case .empire: empire
+            }
+            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
+        }
+        .padding(16)
+        .frame(width: FontScale.w(620))
+        .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+
+    /// 3.29.0: every land the President renamed, original → current, with the date.
+    @ViewBuilder private var names: some View {
+        Text("YOUR NAMES ON THE MAP").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+        let book = gameState.nameBook
+        if book.isEmpty {
+            Text("No lands renamed yet. RENAME in a territory's dossier.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+        }
+        ForEach(book.prefix(40), id: \.land) { n in
+            HStack {
+                Text(verbatim: "\(n.original) → \(n.current)").font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Text(verbatim: GameCalendar.format(n.date)).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+            }
+            .padding(3).themedPanel(retroFill: EGA.black)
+        }
+    }
+
+    /// 3.29.0: progress toward the empire victories.
+    @ViewBuilder private var empire: some View {
+        Text("EMPIRE").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
+        let met = Set(gameState.shadow.empireAtStart ?? [])
+        ForEach(EmpireGoal.allCases) { g in
+            let p = EmpireModel.progress(g, gameState)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(g.title.uppercased()).font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                    Spacer()
+                    Text(met.contains(g.rawValue) ? "HELD AT THE START" : "\(p.held)/\(p.total) · \(g.victory.baseScore) PTS")
+                        .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen)
+                }
+                Text(g.victory.description).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(3).themedPanel(retroFill: EGA.black)
+        }
+    }
+
+    @ViewBuilder private var infamy: some View {
             Text("HALL OF INFAMY").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
             ForEach(InfamyRecord.allCases) { r in
                 HStack {
@@ -1699,11 +1788,6 @@ struct RecordsSheet: View {
                 Text(verbatim: "\(GameCalendar.format(l.date)): \(l.text.replacingOccurrences(of: "Nova: ", with: ""))")
                     .font(ThemeFont.mono(10)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(2)
             }
-            HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
-        }
-        .padding(16)
-        .frame(width: FontScale.w(620))
-        .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 }
 
@@ -2033,7 +2117,7 @@ struct FactbookSheet: View {
                         Spacer()
                         Text(c.region.rawValue).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                     }
-                    Text(verbatim: "\(c.government.rawValue)\(gameState.shadow.leaderNames[c.id].map { " · \($0)" } ?? "")")
+                    Text(verbatim: "\(c.governmentLine)\(gameState.shadow.leaderNames[c.id].map { " · \($0)" } ?? "")")
                         .font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -2249,7 +2333,10 @@ struct AirCampaignSheet: View {
 struct UnclaimedLandsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var gameState: GameState
+    /// 3.29.0: claim campaigns (nil in offscreen snapshots: no campaign buttons).
+    var engine: GameEngine? = nil
     let onShow: (String) -> Void
+    @State private var picked: Set<String> = []
 
     var body: some View {
         let lands = gameState.unclaimedLands
@@ -2263,6 +2350,7 @@ struct UnclaimedLandsSheet: View {
             .foregroundColor(GTNWColors.terminalAmber)
             Text("Land no government holds in \(String(gameState.currentYear)). Islands held by another power are seized from them (war), so they aren't listed.")
                 .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            if let engine { campaign(engine) }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 6) {
                     ForEach(lands) { land in
@@ -2272,6 +2360,10 @@ struct UnclaimedLandsSheet: View {
                                 Text(land.kind.label).font(ThemeFont.mono(9)).foregroundColor(land.kind == .emptyIsland ? GTNWColors.terminalGreen : .gray)
                             }
                             Spacer()
+                            if engine != nil {
+                                Button(picked.contains(land.id) ? "☑" : "☐") { if picked.remove(land.id) == nil { picked.insert(land.id) } }
+                                    .buttonStyle(ThemedButtonStyle()).accessibilityLabel("Select \(land.name) for a campaign")
+                            }
                             Button("SHOW") { onShow(land.id); dismiss() }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
                         }
                         .padding(6)
@@ -2286,5 +2378,33 @@ struct UnclaimedLandsSheet: View {
         }
         .padding(16)
         .frame(width: FontScale.w(560), height: FontScale.h(600))
+    }
+
+    /// 3.29.0: one order (one action) claims a whole set, a flag or a few a turn.
+    @ViewBuilder private func campaign(_ engine: GameEngine) -> some View {
+        if let c = gameState.shadow.claimCampaign {
+            HStack {
+                Text(verbatim: "CAMPAIGN \"\(c.name)\": \(c.planted.count) PLANTED · \(c.queue.count) TO GO")
+                    .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalGreen)
+                Spacer()
+                Button("CANCEL") { engine.cancelClaimCampaign() }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed))
+            }
+        } else {
+            let off = gameState.actionsRemaining == 0 || gameState.gameOver
+            HStack(spacing: 6) {
+                Button("CAMPAIGN: EMPTY ISLANDS") { engine.launchClaimCampaign(.emptyIslands, name: "Empty Islands") }
+                    .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen)).disabled(off || gameState.campaignTargets(.emptyIslands).isEmpty)
+                Menu("REGION") {
+                    ForEach(WorldRegion.allCases, id: \.self) { r in
+                        Button(r.rawValue) { engine.launchClaimCampaign(.region(r), name: r.rawValue) }
+                    }
+                }
+                .fixedSize().disabled(off)
+                Button("CAMPAIGN: SELECTED (\(picked.count))") {
+                    if engine.launchClaimCampaign(.custom(picked.sorted()), name: "Selected Lands") { picked = [] }
+                }
+                .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen)).disabled(off || picked.isEmpty)
+            }
+        }
     }
 }

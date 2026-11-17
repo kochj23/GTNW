@@ -476,6 +476,17 @@ struct VectorWorldMap: View {
                 .offset(y: 12)
                 .allowsHitTesting(false)
         }
+        // 3.29.0: the President's names for his lands, bold and whole (never truncated), above the territory tag.
+        ForEach(gameState.namedLands.sorted().compactMap { byID[$0] }, id: \.id) { c in
+            Text(verbatim: c.name.uppercased())
+                .font(ThemeFont.mono(zoom == .world ? 9 : 12, .heavy))
+                .foregroundColor(Theme.isRetro ? EGA.yellow : GTNWColors.terminalAmber)
+                .shadow(color: .black, radius: 1)
+                .fixedSize()
+                .position(CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t))
+                .offset(y: -4)
+                .allowsHitTesting(false)
+        }
         ForEach(Array(struck.union(warring)).sorted(), id: \.self) { id in
             if let c = byID[id] {
                 let pt = CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t)

@@ -510,3 +510,21 @@ actor PostgresGameStore: GameStore {
         return .unreachable(String(describing: type(of: error)))
     }
 }
+
+// MARK: - World Brief (3.29.0)
+
+extension PostgresGameStore {
+    /// The newest real-world brief Nova wrote to `play.world_brief` (read-only; bounded to 256 KB). Throws when the
+    /// table doesn't exist yet or the role can't read it; the caller treats any failure as "no brief".
+    func latestWorldBrief() async throws -> (day: String?, json: Data)? {
+        try await withConnection { conn in
+            let rows = try await conn.query("""
+                SELECT day::text, brief::text FROM play.world_brief
+                WHERE octet_length(brief::text) <= 262144
+                ORDER BY day DESC LIMIT 1
+                """, logger: self.logger)
+            for try await (day, text) in rows.decode((String, String).self) { return (day, Data(text.utf8)) }
+            return nil
+        }
+    }
+}

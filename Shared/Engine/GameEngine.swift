@@ -592,12 +592,20 @@ class GameEngine: ObservableObject {
             // Don't add to summary if just waiting/monitoring - reduces noise
 
         case .declareWar(let targetID):
+            // 3.29.0: a computer-run nation can only open a war it can physically fight.
+            if country.id != gameState.playerCountryID, !Reach.canReach(country.id, targetID, in: gameState) {
+                modifyDiplomaticRelation(from: targetID, to: country.id, by: -8)
+                gameState.aiActionSummary.append("\(country.flag) \(country.name) 📢 condemns \(getCountry(targetID)?.name ?? targetID) (no way to strike it)")
+                break
+            }
             declareWar(aggressor: country.id, defender: targetID)
             if let target = getCountry(targetID) {
                 eventLogger.log("Declared war on \(target.name)", type: .war, country: country.name, turn: gameState.turn)
                 gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(target.flag) \(target.name)")
             }
 
+        case .launchNuclearStrike(let targetID, _) where country.id != gameState.playerCountryID && !Reach.canReach(country.id, targetID, in: gameState):
+            break   // 3.29.0: no bomber or missile that reaches
         case .launchNuclearStrike(let targetID, let base):
             // 3.9.0: the computer sizes its own salvo (AttackSizing.aiPreset).
             let warheads = getCountry(targetID).map { AttackSizing.aiWarheads(base, attacker: country, defender: $0) } ?? base
@@ -655,6 +663,7 @@ class GameEngine: ObservableObject {
         return gameState.countries
             .filter { !$0.isDestroyed && $0.id != country.id && !country.alliances.contains($0.id) }
             .filter { (country.diplomaticRelations[$0.id] ?? 0) < -40 }
+            .filter { Reach.canReach(country.id, $0.id, in: gameState) }   // 3.29.0
             .sorted { $0.militaryStrength < $1.militaryStrength }
             .first?
             .id

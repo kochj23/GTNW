@@ -211,6 +211,16 @@ struct ShadowState: Codable {
     /// The record of the age (3.17.6): what other powers did, newest last, capped at 40.
     var worldAtrocities: [TickerItem] = []
 
+    /// 3.29.0: the empire release. Renames the President ordered (the Names tab), the claim campaign under way,
+    /// open price wars / auctions / offers, historical offers lost to a rival, the empire goals already met when the
+    /// game began (nil on older saves: set at the first check), and the real-world brief applied at the start.
+    var renames: [RenameRecord] = []
+    var claimCampaign: ClaimCampaign?
+    var landBids: [LandBid] = []
+    var lostOffers: Set<String> = []
+    var empireAtStart: [String]?
+    var worldBrief: WorldBriefState?
+
     // Scenario
     var scenarioID: String?
     var eventQueue: [ScheduledEvent] = []
@@ -250,6 +260,7 @@ struct ShadowState: Codable {
         case cabinetFollowsHistory, playerLeader, trackedGovernments, divergedNations, leaderNames
         case acquired, acquisitionIncome, announcedOffers, extraction, lastLevy, lastTurnCash, worldStats, firedRivalries, treatyOffers, lastReaction, novaLines, eraSyncYear, eraGovernment, eraDiverged, eraBoardIDs, historicalAbsorptions, nobelMoments, playerWarsStarted, startOutputShare, prosperousSince, satellites
         case tacticUses, tacticStances, tacticPrograms, aftermath, resistanceBroken, pressedTroops, hiredContingents, worldAtrocities
+        case renames, claimCampaign, landBids, lostOffers, empireAtStart, worldBrief
     }
 
     init() {}
@@ -333,6 +344,12 @@ struct ShadowState: Codable {
         pressedTroops = try c.decodeIfPresent(Double.self, forKey: .pressedTroops) ?? 0
         hiredContingents = try c.decodeIfPresent([String: Double].self, forKey: .hiredContingents) ?? [:]
         worldAtrocities = try c.decodeIfPresent([TickerItem].self, forKey: .worldAtrocities) ?? []
+        renames = (try? c.decodeIfPresent([RenameRecord].self, forKey: .renames)) ?? []
+        claimCampaign = try? c.decodeIfPresent(ClaimCampaign.self, forKey: .claimCampaign)
+        landBids = (try? c.decodeIfPresent([LandBid].self, forKey: .landBids)) ?? []
+        lostOffers = (try? c.decodeIfPresent(Set<String>.self, forKey: .lostOffers)) ?? []
+        empireAtStart = try? c.decodeIfPresent([String].self, forKey: .empireAtStart)
+        worldBrief = try? c.decodeIfPresent(WorldBriefState.self, forKey: .worldBrief)
     }
 }
 

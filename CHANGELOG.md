@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.29.0] - 2026-11-16 — The empire release
+
+### Added
+- **Land that pays.** Territories yield from their Factbook natural resources (each from the era it was worth
+  exploiting), farmland and coastline, valued against the owner's economy and rising up to +50% over ten years held
+  (about 0.2% of the owner's output at most per land). Per-land yield in the dossier, the total in RESOURCES.
+- **Empire victories.** Manifest Destiny (1000), The Sun Never Sets (1200), Every Rock (900); goals met at the start
+  don't count. RECORDS → EMPIRE shows the progress.
+- **Claim campaigns.** From UNCLAIMED: every empty island, a region, or a ticked selection. One action, then 1–6
+  landings a turn under the ordinary claim rules until done or out of troops or money; CANCEL any time.
+- **Your names on the map.** Renamed lands are labelled in bold on the map; RECORDS → NAMES lists original → new
+  name with dates.
+- **Land market.** Rival bidders on purchases and historical acquisitions (raise once or walk away; a lost
+  historical offer is gone), auctions and offers of colonies their owners want rid of, with deadlines.
+- **Theocracies of any faith.** 57 faiths with founding years (world religions, new religious movements, neopagan,
+  African and diaspora, ancient and indigenous, East Asian), drawn by revolutions and installed governments with a
+  mild lean to the country's Factbook religion; the faith is saved on the country and shows in its name, dossier and
+  the news. History's own theocracies keep history's faith.
+- **Real-world intel.** Modern games (2024+) read the newest `play.world_brief` from the Games DB in the background
+  (private edition only, never blocking, 4-second timeout, missing table tolerated): relations, AI preferences,
+  attributed cyber incidents and a WORLD BRIEF line. All brief content is validated and clamped.
+
+### Changed
+- **Attacks only where physically possible.** AI nations, AI brains and AI wars need a land border, a navy in range
+  for the era, or long-range bombers (1940s) / missiles (1960s). Otherwise they fall back to condemnation or covert
+  action; unreachable wars between others no longer raise a crisis card.
+
+### Fixed
+- **Wars of attrition (Ukraine collapsing in months).** Before: an AI-vs-AI front lost the defender about 1.9% of its
+  army and 5% of its will a week, with no reinforcements or aid, so in 2025 starts Ukraine's will broke in about
+  three months and Russia installed a government. After: comparable nations fight with a home-ground bonus, outside
+  aid from the defender's allies and the aggressor's enemies (alliances and the world brief), drafts and attrition on
+  both sides, and surrender only on collapse or after at least a year (26 weeks before 1914, scaled by difficulty)
+  with half the weeks decisive. In a seeded test the war is still running after 24 monthly turns in at least 16 of
+  20 seeds; a great power against a micro-state still ends within months.
+
 ## [3.28.2] - 2026-11-16 — Every land reachable, and no action spent on nothing
 
 ### Fixed

@@ -21,6 +21,9 @@ enum VictoryType: String, Codable, CaseIterable {
     case nobelPeace = "Nobel Laureate"               // 1300 pts (3.16.0)
     case prosperity = "The Good Life"                // 1400 pts (3.18.12)
     case servedFullTerm = "Served Out Your Presidency" // 900 pts (3.28.0)
+    case manifestDestiny = "Manifest Destiny"        // 1000 pts (3.29.0)
+    case sunNeverSets = "The Sun Never Sets"          // 1200 pts (3.29.0)
+    case everyRock = "Every Rock"                    // 900 pts (3.29.0)
 
     var baseScore: Int {
         switch self {
@@ -35,6 +38,9 @@ enum VictoryType: String, Codable, CaseIterable {
         case .allianceLeader: return 1100
         case .nobelPeace: return 1300
         case .servedFullTerm: return 900
+        case .manifestDestiny: return 1000
+        case .sunNeverSets: return 1200
+        case .everyRock: return 900
         }
     }
 
@@ -62,6 +68,12 @@ enum VictoryType: String, Codable, CaseIterable {
             return "Won the war but at catastrophic cost"
         case .servedFullTerm:
             return "Served every day the Constitution allowed and handed over the keys in one piece"
+        case .manifestDestiny:
+            return "Held every land of North America, sea to shining sea"
+        case .sunNeverSets:
+            return "Held land in every region of the world, so the sun never set on the flag"
+        case .everyRock:
+            return "Planted the flag on every one of the world's 32 small islands"
         }
     }
 }
@@ -292,6 +304,9 @@ class VictoryChecker {
 
         // Treaty network, alliance leadership, economic dominance, Nobel moments (PeaceModel)
         if let peace = PeaceModel.victory(gameState) { return peace }
+
+        // 3.29.0: empire victories (goals already met when the game began don't count)
+        if let empire = EmpireModel.victory(gameState) { return empire }
 
         // Nuclear Supremacy: last nuclear power
         let nuclearPowers = gameState.countries.filter {

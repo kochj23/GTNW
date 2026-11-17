@@ -41,6 +41,9 @@ struct WarFront: Codable, Identifiable, Hashable {
     var usSide: String?
     var status: FrontStatus = .fighting
     var battles: Int = 0
+    /// 3.29.0: consecutive weeks of decisive attacker superiority (wars between computer-run nations). Optional so
+    /// older saves decode.
+    var decisiveWeeks: Int? = nil
 
     var involvesUS: Bool { usSide != nil }
 }
@@ -610,5 +613,127 @@ extension GameEngine {
         frontBlow(targetID, will: aim == .cities ? 0.12 : 0.06, troops: 0.02)   // also saps will on any U.S. front
         completePlayerAction()
         return true
+    }
+}
+
+// MARK: - Wars of attrition between computer-run nations (3.29.0)
+
+/// Before 3.29.0 a computer-run war used the War Room's week-by-week model unchanged: Russia against Ukraine in a 2025
+/// start broke Ukraine's will in about three months (1.9% of its army a week, morale −5% a week, no help from anyone).
+/// Now a war between two comparable nations (the defender fields at least 15% of the attacker's force pool) is a war
+/// of attrition: the defender fights on home ground (stability, terrain, size), its allies and the aggressor's
+/// enemies send aid, both sides lose men slowly and rotate units, morale recovers between offensives, the front
+/// stabilises, and the attacker can only win after many months of decisive superiority. Lopsided wars (a great power
+/// against a micro-state) keep the old, quick model. Design choices, not a simulation of any real war.
+enum AttritionModel {
+    /// Below this share of the attacker's force pool the defender is overmatched: the classic quick war applies.
+    static let mismatchShare = 0.15
+
+    static func isMismatch(attacker a: Country, defender d: Country) -> Bool {
+        CombatModel.forcePool(d) < CombatModel.forcePool(a) * mismatchShare
+    }
+
+    /// Home-ground multiplier on the defender's combat power: 1 + 0.4 × stability + terrain penalty + size (≤ 0.4).
+    static func homeGround(_ d: Country) -> Double {
+        let stability = Double(max(0, min(100, d.stability))) / 100
+        let terrain = Double(WorldFactbookDatabase.record(for: d.id).terrainType.invasionPenalty) / 100
+        let size = min(0.4, log10(Double(max(1, d.population))) / 5)
+        return 1 + 0.4 * stability + terrain + size
+    }
+
+    /// Weekly casualty scale against the War Room's model: positional war grinds slower (0.4); before 1900, when
+    /// field armies met in a few decisive battles, 0.7.
+    static func lossScale(year: Int) -> Double { year < 1900 ? 0.7 : 0.4 }
+
+    /// Weeks of fighting before an attacker can force a surrender: a year in the modern era, half that before 1914;
+    /// harder AIs press a little faster (Easy ×1.2 … Nightmare ×0.8).
+    static func minimumWeeks(year: Int, difficulty: DifficultyLevel) -> Int {
+        let base = year < 1914 ? 26.0 : 52.0
+        let k: Double
+        switch difficulty {
+        case .easy: k = 1.2
+        case .normal: k = 1
+        case .hard: k = 0.9
+        case .nightmare: k = 0.8
+        }
+        return Int((base * k).rounded())
+    }
+
+    /// Nations that back the defender: its allies, and nations hostile to the aggressor (relations ≤ −30 or a
+    /// World Brief tension pair), not allied with the aggressor and not party to this war.
+    static func supporters(of f: WarFront, in gs: GameState) -> [Country] {
+        let briefFoes = Set((gs.shadow.worldBrief?.pairs ?? []).filter { $0.b == f.attacker && $0.kind != "cyber" }.map(\.a))
+        return gs.countries.filter { s in
+            guard !s.isDestroyed, !s.isTerritory, s.id != f.attacker, s.id != f.defender, !s.alliances.contains(f.attacker),
+                  !s.atWarWith.contains(f.defender) else { return false }
+            return s.alliances.contains(f.defender) || (s.diplomaticRelations[f.attacker] ?? 0) <= -30 || briefFoes.contains(s.id)
+        }
+    }
+
+    /// Thousands of troops' worth of aid a week (weapons, money, volunteers): 0.12% of the backers' force pools,
+    /// half that before 1945, capped at 2.5% of the defender's opening army a week.
+    static func weeklyAid(_ supporters: [Country], defenderInitial: Double, year: Int) -> Double {
+        let raw = supporters.reduce(0) { $0 + CombatModel.forcePool($1) } * 0.0012 * (year >= 1945 ? 1 : 0.5)
+        return min(defenderInitial * 0.025, raw)
+    }
+
+    /// One week of a war of attrition. Returns the outcome applied (the caller adds casualties to the world's toll).
+    @discardableResult
+    static func week(_ f: inout WarFront, attacker a: Country, defender d: Country, in gs: GameState, rolls: (Double, Double)) -> BattleOutcome {
+        let year = gs.currentYear
+        let home = homeGround(d)
+        let pa = CombatModel.power(troops: f.attackerTroops, will: f.attackerWill, strength: a.militaryStrength, defending: false)
+        let pd = CombatModel.power(troops: f.defenderTroops, will: f.defenderWill, strength: d.militaryStrength, defending: true) * home
+        let ratio = max(0.05, min(20, pa / max(0.001, pd)))
+        let luckA = 0.7 + rolls.0 * 0.6, luckD = 0.7 + rolls.1 * 0.6
+        let k = lossScale(year: year)
+        let aLoss = f.attackerTroops * 0.012 * k * pow(1 / ratio, 0.5) * luckD
+        let dLoss = f.defenderTroops * 0.012 * k * pow(ratio, 0.5) * luckA
+        let o = BattleOutcome(attackerLosses: aLoss, defenderLosses: dLoss, civilianLosses: (aLoss + dLoss) * 0.3,
+                              momentumChange: max(-0.25, min(0.25, (ratio - 1) * 0.08)))
+        f.attackerTroops = max(0, f.attackerTroops - aLoss)
+        f.defenderTroops = max(0, f.defenderTroops - dLoss)
+        f.attackerDead += aLoss * 0.3
+        f.defenderDead += dLoss * 0.3
+        f.civilianDead += o.civilianLosses
+        f.economicLoss += dLoss * 0.05
+        // The front stabilises: momentum decays toward its equilibrium instead of running away.
+        f.attackerMomentum = max(-1, min(1, f.attackerMomentum * 0.9 + o.momentumChange))
+        // Replacements and aid: both sides draft (0.4% of the opening army a week, up to it); the defender's backers
+        // send aid.
+        let backers = supporters(of: f, in: gs)
+        let aid = weeklyAid(backers, defenderInitial: f.defenderInitial, year: year)
+        f.defenderTroops = min(f.defenderInitial * 1.5, f.defenderTroops + f.defenderInitial * 0.004 + aid)
+        f.attackerTroops = min(f.attackerInitial, f.attackerTroops + f.attackerInitial * 0.004)
+        // Morale: losses and momentum bite (the defender less on home ground); rotation and propaganda pull both
+        // back toward 0.7; backers lift the defender; a long war wears the attacker down.
+        let aFrac = aLoss / max(1, f.attackerInitial), dFrac = dLoss / max(1, f.defenderInitial)
+        f.attackerWill += -aFrac * 2.5 + f.attackerMomentum * 0.01 + (0.7 - f.attackerWill) * 0.05 - (f.battles > 26 ? 0.0015 : 0)
+        f.defenderWill += -dFrac * 2.5 / home - f.attackerMomentum * 0.01 + (0.7 - f.defenderWill) * 0.05 + min(0.01, Double(backers.count) * 0.001)
+        f.attackerWill = max(0, min(1, f.attackerWill))
+        f.defenderWill = max(0, min(1, f.defenderWill))
+        // Decisive superiority: the attacker winning clearly and outnumbering the defender 1.5 to 1.
+        let decisive = f.attackerMomentum >= 0.6 && f.attackerTroops >= f.defenderTroops * 1.5
+        f.decisiveWeeks = decisive ? (f.decisiveWeeks ?? 0) + 1 : 0
+        f.battles += 1
+        return o
+    }
+
+    /// The verdict for a war of attrition: the attacker only wins once the defender has collapsed (under 5% of its
+    /// army) or after the minimum weeks with half of them decisive; until then a breaking defender rallies.
+    static func verdict(_ f: inout WarFront, year: Int, difficulty: DifficultyLevel) -> FrontStatus {
+        let v = CombatModel.verdict(f)
+        guard v == .attackerWon else { return v }
+        let weeks = minimumWeeks(year: year, difficulty: difficulty)
+        let collapsed = f.defenderTroops < f.defenderInitial * 0.05
+        if collapsed || (f.battles >= weeks && (f.decisiveWeeks ?? 0) >= weeks / 2) { return .attackerWon }
+        f.defenderWill = max(f.defenderWill, 0.2)   // the line holds: the defender rallies
+        return .fighting
+    }
+
+    /// Chance a week that a long stalemate (two years, momentum within ±0.5) ends in a negotiated ceasefire:
+    /// about one in five a year.
+    static func ceasefireChance(_ f: WarFront) -> Double {
+        f.battles > 104 && abs(f.attackerMomentum) < 0.5 ? 0.004 : 0
     }
 }
