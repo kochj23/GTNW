@@ -13,6 +13,7 @@ struct GlobalThermalNuclearWarApp: App {
     @StateObject private var gameEngine = GameEngine()
     @StateObject private var themes = ThemeManager.shared
     @StateObject private var fontScale = FontScaleManager.shared
+    @StateObject private var keys = KeyBindingStore.shared   // 3.33.0: remappable shortcuts (Settings → Keys)
     @State private var showingAISettings = false
 
     init() {
@@ -70,14 +71,14 @@ struct GlobalThermalNuclearWarApp: App {
                 Button("New Game") {
                     gameEngine.startNewGame()
                 }
-                .keyboardShortcut("n", modifiers: .command)
+                .gameShortcut(.newGame, store: keys)
             }
 
             CommandMenu("AI") {
                 Button("AI Backend Settings...") {
                     showingAISettings = true
                 }
-                .keyboardShortcut("a", modifiers: [.command, .option])
+                .gameShortcut(.aiSettings, store: keys)
 
                 Divider()
 
@@ -89,7 +90,7 @@ struct GlobalThermalNuclearWarApp: App {
                     ForEach(GameTheme.allCases) { Text($0.displayName).tag($0) }
                 }
                 Button(themes.isRetro ? "Switch to Modern Skin" : "Switch to Retro Skin") { themes.toggle() }
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
+                    .gameShortcut(.toggleSkin, store: keys)
                 Divider()
                 Toggle("Shadow President Art", isOn: Binding(get: { ShadowPack.shared.useRetroArt },
                                                              set: { ShadowPack.shared.useRetroArt = $0 }))
@@ -107,6 +108,7 @@ struct GlobalThermalNuclearWarApp: App {
                 GTNWAISettingsView().tabItem { Label("AI", systemImage: "cpu") }
                 ShadowPackSettingsView().tabItem { Label("Shadow Pack", systemImage: "eye") }
                 GameStoreSettingsView().tabItem { Label("Saves & DB", systemImage: "externaldrive.connected.to.line.below") }
+                KeyBindingsSettingsView().tabItem { Label("Keys", systemImage: "keyboard") }
             }
             .font(.scaled(.body))
             .controlSize(FontScale.factor >= 1.5 ? .large : .regular)

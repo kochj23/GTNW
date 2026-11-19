@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`--migrate-store`, `--launch-smoke`) still prints. `LoggingTests.swift`: categories, a note read back from the
   unified log, and a source scan for stray `print`.
 
+- **Remappable gameplay shortcuts (macOS).** New Game, AI Backend Settings and Switch Skin read their keys from
+  `KeyBindingStore` (`Shared/Models/KeyBindings.swift`); Settings → Keys edits them, with Reset and Reset All.
+  Defaults are the shortcuts the game always had (⌘N, ⌥⌘A, ⇧⌘R). `KeyBindingTests.swift`: 8 tests.
+
 ### Fixed
 - README test badge said 868; it now shows the real count.
 

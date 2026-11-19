@@ -54,6 +54,7 @@
 		1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003A /* Release331Tests.swift */; };
 		1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003F /* Release332Tests.swift */; };
 		1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */; };
+		1A7E5C00334318F4BABD3E0F /* KeyBindingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003354F465D372E248 /* KeyBindingTests.swift */; };
 		1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00334B2A544A8B123E /* LoggingTests.swift */; };
 		1A7E5C003365318D9B0FD872 /* GoldenExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */; };
 		1A7E5C0029A000000000002B /* Release330Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000002A /* Release330Tests.swift */; };
@@ -253,6 +254,7 @@
 		B3A56622AE3C641209272325 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */; };
 		B412B56BCEA45BC76D3284D4 /* LegacyStoreImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B461821C69E93A2EC585B98 /* LegacyStoreImport.swift */; };
 		B4DB344F934840E5FA6D390D /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F961F9A3D52CD1EC10D97CF /* GameState.swift */; };
+		1A7E5C0033D3887257513039 /* KeyBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003388A5D0178012B3 /* KeyBindings.swift */; };
 		B53FC608F112D59453DF010A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DA0AC7158FC18AE8575791A /* Theme.swift */; };
 		B6D8AE81F735B62EAF7434AA /* SystemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8EF3871D54AD759C686C04 /* SystemsView.swift */; };
 		B6EF9A604F7625120A16F32A /* SituationSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036AA603358401CC4A9A2EFD /* SituationSheets.swift */; };
@@ -304,6 +306,7 @@
 		E2485A964A8961A4CD6EFBE7 /* WorldEvaluation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB4D84116FC98A46D9A304E /* WorldEvaluation.swift */; };
 		E3A6138DA1901B58438150AC /* PostgresGameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701102036BC53F821A7D94AB /* PostgresGameStore.swift */; };
 		E53E4698A3E911D099B1CD40 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F961F9A3D52CD1EC10D97CF /* GameState.swift */; };
+		1A7E5C0033A6DABEF0FAC529 /* KeyBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003388A5D0178012B3 /* KeyBindings.swift */; };
 		E60EF72D1CF53E4ACAF32705 /* Country.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4591D208BA4670CBA98E76 /* Country.swift */; };
 		E76389057B2DD82D0D8ACAF2 /* AdvisorWarnings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E76389057B2DD82D0D8ACAF1 /* AdvisorWarnings.swift */; };
 		E76389057B2DD82D0D8ACAF3 /* AdvisorWarnings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E76389057B2DD82D0D8ACAF1 /* AdvisorWarnings.swift */; };
@@ -375,6 +378,7 @@
 		1A7E5C0029A000000000003A /* Release331Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release331Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003F /* Release332Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release332Tests.swift; sourceTree = "<group>"; };
 		1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeterminismTests.swift; sourceTree = "<group>"; };
+		1A7E5C003354F465D372E248 /* KeyBindingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyBindingTests.swift; sourceTree = "<group>"; };
 		1A7E5C00334B2A544A8B123E /* LoggingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoggingTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoldenExportTests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000002A /* Release330Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release330Tests.swift; sourceTree = "<group>"; };
@@ -422,6 +426,7 @@
 		49C60A30E282A42871805106 /* ElectionHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ElectionHistory.swift; sourceTree = "<group>"; };
 		4C968A96393D1AB4C07B3DDB /* AIKitTestSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIKitTestSupport.swift; sourceTree = "<group>"; };
 		4F961F9A3D52CD1EC10D97CF /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
+		1A7E5C003388A5D0178012B3 /* KeyBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindings.swift; sourceTree = "<group>"; };
 		50CDFB6A49139768F787226E /* Quotations.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Quotations.swift; sourceTree = "<group>"; };
 		5187E8FF4DA78ABB3EFDF961 /* GTNWTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GTNWTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		54B56D15BE9A9FCF02F88931 /* QuoteViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuoteViews.swift; sourceTree = "<group>"; };
@@ -615,6 +620,7 @@
 				AB4591D208BA4670CBA98E76 /* Country.swift */,
 				846D958A103EA494AAC732D1 /* CyberWarfare.swift */,
 				4F961F9A3D52CD1EC10D97CF /* GameState.swift */,
+				1A7E5C003388A5D0178012B3 /* KeyBindings.swift */,
 				A998F3C744EB66ACE08758DF /* GameSystems.swift */,
 				5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */,
 				2F7AB3E19855FB84741C6A73 /* HistoricalAdministrations.swift */,
@@ -671,6 +677,7 @@
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
+				1A7E5C003354F465D372E248 /* KeyBindingTests.swift */,
 				1A7E5C00334B2A544A8B123E /* LoggingTests.swift */,
 				1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */,
 				1A7E5C0029A000000000002A /* Release330Tests.swift */,
@@ -1166,6 +1173,7 @@
 				6FC58C6C449B38D80847C955 /* CyberWarfare.swift in Sources */,
 				854167CE65FCF346BA800663 /* GameEngine.swift in Sources */,
 				E53E4698A3E911D099B1CD40 /* GameState.swift in Sources */,
+				1A7E5C0033A6DABEF0FAC529 /* KeyBindings.swift in Sources */,
 				6EB415D2D4186D38A3616E76 /* GameSystems.swift in Sources */,
 				EF095B87A192355C459DBF6E /* GlobalThermalNuclearWarApp.swift in Sources */,
 				F22190179915148B3EA249D4 /* ProhibitedWeapons.swift in Sources */,
@@ -1314,6 +1322,7 @@
 				1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */,
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
+				1A7E5C00334318F4BABD3E0F /* KeyBindingTests.swift in Sources */,
 				1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */,
 				1A7E5C003365318D9B0FD872 /* GoldenExportTests.swift in Sources */,
 				1A7E5C0029A000000000002B /* Release330Tests.swift in Sources */,
@@ -1338,6 +1347,7 @@
 				36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */,
 				D7B745442B105570408715EB /* GameEngine.swift in Sources */,
 				B4DB344F934840E5FA6D390D /* GameState.swift in Sources */,
+				1A7E5C0033D3887257513039 /* KeyBindings.swift in Sources */,
 				9B6EDDFB99BB9370BBAE9C2F /* GameSystems.swift in Sources */,
 				14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */,
 				229A0D1F5A663D4CEE959DD7 /* ProhibitedWeapons.swift in Sources */,
