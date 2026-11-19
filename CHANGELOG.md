@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.33.0] - 2026-11-19 — Same seed, same war
+
 ### Changed
 - **Full determinism.** Every gameplay roll now draws from the game's own `GameRNG` (SplitMix64, saved with the
   game): crises and their wording, elections, combat, covert operations and dirty tactics, the computer's moves,
