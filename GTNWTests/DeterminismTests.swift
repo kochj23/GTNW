@@ -81,9 +81,11 @@ enum ScriptedGame {
     /// Play `turns` turns from `year` with `seed`. `onTurn` sees each turn's input and resulting snapshot.
     @discardableResult
     static func play(year: Int, seed: UInt64, turns: Int, difficulty: DifficultyLevel = .normal,
+                     onStart: (GameState) -> Void = { _ in },
                      onTurn: (Input, Snapshot) -> Void = { _, _ in }) async -> GameEngine {
         let e = GameEngine()
         e.startNewGame(difficulty: difficulty, turnLength: .month, year: year, seed: seed)
+        if let gs = e.gameState { onStart(gs) }
         for t in 0..<turns {
             guard let gs = e.gameState, !gs.gameOver else { break }
             var input = Input(action: "none", target: nil, crisisOption: nil)

@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a source scan that fails on any new unseeded `random` / `randomElement()` / `shuffled()` in `Shared/Engine`,
   `Shared/Events` and `Shared/Models`.
 
+- **Golden fixtures for GTNW Lite.** `GTNWTests/GoldenExportTests.swift` is a test-only exporter: with
+  `GTNW_EXPORT_GOLDEN=<dir>` (via `TEST_RUNNER_GTNW_EXPORT_GOLDEN`) it plays seeded 1789, 1962 and 2025 games with
+  scripted orders and writes, per turn, the orders given and the key resulting state as JSON, plus a manifest with
+  SplitMix64 test vectors. The format is in `Documentation/GOLDEN.md`. Two exports in separate processes are
+  byte-identical.
+
 ### Fixed
 - README test badge said 868; it now shows the real count.
 
