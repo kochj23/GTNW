@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 import AVFoundation
 import SwiftUI
 
@@ -252,7 +253,7 @@ class TheLivingRoom: ObservableObject {
 
         // Apply to country relations
         // country.relations[player] += relationsDelta
-        print("Relations change: \(relationsDelta) based on conversation tone")
+        Log.diplomacy.trace("Relations change: \(relationsDelta) based on conversation tone")
     }
 
     // MARK: - Audio Playback
@@ -271,7 +272,7 @@ class TheLivingRoom: ObservableObject {
             let duration = audioPlayer?.duration ?? 0
             try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
         } catch {
-            print("Audio playback error: \(error)")
+            Log.diplomacy.failure("Audio playback error: \(error)")
         }
 
         isPlayingAudio = false
@@ -523,7 +524,7 @@ struct TheLivingRoomView: View {
                 try await livingRoom.playerResponds(message: playerMessage, tone: selectedTone)
                 playerMessage = ""
             } catch {
-                print("[LivingRoom] response failed: \(error)")
+                Log.diplomacy.failure("response failed: \(error)")
             }
         }
     }

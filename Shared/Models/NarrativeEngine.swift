@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 
 /// Dynamic narrative generation engine
 @MainActor
@@ -60,7 +61,7 @@ class NarrativeEngine: ObservableObject {
                 return headlines
             }
         } catch {
-            print("AI news generation failed: \(error)")
+            Log.ai.failure("AI news generation failed: \(error)")
         }
 
         return generateBasicNews(gameState: gameState)

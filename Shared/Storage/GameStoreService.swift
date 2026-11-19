@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import os
 
 enum StoreStatus: Equatable {
     /// No DB configured for this run (no CA / credentials, disabled in Settings, tests, iOS without a DB).
@@ -151,7 +152,7 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
                 local.enqueue(.leaderboard(leaderboard))
             }
         } catch {
-            print("[GameStore] game result rejected: \(error)")
+            Log.store.failure("game result rejected: \(error)")
         }
         changed()
     }
@@ -169,7 +170,7 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
 
     private func enqueuePlay(_ op: PendingOp, check: () throws -> Void) {
         guard remote != nil else { return }
-        do { try check() } catch { print("[GameStore] play history entry rejected: \(error)"); return }
+        do { try check() } catch { Log.store.failure("play history entry rejected: \(error)"); return }
         local.enqueue(op)
         if status != .syncing { publish(status: .offline(pending: pendingCount)) }
         requestSync()
@@ -215,7 +216,7 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
             return .ok
         } catch {
             let e = (error as? GameStoreError) ?? .unreachable(String(describing: type(of: error)))
-            print("[GameStore] sync failed: \(e)")
+            Log.store.failure("sync failed: \(e)")
             if case .notConfigured(let why) = e {
                 publish(status: .localOnly(why))
                 return .giveUp   // e.g. no Keychain item: don't nag; retried on next launch / Settings change
@@ -245,12 +246,12 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
             } catch let e as GameStoreError {
                 // Play history never holds up the game's own writes: a missing grant/table drops it too.
                 if op.isPlayHistory, case .schemaNotReady = e {
-                    print("[GameStore] dropping play history the DB can't take: \(e)")
+                    Log.store.failure("dropping play history the DB can't take: \(e)")
                     local.complete(op)
                     continue
                 }
                 guard case .invalid = e else { throw e }
-                print("[GameStore] dropping a write the store rejected: \(e)")   // never retry hostile/corrupt data
+                Log.store.failure("dropping a write the store rejected: \(e)")   // never retry hostile/corrupt data
                 local.complete(op)
             }
         }
@@ -262,7 +263,7 @@ final class GameStoreService: ObservableObject, @unchecked Sendable {
             let mine = local.saves.modified(slot: summary.slot)
             guard mine == nil || summary.updatedAt.timeIntervalSince(mine!) > 1 else { continue }
             guard let record = try await remote.getSlot(summary.slot) else { continue }
-            do { try await local.putSlot(record) } catch { print("[GameStore] ignoring remote slot \(summary.slot): \(error)") }
+            do { try await local.putSlot(record) } catch { Log.store.failure("ignoring remote slot \(summary.slot): \(error)") }
         }
         local.merge(leaderboard: try await remote.leaderboard(limit: LocalGameStore.maxLeaderboard),
                     history: try await remote.history(limit: LocalGameStore.maxHistory),

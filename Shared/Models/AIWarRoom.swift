@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 import SwiftUI
 
 /// AI War Room for strategic intelligence and recommendations
@@ -79,7 +80,7 @@ class AIWarRoom: ObservableObject {
                 return analysis
             }
         } catch {
-            print("War Room analysis failed: \(error)")
+            Log.ai.failure("War Room analysis failed: \(error)")
         }
 
         return generateBasicAnalysis(gameState: gameState)

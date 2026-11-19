@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import os
 
 // MARK: - Policy
 
@@ -111,12 +112,12 @@ enum Retry {
                 let retryable = shouldRetry(error) && !(error is CancellationError)
                 guard retryable, attempt < attempts, !Task.isCancelled else { break }
                 let wait = policy.delay(afterAttempt: attempt)
-                print("[Retry] \(label) attempt \(attempt)/\(attempts) failed: \(error). Retrying in \(String(format: "%.2f", wait))s")
+                Log.retry.failure("\(label) attempt \(attempt)/\(attempts) failed: \(error). Retrying in \(String(format: "%.2f", wait))s")
                 await sleep(wait)
                 if Task.isCancelled { break }
             }
         }
-        print("[Retry] \(label) failed after retries: \(lastError.map { "\($0)" } ?? "unknown error")")
+        Log.retry.failure("\(label) failed after retries: \(lastError.map { "\($0)" } ?? "unknown error")")
         throw lastError ?? CancellationError()
     }
 

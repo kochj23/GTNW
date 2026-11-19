@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 
 /// AI decision engine based on personality, memory, and emotional state
 @MainActor
@@ -37,7 +38,7 @@ class AIPersonalityEngine: ObservableObject {
                 return decision
             }
         } catch {
-            print("AI decision failed for \(country.name): \(error)")
+            Log.ai.failure("AI decision failed for \(country.name): \(error)")
         }
 
         return makeRuleBasedDecision(country: country, gameState: gameState, difficulty: difficulty)

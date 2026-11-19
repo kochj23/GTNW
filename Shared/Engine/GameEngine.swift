@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 import Combine
 import NovaAIKit
 
@@ -187,13 +188,13 @@ class GameEngine: ObservableObject {
 
     /// End the current turn and process AI moves
     func endTurn() {
-        print("[GameEngine] ========== END TURN CALLED ==========")
+        Log.engine.trace("========== END TURN CALLED ==========")
         guard let gameState = gameState, !gameState.gameOver else {
-            print("[GameEngine] endTurn aborted - no gameState or game over")
+            Log.engine.trace("endTurn aborted - no gameState or game over")
             return
         }
 
-        print("[GameEngine] Current turn: \(gameState.turn), incrementing to \(gameState.turn + 1)")
+        Log.engine.trace("Current turn: \(gameState.turn), incrementing to \(gameState.turn + 1)")
 
         addLog("", type: .system)
         addLog("", type: .system)
@@ -211,7 +212,7 @@ class GameEngine: ObservableObject {
 
         // Increment turn
         self.gameState?.turn += 1
-        print("[GameEngine] Turn incremented to: \(self.gameState?.turn ?? -1)")
+        Log.engine.trace("Turn incremented to: \(self.gameState?.turn ?? -1)")
 
         // Process all game systems
         if let gs = self.gameState {
@@ -280,7 +281,7 @@ class GameEngine: ObservableObject {
                 try manager.save(gs, slot: 0)
                 noteSlotSaved(0, manager: manager)
             } catch {
-                print("[GameEngine] autosave failed: \(error)")
+                Log.engine.failure("autosave failed: \(error)")
             }
         }
         playSessionTurnEnded()
@@ -305,18 +306,18 @@ class GameEngine: ObservableObject {
         guard let gameState = gameState else { return }
         guard let backend = aiBackend.activeBackend else { return }
 
-        print("[GameEngine] ===== Processing AI Turns with \(backend.rawValue.uppercased()) =====")
+        Log.engine.trace("===== Processing AI Turns with \(backend.rawValue.uppercased()) =====")
         addLog("🤖 Using \(backend.rawValue.uppercased()) AI (Real LLM decisions)...", type: .info)
 
         for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
-            print("[GameEngine] 🤖 Calling AI backend for \(country.name)...")
+            Log.engine.trace("🤖 Calling AI backend for \(country.name)...")
 
             if let response = await generateCountryDecisionWithAI(country: country, gameState: gameState) {
-                print("[GameEngine] 🤖 AI response: \(response)")
+                Log.engine.trace("🤖 AI response: \(response)")
                 let action = parseOllamaDecision(response, country: country, gameState: gameState)
                 executeAIAction(action, for: country, reason: response)
             } else {
-                print("[GameEngine] ⚠️ AI backend failed for \(country.name), using fallback")
+                Log.engine.failure("⚠️ AI backend failed for \(country.name), using fallback")
                 let action = determineAIActionEnhanced(for: country)
                 executeAIAction(action, for: country, reason: nil)
             }
@@ -325,7 +326,7 @@ class GameEngine: ObservableObject {
             try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
         }
 
-        print("[GameEngine] ===== AI Turns Complete =====")
+        Log.engine.trace("===== AI Turns Complete =====")
     }
 
     /// Generate country decision using AI Backend Manager
@@ -372,7 +373,7 @@ class GameEngine: ObservableObject {
             )
             return response
         } catch {
-            print("[GameEngine] AI Backend error: \(error)")
+            Log.engine.failure("AI Backend error: \(error)")
             return nil
         }
     }
@@ -381,33 +382,33 @@ class GameEngine: ObservableObject {
     private func processAITurnsSync() {
         guard let gameState = gameState else { return }
 
-        print("[GameEngine] ===== Processing AI Turns with FALLBACK =====")
+        Log.engine.trace("===== Processing AI Turns with FALLBACK =====")
         addLog("⚪ Using local AI (enhanced rule-based)", type: .info)
 
         for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed && !country.isTerritory {
             let action = determineAIActionEnhanced(for: country)
-            print("[GameEngine] ⚪ FALLBACK decision for \(country.name): \(action)")
+            Log.engine.trace("⚪ FALLBACK decision for \(country.name): \(action)")
             executeAIAction(action, for: country, reason: nil)
         }
 
-        print("[GameEngine] ===== Fallback AI Turns Complete =====")
+        Log.engine.trace("===== Fallback AI Turns Complete =====")
     }
 
     /// Show AI summary in log
     private func showAISummary() {
         guard let gameState = gameState else { return }
 
-        print("[GameEngine] AI summary has \(gameState.aiActionSummary.count) items")
+        Log.engine.trace("AI summary has \(gameState.aiActionSummary.count) items")
         if !gameState.aiActionSummary.isEmpty {
-            print("[GameEngine] Adding AI summary to log")
+            Log.engine.trace("Adding AI summary to log")
             addLog("", type: .system)
             addLog("📊 AI ACTIONS (\(gameState.aiActionSummary.count) countries active):", type: .info)
             for summary in gameState.aiActionSummary {
                 addLog("  • \(summary)", type: .info)
             }
-            print("[GameEngine] AI summary logged successfully")
+            Log.engine.trace("AI summary logged successfully")
         } else {
-            print("[GameEngine] No significant AI actions this turn")
+            Log.engine.trace("No significant AI actions this turn")
             addLog("⚪ AI countries monitoring situation (no major actions)", type: .info)
         }
     }

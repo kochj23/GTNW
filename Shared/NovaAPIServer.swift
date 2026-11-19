@@ -31,6 +31,7 @@
 //
 
 import Foundation
+import os
 import Network
 import Security
 
@@ -111,9 +112,9 @@ class NovaAPIServer {
             params.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!)
             listener = try NWListener(using: params)
             listener?.newConnectionHandler = { [weak self] conn in Task { @MainActor in self?.handle(conn) } }
-            listener?.stateUpdateHandler = { if case .ready = $0 { print("NovaAPI [GTNW]: port \(self.port)") } }
+            listener?.stateUpdateHandler = { if case .ready = $0 { Log.api.note("NovaAPI [GTNW]: port \(self.port)") } }
             listener?.start(queue: .main)
-        } catch { print("NovaAPI [GTNW]: failed — \(error)") }
+        } catch { Log.api.failure("NovaAPI [GTNW]: failed — \(error)") }
     }
 
     func stop() { listener?.cancel(); listener = nil }

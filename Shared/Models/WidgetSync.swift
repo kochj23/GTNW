@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 #if canImport(WidgetKit)
 import WidgetKit
 #endif
@@ -44,7 +45,7 @@ extension GameState {
     /// - Game over
     func syncToWidget(presidentName: String = "Unknown", administrationName: String = "Unknown") {
         guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else {
-            print("[WidgetSync] Error: Could not access App Group container")
+            Log.widget.failure("Error: Could not access App Group container")
             return
         }
 
@@ -73,9 +74,9 @@ extension GameState {
             WidgetCenter.shared.reloadAllTimelines()
             #endif
 
-            print("[WidgetSync] Synced: Turn \(turn), DEFCON \(defconLevel.rawValue), Wars \(activeWars.count)")
+            Log.widget.note("Synced: Turn \(turn), DEFCON \(defconLevel.rawValue), Wars \(activeWars.count)")
         } catch {
-            print("[WidgetSync] Error encoding widget data: \(error)")
+            Log.widget.failure("Error encoding widget data: \(error)")
         }
     }
 
@@ -89,7 +90,7 @@ extension GameState {
         WidgetCenter.shared.reloadAllTimelines()
         #endif
 
-        print("[WidgetSync] Cleared widget data")
+        Log.widget.note("Cleared widget data")
     }
 }
 

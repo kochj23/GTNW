@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 import SwiftUI
 
 // MARK: - Intelligence System (Thread-Safe)
@@ -215,13 +216,13 @@ class SafeNLPProcessor: ObservableObject {
     nonisolated func parseCommand(_ input: String, gameState: GameState) -> SafeParsedCommand? {
         let lower = input.lowercased().trimmingCharacters(in: .whitespaces)
 
-        print("[SafeNLP] Parsing: '\(input)'")
+        Log.commands.trace("Parsing: '\(input)'")
 
         // Check for attack commands
         if lower.contains("attack") || lower.contains("war") || lower.contains("invade") {
             for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
                 if lower.contains(country.name.lowercased()) || lower.contains(country.code.lowercased()) {
-                    print("[SafeNLP] Matched ATTACK on \(country.name)")
+                    Log.commands.trace("Matched ATTACK on \(country.name)")
                     return SafeParsedCommand(action: "ATTACK", target: country.id, reason: "War declared on \(country.name)")
                 }
             }
@@ -231,7 +232,7 @@ class SafeNLPProcessor: ObservableObject {
         if lower.contains("nuke") || lower.contains("nuclear") || lower.contains("launch") {
             for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
                 if lower.contains(country.name.lowercased()) || lower.contains(country.code.lowercased()) {
-                    print("[SafeNLP] Matched NUKE on \(country.name)")
+                    Log.commands.trace("Matched NUKE on \(country.name)")
                     return SafeParsedCommand(action: "NUKE", target: country.id, reason: "Nuclear strike on \(country.name)")
                 }
             }
@@ -239,13 +240,13 @@ class SafeNLPProcessor: ObservableObject {
 
         // Check for build military
         if (lower.contains("build") && lower.contains("military")) || lower.contains("army") || lower.contains("troops") {
-            print("[SafeNLP] Matched BUILD_MILITARY")
+            Log.commands.trace("Matched BUILD_MILITARY")
             return SafeParsedCommand(action: "BUILD_MILITARY", target: nil, reason: "Military buildup ordered")
         }
 
         // Check for build nukes
         if (lower.contains("build") && (lower.contains("nuke") || lower.contains("nuclear") || lower.contains("warhead"))) {
-            print("[SafeNLP] Matched BUILD_NUKES")
+            Log.commands.trace("Matched BUILD_NUKES")
             return SafeParsedCommand(action: "BUILD_NUKES", target: nil, reason: "Nuclear weapons production")
         }
 
@@ -253,13 +254,13 @@ class SafeNLPProcessor: ObservableObject {
         if lower.contains("ally") || lower.contains("alliance") || lower.contains("befriend") {
             for country in gameState.countries where !country.isPlayerControlled && !country.isDestroyed {
                 if lower.contains(country.name.lowercased()) || lower.contains(country.code.lowercased()) {
-                    print("[SafeNLP] Matched ALLY with \(country.name)")
+                    Log.commands.trace("Matched ALLY with \(country.name)")
                     return SafeParsedCommand(action: "ALLY", target: country.id, reason: "Alliance with \(country.name)")
                 }
             }
         }
 
-        print("[SafeNLP] No match found for: '\(input)'")
+        Log.commands.trace("No match found for: '\(input)'")
         return nil
     }
 }

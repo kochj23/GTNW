@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 import SwiftUI
 
 @MainActor
@@ -291,7 +292,7 @@ struct NaturalLanguageIntelView: View {
                         currentReport = try await intel.query(query, gameState: gameState)
                         query = ""
                     } catch {
-                        print("[Intel] query failed: \(error)")
+                        Log.intel.failure("query failed: \(error)")
                     }
                 }
             }) {

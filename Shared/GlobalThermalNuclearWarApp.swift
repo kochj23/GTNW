@@ -132,8 +132,8 @@ enum StoreMigrationCLI {
             .map { URL(fileURLWithPath: $0, isDirectory: true) } ?? LegacyStoreImport.defaultBackupRoot
         if args.contains("--setup-credentials"), !Edition.isPublic,
            KeychainGameStoreCredentials().password(account: GameStoreConfig.load().user) == nil {
-            do { print("credentials stored: \(try GameStoreSetup.fetchFromCore3())") }
-            catch { print("credential setup failed: \(error)") }
+            do { print("credentials stored: \(try GameStoreSetup.fetchFromCore3())") }   // cli output
+            catch { print("credential setup failed: \(error)") }   // cli output
         }
         let service = GameStoreService.makeDefault()
         let done = DispatchSemaphore(value: 0)
@@ -147,9 +147,9 @@ enum StoreMigrationCLI {
         done.wait()
         let enc = JSONEncoder()
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
-        print(String(decoding: (try? enc.encode(box.report)) ?? Data(), as: UTF8.self))
+        print(String(decoding: (try? enc.encode(box.report)) ?? Data(), as: UTF8.self))   // cli output
         // (service.status is published on the main actor, which this blocked thread never yields to; report from the run.)
-        print(service.remote == nil ? "status: no Games DB configured (local only)"
+        print(service.remote == nil ? "status: no Games DB configured (local only)"   // cli output
               : box.report.synced ? "status: Games DB reachable, synced" : "status: Games DB unreachable, writes pending")
         exit(box.report.verified || service.remote == nil ? 0 : 1)
     }
@@ -190,7 +190,7 @@ enum LaunchSmoke {
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
-            print("[LaunchSmoke] reached main run loop; exiting cleanly")
+            print("[LaunchSmoke] reached main run loop; exiting cleanly")   // cli output
             exit(0)
         }
     }

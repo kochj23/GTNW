@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 
 /// A write that hasn't reached the Games DB yet. Replayed in order; every op is idempotent remotely.
 enum PendingOp: Codable, Equatable, Sendable {
@@ -94,7 +95,7 @@ final class LocalGameStore: GameStore, @unchecked Sendable {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             try enc.encode(value).write(to: folder.appendingPathComponent(name), options: .atomic)
         } catch {
-            print("[GameStore] local write \(name) failed: \(error.localizedDescription)")
+            Log.store.failure("local write \(name) failed: \(error.localizedDescription)")
         }
     }
 

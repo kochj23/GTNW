@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 import AVFoundation
 import SwiftUI
 
@@ -184,7 +185,7 @@ class WorldLeaderVoices: ObservableObject {
     func playVoicedMessage(_ message: VoicedDiplomaticMessage) {
         guard AudioGate.allow(), let audioURL = message.audioURL,
               FileManager.default.fileExists(atPath: audioURL.path) else {
-            print("Audio file not available")
+            Log.audio.failure("Audio file not available")
             return
         }
         let message = message // local binding
@@ -218,7 +219,7 @@ class WorldLeaderVoices: ObservableObject {
 
         // F5-TTS training process
         // In production, this would call actual F5-TTS training pipeline
-        print("Training voice model for \(leaderName)...")
+        Log.audio.trace("Training voice model for \(leaderName)...")
 
         voiceLibrary[leaderName] = VoiceModel(
             id: leaderName.lowercased().replacingOccurrences(of: " ", with: "_"),

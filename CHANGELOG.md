@@ -32,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   SplitMix64 test vectors. The format is in `Documentation/GOLDEN.md`. Two exports in separate processes are
   byte-identical.
 
+- **Unified logging.** The ~70 `print` calls are now `os.Logger` messages (`Shared/Engine/Log.swift`), one logger per
+  area, with levels: verbose turn tracing at debug, failures at error (their text private). Real command-line output
+  (`--migrate-store`, `--launch-smoke`) still prints. `LoggingTests.swift`: categories, a note read back from the
+  unified log, and a source scan for stray `print`.
+
 ### Fixed
 - README test badge said 868; it now shows the real count.
 

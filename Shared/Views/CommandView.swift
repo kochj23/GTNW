@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 import NovaAIKit
 
 /// Simplified command-focused interface
@@ -576,33 +577,33 @@ struct CommandView: View {
                 switch parsed.action {
                 case "ATTACK":
                     if let target = parsed.target {
-                        print("[NL Command] Executing ATTACK on \(target)")
+                        Log.commands.trace("Executing ATTACK on \(target)")
                         gameEngine.declareWar(aggressor: player.id, defender: target)
-                        print("[NL Command] Calling endTurn()")
+                        Log.commands.trace("Calling endTurn()")
                         gameEngine.endTurn()
-                        print("[NL Command] endTurn() completed")
+                        Log.commands.trace("endTurn() completed")
                     }
                 case "NUKE":
                     if let target = parsed.target {
-                        print("[NL Command] Executing NUKE on \(target)")
+                        Log.commands.trace("Executing NUKE on \(target)")
                         gameEngine.launchNuclearStrike(from: player.id, to: target, warheads: 1)
-                        print("[NL Command] Calling endTurn()")
+                        Log.commands.trace("Calling endTurn()")
                         gameEngine.endTurn()
-                        print("[NL Command] endTurn() completed")
+                        Log.commands.trace("endTurn() completed")
                     }
                 case "ALLY":
                     if let target = parsed.target {
-                        print("[NL Command] Executing ALLY with \(target)")
+                        Log.commands.trace("Executing ALLY with \(target)")
                         gameEngine.formAlliance(country1: player.id, country2: target)
-                        print("[NL Command] Calling endTurn()")
+                        Log.commands.trace("Calling endTurn()")
                         gameEngine.endTurn()
-                        print("[NL Command] endTurn() completed")
+                        Log.commands.trace("endTurn() completed")
                     }
                 case "BUILD_MILITARY", "BUILD_NUKES":
                     nlCommandResponse += "\n(Build actions happen automatically each turn)"
-                    print("[NL Command] Calling endTurn()")
+                    Log.commands.trace("Calling endTurn()")
                     gameEngine.endTurn()
-                    print("[NL Command] endTurn() completed")
+                    Log.commands.trace("endTurn() completed")
                 default:
                     break
                 }

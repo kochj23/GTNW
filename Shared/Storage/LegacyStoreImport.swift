@@ -12,6 +12,7 @@
 //
 
 import Foundation
+import os
 
 struct LegacyImportReport: Codable, Equatable {
     var backupFolder: String?
@@ -154,7 +155,7 @@ extension GameStoreService {
         guard !Self.isTestOrSmokeRun else { return }
         Task {
             if let report = await LegacyStoreImport.runIfNeeded(service: self, defaults: defaults) {
-                print("[GameStore] legacy import: \(report)")
+                Log.store.note("legacy import: \(report)")
             }
             await self.syncNow()
         }

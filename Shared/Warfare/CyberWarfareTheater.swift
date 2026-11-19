@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 import SwiftUI
 
 @MainActor
@@ -262,7 +263,7 @@ struct CyberWarfareView: View {
 
         Task {
             // Would execute actual attack
-            print("Cyber attack: \(selectedAttack.rawValue) on \(target.name)")
+            Log.engine.trace("Cyber attack: \(selectedAttack.rawValue) on \(target.name)")
         }
     }
 }

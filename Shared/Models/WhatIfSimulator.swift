@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 
 /// Simulates consequences of actions before execution
 @MainActor
@@ -84,7 +85,7 @@ class WhatIfSimulator: ObservableObject {
                 return simulation
             }
         } catch {
-            print("Simulation failed: \(error)")
+            Log.ai.failure("Simulation failed: \(error)")
         }
 
         return generateBasicSimulation(action: action, target: target, gameState: gameState)

@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 import SwiftUI
 
 @MainActor
@@ -90,23 +91,23 @@ class AdaptiveOpponentEngine: ObservableObject {
         let profile = playerProfile
 
         if profile.diplomaticTendency > 0.6 {
-            print("AI: Player is diplomatic — using aggression to exploit pacifism")
+            Log.ai.trace("AI: Player is diplomatic — using aggression to exploit pacifism")
         }
 
         if profile.covertTendency > 0.4 {
-            print("AI: Player favors covert ops — doubling counter-intelligence")
+            Log.ai.trace("AI: Player favors covert ops — doubling counter-intelligence")
         }
 
         if profile.economicTendency > 0.5 {
-            print("AI: Player uses economic pressure — diversifying economy")
+            Log.ai.trace("AI: Player uses economic pressure — diversifying economy")
         }
 
         if profile.nuclearThreshold < 0.3 {
-            print("AI: Player quick to use nukes — maintaining high alert")
+            Log.ai.trace("AI: Player quick to use nukes — maintaining high alert")
         }
 
         if let pattern = profile.patterns.first {
-            print("AI: Exploiting detected pattern — \(pattern)")
+            Log.ai.trace("AI: Exploiting detected pattern — \(pattern)")
         }
     }
 

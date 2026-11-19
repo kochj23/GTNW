@@ -54,6 +54,7 @@
 		1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003A /* Release331Tests.swift */; };
 		1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003F /* Release332Tests.swift */; };
 		1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */; };
+		1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00334B2A544A8B123E /* LoggingTests.swift */; };
 		1A7E5C003365318D9B0FD872 /* GoldenExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */; };
 		1A7E5C0029A000000000002B /* Release330Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000002A /* Release330Tests.swift */; };
 		0CD5072A8BED2D2318681AF3 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
@@ -123,6 +124,7 @@
 		50E45AE9B9584F26BCC9EFFD /* HistoricalCrises.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F79596501F45D8917DD587 /* HistoricalCrises.swift */; };
 		533F72387DFB4F90133E498F /* BrainAssignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E866DC6935A2078861E1D4C /* BrainAssignmentView.swift */; };
 		546CF60D64294145CFF77039 /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */; };
+		1A7E5C00337EB50AD464131B /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033FCF024DF62C312 /* Log.swift */; };
 		54E317E2332711DF31570AF2 /* NovaCommentary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E317E2332711DF31570AF1 /* NovaCommentary.swift */; };
 		54E317E2332711DF31570AF3 /* NovaCommentary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E317E2332711DF31570AF1 /* NovaCommentary.swift */; };
 		58FDD7E468EE5D966F07619A /* WorldFactbookData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DA91E222E440E4B5257DFC /* WorldFactbookData.swift */; };
@@ -130,6 +132,7 @@
 		5A0DFDF18A25C675A84D71FD /* SentimentWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23597A87E243362EFB70CF64 /* SentimentWorldMap.swift */; };
 		5B51E2D1A374CBC57D3A29CA /* ModernCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75BFDEE85E6AE222B571791D /* ModernCommandView.swift */; };
 		5B9E44DEA8EF98AD03BD72E7 /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */; };
+		1A7E5C0033A5FBF909CD6899 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033FCF024DF62C312 /* Log.swift */; };
 		5C26A6F901262E80A187FD40 /* TheLivingRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3AFE577AA206EFC80AC0CE /* TheLivingRoom.swift */; };
 		5D18AD76DBCA881E2BC6DC05 /* LegacyStoreImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B461821C69E93A2EC585B98 /* LegacyStoreImport.swift */; };
 		62EB1DD76C1B4B1081B6C3B7 /* HistoricalCrises_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */; };
@@ -372,6 +375,7 @@
 		1A7E5C0029A000000000003A /* Release331Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release331Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003F /* Release332Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release332Tests.swift; sourceTree = "<group>"; };
 		1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeterminismTests.swift; sourceTree = "<group>"; };
+		1A7E5C00334B2A544A8B123E /* LoggingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoggingTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoldenExportTests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000002A /* Release330Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release330Tests.swift; sourceTree = "<group>"; };
 		0CD5072A8BED2D2318681AF1 /* Coalitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Coalitions.swift; sourceTree = "<group>"; };
@@ -475,6 +479,7 @@
 		A49D733873BC4FDD74DBBAF1 /* TerritoryData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TerritoryData.swift; sourceTree = "<group>"; };
 		A57E66BC543A1CBA41B4C6CF /* LocalGameStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalGameStore.swift; sourceTree = "<group>"; };
 		A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
+		1A7E5C0033FCF024DF62C312 /* Log.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		A6C1C6823465A248C2FB6EB4 /* AdviceEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdviceEngine.swift; sourceTree = "<group>"; };
 		A6DF9F2CF772E926EC377AF1 /* PeaceModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeaceModel.swift; sourceTree = "<group>"; };
 		A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EconomicWarfareSimulator.swift; sourceTree = "<group>"; };
@@ -569,6 +574,7 @@
 				6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */,
 				4551BAADF5536A897DEAD970 /* Shadow */,
 				A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */,
+				1A7E5C0033FCF024DF62C312 /* Log.swift */,
 			);
 			path = Engine;
 			sourceTree = "<group>";
@@ -665,6 +671,7 @@
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
+				1A7E5C00334B2A544A8B123E /* LoggingTests.swift */,
 				1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */,
 				1A7E5C0029A000000000002A /* Release330Tests.swift */,
 				D479F429932A825514F5FAF8 /* WorldWatchTests.swift */,
@@ -1259,6 +1266,7 @@
 				D9402968E639010CF1879C69 /* SituationSheets.swift in Sources */,
 				6ACB1A18F707E5038095F571 /* WarRoomView.swift in Sources */,
 				546CF60D64294145CFF77039 /* Retry.swift in Sources */,
+				1A7E5C00337EB50AD464131B /* Log.swift in Sources */,
 				A9E75A226CF210E7D779B8FA /* GameStore.swift in Sources */,
 				A0D629D4905F5D8B2818170F /* GameStoreRecords.swift in Sources */,
 				44E3E02D0CEACD44596BA287 /* GameStoreService.swift in Sources */,
@@ -1306,6 +1314,7 @@
 				1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */,
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
+				1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */,
 				1A7E5C003365318D9B0FD872 /* GoldenExportTests.swift in Sources */,
 				1A7E5C0029A000000000002B /* Release330Tests.swift in Sources */,
 				8E9F944388DF59415EE024D9 /* WorldWatchTests.swift in Sources */,
@@ -1436,6 +1445,7 @@
 				B6EF9A604F7625120A16F32A /* SituationSheets.swift in Sources */,
 				84AEEC2EDF1D3058CDCA2CA6 /* WarRoomView.swift in Sources */,
 				5B9E44DEA8EF98AD03BD72E7 /* Retry.swift in Sources */,
+				1A7E5C0033A5FBF909CD6899 /* Log.swift in Sources */,
 				D96A769C818141FC253BF887 /* GameStore.swift in Sources */,
 				344295DE32C9A541C84D522B /* GameStoreRecords.swift in Sources */,
 				732E6D1170886552E5C178F2 /* GameStoreService.swift in Sources */,
