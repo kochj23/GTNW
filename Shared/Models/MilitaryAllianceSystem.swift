@@ -258,11 +258,11 @@ struct ArmsRaceEngine {
             // If leader has 40%+ advantage, lagging power responds
             guard ratio >= 1.4 else { continue }
 
-            let buildRate = armsRaceBuildRate(year: year, country: country, ratio: ratio)
+            let buildRate = armsRaceBuildRate(year: year, country: country, ratio: ratio, rng: &gameState.rng)
             guard buildRate > 0 else { continue }
 
             // buildRate is per game year; spread it over the turn length.
-            let perTurn = gameState.scale.integer(annual: Double(buildRate))
+            let perTurn = gameState.scale.integer(annual: Double(buildRate), using: &gameState.rng)
             guard perTurn > 0 else { continue }
             gameState.countries[i].nuclearWarheads += perTurn
             gameState.countries[i].icbmCount += max(0, perTurn / 10)
@@ -283,7 +283,7 @@ struct ArmsRaceEngine {
     // MARK: - Build Rate by Era
 
     /// Returns the number of warheads a country builds this turn given the era and gap.
-    private static func armsRaceBuildRate(year: Int, country: Country, ratio: Double) -> Int {
+    private static func armsRaceBuildRate(year: Int, country: Country, ratio: Double, rng: inout GameRNG) -> Int {
         let gapMultiplier = min(ratio - 1.0, 2.0)   // cap at 2x advantage effect
 
         switch year {
@@ -292,25 +292,25 @@ struct ArmsRaceEngine {
             return 0
         case 1950..<1960:
             // 1950s: Bomber-missile race ramps up fast
-            return Int(Double.random(in: 20...80) * gapMultiplier)
+            return Int(Double.random(in: 20...80, using: &rng) * gapMultiplier)
         case 1960..<1970:
             // 1960s: ICBM race, both sides sprint
-            return Int(Double.random(in: 100...300) * gapMultiplier)
+            return Int(Double.random(in: 100...300, using: &rng) * gapMultiplier)
         case 1970..<1980:
             // 1970s: MIRV technology, arsenals explode
-            return Int(Double.random(in: 200...600) * gapMultiplier)
+            return Int(Double.random(in: 200...600, using: &rng) * gapMultiplier)
         case 1980..<1989:
             // Reagan era: USA builds up, USSR responds
-            return Int(Double.random(in: 150...400) * gapMultiplier)
+            return Int(Double.random(in: 150...400, using: &rng) * gapMultiplier)
         case 1989..<1993:
             // Cold War ending: buildups slow
-            return Int(Double.random(in: 50...150) * gapMultiplier)
+            return Int(Double.random(in: 50...150, using: &rng) * gapMultiplier)
         case 1993..<2010:
             // Post-Cold War: significant reductions, race slows
-            return country.id == "CHN" ? Int(Double.random(in: 5...20) * gapMultiplier) : 0
+            return country.id == "CHN" ? Int(Double.random(in: 5...20, using: &rng) * gapMultiplier) : 0
         default:
             // Modern: China builds up; US/Russia hold static
-            return country.id == "CHN" ? Int(Double.random(in: 10...30) * gapMultiplier) : 0
+            return country.id == "CHN" ? Int(Double.random(in: 10...30, using: &rng) * gapMultiplier) : 0
         }
     }
 
@@ -345,7 +345,7 @@ struct ArmsRaceEngine {
                   country.nuclearWarheads > cap else { continue }
 
             // Small natural reduction each turn toward the cap
-            let reduction = gameState.scale.integer(annual: Double(min(50, (country.nuclearWarheads - cap) / 10)))
+            let reduction = gameState.scale.integer(annual: Double(min(50, (country.nuclearWarheads - cap) / 10)), using: &gameState.rng)
             if reduction > 0 {
                 gameState.countries[i].nuclearWarheads -= reduction
                 logs.append("ARMS CONTROL: \(country.flag) \(country.name) reduces arsenal under \(label) (-\(reduction))")

@@ -299,7 +299,8 @@ enum WorldWatch {
     /// When this many decisions are already waiting, a new emergency is news on the ticker, not another card.
     static let busyDesk = 2
 
-    static func disasterCrisis(gameState gs: GameState, roll: () -> Double = { Double.random(in: 0..<1) }) -> CrisisEvent? {
+    static func disasterCrisis(gameState gs: GameState, roll: (() -> Double)? = nil) -> CrisisEvent? {
+        let roll = roll ?? { Double.random(in: 0..<1, using: &gs.rng) }
         let year = gs.currentYear
         let live = gs.liveCountries.filter { !$0.isPlayerControlled }
         let ids = Set(live.map(\.id))

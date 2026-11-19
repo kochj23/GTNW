@@ -31,7 +31,7 @@ class CyberWarfareTheater: ObservableObject {
         defer { isExecuting = false }
 
         let successProbability = calculateSuccessProbability(attacker: attacker, target: target, attackType: attackType)
-        let success = Double.random(in: 0...1) < successProbability
+        let success = Double.random(in: 0...1) < successProbability   // rng: not gameplay (standalone LLM theater, not in the turn loop)
         let damage = success ? calculateDamage(attackType, target: target) : CyberDamage.none
         let discovered = shouldBeAttributed(attribution, target: target)
 
@@ -109,7 +109,7 @@ class CyberWarfareTheater: ObservableObject {
         }
 
         let counterIntelBonus = (Double(target.cyberDefenseLevel.rawValue) / 4.0) * 0.3
-        return Double.random(in: 0...1) < (baseChance + counterIntelBonus)
+        return Double.random(in: 0...1) < (baseChance + counterIntelBonus)   // rng: not gameplay (see executeCyberAttack)
     }
 
     private func calculateRetaliationProbability(_ discovered: Bool, _ damage: CyberDamage, _ target: Country) -> Double {

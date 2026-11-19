@@ -330,7 +330,7 @@ struct StatCard: View {
         .scaleEffect(show ? 1.0 : 0.8)
         .opacity(show ? 1.0 : 0.0)
         .onAppear {
-            withAnimation(GTNWAnimations.spring.delay(Double.random(in: 0...0.3))) {
+            withAnimation(GTNWAnimations.spring.delay(Double.random(in: 0...0.3))) {   // rng: cosmetic
                 show = true
             }
         }

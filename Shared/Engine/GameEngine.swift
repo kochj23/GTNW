@@ -135,12 +135,14 @@ class GameEngine: ObservableObject {
 
     /// Start a new game
     func startNewGame(playerCountryID: String = "USA", difficulty: DifficultyLevel = .normal, administration: Administration? = nil,
-                      turnLength: TurnLength = TurnLength.defaultForNewGames(), year: Int? = nil, spectate: Bool = false) {
+                      turnLength: TurnLength = TurnLength.defaultForNewGames(), year: Int? = nil, spectate: Bool = false,
+                      seed: UInt64? = nil) {
         spectating = spectate   // before the play session opens: a spectated game never gets one
         // `year` (3.14.0): start on Inauguration Day of that year with its board (tests sweep eras with it).
         let administration = administration ?? year.flatMap { y in Advisor.allAdministrations().last { $0.startYear <= y } }
         gameState = GameState(playerCountryID: playerCountryID, difficultyLevel: difficulty, administration: administration,
-                              turnLength: turnLength, startDate: year.map { GameCalendar.date(year: $0, month: 1, day: 20) }, boardYear: year)
+                              turnLength: turnLength, startDate: year.map { GameCalendar.date(year: $0, month: 1, day: 20) }, boardYear: year,
+                              seed: seed)
         logMessages = []
         showingGameOver = false
         // 3.11.0: another nation's leader gets that nation's real cabinet for the date, and no U.S. presidential elections.
@@ -174,6 +176,13 @@ class GameEngine: ObservableObject {
         addLog("📅 \(gameState!.currentDateLabel) — elections, budgets and polls follow the calendar.", type: .info)
         addLog("═══════════════════════════════════════", type: .system)
         addLog("", type: .system)
+    }
+
+    /// A gameplay roll in 0..<1 from the saved game's RNG (`GameRNG`). With no game loaded there is nothing to decide,
+    /// so it returns the midpoint rather than touching an unseeded generator.
+    func gameRoll() -> Double {
+        guard let gs = gameState else { return 0.5 }
+        return Double.random(in: 0..<1, using: &gs.rng)
     }
 
     /// End the current turn and process AI moves
@@ -258,7 +267,7 @@ class GameEngine: ObservableObject {
 
         // Process feature systems
         intelService.processTurn()
-        diplomacyService.processTurn(countries: gameState.countries, turn: gameState.turn)
+        diplomacyService.processTurn(countries: gameState.countries, turn: gameState.turn, rng: &gameState.rng)
 
         // Log new notifications
         logFeatureNotifications()
@@ -477,7 +486,7 @@ class GameEngine: ObservableObject {
         // If at war, focus on war
         if !country.atWarWith.isEmpty {
             if country.nuclearWarheads > 0 && gameState.defconLevel.rawValue <= 2 {
-                let roll = Int.random(in: 1...100)
+                let roll = Int.random(in: 1...100, using: &gameState.rng)
                 if roll <= effectiveAggression * 5 {  // 40-50% for aggressive nations
                     if let enemy = country.atWarWith.first {
                         return .launchNuclearStrike(target: enemy, warheads: min(3, country.nuclearWarheads))
@@ -488,7 +497,7 @@ class GameEngine: ObservableObject {
         }
 
         // Not at war - decide action
-        let actionRoll = Int.random(in: 1...100)
+        let actionRoll = Int.random(in: 1...100, using: &gameState.rng)
 
         // Very aggressive (8-10): 40% attack, 20% build military, 40% wait
         if effectiveAggression >= 8 {
@@ -530,7 +539,7 @@ class GameEngine: ObservableObject {
         if !country.atWarWith.isEmpty {
             // Check if should escalate to nuclear
             if gameState.defconLevel.rawValue <= 2 && country.nuclearWarheads > 0 {
-                let shouldLaunch = Int.random(in: 1...100) <= (country.aggressionLevel / 2)
+                let shouldLaunch = Int.random(in: 1...100, using: &gameState.rng) <= (country.aggressionLevel / 2)
                 if shouldLaunch {
                     if let target = country.atWarWith.first {
                         return .launchNuclearStrike(target: target, warheads: min(5, country.nuclearWarheads))
@@ -541,13 +550,13 @@ class GameEngine: ObservableObject {
         }
 
         // Evaluate threats
-        let aggressionRoll = Int.random(in: 1...100)
+        let aggressionRoll = Int.random(in: 1...100, using: &gameState.rng)
         let aggressionThreshold = Int(Double(country.aggressionLevel) * gameState.difficultyLevel.aiAggressionMultiplier)
 
         if aggressionRoll > aggressionThreshold {
             // Peaceful actions
             let peacefulActions: [AIAction] = [.wait, .improveDiplomacy, .seekAlliance]
-            return peacefulActions.randomElement() ?? .wait
+            return peacefulActions.randomElement(using: &gameState.rng) ?? .wait
         } else {
             // Aggressive actions
             if country.nuclearWarheads > 0 && gameState.defconLevel.rawValue <= 3 {
@@ -573,7 +582,7 @@ class GameEngine: ObservableObject {
         switch action {
         case .wait:
             // Check if should build military/nukes
-            let buildRoll = Int.random(in: 1...100)
+            let buildRoll = Int.random(in: 1...100, using: &gameState.rng)
             if buildRoll <= 30 && country.gdp >= 0.5 {
                 // BUILD MILITARY
                 if let countryIndex = gameState.countries.firstIndex(where: { $0.id == country.id }) {
@@ -634,7 +643,7 @@ class GameEngine: ObservableObject {
 
         case .improveDiplomacy:
             // Find country with mediocre relations and improve them
-            if let targetID = country.diplomaticRelations.filter({ $0.value > -50 && $0.value < 50 }).keys.randomElement() {
+            if let targetID = country.diplomaticRelations.filter({ $0.value > -50 && $0.value < 50 }).keys.sorted().randomElement(using: &gameState.rng) {
                 modifyDiplomaticRelation(from: country.id, to: targetID, by: 10)
                 addLog("\(country.flag) \(country.name) improves relations with \(getCountry(targetID)?.name ?? "unknown")", type: .info)
                 if let target = getCountry(targetID) {
@@ -644,7 +653,7 @@ class GameEngine: ObservableObject {
 
         case .seekAlliance:
             // Find friendly nation and form alliance
-            if let targetID = country.diplomaticRelations.filter({ $0.value > 60 }).keys.randomElement(),
+            if let targetID = country.diplomaticRelations.filter({ $0.value > 60 }).keys.sorted().randomElement(using: &gameState.rng),
                !country.alliances.contains(targetID) {
                 formAlliance(country1: country.id, country2: targetID)
                 if let target = getCountry(targetID) {
@@ -719,7 +728,7 @@ class GameEngine: ObservableObject {
             let coveredWarheads = Int(Double(warheads) * (coveragePct / 100.0))
             let uncoveredWarheads = warheads - coveredWarheads
             for _ in 0..<coveredWarheads {
-                if Int.random(in: 1...100) <= interceptRate { interceptedWarheads += 1 }
+                if Int.random(in: 1...100, using: &gameState.rng) <= interceptRate { interceptedWarheads += 1 }
             }
             penetratingWarheads = uncoveredWarheads + (coveredWarheads - interceptedWarheads)
 
@@ -847,7 +856,7 @@ class GameEngine: ObservableObject {
         if !scripted, aggressor != gameState.playerCountryID {
             deliberateWar(actor: aggressor, target: defender, committed: true)
         }
-        watchCue("sfx.war\(Int.random(in: 1...5))")
+        watchCue("sfx.war\(Int.random(in: 1...5))")   // rng: cosmetic
         gameState.flash([aggressor, defender], .hostile, "⚔️ \(aggressorCountry.name) declares war on \(defenderCountry.name)")
 
         // Update countries
@@ -1137,7 +1146,7 @@ class GameEngine: ObservableObject {
             if !program.wasDetected && gameState.turn < program.completionTurn {
                 let detectionChance = calculateWeaponDetectionChance(program: program)
                 // The chance is per game year; scale it to this turn's length.
-                if Double.random(in: 0..<1) < gameState.scale.probability(annual: Double(detectionChance) / 100) {
+                if Double.random(in: 0..<1, using: &gameState.rng) < gameState.scale.probability(annual: Double(detectionChance) / 100) {
                     program.wasDetected = true
                     program.detectedOnTurn = gameState.turn
                     gameState.activeWeaponPrograms[i] = program
@@ -1296,7 +1305,7 @@ class GameEngine: ObservableObject {
             for powerID in nuclearPowers where powerID != countryID {
                 if let power = gameState.getCountry(id: powerID) {
                     let relation = power.diplomaticRelations[countryID] ?? 0
-                    if relation < -50 && Int.random(in: 1...100) <= 30 {
+                    if relation < -50 && Int.random(in: 1...100, using: &gameState.rng) <= 30 {
                         addLog("⚔️ \(power.name) considers treaty violations an act of aggression!", type: .critical)
                         declareWar(aggressor: powerID, defender: countryID)
                         break
@@ -1382,7 +1391,7 @@ class GameEngine: ObservableObject {
             if !operation.wasDetected && gameState.turn < operation.completionTurn {
                 let detectionChance = calculateDetectionChance(operation: operation)
                 // The chance is per game year; scale it to this turn's length.
-                if Double.random(in: 0..<1) < gameState.scale.probability(annual: Double(detectionChance) / 100) {
+                if Double.random(in: 0..<1, using: &gameState.rng) < gameState.scale.probability(annual: Double(detectionChance) / 100) {
                     operation.wasDetected = true
                     operation.detectedOnTurn = gameState.turn
                     gameState.activeCyberOperations[i] = operation
@@ -1421,7 +1430,7 @@ class GameEngine: ObservableObject {
         let defensePrevention = target.cyberDefenseLevel.preventionBonus
         let successChance = max(10, min(90, offenseSkill - defensePrevention + 30))
 
-        let success = Int.random(in: 1...100) <= successChance
+        let success = Int.random(in: 1...100, using: &gameState.rng) <= successChance
         operation.success = success
         operation.isCompleted = true
 
@@ -1488,7 +1497,7 @@ class GameEngine: ObservableObject {
                 let attackSeverity = operation.type.severity
                 if attackSeverity == .critical || attackSeverity == .catastrophic {
                     let warRisk = 40
-                    if Int.random(in: 1...100) <= warRisk {
+                    if Int.random(in: 1...100, using: &gameState.rng) <= warRisk {
                         addLog("⚔️ \(target.name) considers this an act of war!", type: .critical)
                         declareWar(aggressor: operation.targetID, defender: operation.attackerID)
                     }
@@ -1590,10 +1599,10 @@ class GameEngine: ObservableObject {
             addLog("   -20 military strength, -15 economic strength", type: .info)
 
             // Small chance of discovery
-            if Int.random(in: 1...100) <= 30 {
+            if Int.random(in: 1...100, using: &gameState.rng) <= 30 {
                 addLog("⚠️ Operation exposed! \(toCountry.name) blames \(fromCountry.name)", type: .warning)
                 modifyDiplomaticRelation(from: toID, to: fromID, by: -30)
-                if Int.random(in: 1...100) <= 20 {
+                if Int.random(in: 1...100, using: &gameState.rng) <= 20 {
                     declareWar(aggressor: toID, defender: fromID)
                 }
             }
@@ -1617,7 +1626,7 @@ class GameEngine: ObservableObject {
             addLog("   -15 military strength, -10 stability", type: .info)
 
             // Cyber attacks are hard to trace
-            if Int.random(in: 1...100) <= 15 {
+            if Int.random(in: 1...100, using: &gameState.rng) <= 15 {
                 addLog("🔍 Attack traced to \(fromCountry.name)!", type: .warning)
                 modifyDiplomaticRelation(from: toID, to: fromID, by: -20)
                 raiseDEFCON()
@@ -1647,7 +1656,7 @@ class GameEngine: ObservableObject {
             addLog("   +10 relations (population sympathizes with \(fromCountry.name))", type: .info)
 
             // Low chance of backlash
-            if Int.random(in: 1...100) <= 10 {
+            if Int.random(in: 1...100, using: &gameState.rng) <= 10 {
                 addLog("📺 Counter-propaganda exposes \(fromCountry.name)'s interference", type: .warning)
                 modifyDiplomaticRelation(from: toID, to: fromID, by: -15)
             }
@@ -1673,12 +1682,12 @@ class GameEngine: ObservableObject {
             addLog("   -25 military strength, -\(warheadsDestroyed) nuclear warheads", type: .info)
 
             // High chance of discovery and war
-            if Int.random(in: 1...100) <= 70 {
+            if Int.random(in: 1...100, using: &gameState.rng) <= 70 {
                 addLog("🚨 ATTACK TRACED TO \(fromCountry.name)!", type: .critical)
                 modifyDiplomaticRelation(from: toID, to: fromID, by: -50)
                 addLog("⚔️ \(toCountry.name) considers this an act of war!", type: .critical)
 
-                if Int.random(in: 1...100) <= 60 {
+                if Int.random(in: 1...100, using: &gameState.rng) <= 60 {
                     declareWar(aggressor: toID, defender: fromID)
                 }
             } else {
@@ -1855,8 +1864,8 @@ class GameEngine: ObservableObject {
         for i in gameState.countries.indices {
             if gameState.countries[i].radiationLevel > 50 {
                 // -5 stability / -3 economy per game year of heavy fallout
-                gameState.countries[i].stability = max(0, gameState.countries[i].stability - gameState.scale.integer(annual: 5))
-                gameState.countries[i].economicStrength = max(0, gameState.countries[i].economicStrength - gameState.scale.integer(annual: 3))
+                gameState.countries[i].stability = max(0, gameState.countries[i].stability - gameState.scale.integer(annual: 5, using: &gameState.rng))
+                gameState.countries[i].economicStrength = max(0, gameState.countries[i].economicStrength - gameState.scale.integer(annual: 3, using: &gameState.rng))
             }
         }
 
@@ -2130,7 +2139,7 @@ extension GameEngine {
 
         self.gameState = gameState
 
-        if action.category == .covert && Double.random(in: 0...1) < result.detectedProbability {
+        if action.category == .covert && Double.random(in: 0...1, using: &gameState.rng) < result.detectedProbability {
             addLog("⚠️ COVERT OPERATION DETECTED!", type: .warning)
             modifyDiplomaticRelation(from: playerID, to: targetID, by: -40)
         }

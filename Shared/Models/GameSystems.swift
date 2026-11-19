@@ -307,7 +307,7 @@ class SystemsManager: ObservableObject {
     private func processIntel(_ gs: GameState) {
         intelOps.removeAll { $0.turn < gs.turn - 5 }
         spyNets.indices.forEach { i in
-            if Int.random(in: 0...100) < (100 - spyNets[i].cover) / 3 {
+            if Int.random(in: 0...100, using: &gs.rng) < (100 - spyNets[i].cover) / 3 {
                 spyNets[i].compromised = true
             }
         }
@@ -318,8 +318,8 @@ class SystemsManager: ObservableObject {
         resolved.append(contentsOf: crises.filter { $0.resolved || $0.deadline <= 0 })
         crises.removeAll { $0.resolved || $0.deadline <= 0 }
 
-        if gs.defconLevel.rawValue <= 2 && Int.random(in: 0...100) < 20 {
-            let crisis = Crisis.allCases.randomElement()!
+        if gs.defconLevel.rawValue <= 2 && Int.random(in: 0...100, using: &gs.rng) < 20 {
+            let crisis = Crisis.allCases.randomElement(using: &gs.rng)!
             crises.append(SimpleCrisis(type: crisis, turn: gs.turn, deadline: crisis.time))
         }
     }
@@ -353,14 +353,14 @@ class SystemsManager: ObservableObject {
 
     private func processWarfare(_ gs: GameState) {
         proxies.indices.forEach { i in
-            proxies[i].casualties += Int.random(in: 100...1000)
-            proxies[i].strength = max(0, proxies[i].strength - Int.random(in: 1...5))
+            proxies[i].casualties += Int.random(in: 100...1000, using: &gs.rng)
+            proxies[i].strength = max(0, proxies[i].strength - Int.random(in: 1...5, using: &gs.rng))
         }
         proxies.removeAll { $0.strength <= 0 }
 
         subs.indices.forEach { i in
             if subs[i].loc == .coast { subs[i].stealth -= 10 }
-            subs[i].detected = Int.random(in: 0...100) > subs[i].stealth
+            subs[i].detected = Int.random(in: 0...100, using: &gs.rng) > subs[i].stealth
         }
     }
 
@@ -370,7 +370,7 @@ class SystemsManager: ObservableObject {
                 if let idx = sats.firstIndex(where: { $0.id.uuidString == asat[i].targetID }) {
                     sats[idx].destroyed = true
                     sats[idx].operational = false
-                    debris.add(Int.random(in: 50...200))
+                    debris.add(Int.random(in: 50...200, using: &gs.rng))
                 }
             }
         }

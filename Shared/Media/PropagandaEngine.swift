@@ -216,7 +216,7 @@ class PropagandaEngine: ObservableObject {
             "FREEDOM CALLS - ANSWER TODAY",
             "UNITE AGAINST \(opponent.uppercased())"
         ]
-        return templates.randomElement() ?? templates[0]
+        return templates.randomElement() ?? templates[0]   // rng: cosmetic (poster caption, not in the saved game)
     }
 }
 

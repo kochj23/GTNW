@@ -117,7 +117,8 @@ extension GameEngine {
 
     /// Ask Congress (one action). The chambers vote at once; `roll` (0..<1) is for tests. Returns the vote.
     @discardableResult
-    func requestAuthorization(target: String, kind: WarAuthorizationKind, roll: Double = Double.random(in: 0..<1)) -> WarAuthorization? {
+    func requestAuthorization(target: String, kind: WarAuthorizationKind, roll: Double? = nil) -> WarAuthorization? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0, !isAuthorized(target),
               let o = authorizationOdds(target: target, kind: kind), let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return nil }
         let swing = (roll - 0.5) * 16   // the same ±8 points the odds assume

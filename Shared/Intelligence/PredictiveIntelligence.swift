@@ -64,7 +64,7 @@ class PredictiveIntelligence: ObservableObject {
                         attacker: country1,
                         defender: country2,
                         probability: probability,
-                        estimatedTurn: gameState.turnNumber + Int.random(in: 2...5),
+                        estimatedTurn: gameState.turnNumber + Int.random(in: 2...5, using: &gameState.rng),
                         reasons: analyzeWarReasons(country1, country2),
                         confidence: calculateConfidence(probability)
                     )
@@ -204,7 +204,7 @@ class PredictiveIntelligence: ObservableObject {
                         country1: country1,
                         country2: country2,
                         probability: probability,
-                        estimatedTurn: gameState.turn + Int.random(in: 2...6),
+                        estimatedTurn: gameState.turn + Int.random(in: 2...6, using: &gameState.rng),
                         reasons: analyzeAllianceReasons(country1, country2),
                         confidence: probability * 0.9
                     ))

@@ -465,7 +465,7 @@ class ShadowPresidentActionManager {
         successChance: Double? = nil
     ) -> ActionResult {
         // `successChance` (3.4.0): an undersized offensive can fail; nil = the action's own odds.
-        let success = Double.random(in: 0...1) < (successChance ?? action.successChance)
+        let success = Double.random(in: 0...1, using: &gameState.rng) < (successChance ?? action.successChance)
 
         guard success else {
             return ActionResult(
@@ -540,7 +540,7 @@ class ShadowPresidentActionManager {
         case .bribe:
             let fb = WorldFactbookDatabase.record(for: targetID)
             let bribeChance = fb.briberySuccessRate
-            result.success = Double.random(in: 0...1) < bribeChance
+            result.success = Double.random(in: 0...1, using: &gameState.rng) < bribeChance
             result.message = result.success ?
                 "Bribery successful. Officials cooperating." :
                 "Bribery failed — target officials refused or reported contact."

@@ -305,7 +305,7 @@ extension GameEngine {
         guard let gs = gameState else { return }
         for (key, p) in gs.shadow.wmdPrograms where !p.discovered {
             if p.ready <= gs.currentDate { continue }
-            if Double.random(in: 0..<1) < gs.scale.probability(annual: ArsenalCatalog.restartDiscoveryAnnual) {
+            if Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: ArsenalCatalog.restartDiscoveryAnnual) {
                 gs.shadow.wmdPrograms[key]?.discovered = true
                 gs.shadow.post("Intelligence leaks expose a secret U.S. \(p.kind.title.lowercased()) weapons program.", date: gs.currentDate, severity: 3)
                 applyWMDCost(.treatyBanned, kind: p.kind, target: nil)

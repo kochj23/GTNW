@@ -144,7 +144,8 @@ enum PeaceModel {
 extension GameEngine {
     /// Broker peace between two warring nations (one action). Success ends the war and is a Nobel moment.
     @discardableResult
-    func brokerPeace(_ a: String, _ b: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+    func brokerPeace(_ a: String, _ b: String, roll: Double? = nil) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, gs.actionsRemaining > 0, a != gs.playerCountryID, b != gs.playerCountryID,
               let ca = gs.getCountry(id: a), let cb = gs.getCountry(id: b), ca.atWarWith.contains(b) else { return nil }
         let won = roll < PeaceModel.brokerOdds(ca, cb, player: gs.playerCountryID)

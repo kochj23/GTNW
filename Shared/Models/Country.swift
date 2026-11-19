@@ -236,10 +236,11 @@ struct Country: Identifiable, Codable, Hashable {
         // Public opinion defaults (varies by government type)
         switch government {
         case .democracy, .republic:
-            self.publicApproval = 50 + Int.random(in: -10...10)
-            self.warSupport = 30 + Int.random(in: -10...10)
+            // The spread (±10) is rolled from the game's RNG by `rollStartingOpinion` when a game is built.
+            self.publicApproval = 50
+            self.warSupport = 30
             self.electionCycle = 8 // 8 turns until election
-            self.congressionalSupport = 50 + Int.random(in: -10...10)
+            self.congressionalSupport = 50
         case .authoritarian, .military, .communist, .theocracy:
             self.publicApproval = 70 // Propaganda inflates numbers
             self.warSupport = 60
@@ -256,7 +257,7 @@ struct Country: Identifiable, Codable, Hashable {
         self.treasury = Int(gdp * 1_000_000_000_000 * 0.2) // 20% of GDP
         self.annualGDP = Int(gdp * 1_000_000_000_000)
         self.militaryBudget = Int(Double(annualGDP) * Double(militaryStrength) / 1000.0)
-        self.debtLevel = Int.random(in: 20...100)
+        self.debtLevel = 60   // rolled 20...100 by `rollStartingOpinion`
         self.tradeAgreements = []
         self.economicSanctions = []
 
@@ -342,6 +343,17 @@ struct Country: Identifiable, Codable, Hashable {
         case .independent:
             return .purple
         }
+    }
+
+    /// Starting public opinion and debt, rolled from the game's RNG when a game is built (they used to be rolled
+    /// unseeded in `init`, so two games from one seed began differently).
+    mutating func rollStartingOpinion(using rng: inout GameRNG) {
+        if government == .democracy || government == .republic {
+            publicApproval = 50 + Int.random(in: -10...10, using: &rng)
+            warSupport = 30 + Int.random(in: -10...10, using: &rng)
+            congressionalSupport = 50 + Int.random(in: -10...10, using: &rng)
+        }
+        debtLevel = Int.random(in: 20...100, using: &rng)
     }
 }
 

@@ -118,7 +118,7 @@ class NewsManager: ObservableObject {
         }
 
         // Random diplomatic news
-        if Int.random(in: 0...100) < 15 {
+        if Int.random(in: 0...100, using: &gameState.rng) < 15 {
             generateRandomDiplomaticNews(from: gameState)
         }
     }
@@ -132,10 +132,10 @@ class NewsManager: ObservableObject {
             "Summit scheduled between {country1} and {country2} leaders"
         ]
 
-        guard let c1 = gameState.liveCountries.randomElement(),
-              let c2 = gameState.liveCountries.filter({ $0.id != c1.id }).randomElement() else { return }
+        guard let c1 = gameState.liveCountries.randomElement(using: &gameState.rng),
+              let c2 = gameState.liveCountries.filter({ $0.id != c1.id }).randomElement(using: &gameState.rng) else { return }
 
-        let template = templates.randomElement()!
+        let template = templates.randomElement(using: &gameState.rng)!
         let headline = template
             .replacingOccurrences(of: "{country1}", with: c1.name)
             .replacingOccurrences(of: "{country2}", with: c2.name)

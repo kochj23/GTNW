@@ -120,7 +120,7 @@ class AIPersonalityEngine: ObservableObject {
 
         let effectiveAggression = baseAggression * personalityModifier * emotionalModifier * difficultyMultiplier
 
-        let roll = Double.random(in: 0...1)
+        let roll = Double.random(in: 0...1, using: &gameState.rng)
 
         if country.isAtWarWith(gameState.playerCountry) {
             if roll < effectiveAggression * 0.6 {

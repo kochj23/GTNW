@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Full determinism.** Every gameplay roll now draws from the game's own `GameRNG` (SplitMix64, saved with the
+  game): crises and their wording, elections, combat, covert operations and dirty tactics, the computer's moves,
+  world politics, news, diplomatic chatter, the arms race and the starting board (public opinion and debt used to
+  be rolled unseeded when a country was built). `GameEngine.startNewGame(seed:)` and `startScenario(_:seed:)` take
+  a seed, so two games from one seed with the same orders are the same game, turn for turn. Rolls that only make a
+  sound or a sparkle stay on the system generator and are marked `// rng: cosmetic`. Set-ordered choices (open
+  land, enemy colonies) are sorted before they are drawn from, and the shared diplomacy service's chat gates reset
+  when a game starts or loads, so the previous game no longer changes this one's rolls.
+- **This changes outcomes for a given seed.** A seed from an earlier version will not replay the same game.
+  Saved games still load and play on: the generator's state is in the save, and pre-3.27 saves without one get a
+  fresh seed as before.
+
+### Added
+- `DeterminismTests.swift`: one seed, one starting board; two seeded games with the same scripted orders identical
+  after every turn in 1789, 1913, 1962 and 2025; different seeds diverge; the RNG state survives save and load; and
+  a source scan that fails on any new unseeded `random` / `randomElement()` / `shuffled()` in `Shared/Engine`,
+  `Shared/Events` and `Shared/Models`.
+
+### Fixed
+- README test badge said 868; it now shows the real count.
+
 ## [3.32.0] - 2026-11-17 — Why they went
 
 The herd's review notes, built in the order they overlapped. Everything below is assembled from numbers the rules

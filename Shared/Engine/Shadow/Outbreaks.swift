@@ -263,7 +263,8 @@ extension GameEngine {
 
     /// Release an engineered pathogen (one action). It spreads like any disease: to allies, and home.
     @discardableResult
-    func releasePathogen(target: String, discoveryRoll: Double = Double.random(in: 0..<1)) -> Outbreak? {
+    func releasePathogen(target: String, discoveryRoll: Double? = nil) -> Outbreak? {
+        let discoveryRoll = discoveryRoll ?? gameRoll()
         guard pathogenProblem(target: target) == nil, let gs = gameState, let t = DirtyTactics.tactic("engineered_pathogen") else { return nil }
         let o = startEngineeredOutbreak(origin: target, by: gs.playerCountryID)
         var use = TacticUse(tactic: t.id, target: target, date: gs.currentDate, covert: true, scale: 2)

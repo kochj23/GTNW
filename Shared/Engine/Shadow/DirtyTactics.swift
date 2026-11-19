@@ -791,7 +791,8 @@ extension GameEngine {
     /// Order a tactic (one action). `roll` and `discoveryRoll` are injected by tests.
     @discardableResult
     func useTactic(_ id: String, target: String? = nil, covert: Bool = false, preset: AttackPreset = .standard,
-                   discoveryRoll: Double = Double.random(in: 0..<1)) -> TacticUse? {
+                   discoveryRoll: Double? = nil) -> TacticUse? {
+        let discoveryRoll = discoveryRoll ?? gameRoll()
         guard let gs = gameState, gs.actionsRemaining > 0, tacticProblem(id, target: target) == nil,
               let t = DirtyTactics.tactic(id) else { return nil }
         let hidden = covert && t.canBeCovert
@@ -839,7 +840,8 @@ extension GameEngine {
 
     /// The full price: relations, ruthlessness, approval, sanctions and impeachment hearings (the 3.6.0 treaty cost),
     /// plus a war-crimes tribunal in the eras that have one.
-    func applyTacticCost(_ t: DirtyTactic, target: String?, coverUp: Bool, tribunalRoll: Double = Double.random(in: 0..<1)) {
+    func applyTacticCost(_ t: DirtyTactic, target: String?, coverUp: Bool, tribunalRoll: Double? = nil) {
+        let tribunalRoll = tribunalRoll ?? gameRoll()
         guard let gs = gameState else { return }
         let status = t.status(in: gs.currentYear)
         applyTreatyCost(status, target: target)
@@ -916,7 +918,7 @@ extension GameEngine {
             // A standing policy is nobody's secret: a share of its price every year it runs.
             let c = DirtyTactics.cost(t, year: gs.currentYear)
             gs.shadow.ruthlessness += c.ruthlessness * DirtyTactics.stanceYearlyShare * gs.turnLength.yearFraction
-            let hit = gs.scale.integer(annual: Double(c.world) * DirtyTactics.stanceYearlyShare)
+            let hit = gs.scale.integer(annual: Double(c.world) * DirtyTactics.stanceYearlyShare, using: &gs.rng)
             if hit > 0 {
                 for o in gs.countries where o.id != gs.playerCountryID && !o.isTerritory && !o.isDestroyed {
                     modifyDiplomaticRelation(from: o.id, to: gs.playerCountryID, by: -hit)
@@ -959,9 +961,9 @@ extension GameEngine {
             gs.countries[i].gdp *= 1 - 0.14 * yf
             gs.countries[i].stability = max(0, gs.countries[i].stability - Int((10 * yf).rounded()))
             frontBlow(target, will: 0.12 * yf, troops: 0.04 * yf)
-            if Double.random(in: 0..<1) < gs.scale.probability(annual: 0.6) {
+            if Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 0.6) {
                 let neutrals = gs.liveCountries.filter { $0.id != gs.playerCountryID && $0.id != target && !$0.atWarWith.contains(gs.playerCountryID) }
-                if let n = neutrals.randomElement() {
+                if let n = neutrals.randomElement(using: &gs.rng) {
                     modifyDiplomaticRelation(from: n.id, to: gs.playerCountryID, by: -25)
                     gs.shadow.post("An American submarine sinks a \(n.name) merchantman without warning. \(n.name) is furious.",
                                    date: gs.currentDate, severity: 2)
@@ -1009,7 +1011,7 @@ extension GameEngine {
                 continue
             }
             guard !p.discovered,
-                  Double.random(in: 0..<1) < gs.scale.probability(annual: DirtyTactics.programLeakAnnual(t, year: gs.currentYear)) else { continue }
+                  Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: DirtyTactics.programLeakAnnual(t, year: gs.currentYear)) else { continue }
             gs.shadow.tacticPrograms[id]?.discovered = true
             gs.shadow.post("A leak exposes a secret American \(t.name.lowercased()).", date: gs.currentDate, severity: 3)
             logPlayEvent("tactic_program_discovered", detail: ["tactic": id, "game_date": PlayHistory.day(gs.currentDate)])
@@ -1262,14 +1264,14 @@ extension GameEngine {
         case "contaminated_goods":
             // Low, random effectiveness, and blowback into your own camps and cities (the 1763 blankets are not
             // known to have started the epidemic that was already running).
-            let bite = Double.random(in: 0...1)
+            let bite = Double.random(in: 0...1, using: &gs.rng)
             if let target = use.target, let i = gs.countries.firstIndex(where: { $0.id == target }) {
                 gs.countries[i].stability = max(0, gs.countries[i].stability - Int(12 * bite * m))
                 gs.countries[i].profile.anxieties.social += 20 * bite
             } else if let target = use.target {
                 resistanceHit(target, by: 10 * bite * m)
             }
-            if Double.random(in: 0..<1) < 0.35, let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
+            if Double.random(in: 0..<1, using: &gs.rng) < 0.35, let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) {
                 gs.countries[pi].stability = max(0, gs.countries[pi].stability - Int(4 * m))
                 gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 2)
                 gs.shadow.post("The sickness crosses into American camps and towns.", date: gs.currentDate, severity: 2)
@@ -1423,7 +1425,7 @@ extension GameEngine {
             }
         case "torture":
             // Intelligence, some of it true: half the time the prisoner tells you what you want to hear.
-            let sound = Double.random(in: 0..<1) < 0.5
+            let sound = Double.random(in: 0..<1, using: &gs.rng) < 0.5
             if sound, let target = use.target {
                 if let fi = gs.shadow.fronts.firstIndex(where: { $0.status == .fighting && ($0.defender == target || $0.attacker == target) }) {
                     let we = gs.shadow.fronts[fi].defender == target

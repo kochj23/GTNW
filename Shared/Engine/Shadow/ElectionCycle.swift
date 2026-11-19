@@ -425,7 +425,7 @@ extension GameEngine {
 
         case .challenge:
             guard c.running, rules.nomination != .acclamation else { return }
-            if let (name, strength) = ElectionCycle.intraPartyChallenger(year: year, party: c.party, popularity: pop, roll: Double.random(in: 0..<1)) {
+            if let (name, strength) = ElectionCycle.intraPartyChallenger(year: year, party: c.party, popularity: pop, roll: Double.random(in: 0..<1, using: &gs.rng)) {
                 c.challenger = name; c.challengerStrength = strength
                 announce("\(name.uppercased()) CHALLENGES YOU for the \(party)nomination.", severity: 3, on: date)
                 decide(ElectionCycle.card("A Challenge From Your Own Party",
@@ -447,7 +447,7 @@ extension GameEngine {
                 announce("\(name.capitalized): you run essentially unopposed and collect the delegates.", on: date)
                 return
             }
-            let share = ElectionCycle.contestShare(popularity: pop, momentum: c.momentum, strength: c.challengerStrength, noise: Double.random(in: -1...1))
+            let share = ElectionCycle.contestShare(popularity: pop, momentum: c.momentum, strength: c.challengerStrength, noise: Double.random(in: -1...1, using: &gs.rng))
             let weight = stage == .superTuesday || stage == .primariesEnd ? 3.0 : 1.0
             let prior = (c.delegateShare ?? 0) * Double(c.contests)
             c.contests += Int(weight)
@@ -477,7 +477,7 @@ extension GameEngine {
 
         case .opponentConvention:
             if c.running || c.leaveReason == .termLimited || c.leaveReason == .retired {
-                let bounce = Int.random(in: 2...6)
+                let bounce = Int.random(in: 2...6, using: &gs.rng)
                 c.momentum -= Double(bounce) * 0.25
                 announce("The \(ElectionHistory.partyLabel(c.party.opposition(in: year), year: year)) convention nominates \(opponent.uppercased()). They leave with a \(bounce)-point bounce\(rules.televised ? " and prime-time coverage" : "").", severity: 2, on: date)
             }
@@ -490,7 +490,7 @@ extension GameEngine {
                 return
             }
             if let rival = c.challenger {
-                let ballot = c.delegateShare ?? ElectionCycle.contestShare(popularity: pop, momentum: c.momentum, strength: c.challengerStrength, noise: Double.random(in: -1...1))
+                let ballot = c.delegateShare ?? ElectionCycle.contestShare(popularity: pop, momentum: c.momentum, strength: c.challengerStrength, noise: Double.random(in: -1...1, using: &gs.rng))
                 if ballot < 50 {
                     c.running = false
                     c.leaveReason = .deniedRenomination
@@ -553,21 +553,21 @@ extension GameEngine {
                 default: return (0.2, 2)
                 }
             }()
-            let result = mean + Double.random(in: -spread...spread)
+            let result = mean + Double.random(in: -spread...spread, using: &gs.rng)
             c.debateScore += result
             announce(String(format: "DEBATES: snap polls say you %@ (%+.1f).", result >= 0 ? "won" : "lost", result), severity: 2, on: date)
 
         case .vpDebate:
             guard c.running else { return }
-            let r = Double.random(in: -1...1)
+            let r = Double.random(in: -1...1, using: &gs.rng)
             c.debateScore += r * 0.5
             announce("Vice-presidential debate: \(r >= 0 ? "your running mate holds their own" : "your running mate stumbles").", on: date)
 
         case .octoberSurprise:
             guard c.running else { return }
             announce("\(GameCalendar.days(from: date, to: rules.electionDay)) DAYS TO ELECTION DAY.", severity: 2, on: date)
-            guard Double.random(in: 0..<1) < 0.75 else { return }
-            let pick = Int.random(in: 0..<5)
+            guard Double.random(in: 0..<1, using: &gs.rng) < 0.75 else { return }
+            let pick = Int.random(in: 0..<5, using: &gs.rng)
             let relief = year >= 1979 ? "FEMA" : "federal relief"
             switch pick {
             case 0:
@@ -616,7 +616,7 @@ extension GameEngine {
             if c.houseContingent {
                 c.houseContingent = false
                 let chance = min(0.9, max(0.1, Double(player?.congressionalSupport ?? 50) / 100 + c.houseLobby))
-                let won = Double.random(in: 0..<1) < chance
+                let won = Double.random(in: 0..<1, using: &gs.rng) < chance
                 if var r = gs.shadow.lastElection {
                     r.won = won; r.decidedBy = "the House of Representatives"
                     gs.shadow.lastElection = r
@@ -654,7 +654,7 @@ extension GameEngine {
 
         case .midtermNight:
             guard let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
-            let seats = ElectionCycle.midtermSeats(popularity: pop, effort: c.midtermEffort, atWar: atWar, noise: Double.random(in: -1...1))
+            let seats = ElectionCycle.midtermSeats(popularity: pop, effort: c.midtermEffort, atWar: atWar, noise: Double.random(in: -1...1, using: &gs.rng))
             c.midtermEffort = 0
             c.midtermResults[year] = seats
             gs.countries[pi].congressionalSupport = max(5, min(95, gs.countries[pi].congressionalSupport + seats / 2))
@@ -691,21 +691,21 @@ extension GameEngine {
         // Third candidates: history's, or (rarely) one born of an unhappy electorate.
         var third: (name: String, party: String, popular: Double)? = ElectionHistory.thirdParties[year]
         if third == nil, year > 2024 || ElectionHistory.nominees[year] == nil,
-           Double.random(in: 0..<1) < (gs.shadow.popularity < 40 ? 0.3 : 0.1) {
-            third = ("Gov. Mercer Vance", "Independent", Double.random(in: 4...16))
+           Double.random(in: 0..<1, using: &gs.rng) < (gs.shadow.popularity < 40 ? 0.3 : 0.1) {
+            third = ("Gov. Mercer Vance", "Independent", Double.random(in: 4...16, using: &gs.rng))
         }
 
         let share: Double
         let playerName: String?
         if c.running {
-            share = ElectionCycle.voteShare(popularity: gs.shadow.popularity, termsWon: gs.shadow.termsWon, campaign: c, year: year, noise: Double.random(in: -1...1))
+            share = ElectionCycle.voteShare(popularity: gs.shadow.popularity, termsWon: gs.shadow.termsWon, campaign: c, year: year, noise: Double.random(in: -1...1, using: &gs.rng))
             playerName = nil
         } else {
             // Not on the ballot: your party's nominee runs on your record.
-            share = min(75, max(25, 50 + (gs.shadow.popularity - 50) * 0.5 + c.successorBoost + Double.random(in: -3...3)))
+            share = min(75, max(25, 50 + (gs.shadow.popularity - 50) * 0.5 + c.successorBoost + Double.random(in: -3...3, using: &gs.rng)))
             playerName = "Your party's nominee"
         }
-        let t = ElectionCycle.tally(year: year, twoPartyShare: share, thirdPopular: third?.popular ?? 0, stateNoise: Double.random(in: -1...1))
+        let t = ElectionCycle.tally(year: year, twoPartyShare: share, thirdPopular: third?.popular ?? 0, stateNoise: Double.random(in: -1...1, using: &gs.rng))
         var result = ElectionResult(date: day, playerShare: t.playerPopular, opponentShare: t.opponentPopular,
                                     won: t.outcome == .won, opponentName: opponent)
         result.playerEV = t.playerEV; result.opponentEV = t.opponentEV; result.totalEV = t.electors
@@ -713,7 +713,7 @@ extension GameEngine {
         result.popularVoteRecorded = rules.hasPopularVote
         result.playerName = playerName
         gs.shadow.lastElection = result
-        ShadowPack.shared.play("sfx.election_speech\(Int.random(in: 1...3))")
+        ShadowPack.shared.play("sfx.election_speech\(Int.random(in: 1...3))")   // rng: cosmetic
         var tallyDetail: [String: Any] = [
             "year": year, "on_the_ballot": c.running, "opponent": PlayHistory.text(opponent),
             "outcome": t.outcome == .won ? "won" : t.outcome == .lost ? "lost" : "no_majority",
@@ -825,7 +825,7 @@ extension ElectionCycle {
             c.runningMate = parts.count > 1 ? parts[1] : nil
         case "debate": c.debatePrep = parts.count > 1 ? parts[1] : nil
         case "gamble":
-            let won = Double.random(in: 0..<1) < num(3)
+            let won = Double.random(in: 0..<1, using: &gs.rng) < num(3)
             c.momentum += won ? num(1) : num(2)
             let text = won ? (parts.count > 4 ? parts[4] : "It pays off.") : (parts.count > 5 ? parts[5] : "It backfires.")
             gs.shadow.post("CAMPAIGN: \(text)", date: date, severity: 2)
@@ -834,7 +834,7 @@ extension ElectionCycle {
         case "ground": c.momentum += 0.5
         case "recount", "court":
             let p = parts.first == "court" ? 0.25 : 0.15
-            if Double.random(in: 0..<1) < p, var r = gs.shadow.lastElection {
+            if Double.random(in: 0..<1, using: &gs.rng) < p, var r = gs.shadow.lastElection {
                 r.won = true
                 r.decidedBy = parts.first == "court" ? "the courts" : "the recount"
                 (r.playerEV, r.opponentEV) = (r.opponentEV, r.playerEV)

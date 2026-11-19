@@ -210,12 +210,12 @@ extension GameEngine {
     /// Check if the alien invasion should be triggered (random event, very rare).
     /// Can be triggered from any presidential era.
     func checkForAlienInvasion() {
-        guard let _ = gameState else { return }
+        guard let gs = gameState else { return }
         guard crisisManager.activeCrisis == nil else { return }
 
         // 0.1% chance per turn — very rare but possible in any era
         // Also triggerable via the What If system
-        if Double.random(in: 0...1) < 0.001 {
+        if Double.random(in: 0...1, using: &gs.rng) < 0.001 {
             triggerAlienInvasion()
         }
     }

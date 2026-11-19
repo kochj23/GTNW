@@ -170,7 +170,8 @@ extension GameEngine {
 
     /// Ask Congress to admit a territory as a state (one action). Nil if conditions aren't met; else whether it passed.
     @discardableResult
-    func petitionStatehood(_ id: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+    func petitionStatehood(_ id: String, roll: Double? = nil) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0, let ti = gs.countries.firstIndex(where: { $0.id == id }),
               gs.countries[ti].territoryOf == gs.playerCountryID, !gs.shadow.statesAdmitted.contains(where: { $0.id == id }),
               OccupationModel.statehoodProblems(c: gs.countries[ti], policy: gs.shadow.territoryPolicies[id],
@@ -199,7 +200,8 @@ extension GameEngine {
     /// counterpart to petitionStatehood: these are not Country entities, so the odds use the territory's base
     /// stability and the result goes straight into the statesAdmitted star ledger. Nil if it cannot be petitioned.
     @discardableResult
-    func petitionDomesticStatehood(_ id: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+    func petitionDomesticStatehood(_ id: String, roll: Double? = nil) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, gs.playerCountryID == "USA", gs.actionsRemaining > 0,
               let t = OccupationModel.usTerritories.first(where: { $0.id == id }),
               t.from <= gs.currentYear, !gs.shadow.statesAdmitted.contains(where: { $0.id == id }),
@@ -254,7 +256,7 @@ extension GameEngine {
             gs.shadow.territoryPolicies[c.id] = pol
             let boiling = ((pol.crisisSince.map { GameCalendar.years(from: $0, to: gs.currentDate) >= 1 } ?? false)
                 && garrison < OccupationModel.neededGarrison(c) / 2)
-                || (rate.insurgencyShift >= 30 && p.outcry > 60 && Double.random(in: 0..<1) < gs.scale.probability(annual: 0.25))   // plunder and the quota breed revolt
+                || (rate.insurgencyShift >= 30 && p.outcry > 60 && Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 0.25))   // plunder and the quota breed revolt
             if boiling || (garrison < 0.5 && gs.countries[i].stability < 10) {
                 var lost = gs.countries[i]
                 lost.territoryOf = nil

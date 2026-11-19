@@ -235,7 +235,7 @@ extension GameEngine {
             if gs.unclaimedLandIDs.contains(id) {
                 ok = claimLand(id, troops: troops, spendAction: false)
             } else {
-                ok = claimIndigenousLand(id, troops: troops, roll: roll ?? Double.random(in: 0..<1), spendAction: false) == true
+                ok = claimIndigenousLand(id, troops: troops, roll: roll ?? Double.random(in: 0..<1, using: &gs.rng), spendAction: false) == true
             }
             if ok { c.planted.append(id) } else { c.failed.append(id) }
             left -= 1
@@ -375,7 +375,8 @@ extension GameEngine {
 
     /// The President raises (price war) or bids (auction) once. No action. Returns whether he won the land.
     @discardableResult
-    func raiseBid(_ id: UUID, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+    func raiseBid(_ id: UUID, roll: Double? = nil) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, let k = gs.shadow.landBids.firstIndex(where: { $0.id == id }), let me = gs.getPlayerCountry() else { return nil }
         let b = gs.shadow.landBids[k]
         guard b.kind != .offer else { return nil }

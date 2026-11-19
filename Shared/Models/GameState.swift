@@ -75,7 +75,7 @@ class GameState: ObservableObject, Codable {
     @Published var shadow = ShadowState()
     /// 3.27.0: the gameplay RNG (nation AI, world politics), seeded per game; cosmetic randomness stays on the
     /// system generator. The seed goes into the play summary (`rng_seed`).
-    var rng = GameRNG(seed: UInt64.random(in: 1...UInt64.max))
+    var rng = GameRNG(seed: UInt64.random(in: 1...UInt64.max))   // rng: seed (replaced in init when a seed is given)
 
     var actionsPerTurn: Int { turnLength.actionsPerTurn }
     var actionsRemaining: Int { max(0, actionsPerTurn - actionsUsedThisTurn) }
@@ -335,7 +335,8 @@ class GameState: ObservableObject, Codable {
 
     /// `boardYear` (3.12.0) builds the countries for that year instead of the administration's first year (a scenario
     /// set mid-term, e.g. Korea 1950 under an administration that began in 1945).
-    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil, turnLength: TurnLength = .month, startDate: Date? = nil, boardYear: Int? = nil) {
+    init(playerCountryID: String, difficultyLevel: DifficultyLevel = .normal, scenario: Scenario? = nil, isMultiplayer: Bool = false, administration: Administration? = nil, turnLength: TurnLength = .month, startDate: Date? = nil, boardYear: Int? = nil, seed: UInt64? = nil) {
+        if let seed { self.rng = GameRNG(seed: seed) }
         self.playerCountryID = playerCountryID
         self.turnLength = turnLength
         self.difficultyLevel = difficultyLevel
@@ -377,6 +378,7 @@ class GameState: ObservableObject, Codable {
         if let index = countries.firstIndex(where: { $0.id == playerCountryID }) {
             countries[index].isPlayerControlled = true
         }
+        for i in countries.indices { countries[i].rollStartingOpinion(using: &rng) }
         initializeDiplomaticRelations()
         applyFactbookModifiers()
         WorldPolitics.applyRivalries(self)   // 3.14.0: the era's real enmities
@@ -428,7 +430,7 @@ class GameState: ObservableObject, Codable {
         alliancesBroken = try c.decodeIfPresent(Int.self, forKey: .alliancesBroken) ?? 0
         militaryActionsUsed = try c.decodeIfPresent(Int.self, forKey: .militaryActionsUsed) ?? 0
         reachedDEFCON1 = try c.decodeIfPresent(Bool.self, forKey: .reachedDEFCON1) ?? false
-        rng = try c.decodeIfPresent(GameRNG.self, forKey: .rng) ?? GameRNG(seed: UInt64.random(in: 1...UInt64.max))
+        rng = try c.decodeIfPresent(GameRNG.self, forKey: .rng) ?? GameRNG(seed: UInt64.random(in: 1...UInt64.max))   // rng: seed (pre-3.27 saves)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -494,7 +496,7 @@ class GameState: ObservableObject, Codable {
                 }
 
                 // Add some randomness
-                let randomAdjustment = Int.random(in: -10...10)
+                let randomAdjustment = Int.random(in: -10...10, using: &rng)
                 relations[otherCountry.id] = max(-100, min(100, baseRelation + randomAdjustment))
             }
 

@@ -217,9 +217,9 @@ extension GameEngine {
         var open = gs.unclaimedLandIDs.filter { $0 != Antarctica.id || gs.currentYear >= 1908 }.union(gs.indigenousLandIDs)
         for p in WorldPolitics.powers(gs) where Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: rate) {
             // Colonies of an enemy first; otherwise the nearest open land of a few.
-            let enemyColony = gs.colonyLandIDs.first { gs.preState($0).map { p.atWarWith.contains($0.era.owner) } ?? false }
+            let enemyColony = gs.colonyLandIDs.sorted().first { gs.preState($0).map { p.atWarWith.contains($0.era.owner) } ?? false }
             let overseas = WorldPolitics.reachesOverseas(p.id, year: gs.currentYear)
-            let near = open.shuffled().prefix(5).filter { overseas || distance(p, $0) < WorldPolitics.nearDegrees }.min { a, b in
+            let near = open.sorted().shuffled(using: &gs.rng).prefix(5).filter { overseas || distance(p, $0) < WorldPolitics.nearDegrees }.min { a, b in
                 distance(p, a) < distance(p, b)
             }
             if let land = enemyColony ?? near, aiTakeLand(land, by: p.id) { open.remove(land) }
@@ -252,7 +252,7 @@ extension GameEngine {
         if let t = mine.randomElement(using: &gs.rng), let i = gs.countries.firstIndex(where: { $0.id == t.id }) {
             gs.countries[i].profile.outcry = min(100, gs.countries[i].profile.outcry + 15)
             gs.countries[i].stability = max(0, gs.countries[i].stability - 8)
-            gs.shadow.post("\(rivals.randomElement()?.name ?? lead.name) arms rebels in \(t.name).", date: gs.currentDate, severity: 2)
+            gs.shadow.post("\(rivals.randomElement(using: &gs.rng)?.name ?? lead.name) arms rebels in \(t.name).", date: gs.currentDate, severity: 2)
         }
         // A weakly held territory is seized.
         if let weak = mine.first(where: { (gs.shadow.garrisons[$0.id] ?? 5) < OccupationModel.neededGarrison($0) / 2 }),

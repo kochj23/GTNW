@@ -159,7 +159,12 @@ struct TurnScale {
     func amount(annual x: Double) -> Double { x * yearFraction }
 
     /// An annual integer amount for one turn, rounded stochastically so small per-turn shares are not lost.
-    func integer(annual x: Double, roll: Double = Double.random(in: 0..<1)) -> Int {
+    /// The roll comes from the game's RNG (see `GameRNG`), so a seeded game rounds the same way every time.
+    func integer(annual x: Double, using rng: inout GameRNG) -> Int {
+        integer(annual: x, roll: Double.random(in: 0..<1, using: &rng))
+    }
+
+    func integer(annual x: Double, roll: Double) -> Int {
         let v = x * yearFraction
         let base = v.rounded(.towardZero)
         let frac = abs(v - base)

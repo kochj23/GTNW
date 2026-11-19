@@ -129,8 +129,11 @@ extension GameEngine {
     /// Order an operation (one action, money). `discoveryRoll`, `spillRoll` and `backfireRoll` for tests.
     @discardableResult
     func runAgentOperation(target: String, agent: AgentClass, vector: AgentVector,
-                           discoveryRoll: Double = Double.random(in: 0..<1), spillRoll: Double = Double.random(in: 0..<1),
-                           backfireRoll: Double = Double.random(in: 0..<1)) -> AgentOperation? {
+                           discoveryRoll: Double? = nil, spillRoll: Double? = nil,
+                           backfireRoll: Double? = nil) -> AgentOperation? {
+        let discoveryRoll = discoveryRoll ?? gameRoll()
+        let spillRoll = spillRoll ?? gameRoll()
+        let backfireRoll = backfireRoll ?? gameRoll()
         guard agentProblem(target: target, agent: agent, vector: vector) == nil, let gs = gameState else { return nil }
         let op = launchAgents(by: gs.playerCountryID, target: target, agent: agent, vector: vector, spillRoll: spillRoll, backfireRoll: backfireRoll)
         spendFunds(CovertAgents.operationCost)

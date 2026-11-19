@@ -247,7 +247,8 @@ extension GameEngine {
     /// Seize a colony from its owner by force (one action). Opens a war with the owner if there isn't one; the
     /// colonial garrison fights the expedition. `roll` 0..<1 for tests.
     @discardableResult
-    func seizeColony(_ land: String, troops: Double, roll: Double = Double.random(in: 0..<1), spendAction: Bool = true) -> Bool? {
+    func seizeColony(_ land: String, troops: Double, roll: Double? = nil, spendAction: Bool = true) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, let st = colonyTarget(land),
               let me = gs.getPlayerCountry(), troops.isFinite, troops >= 1,
               !spendAction || troops <= AttackSizing.freeTroops(gs) else { return nil }
@@ -305,7 +306,7 @@ extension GameEngine {
             self.gameState = gs
             return false
         }
-        if let r = rivalRoll ?? (LandMarket.enabled ? Double.random(in: 0..<1) : nil),
+        if let r = rivalRoll ?? (LandMarket.enabled ? Double.random(in: 0..<1, using: &gs.rng) : nil),
            openPriceWar(land: a.land, acquisition: a.id, owner: owner.id, label: "the \(a.name)", price: max(1, a.value * 5), roll: r) != nil {
             completePlayerAction()
             return false
@@ -325,14 +326,15 @@ extension GameEngine {
     /// Negotiate to buy a colony (one action): price from value and relations, paid out of national output. `roll`
     /// 0..<1 for tests. Returns whether the owner sold.
     @discardableResult
-    func purchaseColony(_ land: String, roll: Double = Double.random(in: 0..<1), rivalRoll: Double? = nil) -> Bool? {
+    func purchaseColony(_ land: String, roll: Double? = nil, rivalRoll: Double? = nil) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, gs.actionsRemaining > 0, let st = colonyTarget(land), let me = gs.getPlayerCountry() else { return nil }
         let owner = st.owner
         let rel = owner.diplomaticRelations[me.id] ?? 0
         let price = PreStateModel.price(land, year: gs.currentYear, relation: rel)
         let sold = roll < PreStateModel.saleOdds(relation: rel, atWar: owner.atWarWith.contains(me.id), historical: false)
         // 3.29.0: a rival power may bid against the President: a price war he can raise once.
-        if sold, let r = rivalRoll ?? (LandMarket.enabled ? Double.random(in: 0..<1) : nil),
+        if sold, let r = rivalRoll ?? (LandMarket.enabled ? Double.random(in: 0..<1, using: &gs.rng) : nil),
            openPriceWar(land: land, acquisition: nil, owner: owner.id, label: st.label, price: price, roll: r) != nil {
             self.gameState = gs
             completePlayerAction()
@@ -355,7 +357,8 @@ extension GameEngine {
 
     /// Back a colony's independence (one action, $2B). Success makes it a sovereign state allied to the player.
     @discardableResult
-    func supportIndependence(_ land: String, roll: Double = Double.random(in: 0..<1)) -> Bool? {
+    func supportIndependence(_ land: String, roll: Double? = nil) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, gs.actionsRemaining > 0, let st = colonyTarget(land), let me = gs.getPlayerCountry(),
               let pi = gs.countries.firstIndex(where: { $0.id == me.id }) else { return nil }
         let owner = st.owner
@@ -390,7 +393,8 @@ extension GameEngine {
     /// Claim indigenous-held land (one action): its people resist (odds from troops against resistance); success
     /// brings a restless territory, and after 1945 the world condemns it as colonial conquest. `roll` for tests.
     @discardableResult
-    func claimIndigenousLand(_ land: String, troops: Double, roll: Double = Double.random(in: 0..<1), spendAction: Bool = true) -> Bool? {
+    func claimIndigenousLand(_ land: String, troops: Double, roll: Double? = nil, spendAction: Bool = true) -> Bool? {
+        let roll = roll ?? gameRoll()
         guard let gs = gameState, !spendAction || gs.actionsRemaining > 0, let st = gs.preState(land), st.era.kind == .indigenous,
               let me = gs.getPlayerCountry(), troops.isFinite, troops >= 1, troops <= max(5, AttackSizing.freeTroops(gs)) else { return nil }
         // 3.17.0: gas, infected stores or a slaughtered food supply have already broken some of the resistance.

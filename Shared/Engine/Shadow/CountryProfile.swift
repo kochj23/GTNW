@@ -424,7 +424,8 @@ enum WorldMove: Equatable {
 
 enum PersonalityAI {
     /// Weighted choice of a move. `roll` in 0..<1 makes it deterministic for tests.
-    static func choose(for c: Country, in gs: GameState, roll: Double = Double.random(in: 0..<1)) -> WorldMove {
+    static func choose(for c: Country, in gs: GameState, roll: Double? = nil) -> WorldMove {
+        let roll = roll ?? Double.random(in: 0..<1, using: &gs.rng)
         let p = c.profile
         // 3.27.0: the nation's character (data) scales hostility, nuclear risk and how hard anxieties bite.
         let ch = NationCharacterTable.shared.character(for: c, difficulty: gs.difficultyLevel)

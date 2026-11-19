@@ -251,12 +251,12 @@ extension GameEngine {
         if earned >= 0.01 { gs.shadow.post(String(format: "Territories paid $%.2fB this %@.", earned, gs.turnLength.displayName.lowercased()), date: gs.currentDate) }
         // Heavy extraction and plunder cost goodwill abroad.
         for (c, _, _) in ExpansionModel.ledger(gs) {
-            let hit = gs.scale.integer(annual: ExpansionModel.rate(c.id, in: gs).worldHitPerYear)
+            let hit = gs.scale.integer(annual: ExpansionModel.rate(c.id, in: gs).worldHitPerYear, using: &gs.rng)
             if hit > 0 { for o in gs.countries where o.id != gs.playerCountryID && !o.isTerritory && !o.isDestroyed { modifyDiplomaticRelation(from: o.id, to: gs.playerCountryID, by: -hit) } }
         }
         // Strategic resources: uranium speeds the bomb; oil and rubber feed the forces (see AttackSizing / NavalModel).
         if ExpansionModel.strategic(gs).contains(.uranium) && gs.currentDate >= ArsenalCatalog.trinity {
-            gs.countries[pi].nuclearWarheads += gs.scale.integer(annual: 20)
+            gs.countries[pi].nuclearWarheads += gs.scale.integer(annual: 20, using: &gs.rng)
         }
         // Warn once when impeachment pressure crosses the line (and again if it drops back and returns).
         let (pressure, _) = impeachmentRisk()

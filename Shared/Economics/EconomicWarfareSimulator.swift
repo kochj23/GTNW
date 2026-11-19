@@ -190,7 +190,7 @@ class EconomicWarfareSimulator: ObservableObject {
             alternatives.append(AlternativeRoute(
                 partner: partner,
                 replacementCapacity: estimateReplacementCapacity(target, partner),
-                timeToEstablish: Int.random(in: 2...8)
+                timeToEstablish: Int.random(in: 2...8)   // rng: not gameplay (standalone what-if estimate, not in the turn loop)
             ))
         }
 

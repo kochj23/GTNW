@@ -75,7 +75,7 @@ class SafeDiplomacyService: ObservableObject {
         }
     }
 
-    func processTurn(countries: [Country], turn: Int) {
+    func processTurn(countries: [Country], turn: Int, rng: inout GameRNG) {
         // Identify the player country
         guard let playerCountry = countries.first(where: { $0.isPlayerControlled }) else { return }
         let playerID = playerCountry.id
@@ -95,7 +95,7 @@ class SafeDiplomacyService: ObservableObject {
 
             let character = NationCharacterTable.shared.character(for: country)
             guard Self.chatGate(baseChance: messageChance, character: character, lastSpoke: lastSpoke[country.id],
-                                turn: turn, sentThisTurn: sent, roll: Double.random(in: 0..<1)) else { continue }
+                                turn: turn, sentThisTurn: sent, roll: Double.random(in: 0..<1, using: &rng)) else { continue }
             sent += 1
             lastSpoke[country.id] = turn
 
@@ -118,7 +118,7 @@ class SafeDiplomacyService: ObservableObject {
                     "We appeal to all nations to condemn this act of war.",
                     "Our forces stand ready. The blood of innocents is on your hands."
                 ]
-                message = warMessages.randomElement()!
+                message = warMessages.randomElement(using: &rng)!
 
             } else if isHostile {
                 // Hostile but not at war — warn about ACTUAL player behavior
@@ -132,7 +132,7 @@ class SafeDiplomacyService: ObservableObject {
                         "We counsel restraint before this conflict claims more lives.",
                         "The nations of this region observe your actions with alarm."
                     ]
-                    message = messages.randomElement()!
+                    message = messages.randomElement(using: &rng)!
                 } else if playerHasSanctions {
                     let messages = isModernEra ? [
                         "Your economic pressure on our allies is noted and condemned.",
@@ -143,7 +143,7 @@ class SafeDiplomacyService: ObservableObject {
                         "We protest your interference in the commerce of sovereign nations.",
                         "Economic coercion is beneath the dignity of a great nation."
                     ]
-                    message = messages.randomElement()!
+                    message = messages.randomElement(using: &rng)!
                 } else {
                     // Hostile relations but player hasn't done anything specific
                     let messages = isModernEra ? [
@@ -155,7 +155,7 @@ class SafeDiplomacyService: ObservableObject {
                         "We propose a congress of representatives to address our differences.",
                         "No good shall come from continued estrangement between our peoples."
                     ]
-                    message = messages.randomElement()!
+                    message = messages.randomElement(using: &rng)!
                 }
 
             } else if isAlly {
@@ -171,7 +171,7 @@ class SafeDiplomacyService: ObservableObject {
                     "We stand as true friends — in peace and in hardship alike.",
                     "Your prosperity is our prosperity. Our cooperation continues."
                 ]
-                message = messages.randomElement()!
+                message = messages.randomElement(using: &rng)!
 
             } else {
                 // Neutral — informational or general diplomatic contact
@@ -186,7 +186,7 @@ class SafeDiplomacyService: ObservableObject {
                     "We propose a treaty of amity and navigation between our peoples.",
                     "Peaceful intercourse between neighboring nations is a virtue."
                 ]
-                message = messages.randomElement()!
+                message = messages.randomElement(using: &rng)!
             }
 
             generateMessage(from: country.id, content: message, turn: turn)

@@ -543,9 +543,10 @@ enum Scorecard {
 enum ScenarioLoader {
     /// Build a fresh GameState for a scenario.
     static func makeGameState(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal,
-                              turnLength: TurnLength? = nil, player: String = "USA", packFolder: URL? = ShadowPack.shared.isInstalled ? ShadowPack.shared.folder : nil) -> GameState {
+                              turnLength: TurnLength? = nil, player: String = "USA", packFolder: URL? = ShadowPack.shared.isInstalled ? ShadowPack.shared.folder : nil,
+                              seed: UInt64? = nil) -> GameState {
         let gs = GameState(playerCountryID: player, difficultyLevel: difficulty, administration: s.administration,
-                           turnLength: turnLength ?? s.suggestedTurnLength, startDate: s.startDate, boardYear: s.boardYear)
+                           turnLength: turnLength ?? s.suggestedTurnLength, startDate: s.startDate, boardYear: s.boardYear, seed: seed)
         apply(s, to: gs, packFolder: packFolder)
         return gs
     }

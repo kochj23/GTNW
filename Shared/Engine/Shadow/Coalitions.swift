@@ -73,7 +73,7 @@ extension GameEngine {
         guard !odds.isEmpty else { return nil }
         var members: [String] = [], refused: [String] = []
         for (id, p) in odds {
-            if (rolls[id] ?? Double.random(in: 0..<1)) < p { members.append(id) } else { refused.append(id) }
+            if (rolls[id] ?? Double.random(in: 0..<1, using: &gs.rng)) < p { members.append(id) } else { refused.append(id) }
         }
         let player = gs.playerCountryID
         for id in members {

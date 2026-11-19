@@ -56,9 +56,10 @@ extension GameEngine {
     }
 
     /// Start a scenario from the scenario list.
-    func startScenario(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal, turnLength: TurnLength? = nil, player: String = "USA") {
+    func startScenario(_ s: ScenarioDefinition, difficulty: DifficultyLevel = .normal, turnLength: TurnLength? = nil, player: String = "USA",
+                       seed: UInt64? = nil) {
         spectating = false
-        gameState = ScenarioLoader.makeGameState(s, difficulty: difficulty, turnLength: turnLength, player: player)
+        gameState = ScenarioLoader.makeGameState(s, difficulty: difficulty, turnLength: turnLength, player: player, seed: seed)
         logMessages = []
         showingGameOver = false
         crisisManager.activeCrisis = nil
@@ -217,7 +218,7 @@ extension GameEngine {
 
             // Unrest in a territory is an insurgency against its owner, not a change of government.
             if c.isTerritory {
-                if p.outcry > 85 && Double.random(in: 0..<1) < scale.probability(annual: 0.5) {
+                if p.outcry > 85 && Double.random(in: 0..<1, using: &gs.rng) < scale.probability(annual: 0.5) {
                     gs.countries[i].stability = max(0, c.stability - 5)
                     if c.territoryOf == gs.playerCountryID { gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 1) }
                     gs.shadow.post("Insurgents strike occupation forces in \(c.name).", date: gs.currentDate, severity: 2)
@@ -227,8 +228,8 @@ extension GameEngine {
 
             // Governments under enough pressure fall.
             if !c.isPlayerControlled && p.outcry > 85 && c.stability < 20
-                && Double.random(in: 0..<1) < scale.probability(annual: 0.5) {
-                let new = LeaderIdeology.allCases.randomElement() ?? .nationalism
+                && Double.random(in: 0..<1, using: &gs.rng) < scale.probability(annual: 0.5) {
+                let new = LeaderIdeology.allCases.randomElement(using: &gs.rng) ?? .nationalism
                 gs.countries[i].profile.ideology = new
                 gs.countries[i].profile.outcry = 30
                 gs.countries[i].stability = 45
@@ -248,7 +249,7 @@ extension GameEngine {
             gs.shadow.post(text, date: gs.currentDate, severity: c.isPlayerControlled ? 2 : 1)
             // A spike at home, or in a major power, can become a crisis on the President's desk.
             let major = c.isPlayerControlled || c.profile.strategicValue > 70
-            if major && crisisManager.activeCrisis == nil && Double.random(in: 0..<1) < 0.5 {
+            if major && crisisManager.activeCrisis == nil && Double.random(in: 0..<1, using: &gs.rng) < 0.5 {
                 let type: CrisisEventType
                 switch kind {
                 case .nuclear: type = .falseAlarm
@@ -265,14 +266,14 @@ extension GameEngine {
         }
         // Natural disasters (3.18.14): an era-agnostic shock, independent of anxiety — a modest annual chance
         // scaled to the turn length, only when the President isn't already handling a crisis.
-        if crisisManager.activeCrisis == nil, Double.random(in: 0..<1) < gs.scale.probability(annual: 0.04),
+        if crisisManager.activeCrisis == nil, Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 0.04),
            let disaster = crisisManager.createCrisis(type: .naturalDisaster, gameState: gs) {
             crisisManager.presentCrisis(disaster)
             gs.flash(disaster.affectedCountries, .disaster, disaster.title)
             addLog("🌀 DISASTER: \(disaster.title)", type: .critical)
         }
         // 3.20.0: emergencies abroad (3.21.1: about four a game year, one a turn at most), each a decision (send aid, evacuate, sanction…).
-        let emergencies = min(WorldWatch.maxEmergenciesPerTurn, gs.scale.integer(annual: WorldWatch.emergenciesPerYear))
+        let emergencies = min(WorldWatch.maxEmergenciesPerTurn, gs.scale.integer(annual: WorldWatch.emergenciesPerYear, using: &gs.rng))
         for _ in 0..<max(0, emergencies) {
             guard let e = crisisManager.createCrisis(type: .worldDisaster, gameState: gs) else { continue }
             gs.flash(e.affectedCountries, .disaster, e.title)
@@ -295,6 +296,9 @@ extension GameEngine {
     func resetWorldWatch() {
         crisisManager.pendingCrises = []
         crisisManager.worldBaseline = gameState.map(WorldWatch.snapshot)
+        // 3.33.0: the chat gates live on a shared service; a new or loaded game starts them fresh, or the last game's
+        // conversations would change this one's rolls (two games from one seed must play the same).
+        diplomacyService.lastSpoke = [:]
     }
 
     /// Compare the world with the last watch: every new war and change of power is posted, and the most
@@ -379,7 +383,7 @@ extension GameEngine {
                 gs.countries[j].stability = max(0, gs.countries[j].stability - 3)
                 gs.countries[i].spyNetworks[t] = min(100, (gs.countries[i].spyNetworks[t] ?? 0) + 10)
             }
-            if Double.random(in: 0..<1) < 0.35 {
+            if Double.random(in: 0..<1, using: &gs.rng) < 0.35 {
                 modifyDiplomaticRelation(from: t, to: country.id, by: -20)
                 gs.aiActionSummary.append("\(flag) \(name) 🕵️ caught running agents in \(tname(t))")
                 if againstUS(t) { gs.shadow.post("\(GameState.counterspies(gs.currentYear)) arrest agents working for \(name).", date: gs.currentDate, severity: 2) }
@@ -437,7 +441,7 @@ extension GameEngine {
         guard let gs = gameState else { return }
         let days = Double(max(1, GameCalendar.days(from: from, to: to)))
         var weeks = Int(days / 7)
-        if Double.random(in: 0..<1) < (days / 7 - Double(weeks)) { weeks += 1 }
+        if Double.random(in: 0..<1, using: &gs.rng) < (days / 7 - Double(weeks)) { weeks += 1 }
         guard weeks > 0 else { return }
         for i in gs.shadow.fronts.indices where gs.shadow.fronts[i].status == .fighting {
             for _ in 0..<weeks {
@@ -462,7 +466,7 @@ extension GameEngine {
                     continue
                 }
                 let o = CombatModel.battle(f, attackerStrength: a.militaryStrength, defenderStrength: d.militaryStrength,
-                                           rolls: (Double.random(in: 0..<1), Double.random(in: 0..<1)))
+                                           rolls: (Double.random(in: 0..<1, using: &gs.rng), Double.random(in: 0..<1, using: &gs.rng)))
                 let usLoss = CombatModel.apply(o, to: &f, date: to)
                 gs.totalCasualties += Int((o.attackerLosses + o.defenderLosses) * 300 + o.civilianLosses * 1000)
                 // War-weariness, scaled by the decade's appetite for foreign blood (3.18.9): Vietnam losses bite
@@ -788,7 +792,7 @@ extension GameEngine {
         let usSide = f.usSide ?? (f.attacker == gs.playerCountryID ? f.attacker : (f.defender == gs.playerCountryID ? f.defender : nil))
         guard let side = usSide else { return false }
         let p = CombatModel.surrenderAcceptance(f, demandedBy: side)
-        if Double.random(in: 0..<1) < p {
+        if Double.random(in: 0..<1, using: &gs.rng) < p {
             resolveFront(index: i, verdict: side == f.attacker ? .attackerWon : .defenderWon)
             return true
         }
@@ -807,7 +811,7 @@ extension GameEngine {
         let proj = BudgetModel.project(gs.shadow.budget, atWar: atWar)
         gs.countries[pi].gdp *= scale.growthFactor(annual: proj.growth / 100)
         gs.countries[pi].profile.qualityOfLife = min(100, max(0, gs.countries[pi].profile.qualityOfLife + scale.amount(annual: proj.qualityOfLifeChange)))
-        gs.countries[pi].militaryStrength = min(100, max(1, gs.countries[pi].militaryStrength + scale.integer(annual: proj.militaryChange)))
+        gs.countries[pi].militaryStrength = min(100, max(1, gs.countries[pi].militaryStrength + scale.integer(annual: proj.militaryChange, using: &gs.rng)))
 
         // Other economies grow a little every turn; war, unrest and radiation drag them down.
         for i in gs.countries.indices where i != pi && !gs.countries[i].isDestroyed {
@@ -945,7 +949,7 @@ extension GameEngine {
 
         // Assassination.
         let pAssassin = scale.probability(annual: PopularityModel.assassinationAnnualProbability(popularity: gs.shadow.popularity, ruthlessness: gs.shadow.ruthlessness))
-        if gs.shadow.domesticEnding == nil && Double.random(in: 0..<1) < pAssassin { endPresidency(.assassinated) }
+        if gs.shadow.domesticEnding == nil && Double.random(in: 0..<1, using: &gs.rng) < pAssassin { endPresidency(.assassinated) }
 
         // Civil war.
         if gs.shadow.domesticEnding == nil && player.profile.outcry > 90 && player.stability < 15 { endPresidency(.civilWar) }
@@ -978,8 +982,8 @@ extension GameEngine {
         guard let gs = gameState else { return }
         let pScandal = scale.probability(annual: 0.03)
         for i in gs.advisors.indices where gs.advisors[i].isActive && !gs.advisors[i].title.contains("President") {
-            if Double.random(in: 0..<1) < pScandal {
-                let what = AdviceEngine.scandals.randomElement() ?? "was caught in an embarrassing scandal"
+            if Double.random(in: 0..<1, using: &gs.rng) < pScandal {
+                let what = AdviceEngine.scandals.randomElement(using: &gs.rng) ?? "was caught in an embarrassing scandal"
                 departAdvisor(index: i, status: .scandal, reason: "\(gs.advisors[i].name) \(what) and has resigned.")
             }
         }
@@ -1007,7 +1011,7 @@ extension GameEngine {
     func homelandStruck() {
         guard let gs = gameState else { return }
         for i in gs.advisors.indices where gs.advisors[i].isActive && !gs.advisors[i].title.contains("President") {
-            if Double.random(in: 0..<1) < 0.3 {
+            if Double.random(in: 0..<1, using: &gs.rng) < 0.3 {
                 departAdvisor(index: i, status: .killed, reason: "\(gs.advisors[i].name), \(gs.advisors[i].title), was killed in the attack.")
             }
         }
