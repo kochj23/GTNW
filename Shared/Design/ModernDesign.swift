@@ -151,7 +151,7 @@ struct ModernButtonStyle: ButtonStyle {
             .font(.scaled(size: 14, weight: .semibold, design: .rounded))
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .shadow(color: color.opacity(0.3), radius: configuration.isPressed ? 5 : 8)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .animation(Motion.allow(.easeInOut(duration: 0.15)), value: configuration.isPressed)
     }
 }
 
@@ -269,7 +269,9 @@ struct GlassmorphicBackground: View {
             )
         }
         .onAppear {
-            withAnimation {
+            // Reduce Motion: the blobs stay put.
+            guard !Motion.reduced else { return }
+            withAnimation(Motion.allow(.default)) {
                 animateBlobs = true
             }
         }
@@ -333,14 +335,14 @@ struct CircularGauge: View {
                 )
                 .rotationEffect(.degrees(-90))
                 .shadow(color: color.opacity(0.6), radius: 6)
-                .animation(.easeInOut(duration: 0.6), value: animatedValue)
+                .animation(Motion.allow(.easeInOut(duration: 0.6)), value: animatedValue)
 
             if showValue {
                 VStack(spacing: 2) {
                     Text(String(format: "%.0f", animatedValue))
                         .font(.scaled(size: size > 60 ? 24 : 16, weight: .bold, design: .rounded))
                         .foregroundColor(ModernColors.textPrimary)
-                        .animation(.easeInOut(duration: 0.6), value: animatedValue)
+                        .animation(Motion.allow(.easeInOut(duration: 0.6)), value: animatedValue)
 
                     if let label = label {
                         Text(label)
@@ -355,7 +357,7 @@ struct CircularGauge: View {
             animatedValue = value
         }
         .onChange(of: value) { newValue in
-            withAnimation(.easeInOut(duration: 0.6)) {
+            withAnimation(Motion.allow(.easeInOut(duration: 0.6))) {
                 animatedValue = newValue
             }
         }
@@ -379,14 +381,14 @@ struct MiniGauge: View {
                 .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .shadow(color: color.opacity(0.5), radius: 3)
-                .animation(.easeInOut(duration: 0.6), value: animatedValue)
+                .animation(Motion.allow(.easeInOut(duration: 0.6)), value: animatedValue)
         }
         .frame(width: FontScale.w(40), height: FontScale.h(40))
         .onAppear {
             animatedValue = value
         }
         .onChange(of: value) { newValue in
-            withAnimation(.easeInOut(duration: 0.6)) {
+            withAnimation(Motion.allow(.easeInOut(duration: 0.6))) {
                 animatedValue = newValue
             }
         }

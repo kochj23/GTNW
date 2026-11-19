@@ -54,6 +54,7 @@
 		1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003A /* Release331Tests.swift */; };
 		1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003F /* Release332Tests.swift */; };
 		1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */; };
+		1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */; };
 		1A7E5C00334318F4BABD3E0F /* KeyBindingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003354F465D372E248 /* KeyBindingTests.swift */; };
 		1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00334B2A544A8B123E /* LoggingTests.swift */; };
 		1A7E5C003365318D9B0FD872 /* GoldenExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */; };
@@ -86,6 +87,7 @@
 		229A0D1F5A663D4CEE959DD7 /* ProhibitedWeapons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA793E720506B3D71FA8D15 /* ProhibitedWeapons.swift */; };
 		2717DAD271F33C80CAA4E1BA /* AIMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECB96BC2F3C16F08080563A /* AIMove.swift */; };
 		29C376F595D747EF80E61005 /* FontScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27371408F87320221E20362 /* FontScale.swift */; };
+		1A7E5C0033B33C224560652C /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00332B0173313A2BF7 /* Accessibility.swift */; };
 		2A499147CB1962A9C838F871 /* QuoteViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B56D15BE9A9FCF02F88931 /* QuoteViews.swift */; };
 		2C848CB7F1440044297B7FBA /* PostgresGameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701102036BC53F821A7D94AB /* PostgresGameStore.swift */; };
 		2D2B124B51188CEF8EC3803E /* GameCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5839CC57563336D8720136 /* GameCalendar.swift */; };
@@ -329,6 +331,7 @@
 		FD1D37B2D950DA621B01678D /* ModernCountryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */; };
 		FDA0817763260DF5A2653FC1 /* EconomicWarfareSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A0230C66153AEFFC02ECDA /* EconomicWarfareSimulator.swift */; };
 		FE238D6F4C2B1EAE305745A8 /* FontScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27371408F87320221E20362 /* FontScale.swift */; };
+		1A7E5C0033721D74E8402D30 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00332B0173313A2BF7 /* Accessibility.swift */; };
 		WIDGET001A /* GTNWWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET001F /* GTNWWidget.swift */; };
 		WIDGET002A /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET002F /* WidgetData.swift */; };
 		WIDGET003A /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WIDGET003F /* SharedDataManager.swift */; };
@@ -378,6 +381,7 @@
 		1A7E5C0029A000000000003A /* Release331Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release331Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003F /* Release332Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release332Tests.swift; sourceTree = "<group>"; };
 		1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeterminismTests.swift; sourceTree = "<group>"; };
+		1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccessibilityTests.swift; sourceTree = "<group>"; };
 		1A7E5C003354F465D372E248 /* KeyBindingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyBindingTests.swift; sourceTree = "<group>"; };
 		1A7E5C00334B2A544A8B123E /* LoggingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoggingTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoldenExportTests.swift; sourceTree = "<group>"; };
@@ -475,6 +479,7 @@
 		9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShadowPackTests.swift; sourceTree = "<group>"; };
 		A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalCrises_PreNuclear.swift; sourceTree = "<group>"; };
 		A27371408F87320221E20362 /* FontScale.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FontScale.swift; path = Shared/Design/FontScale.swift; sourceTree = SOURCE_ROOT; };
+		1A7E5C00332B0173313A2BF7 /* Accessibility.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Accessibility.swift; path = Shared/Design/Accessibility.swift; sourceTree = SOURCE_ROOT; };
 		A311CAB1E7000000000000F1 /* nation_cabinets.json */ = {isa = PBXFileReference; includeInIndex = 1; name = nation_cabinets.json; path = Shared/Resources/nation_cabinets.json; sourceTree = SOURCE_ROOT; };
 		A311CAB1E700000000000101 /* nation_characters.json */ = {isa = PBXFileReference; includeInIndex = 1; name = nation_characters.json; path = Shared/Resources/nation_characters.json; sourceTree = SOURCE_ROOT; };
 		A35N4V4L0000000000000001 /* NavalModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NavalModel.swift; sourceTree = "<group>"; };
@@ -677,6 +682,7 @@
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
+				1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */,
 				1A7E5C003354F465D372E248 /* KeyBindingTests.swift */,
 				1A7E5C00334B2A544A8B123E /* LoggingTests.swift */,
 				1A7E5C0033245C556C37ECBB /* GoldenExportTests.swift */,
@@ -961,6 +967,7 @@
 				34CF53E773D67381802521E1 /* ModernDesign.swift */,
 				0DA0AC7158FC18AE8575791A /* Theme.swift */,
 				A27371408F87320221E20362 /* FontScale.swift */,
+				1A7E5C00332B0173313A2BF7 /* Accessibility.swift */,
 			);
 			name = Design;
 			sourceTree = "<group>";
@@ -1284,6 +1291,7 @@
 				C1623ADBD12DD7CB5E27D243 /* LocalGameStore.swift in Sources */,
 				2C848CB7F1440044297B7FBA /* PostgresGameStore.swift in Sources */,
 				29C376F595D747EF80E61005 /* FontScale.swift in Sources */,
+				1A7E5C0033B33C224560652C /* Accessibility.swift in Sources */,
 				D2B064DA8A17BE10AE578508 /* PlayHistory.swift in Sources */,
 				505B873C3EFE4949E22D0302 /* Quotations.swift in Sources */,
 				BF81CE37F9C68A02EEFF8EE9 /* WorldWatch.swift in Sources */,
@@ -1322,6 +1330,7 @@
 				1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */,
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
+				1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */,
 				1A7E5C00334318F4BABD3E0F /* KeyBindingTests.swift in Sources */,
 				1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */,
 				1A7E5C003365318D9B0FD872 /* GoldenExportTests.swift in Sources */,
@@ -1465,6 +1474,7 @@
 				FC936ACCA23F8DC791756906 /* LocalGameStore.swift in Sources */,
 				E3A6138DA1901B58438150AC /* PostgresGameStore.swift in Sources */,
 				FE238D6F4C2B1EAE305745A8 /* FontScale.swift in Sources */,
+				1A7E5C0033721D74E8402D30 /* Accessibility.swift in Sources */,
 				8557487B22FE59152EA37957 /* PlayHistory.swift in Sources */,
 				74E566A222D8A93DE0A664B0 /* Quotations.swift in Sources */,
 				B088BF301E57B3579BD571CD /* WorldWatch.swift in Sources */,

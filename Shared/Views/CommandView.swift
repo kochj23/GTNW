@@ -113,7 +113,7 @@ struct CommandView: View {
                     .font(.scaled(size: 10, design: .monospaced))
 
                 Button(action: {
-                    withAnimation {
+                    withAnimation(Motion.allow(.default)) {
                         showingStatsPanel.toggle()
                     }
                 }) {

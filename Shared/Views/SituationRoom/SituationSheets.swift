@@ -354,10 +354,14 @@ struct DrawnCityTile: View {
 }
 
 struct BurningOverlay: View {
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    private var reduceMotion: Bool { systemReduceMotion || Motion.override == true }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.12)) { ctx in
+        TimelineView(.animation(minimumInterval: 0.12, paused: reduceMotion)) { ctx in
             Canvas { g, size in
-                let t = ctx.date.timeIntervalSinceReferenceDate
+                // Reduce Motion: one still frame of the fire, no flicker.
+                let t = reduceMotion ? 0 : ctx.date.timeIntervalSinceReferenceDate
                 g.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black.opacity(0.35)))
                 for i in 0..<40 {
                     let x = (Double(i * 97 % 100) / 100) * size.width
@@ -1267,10 +1271,10 @@ struct GovernSheet: View {
                         .font(ThemeFont.mono(11, .bold)).foregroundColor(c.profile.outcry > 60 ? GTNWColors.terminalRed : GTNWColors.neonCyan)
                     HStack(spacing: 6) {
                         Text("GARRISON").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
-                        Button("−") { gameEngine.setGarrison(c.id, thousands: max(0.5, garrison - 1)) }.buttonStyle(ThemedButtonStyle())
+                        Button("−") { gameEngine.setGarrison(c.id, thousands: max(0.5, garrison - 1)) }.buttonStyle(ThemedButtonStyle()).accessibilityLabel("Fewer troops in the garrison").accessibilityValue("\(Int(garrison)) thousand")
                         Text("\(Int(garrison))K of \(Int(needed.rounded()))K needed").font(ThemeFont.mono(11, .bold))
                             .foregroundColor(garrison >= needed ? GTNWColors.terminalGreen : GTNWColors.terminalAmber)
-                        Button("+") { gameEngine.setGarrison(c.id, thousands: garrison + 1) }.buttonStyle(ThemedButtonStyle())
+                        Button("+") { gameEngine.setGarrison(c.id, thousands: garrison + 1) }.buttonStyle(ThemedButtonStyle()).accessibilityLabel("More troops in the garrison").accessibilityValue("\(Int(garrison)) thousand")
                         Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                     }
                     Text("GOVERNMENT").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
@@ -1450,9 +1454,9 @@ struct GroupActionSheet: View {
             }
             if kind == .money || kind == .aid {
                 HStack(spacing: 6) {
-                    Button("−") { amount = max(1, amount - 1) }.buttonStyle(ThemedButtonStyle())
+                    Button("−") { amount = max(1, amount - 1) }.buttonStyle(ThemedButtonStyle()).accessibilityLabel("Less money").accessibilityValue(String(format: "%.0f billion dollars", amount))
                     Text(String(format: "$%.0fB TOTAL", amount)).font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
-                    Button("+") { amount += 1 }.buttonStyle(ThemedButtonStyle())
+                    Button("+") { amount += 1 }.buttonStyle(ThemedButtonStyle()).accessibilityLabel("More money").accessibilityValue(String(format: "%.0f billion dollars", amount))
                     ForEach(AidSplit.allCases) { s in
                         Button(s.title.uppercased()) { split = s }.buttonStyle(ThemedButtonStyle(prominent: split == s))
                     }
@@ -1461,9 +1465,9 @@ struct GroupActionSheet: View {
             }
             if kind == .garrison {
                 HStack(spacing: 6) {
-                    Button("−") { garrison = max(0.5, garrison - 1) }.buttonStyle(ThemedButtonStyle())
+                    Button("−") { garrison = max(0.5, garrison - 1) }.buttonStyle(ThemedButtonStyle()).accessibilityLabel("Fewer troops each").accessibilityValue("\(Int(garrison)) thousand")
                     Text("\(Int(garrison))K EACH").font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
-                    Button("+") { garrison += 1 }.buttonStyle(ThemedButtonStyle())
+                    Button("+") { garrison += 1 }.buttonStyle(ThemedButtonStyle()).accessibilityLabel("More troops each").accessibilityValue("\(Int(garrison)) thousand")
                     Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 }
             }

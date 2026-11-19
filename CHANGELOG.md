@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `KeyBindingStore` (`Shared/Models/KeyBindings.swift`); Settings → Keys edits them, with Reset and Reset All.
   Defaults are the shortcuts the game always had (⌘N, ⌥⌘A, ⇧⌘R). `KeyBindingTests.swift`: 8 tests.
 
+- **Accessibility.** VoiceOver labels and values for the Situation Room map (each nation an element that reads its
+  standing with you and selects it), the map tab's cards, the status bar, escalation ladder, cabinet, action list
+  and −/+ steppers (`Shared/Design/Accessibility.swift`). Reduce Motion is honoured: steady map flashes, a still
+  news line, no fire flicker, no floating blobs, no animated transitions or pulses. Text scaling is unchanged.
+  `AccessibilityTests.swift`: 7 tests.
+
 ### Fixed
 - README test badge said 868; it now shows the real count.
 

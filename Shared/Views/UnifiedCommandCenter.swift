@@ -256,7 +256,7 @@ struct UnifiedCommandCenter: View {
                     .padding(16)
                     .onChange(of: gameEngine.logMessages.count) { _ in
                         // Auto-scroll to latest marker (fixed to always target stable ID)
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(Motion.allow(.easeInOut(duration: 0.3))) {
                             proxy.scrollTo("latest-marker", anchor: .top)
                         }
                     }

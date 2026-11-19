@@ -119,18 +119,19 @@ struct GTNWCorners {
 
 // MARK: - Animations
 
+/// 3.33.0: every one is nil (no animation) when Reduce Motion is on.
 struct GTNWAnimations {
-    static let quick = Animation.easeInOut(duration: 0.2)
-    static let standard = Animation.easeInOut(duration: 0.3)
-    static let slow = Animation.easeInOut(duration: 0.5)
-    static let spring = Animation.spring(response: 0.4, dampingFraction: 0.7)
+    static var quick: Animation? { Motion.allow(.easeInOut(duration: 0.2)) }
+    static var standard: Animation? { Motion.allow(.easeInOut(duration: 0.3)) }
+    static var slow: Animation? { Motion.allow(.easeInOut(duration: 0.5)) }
+    static var spring: Animation? { Motion.allow(.spring(response: 0.4, dampingFraction: 0.7)) }
 
-    static func pulse(duration: Double = 1.0) -> Animation {
-        .easeInOut(duration: duration).repeatForever(autoreverses: true)
+    static func pulse(duration: Double = 1.0) -> Animation? {
+        Motion.allow(.easeInOut(duration: duration).repeatForever(autoreverses: true))
     }
 
-    static func blink(duration: Double = 0.5) -> Animation {
-        .easeInOut(duration: duration).repeatForever(autoreverses: true)
+    static func blink(duration: Double = 0.5) -> Animation? {
+        Motion.allow(.easeInOut(duration: duration).repeatForever(autoreverses: true))
     }
 }
 
@@ -330,7 +331,7 @@ struct StatCard: View {
         .scaleEffect(show ? 1.0 : 0.8)
         .opacity(show ? 1.0 : 0.0)
         .onAppear {
-            withAnimation(GTNWAnimations.spring.delay(Double.random(in: 0...0.3))) {   // rng: cosmetic
+            withAnimation(GTNWAnimations.spring?.delay(Double.random(in: 0...0.3))) {   // rng: cosmetic
                 show = true
             }
         }
@@ -568,7 +569,7 @@ struct ScanlineOverlay: View {
             }
             .offset(y: offset)
             .onAppear {
-                withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                withAnimation(Motion.allow(.linear(duration: 2.0).repeatForever(autoreverses: false))) {
                     offset = 8
                 }
             }

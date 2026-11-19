@@ -141,7 +141,7 @@ struct TextCommandInterface: View {
                     .padding()
                     .onChange(of: eventLogger.events.count) { _ in
                         if let first = eventLogger.events.first {
-                            withAnimation {
+                            withAnimation(Motion.allow(.default)) {
                                 proxy.scrollTo(first.id, anchor: .top)
                             }
                         }

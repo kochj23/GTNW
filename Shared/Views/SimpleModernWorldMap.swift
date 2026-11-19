@@ -132,6 +132,10 @@ struct SimpleModernWorldMap: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(A11y.countryLabel(country, in: gameState))
+        .accessibilityValue(A11y.countryValue(country, in: gameState))
+        .accessibilityHint("Opens the country")
         .hoverScale()
     }
 
@@ -171,6 +175,10 @@ struct SimpleModernWorldMap: View {
             .modernCard(glowColor: .gray)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(pre?.label ?? WorldCountriesDatabase.template(id: id)?.name ?? id)
+        .accessibilityValue(pre?.era.kind == .colony ? "colony" : "unclaimed land")
+        .accessibilityHint("Shows how to claim it")
         .hoverScale()
     }
 
@@ -245,6 +253,7 @@ struct CountryDetailSheet: View {
                             .font(.scaled(size: 32))
                             .foregroundColor(GTNWColors.terminalRed)
                     }
+                    .accessibilityLabel("Close")
                 }
                 .padding()
 
@@ -368,8 +377,10 @@ struct UnclaimedLandSheet: View {
                 HStack(spacing: 6) {
                     Text("TROOPS").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
                     Button("−") { troops = max(1, troops - 1) }.buttonStyle(ThemedButtonStyle())
+                        .accessibilityLabel("Fewer troops").accessibilityValue("\(Int(troops)) thousand")
                     Text("\(Int(troops))K").font(ThemeFont.mono(12, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                     Button("+") { troops = min(max(1, AttackSizing.freeTroops(gameState)), troops + 1) }.buttonStyle(ThemedButtonStyle())
+                        .accessibilityLabel("More troops").accessibilityValue("\(Int(troops)) thousand")
                     Text("\(Int(AttackSizing.freeTroops(gameState)))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 }
                 HStack {

@@ -434,7 +434,7 @@ struct WOPRSecretEndingView: View {
                         .padding(.horizontal, 20)
                     }
                     .onChange(of: displayedLines.count) { _ in
-                        withAnimation {
+                        withAnimation(Motion.allow(.default)) {
                             proxy.scrollTo(displayedLines.count - 1, anchor: .bottom)
                         }
                     }

@@ -230,6 +230,8 @@ struct VectorWorldMap: View {
     @Binding var zoom: MapZoom
     @Binding var filter: MapFilter
     @State private var hoverID: String?
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    private var reduceMotion: Bool { systemReduceMotion || Motion.override == true }
 
     private let data = WorldMapData.shared
     private static let worldRect = CGRect(x: -180, y: -84, width: 360, height: 158)   // lat 84N … 74S (Antarctica's coast, 3.10.0)
@@ -324,7 +326,8 @@ struct VectorWorldMap: View {
                       ZStack(alignment: .bottomLeading) {
                         Canvas { ctx, _ in
                             let live = gameState.mapFlashes.filter { $0.until > tl.date }
-                            guard !live.isEmpty, Int(tl.date.timeIntervalSinceReferenceDate * 3) % 2 == 0 else { return }
+                            // Reduce Motion: a steady highlight instead of a blink.
+                            guard !live.isEmpty, reduceMotion || Int(tl.date.timeIntervalSinceReferenceDate * 3) % 2 == 0 else { return }
                             func tone(_ ids: String...) -> MapFlash.Tone? { live.last { f in ids.contains { f.ids.contains($0) } }?.tone }
                             func ring(_ center: CGPoint, _ color: Color) {
                                 ctx.stroke(Path(ellipseIn: CGRect(x: center.x - 9, y: center.y - 9, width: 18, height: 18)), with: .color(color), lineWidth: 2.5)
@@ -372,6 +375,20 @@ struct VectorWorldMap: View {
             })
             .modifier(HoverTracker { loc in hoverID = loc.flatMap { hit($0, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys)) } })
             .clipped()
+            // 3.33.0: VoiceOver. The map is drawn on a Canvas, so each nation is given as an element of its own that
+            // reads its standing with you and selects it on activation.
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(A11y.mapLabel)
+            .accessibilityValue(A11y.mapValue(gameState, selected: selectedCountryID))
+            .accessibilityChildren {
+                ForEach(A11y.mapNations(gameState)) { n in
+                    Rectangle()
+                        .accessibilityLabel(n.label)
+                        .accessibilityValue(n.value)
+                        .accessibilityAddTraits(n.id == selectedCountryID ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityAction { selectedCountryID = n.id }
+                }
+            }
         }
     }
 

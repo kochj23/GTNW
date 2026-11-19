@@ -216,7 +216,15 @@ struct SituationTopBar: View {
         return AnyView(HStack(spacing: 14) { stats(eval); Spacer(minLength: 14); controls })
     }
 
-    @ViewBuilder private func stats(_ eval: WorldEvaluation) -> some View {
+    private func stats(_ eval: WorldEvaluation) -> some View {
+        // 3.33.0: one VoiceOver element for the numbers, read as a sentence.
+        HStack(spacing: 14) { statItems(eval) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Status")
+            .accessibilityValue(A11y.statusValue(gameState))
+    }
+
+    @ViewBuilder private func statItems(_ eval: WorldEvaluation) -> some View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(gameState.currentDateLabel.uppercased())
                     .font(ThemeFont.mono(18, .bold))
@@ -298,6 +306,7 @@ struct SituationTopBar: View {
             }
             .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
             .disabled(gameEngine.isProcessingAITurn || gameState.gameOver)
+            .accessibilityHint("Ends the \(gameState.turnLength.displayName.lowercased()); then the other nations move")
     }
 
     private var divider: some View {
@@ -364,6 +373,10 @@ struct AdvisorRail: View {
                     }
                     .buttonStyle(.plain)
                     .help(AdviceEngine.briefing(role: role, country: selected, gameState: gameState))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(AdviceEngine.roleTitle(role)), \(adv?.name ?? "vacant")")
+                    .accessibilityHint("Opens the briefing")
+                    .accessibilityAddTraits(.isButton)
                 }
             }
             .padding(4)
@@ -477,8 +490,10 @@ struct CountryDossier: View {
             HStack(spacing: 6) {
                 Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 Button("−") { expedition = max(1, expedition - 1) }.buttonStyle(ThemedButtonStyle())
+                    .accessibilityLabel("Fewer troops").accessibilityValue("\(Int(expedition)) thousand")
                 Text("\(Int(expedition))K").font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                 Button("+") { expedition = min(max(1, free), expedition + 5) }.buttonStyle(ThemedButtonStyle())
+                    .accessibilityLabel("More troops").accessibilityValue("\(Int(expedition)) thousand of \(Int(free)) thousand free")
                 Text("\(Int(free))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
             if let me {
@@ -539,8 +554,10 @@ struct CountryDossier: View {
             HStack(spacing: 6) {
                 Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 Button("−") { expedition = max(1, expedition - 1) }.buttonStyle(ThemedButtonStyle())
+                    .accessibilityLabel("Fewer troops").accessibilityValue("\(Int(expedition)) thousand")
                 Text("\(Int(expedition))K").font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                 Button("+") { expedition = min(max(1, free), expedition + 5) }.buttonStyle(ThemedButtonStyle())
+                    .accessibilityLabel("More troops").accessibilityValue("\(Int(expedition)) thousand of \(Int(free)) thousand free")
                 Text("\(Int(free))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
             Button("SEIZE BY FORCE (\(Int(odds * 100))%)") { if gameEngine.seizeColony(c.id, troops: expedition) == true { onSheet(.nameClaim) } }
@@ -621,8 +638,10 @@ struct CountryDossier: View {
             HStack(spacing: 6) {
                 Text("TROOPS").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
                 Button("−") { expedition = max(1, expedition - 1) }.buttonStyle(ThemedButtonStyle())
+                    .accessibilityLabel("Fewer troops").accessibilityValue("\(Int(expedition)) thousand")
                 Text("\(Int(expedition))K").font(ThemeFont.mono(11, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                 Button("+") { expedition = min(max(1, free), expedition + 1) }.buttonStyle(ThemedButtonStyle())
+                    .accessibilityLabel("More troops").accessibilityValue("\(Int(expedition)) thousand of \(Int(free)) thousand free")
                 Text("\(Int(free))K FREE").font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
             Button("SEND EXPEDITION") { if gameEngine.claimLand(id, troops: expedition) { onSheet(.nameClaim) } }
@@ -871,6 +890,8 @@ struct ActionLadder: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(ThemedButtonStyle(color: color(rung), prominent: false))
+                .accessibilityLabel(rung.title)
+                .accessibilityHint(target.map { "Against \($0.name)" } ?? "Select a nation on the map first")
                 .disabled(target == nil || target?.isPlayerControlled == true || gameState.actionsRemaining == 0
                           || gameEngine.isProcessingAITurn || gameState.gameOver)
             }
@@ -893,10 +914,20 @@ struct ActionLadder: View {
 struct NewsTicker: View {
     let items: [TickerItem]
     @State private var start = Date()
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    private var reduceMotion: Bool { systemReduceMotion || Motion.override == true }
 
     var body: some View {
         let recent = Array(items.suffix(8).reversed())
         let line = recent.map { "\(GameCalendar.format($0.date)): \($0.text)" }.joined(separator: "   ◆   ")
+        Group {
+        if reduceMotion {
+            // Reduce Motion: the latest news, still, instead of a crawl.
+            Text(recent.first.map { "\(GameCalendar.format($0.date)): \($0.text)" } ?? "NO NEWS")
+                .font(ThemeFont.mono(12, .bold))
+                .foregroundColor(recent.first.map { $0.severity >= 3 } == true ? GTNWColors.terminalRed : GTNWColors.terminalGreen)
+                .lineLimit(1)
+        } else {
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { ctx in
             GeometryReader { g in
                 let speed = 60.0
@@ -909,6 +940,11 @@ struct NewsTicker: View {
                     .offset(x: g.size.width - offset)
             }
         }
+        }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("News")
+        .accessibilityValue(line.isEmpty ? "No news" : line)
         .frame(height: FontScale.h(22))
         .clipped()
         .padding(.horizontal, 6)
@@ -969,6 +1005,9 @@ struct ActionLadderSheet: View {
                                 .background(action == a ? GTNWColors.terminalAmber : Color.clear)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(a.rawValue)
+                            .accessibilityValue(a.isHostile ? "hostile" : "friendly")
+                            .accessibilityAddTraits(action == a ? .isSelected : [])
                         }
                     }
                 }

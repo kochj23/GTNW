@@ -57,7 +57,7 @@ struct DetailedCrisisView: View {
                 HStack(spacing: 20) {
                     if let selected = selectedOption {
                         Button(action: {
-                            withAnimation {
+                            withAnimation(Motion.allow(.default)) {
                                 onResolve(selected)
                             }
                         }) {
