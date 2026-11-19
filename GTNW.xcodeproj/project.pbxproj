@@ -54,6 +54,7 @@
 		1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003A /* Release331Tests.swift */; };
 		1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003F /* Release332Tests.swift */; };
 		1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */; };
+		1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */; };
 		1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */; };
 		1A7E5C00334318F4BABD3E0F /* KeyBindingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003354F465D372E248 /* KeyBindingTests.swift */; };
 		1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00334B2A544A8B123E /* LoggingTests.swift */; };
@@ -381,6 +382,7 @@
 		1A7E5C0029A000000000003A /* Release331Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release331Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003F /* Release332Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release332Tests.swift; sourceTree = "<group>"; };
 		1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeterminismTests.swift; sourceTree = "<group>"; };
+		1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RepoHygieneTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccessibilityTests.swift; sourceTree = "<group>"; };
 		1A7E5C003354F465D372E248 /* KeyBindingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyBindingTests.swift; sourceTree = "<group>"; };
 		1A7E5C00334B2A544A8B123E /* LoggingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoggingTests.swift; sourceTree = "<group>"; };
@@ -682,6 +684,7 @@
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
+				1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */,
 				1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */,
 				1A7E5C003354F465D372E248 /* KeyBindingTests.swift */,
 				1A7E5C00334B2A544A8B123E /* LoggingTests.swift */,
@@ -1330,6 +1333,7 @@
 				1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */,
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
+				1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */,
 				1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */,
 				1A7E5C00334318F4BABD3E0F /* KeyBindingTests.swift in Sources */,
 				1A7E5C003352C524E25FC3F4 /* LoggingTests.swift in Sources */,

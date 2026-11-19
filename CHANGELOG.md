@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **This changes outcomes for a given seed.** A seed from an earlier version will not replay the same game.
   Saved games still load and play on: the generator's state is in the save, and pre-3.27 saves without one get a
   fresh seed as before.
+- 24 stale status, plan and session notes moved from the repository root to `Documentation/archive/`.
 
 ### Added
 - `DeterminismTests.swift`: one seed, one starting board; two seeded games with the same scripted orders identical
@@ -47,8 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   news line, no fire flicker, no floating blobs, no animated transitions or pulses. Text scaling is unchanged.
   `AccessibilityTests.swift`: 7 tests.
 
+### Removed
+- Six one-off root Ruby scripts that patched the Xcode project (`add_diplomatic_view.rb`, `add_modern_design.rb`,
+  `add_new_files.rb`, `fix_paths.rb`, `fix_signing.rb`, `remove_image_files.rb`). Nothing referenced them and they
+  had not changed since the first commit.
+
 ### Fixed
-- README test badge said 868; it now shows the real count.
+- README test badge said 868; it now shows the real count, and `RepoHygieneTests.swift` fails if the badge or the
+  Testing section drifts from the number of tests (2 tests, with the root-tidiness guard).
 
 ## [3.32.0] - 2026-11-17 — Why they went
 
