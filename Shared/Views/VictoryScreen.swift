@@ -35,8 +35,10 @@ struct VictoryScreen: View {
             AppSettings.terminalBackground
                 .edgesIgnoringSafeArea(.all)
 
+            // 3.33.1: scrolls. A macOS sheet is only as tall as the window, and the debrief alone can be
+            // taller than that; without a ScrollView the header and the end of the debrief were cut off.
+            ScrollView {
             VStack(spacing: 30) {
-                Spacer()
 
                 // Victory/Defeat Header
                 if let victory = victoryType {
@@ -79,8 +81,6 @@ struct VictoryScreen: View {
                 }
                 .padding(.horizontal, 40)
 
-                Spacer()
-
                 // Nova's post-mortem roast
                 if !gameState.novaRoast.isEmpty { novaRoastView() }
 
@@ -95,8 +95,18 @@ struct VictoryScreen: View {
                 // WOPR Quote
                 woprQuote()
             }
+            .padding(.vertical, 30)
+            .frame(maxWidth: .infinity)
+            }
         }
+        #if os(macOS)
+        // A sheet with no size takes its content's narrowest width (about 330 pt): every line wrapped and
+        // the headings truncated. Give it a readable one.
+        .frame(minWidth: Self.minSheetWidth, idealWidth: 960, minHeight: 640, idealHeight: 860)
+        #endif
     }
+
+    static let minSheetWidth: CGFloat = 820
 
     private func victoryHeader(victory: VictoryType) -> some View {
         VStack(spacing: 15) {
@@ -211,6 +221,8 @@ struct VictoryScreen: View {
             Text(value)
                 .font(.scaled(size: 24, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)   // "827,855" must not break into "827,85" / "5"
             Text(label)
                 .font(.scaled(size: 12, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
@@ -233,13 +245,19 @@ struct VictoryScreen: View {
                         Text(verbatim: d.title)
                             .font(.scaled(size: 12, weight: .bold, design: .monospaced))
                             .foregroundColor(AppSettings.terminalGreen)
-                        Text(verbatim: d.body)
-                            .font(.scaled(size: 11, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.85))
-                            .fixedSize(horizontal: false, vertical: true)
+                            .fixedSize(horizontal: false, vertical: true)   // wrap, never "THE CRISIS THAT ALMOST HA…"
+                        // One paragraph per entry, with air between them, instead of one run-on block.
+                        ForEach(Array(d.body.split(separator: "\n").enumerated()), id: \.offset) { _, entry in
+                            Text(verbatim: String(entry))
+                                .font(.scaled(size: 11, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.85))
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.bottom, 4)
+                        }
                     }
                 }
             }
+            .frame(maxWidth: 860, alignment: .leading)
             .padding(.horizontal, 40)
         }
     }

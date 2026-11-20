@@ -71,6 +71,20 @@ final class GTNWFrameTests: XCTestCase {
         }
     }
 
+    /// The game-over sheet must open at a readable width and render its huge numbers on one line.
+    /// It used to open about 330 pt wide, cut off at top and bottom (screenshot 2026-11-19).
+    @MainActor
+    func testGameOverSheetOpensReadablyWide() throws {
+        let gs = GameState(playerCountryID: "USA", turnLength: .month)
+        gs.totalCasualties = 827_855
+        let view = VictoryScreen(gameState: gs, victoryType: nil, score: GameScore(), onNewGame: {}, onViewLeaderboard: {})
+        let host = NSHostingView(rootView: view)
+        XCTAssertGreaterThanOrEqual(host.fittingSize.width, VictoryScreen.minSheetWidth)
+        let renderer = ImageRenderer(content: view.frame(width: VictoryScreen.minSheetWidth, height: 640))
+        renderer.scale = 1
+        XCTAssertNotNil(renderer.cgImage, "game-over screen failed to render at its minimum size")
+    }
+
     func testLaunchSmokeFlagIsRecognised() {
         XCTAssertEqual(LaunchSmoke.flag, "--launch-smoke")
         XCTAssertFalse(LaunchSmoke.isRequested, "the test host itself must not be in smoke mode")

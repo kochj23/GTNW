@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.33.1] - 2026-11-19 — A readable end screen
+
+### Fixed
+- **Game-over screen:** it opened as a sheet about 330 pt wide, so the score and stats ran off the top, the
+  debrief ran off the bottom, "827,855" broke across two lines and debrief headings were truncated. It now opens
+  960 pt wide (never under 820), scrolls, keeps stat values on one line, wraps headings, and sets each debrief entry
+  as its own paragraph at a readable width.
+
 ## [3.33.0] - 2026-11-19 — Same seed, same war
 
 ### Changed
