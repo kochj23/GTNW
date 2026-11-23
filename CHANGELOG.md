@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Planned as 3.34.0 — The command box.
+
+### Added
+- **Command box (⌘K, rebindable in Settings → Keys; Orders → Command Box…; the `>` prompt in the Situation Room).**
+  Type orders and questions in plain English, e.g. "attack Madagascar with all air, naval, and army forces that are
+  non-nuclear", "deploy the seventh fleet to Japan", "who can reach me with ICBMs?", "what's France's stability?".
+- **Confirmation card:** the target by its name that year (1850 Madagascar is the Merina Kingdom; colonies and
+  unclaimed land named as such), forces committed by type, what is held back (warheads unless asked for), and
+  warnings (out of reach, not enough actions or forces, alliances and treaties broken, nuclear powers, DEFCON).
+  EXECUTE / EDIT / CANCEL; a nuclear order needs a second, explicit confirmation. Ambiguous names ask which one.
+- **Offline parser first; the local model only as a translator.** When the parser can't read a command, Ollama (the
+  Settings → AI model, qwen3:8b by default, thinking off, JSON-schema output) maps it to the same closed list of
+  verbs; the engine and the seeded RNG decide outcomes. AI off or Ollama down: a clear message, the parser still works.
+- **Read-only questions** answered from the game: reach, wars, allies, actions left, DEFCON, arsenal, fleets, and a
+  nation's stability, military, warheads, approval, relations, economy, population, government or leader.
+- Saves, replays and play history record the resolved orders (`shadow.commandLog`, play event `command_orders`),
+  never the typed text. Older saves load with an empty log.
+- 36 tests across all seven categories, including a determinism test (same seed + same orders = same war; replaying
+  the recorded orders reproduces it).
+
+### Security
+- Typed text can only become orders from a whitelist of the engine's own player actions (no chemical or biological
+  attacks, assassinations, poisonings, terror or drug operations); everything is re-validated at execute. Input is
+  capped at 200 characters; the model's reply is schema-checked and never shown; the only request goes to the
+  configured local Ollama URL (backend pinned, no failover).
+
 ## [3.33.2] - 2026-11-23 — The map draws on the GPU
 
 ### Changed

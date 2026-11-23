@@ -11,7 +11,7 @@ import SwiftUI
 
 /// A gameplay command that has a keyboard shortcut.
 enum GameShortcut: String, CaseIterable, Identifiable, Codable {
-    case newGame, aiSettings, toggleSkin
+    case newGame, aiSettings, toggleSkin, commandBox
 
     var id: String { rawValue }
 
@@ -20,15 +20,17 @@ enum GameShortcut: String, CaseIterable, Identifiable, Codable {
         case .newGame: return "New Game"
         case .aiSettings: return "AI Backend Settings"
         case .toggleSkin: return "Switch Skin (Retro / Modern)"
+        case .commandBox: return "Command Box"
         }
     }
 
-    /// Today's shortcuts: ⌘N, ⌥⌘A, ⇧⌘R.
+    /// Today's shortcuts: ⌘N, ⌥⌘A, ⇧⌘R, and the command box's ⌘K (3.34.0).
     var defaultBinding: KeyBinding {
         switch self {
         case .newGame: return KeyBinding(key: "n", command: true)
         case .aiSettings: return KeyBinding(key: "a", command: true, option: true)
         case .toggleSkin: return KeyBinding(key: "r", command: true, shift: true)
+        case .commandBox: return KeyBinding(key: "k", command: true)
         }
     }
 }

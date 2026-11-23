@@ -33,6 +33,8 @@ class GameEngine: ObservableObject {
     @Published var actionResult: ActionReport?
     @Published var finalScore: GameScore?
     @Published var isProcessingAITurn = false  // Prevent actions during AI processing
+    /// 3.34.0: the command box sheet (opened by the prompt line under the map or its shortcut, ⌘K by default).
+    @Published var commandBoxOpen = false
 
     /// When set (the app does this; tests don't), the game autosaves to slot 0 at the end of every turn.
     var autosaveManager: SaveManager? = nil

@@ -18,6 +18,8 @@ struct MainTabView: View {
         return args.firstIndex(of: "--tab").flatMap { args.indices.contains($0 + 1) ? Int(args[$0 + 1]) : nil } ?? 0
     }
     @State private var electionShown: Date?
+    /// 3.34.0: the command box keeps its history for the whole sitting.
+    @StateObject private var commandBox = CommandBoxModel()
 
     var body: some View {
         if gameEngine.gameState == nil {
@@ -81,6 +83,9 @@ struct MainTabView: View {
                 get: { gameEngine.spectating ? nil : gameEngine.gameState?.shadow.lastElection.flatMap { $0.date == electionShown ? nil : $0 } },
                 set: { if $0 == nil { electionShown = gameEngine.gameState?.shadow.lastElection?.date } })) { result in
                 ElectionNightView(result: result)
+            }
+            .sheet(isPresented: $gameEngine.commandBoxOpen) {
+                CommandBoxView(model: commandBox).environmentObject(gameEngine)
             }
         }
     }

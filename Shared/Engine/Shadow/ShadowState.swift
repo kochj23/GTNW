@@ -252,6 +252,9 @@ struct ShadowState: Codable {
     var sittingID: String?
     var sittingTurns: Int?
     var sittingDebrief: [String] = []
+    /// 3.34.0: what the command box carried out, as resolved orders (never the typed text), newest last.
+    var commandLog: [CommandRecord] = []
+    static let commandLogCap = 200
 
     // Scenario
     var scenarioID: String?
@@ -296,6 +299,7 @@ struct ShadowState: Codable {
         case agentProgramSince, agentOps, agentOpsRun, outbreaks, pathogenReadySince, countermeasureReady, intelPosture
         case deliberations, casusLog, doneTests, statedCasus, intel, worldIntel, dispatches, peaceTerms
         case doctrines, sittingID, sittingTurns, sittingDebrief
+        case commandLog
     }
 
     init() {}
@@ -404,6 +408,7 @@ struct ShadowState: Codable {
         sittingID = try? c.decodeIfPresent(String.self, forKey: .sittingID)
         sittingTurns = try? c.decodeIfPresent(Int.self, forKey: .sittingTurns)
         sittingDebrief = (try? c.decodeIfPresent([String].self, forKey: .sittingDebrief)) ?? []
+        commandLog = (try? c.decodeIfPresent([CommandRecord].self, forKey: .commandLog)) ?? []
     }
 }
 

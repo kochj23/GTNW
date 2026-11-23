@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1A7E5C003474C32986D63D3D /* CommandBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */; };
+		1A7E5C0034346E5146A710E4 /* CommandBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003409CDDA53BCE1F9 /* CommandBoxView.swift */; };
+		1A7E5C0034E220FB5C7AC8CD /* CommandBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003409CDDA53BCE1F9 /* CommandBoxView.swift */; };
+		1A7E5C0034F89E95ED26EC32 /* CommandTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00349ADF35C1393A10 /* CommandTranslator.swift */; };
+		1A7E5C0034745E2752F8B3E7 /* CommandTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00349ADF35C1393A10 /* CommandTranslator.swift */; };
+		1A7E5C0034C8B3864551A8E6 /* CommandPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00343EF0A6A8BB7A55 /* CommandPlanner.swift */; };
+		1A7E5C00340490CD7A5E0B83 /* CommandPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00343EF0A6A8BB7A55 /* CommandPlanner.swift */; };
+		1A7E5C0034DC4BC1077D9367 /* CommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0034A7C3BEFD7D6BEE /* CommandParser.swift */; };
+		1A7E5C0034A530975A55336B /* CommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0034A7C3BEFD7D6BEE /* CommandParser.swift */; };
+		1A7E5C0034455BF3B5FB9E0A /* GameOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00345A3D8C4593BD7D /* GameOrder.swift */; };
+		1A7E5C00349CE04BF08471C4 /* GameOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C00345A3D8C4593BD7D /* GameOrder.swift */; };
 		01E15CF63F9E705ECCA7F579 /* PresidentialPowersViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003177A629E84F33BCF55FD0 /* PresidentialPowersViews.swift */; };
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
@@ -352,6 +363,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommandBoxTests.swift; sourceTree = "<group>"; };
+		1A7E5C003409CDDA53BCE1F9 /* CommandBoxView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommandBoxView.swift; sourceTree = "<group>"; };
+		1A7E5C00349ADF35C1393A10 /* CommandTranslator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommandTranslator.swift; sourceTree = "<group>"; };
+		1A7E5C00343EF0A6A8BB7A55 /* CommandPlanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommandPlanner.swift; sourceTree = "<group>"; };
+		1A7E5C0034A7C3BEFD7D6BEE /* CommandParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommandParser.swift; sourceTree = "<group>"; };
+		1A7E5C00345A3D8C4593BD7D /* GameOrder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameOrder.swift; sourceTree = "<group>"; };
 		003177A629E84F33BCF55FD0 /* PresidentialPowersViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidentialPowersViews.swift; sourceTree = "<group>"; };
 		00DA91E222E440E4B5257DFC /* WorldFactbookData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldFactbookData.swift; sourceTree = "<group>"; };
 		00ED35FA1859FB798CDBD083 /* WorldMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMap.swift; sourceTree = "<group>"; };
@@ -581,6 +598,9 @@
 			isa = PBXGroup;
 			children = (
 				79F2CAFFC239692E6D4C5120 /* GameEngine.swift */,
+				1A7E5C00343EF0A6A8BB7A55 /* CommandPlanner.swift */,
+				1A7E5C0034A7C3BEFD7D6BEE /* CommandParser.swift */,
+				1A7E5C00345A3D8C4593BD7D /* GameOrder.swift */,
 				AECB96BC2F3C16F08080563A /* AIMove.swift */,
 				80D288D0C83D8EB60BA776D4 /* AIBrain.swift */,
 				6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */,
@@ -684,6 +704,7 @@
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
+				1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */,
 				1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */,
 				1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */,
 				1A7E5C003354F465D372E248 /* KeyBindingTests.swift */,
@@ -795,6 +816,7 @@
 				00ED35FA1859FB798CDBD083 /* WorldMap.swift */,
 				B1A3A764291E4C33F6D43277 /* AdministrationSelectionView.swift */,
 				D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */,
+				1A7E5C003409CDDA53BCE1F9 /* CommandBoxView.swift */,
 				1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */,
 				07228E319CC144294BA9F6FA /* VictoryScreen.swift */,
 				E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */,
@@ -877,6 +899,7 @@
 				1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */,
 				16128088EEBC501C77066EB8 /* AIOutputSanitizer.swift */,
 				1F531D63D4C9E7958EA8037A /* AppAI.swift */,
+				1A7E5C00349ADF35C1393A10 /* CommandTranslator.swift */,
 				EED7011F371BCF8B66DB5E6B /* GTNWAIViews.swift */,
 				B7ED668649FBA1154AC463E0 /* TerminalAdvisor.swift */,
 			);
@@ -1167,6 +1190,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A7E5C0034E220FB5C7AC8CD /* CommandBoxView.swift in Sources */,
+				1A7E5C0034745E2752F8B3E7 /* CommandTranslator.swift in Sources */,
+				1A7E5C00340490CD7A5E0B83 /* CommandPlanner.swift in Sources */,
+				1A7E5C0034A530975A55336B /* CommandParser.swift in Sources */,
+				1A7E5C00349CE04BF08471C4 /* GameOrder.swift in Sources */,
 				EADF976252434AAAAA0FF642 /* WorldFactbookData.swift in Sources */,
 				769CA620D51E46A7A71BF2A0 /* AlienInvasionScenario.swift in Sources */,
 				A5B12EA17B9C44E383A50B70 /* PresidentialPowersViews.swift in Sources */,
@@ -1314,6 +1342,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A7E5C003474C32986D63D3D /* CommandBoxTests.swift in Sources */,
 				F592921EED27A78259583B4A /* GTNWUnitTests.swift in Sources */,
 				1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */,
 				6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */,
@@ -1351,6 +1380,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A7E5C0034346E5146A710E4 /* CommandBoxView.swift in Sources */,
+				1A7E5C0034F89E95ED26EC32 /* CommandTranslator.swift in Sources */,
+				1A7E5C0034C8B3864551A8E6 /* CommandPlanner.swift in Sources */,
+				1A7E5C0034DC4BC1077D9367 /* CommandParser.swift in Sources */,
+				1A7E5C0034455BF3B5FB9E0A /* GameOrder.swift in Sources */,
 				4310D872B9E220245A099D5E /* Advisor.swift in Sources */,
 				7ABDEF5D1B4F33715640E692 /* AdvisorViews.swift in Sources */,
 				7494639D7337DF87DC04D621 /* AppSettings.swift in Sources */,

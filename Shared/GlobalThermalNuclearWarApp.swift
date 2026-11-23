@@ -74,6 +74,13 @@ struct GlobalThermalNuclearWarApp: App {
                 .gameShortcut(.newGame, store: keys)
             }
 
+            CommandMenu("Orders") {
+                Button("Command Box…") {
+                    if gameEngine.gameState != nil { gameEngine.commandBoxOpen = true }
+                }
+                .gameShortcut(.commandBox, store: keys)
+            }
+
             CommandMenu("AI") {
                 Button("AI Backend Settings...") {
                     showingAISettings = true

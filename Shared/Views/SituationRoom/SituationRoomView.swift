@@ -116,6 +116,7 @@ struct SituationRoomView: View {
                 ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 }).frame(minWidth: FontScale.w(900))
             }
             worldBriefLine
+            CommandPromptBar()
             NewsTicker(items: gameState.shadow.ticker)
         }
     }
@@ -140,6 +141,7 @@ struct SituationRoomView: View {
             }
             ActionLadder(gameState: gameState, target: selected, onRung: { ladderRung = $0 })
             worldBriefLine
+            CommandPromptBar()
             NewsTicker(items: gameState.shadow.ticker)
         }
     }
