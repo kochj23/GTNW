@@ -11,7 +11,7 @@
 //    newGame({"scenario":"cuba1962"})   newGame({"sitting":"sit_cuba"})
 //    act({"action":"Send Ambassador","target":"FRA"})      act({"crisisOption":0})
 //    act({"action":"Air Strike","target":"CUB","advised":true})   act({"action":"Air Strike","target":"CUB","decline":true})
-//    act({"advisor":"<id>","recommendation":"accept"|"reject"|"alternative"})
+//    act({"advisor":"<id>","recommendation":"accept"|"reject"|"alternative"})   act({"verb":"recallFleet","id":"…"}) (Verbs/)
 //    endTurn()   snapshot()   save()   load(<save>)   golden(1962, 0x7aa, 12)   query({"q":"map"}) (Queries/)
 //
 
@@ -69,6 +69,8 @@ public enum GTNWBridge {
         /// An advisor's standing recommendation: accept, reject or alternative.
         var advisor: String?
         var recommendation: String?
+        /// A sheet's order (Verbs/): `{"verb":"commitTroops", ...its fields}`. Nothing else in the order is read.
+        var verb: String?
     }
 
     /// What an advised order produced (the app's ActionResultSheet).
@@ -200,6 +202,7 @@ public enum GTNWBridge {
         guard let e = engine, let gs = e.gameState else { return failure("act: no game") }
         guard !gs.gameOver else { return failure("act: the game is over") }
         guard let order = decode(Order.self, json) else { return failure("act: not a valid order") }
+        if let name = order.verb { return verb(name, json) }
         if let option = order.crisisOption {
             guard let crisis = e.crisisManager.activeCrisis else { return failure("act: no crisis is waiting") }
             guard crisis.options.indices.contains(option) else { return failure("act: no option \(option)") }
