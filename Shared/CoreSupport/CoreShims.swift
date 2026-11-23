@@ -103,6 +103,8 @@ protocol CoreTextAI: Sendable {
 
 enum CoreAI {
     nonisolated(unsafe) static var provider: CoreTextAI?
+    /// The host answers for model brains (`brainTransportOverride`) without a text AI: the web build's site AI.
+    nonisolated(unsafe) static var brainsOn = false
 }
 
 struct CoreAIUnavailable: Error, Equatable {}

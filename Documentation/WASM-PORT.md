@@ -151,6 +151,7 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 
 | query | args | answers |
 |---|---|---|
+| `acquisitions` | | land for sale this year (historical purchases in their window), and for the U.S. the stars on the flag and the real possessions that may petition for statehood, with the odds |
 | `actions` | `target?` | the escalation ladder (rungs, lead advisor) and every action available this era with cost, risk, odds against the target, why it can't be ordered, whether it is major and how it is sized |
 | `administrations` | | the U.S. administrations (`PresidentialAdministrations`) |
 | `advice` | `action, target` | the cabinet's advice (advisor, stance, reason, odds), the three-line warnings for major actions, the default sizing and warhead |
@@ -158,23 +159,35 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `aid` | `id` | foreign aid to one country (AidSheet): money left this year, need and sent per kind of aid |
 | `airCampaign` | `target` | the strategic air campaign (AirCampaignSheet): why it can't be ordered, the two aims |
 | `arsenal` | `target?, action?, troops?, aircraft?, warheads?` | the era's weapons under each military order with legal status and treaty (ArsenalLine), and the force-sizing panel for one offensive (AttackSizingPanel) with the cabinet's warnings |
+| `brains` | `jobs?` | who plays each country (human, rule-based, the site AI), whether the player is only watching (Watch AI vs AI), and with `jobs` the site-AI moves the next end of turn will ask for |
 | `budget` | `draft?` | the federal budget (BudgetView): sliders with limits, the projection for a draft, where the money goes, the era's reset |
+| `cities` | `id` | a nation's seven city tiles (level, damage), whether it is burning or destroyed |
 | `coalitions` | `target` | a coalition against a country (CoalitionSheet): members and each candidate's odds of joining |
 | `command` | `text` \| `intent` \| `model` \| `schema` | the command box (3.34.0): `CommandParser` then `CommandPlanner`, as the app runs them → `plan` (card + `GameOrder`s), `clarify` (choices carrying their intent), `answer`, `rejected`, or `unparsed` (ask a model); `model` is a translation in the app's `ModelCommand` shape, checked against the closed lists before planning; `schema` returns the lists |
+| `congress` | `target?` | the House and Senate, war support, the War Powers clock, impeachment risk and stage, and against a target the two authorizations with their odds and the votes so far |
 | `country` | `id` | the dossier: a nation (profile, economy, intelligence estimates for foreign military and warheads, anxieties, aid need, factbook) or a colony / pre-state / unclaimed land |
 | `crisis` | | the waiting crisis as DetailedCrisisView shows it: severity label, brief, epigraph, time limit, decisions waiting behind it, options with the recommending advisor's name and odds |
+| `dirtyTactics` | `target?, preset?` | every tactic of the year with its legal status, problem, program, covert risk and standing policies in force; what comes later |
+| `election` | | the election cycle under the coming election's law (nomination, electors, popular vote, ticket, debates, dates), every stage with its date or none, the campaign, the last election night and the domestic ending |
 | `fleets` | `target, fleet?, mission?, preset?` | fleet orders (FleetOrderSheet): the era's fleets, missions, commitments, the read-out, why not, warnings, fleets out |
 | `fronts` | | the War Room: every front with troop and damage assessments, momentum, the orders it allows, surrender odds, the War Powers clock, the operations log |
 | `groupAction` | `pick, region?, ids?, saved?, kind, amount?, garrison?, split?, rate?` | a group action's per-nation plan and total (GroupActionSheet) |
+| `intel` | | the intelligence summary: wars, nuclear powers, relations |
+| `landMarket` | | the land market's bids, unclaimed lands, the claim campaign and the regions it can cover |
 | `manpower` | | troops, the draft in force, and the two call-ups with cost and training (ManpowerSheet) |
 | `map` | | the map for the game's year: every outline's kind (nation, territory, colony, indigenous, unclaimed) with owner and what clicking selects, dots for nations without outlines and pre-state islands, fleets, live map flashes |
 | `messages` | | the diplomatic inbox with the replies each message offers (DiplomaticMessagesView) |
 | `nations` | `year` | the nations that exist in a year (1789–2100) for the new-game picker |
 | `news` | | the news wire (`ShadowState.ticker`, saved with the game) with dates and severities, and the scenario's epigraph |
 | `peace` | | the four peace paths with progress, the conditions, the wars elsewhere to broker (PeaceSheet) |
+| `records` | | the Records tabs: the Hall of Infamy (as stored, for the front end to keep) and the age, renamed lands, empire goals, war deliberations and reasons, the fog, the debrief |
 | `resources` | | territory income, extraction rates and levies (ResourcesSheet) |
 | `scenarios` | | the historical scenarios and the sittings (short scored challenges) |
+| `scorecard` | | the scenario scorecard against history, the World Evaluation and Presidency Summary, and once the game is over the final score, breakdown, statistics and epigraphs |
 | `settlements` | | surrenders waiting for the President's terms (SettlementSheet): annex or a post-war government, each with the cabinet's take |
+| `space` | | the space age and the satellites in orbit |
+| `systems` | | the Systems tabs (economy, military, diplomacy, nuclear, domestic, intelligence, leaders, scenarios…) as labelled rows |
+| `territory` | `id, troops?` | a land's orders: claim, plant the flag, seize, buy, back independence (odds, troops, warnings), island projects, and for the player's own territory its government, garrison and statehood |
 | `topbar` | | the Situation Room top bar: leader, date, turn, popularity and election line, DEFCON (ALERT before 1959), peace index, impeachment, pending offers, scenario / sitting |
 | `treaties` | | treaty offers on the table (TreatyOffersSheet) |
 | `warRecord` | | the Records sheet's WAR, FOG and LEGENDS panels: deliberations and stated reasons, the silences and intelligence age, the debrief and the chronicle |
@@ -192,22 +205,42 @@ through verbs is a function of seed and orders.
 
 | verb | fields | the app's button |
 |---|---|---|
+| `acceptAcquisition` | `id` | accept a historical purchase |
 | `answerMessage` | `id, response` | a reply on a diplomatic message (accept, decline, counter, nonAggression, apology, standFirm, trade, mediation) |
 | `answerTreaty` | `id, accept` | TreatyOffersSheet ACCEPT / DECLINE |
+| `askCongress` | `target, kind` | ask for a declaration of war or an authorization to use force |
+| `assignBrain` | `country, brain` | human, rule or relay (the site AI) |
+| `brainMoves` | `on, moves?` | stage the site AI's answers for the next end of turn (`on: false`: rule-based) |
 | `brokerCeasefire` | `front` | War Room BROKER CEASEFIRE (one action) |
 | `brokerPeace` | `a, b` | PeaceSheet BROKER |
 | `callUp`, `standDown` | `kind` (draft, mobilization) | ManpowerSheet CALL / STAND DOWN |
+| `claimCampaign` | `op, selection?, region?, ids?` | launch or cancel a claim campaign |
 | `collectLevy`, `setExtraction` | `id`, `rate` | ResourcesSheet |
+| `colonyDeal` | `id, op` | offer to buy a colony or back its independence |
 | `commitTroops` | `front, side, thousands` (negative recalls) | War Room SEND TO / RECALL |
 | `demandSurrender`, `sueForPeace` | `front` | War Room |
+| `developIsland` | `id, project` | build on one of the player's islands |
+| `dirtyTactic` | `id, target?, covert?, preset?, stance?` | use a tactic, or put a standing policy in force / lift it |
 | `enactBudget` | `draft` | BudgetView ENACT BUDGET |
+| `governTerritory` | `id, garrison?, governance?` | a territory's garrison and government |
 | `groupAction`, `saveGroup` | the `groupAction` query's fields; `name, ids` | GroupActionSheet CONFIRM / SAVE GROUP |
+| `hallOfInfamy` | `hall` | restore the Hall of Infamy the front end kept |
+| `landBid` | `id, op` | raise, accept or walk away from a land-market bid |
+| `launchSatellite` | `type` | recon or warning |
 | `orderFleet`, `recallFleet` | `fleet, target, mission, preset`; `id` | FleetOrderSheet |
+| `petitionStatehood` | `id` | ask Congress to admit a territory |
+| `renameTerritory` | `id, name` | name or rename a territory |
 | `requestCoalition` | `target` | CoalitionSheet ASK |
 | `sendAid` | `target, humanitarian?, economic?, intelligence?, military?, nuclear?` | AidSheet SEND AID |
 | `settle` | `id, choice, name?` | SettlementSheet ANNEX / INSTALL |
 | `sizedOrder` | `action, target, troops?, aircraft?, warheads?` | an offensive at the size set on AttackSizingPanel |
+| `spectate` | `op` | watch (AI vs AI), play one spectated turn, take the seat |
 | `strategicBombing` | `target, aim` | AirCampaignSheet ORDER THE RAID |
+| `takeLand` | `id, troops?` | expedition, plant the flag, take or seize a land |
+
+The site AI brains: GTNWCore has no brain transport, so a model brain normally plays the rule-based AI. The web
+front end asks the site AI for the `brains` query's `jobs` before the turn and stages the answers with
+`brainMoves`, which turns on `CoreAI.brainsOn` (the one engine line it guards: `aiOn` in `processAITurnsWithBrains`).
 
 `state` carries the golden snapshot's fields (turn, date, DEFCON, radiation, casualties, popularity, game over, RNG
 state, wars, and per nation: warheads, military, stability, approval, destroyed, at war with, relation to the

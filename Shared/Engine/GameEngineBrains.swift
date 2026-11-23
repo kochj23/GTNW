@@ -65,7 +65,9 @@ extension GameEngine {
         // Global "Use AI" switch: off means every automated country plays the built-in rule-based AI and no
         // brain request leaves the app.
         #if GTNW_CORE
-        let aiOn = CoreAI.provider != nil   // GTNWCore has no brain transports: an assigned brain falls back at once
+        // GTNWCore has no brain transports: an assigned brain falls back at once, unless the host answers for them
+        // (the web build stages the site AI's moves before the turn, CoreSupport/Queries/BrainsQuery.swift).
+        let aiOn = CoreAI.provider != nil || CoreAI.brainsOn
         #else
         let aiOn = AppAI.shared.isEnabled
         #endif
