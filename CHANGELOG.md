@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.34.0] - 2026-11-23 — Give the order
 
-Planned as 3.34.0 — The command box.
-
 ### Added
 - **Command box (⌘K, rebindable in Settings → Keys; Orders → Command Box…; the `>` prompt in the Situation Room).**
   Type orders and questions in plain English, e.g. "attack Madagascar with all air, naval, and army forces that are
