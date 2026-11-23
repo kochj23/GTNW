@@ -28,7 +28,21 @@ enum AdvisorStatus: String, Codable {
 extension Advisor {
     var isActive: Bool { (status ?? .active) == .active }
     /// Which of the seven Situation Room posts this advisor fills, if any.
-    var roleKey: String? { role ?? ShadowPack.advisorKey(forTitle: title) }
+    var roleKey: String? { role ?? Advisor.roleKey(forTitle: title) }
+
+    /// Shadow President had seven advisors; map a GTNW cabinet title onto the matching post (also the pack's
+    /// portrait key, `ShadowPack.advisorKey`).
+    static func roleKey(forTitle title: String) -> String? {
+        let t = title.lowercased()
+        if t.contains("national security") { return "nsa" }
+        if t.contains("state") && !t.contains("homeland") { return "state" }
+        if t.contains("defense") || t.contains("of war") || t.contains("joint chiefs") { return "defense" }
+        if t.contains("treasury") || t.contains("economic") || t.contains("commerce") { return "economic" }
+        if t.contains("cia") || t.contains("central intelligence") || t.contains("national intelligence") { return "cia" }
+        if t.contains("chief of staff") { return "whc" }
+        if t.contains("press") { return "press" }
+        return nil
+    }
 }
 
 enum AdviceStance: String, Codable {

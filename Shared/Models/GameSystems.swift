@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 // MARK: - Unified Operation Base
 protocol GameOperation: Identifiable, Codable {

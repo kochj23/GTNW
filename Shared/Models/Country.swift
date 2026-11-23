@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 /// Nuclear capability status of a nation
 enum NuclearStatus: String, Codable, CaseIterable {
@@ -102,9 +104,10 @@ struct Country: Identifiable, Codable, Hashable {
     var congressionalSupport: Int // 0-100, legislative support
 
     // Economic System
-    var treasury: Int // Current funds in dollars
-    var annualGDP: Int // Annual GDP in dollars
-    var militaryBudget: Int // Military spending per year
+    // Dollar amounts are Int64: they pass 2^31, and the engine also runs where Int is 32 bits (WebAssembly).
+    var treasury: Int64 // Current funds in dollars
+    var annualGDP: Int64 // Annual GDP in dollars
+    var militaryBudget: Int64 // Military spending per year
     var debtLevel: Int // National debt as percentage of GDP
     var tradeAgreements: Set<String> // CountryIDs with trade deals
     var economicSanctions: Set<String> // Countries sanctioning this nation
@@ -254,9 +257,9 @@ struct Country: Identifiable, Codable, Hashable {
         }
 
         // Economic defaults
-        self.treasury = Int(gdp * 1_000_000_000_000 * 0.2) // 20% of GDP
-        self.annualGDP = Int(gdp * 1_000_000_000_000)
-        self.militaryBudget = Int(Double(annualGDP) * Double(militaryStrength) / 1000.0)
+        self.treasury = Int64(gdp * 1_000_000_000_000 * 0.2) // 20% of GDP
+        self.annualGDP = Int64(gdp * 1_000_000_000_000)
+        self.militaryBudget = Int64(Double(annualGDP) * Double(militaryStrength) / 1000.0)
         self.debtLevel = 60   // rolled 20...100 by `rollStartingOpinion`
         self.tradeAgreements = []
         self.economicSanctions = []
@@ -330,6 +333,7 @@ struct Country: Identifiable, Codable, Hashable {
     var powerScore: Int {
         return (militaryStrength + economicStrength + min(nuclearCapability / 10, 100)) / 3
     }
+#if !GTNW_CORE
 
     /// Color representation for UI
     var color: Color {
@@ -344,6 +348,7 @@ struct Country: Identifiable, Codable, Hashable {
             return .purple
         }
     }
+#endif
 
     /// Starting public opinion and debt, rolled from the game's RNG when a game is built (they used to be rolled
     /// unseeded in `init`, so two games from one seed began differently).

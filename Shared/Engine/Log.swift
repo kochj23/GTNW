@@ -9,10 +9,16 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import os
+#endif
 
 enum Log {
+    #if GTNW_CORE
+    static let subsystem = "com.wopr.gtnw"   // no app bundle (WebAssembly: Bundle.main traps)
+    #else
     static let subsystem = Bundle.main.bundleIdentifier ?? "com.wopr.gtnw"
+    #endif
 
     /// The turn loop, the computer's moves, saving.
     static let engine = Logger(subsystem: subsystem, category: "engine")
@@ -38,6 +44,7 @@ enum Log {
     static let categories = ["engine", "ai", "store", "api", "commands", "diplomacy", "intel", "audio", "widget", "retry"]
 }
 
+#if !GTNW_CORE
 extension Logger {
     /// Verbose tracing (debug level: kept in memory, not persisted unless asked for).
     func trace(_ message: String) { debug("\(message, privacy: .public)") }
@@ -46,3 +53,4 @@ extension Logger {
     /// A failure (error level). Its text may name a host or a path, so it is private outside a debugger.
     func failure(_ message: String) { error("\(message, privacy: .private)") }
 }
+#endif

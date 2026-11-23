@@ -47,6 +47,7 @@ protocol WorldBriefProvider: Sendable {
     func latestBrief() async -> (day: String?, json: Data)?
 }
 
+#if !GTNW_CORE
 /// The Games DB (private edition only, when configured).
 struct GamesDBWorldBriefProvider: WorldBriefProvider {
     func latestBrief() async -> (day: String?, json: Data)? {
@@ -54,6 +55,7 @@ struct GamesDBWorldBriefProvider: WorldBriefProvider {
         return try? await pg.latestWorldBrief()
     }
 }
+#endif
 
 enum WorldBriefModel {
     /// "WORLD BRIEF 2026-11-15: Russia → Ukraine (war) · …": the date and the three heaviest pairs, by current names.
@@ -83,7 +85,12 @@ enum WorldBriefModel {
     }
 
     private static func clamp(_ v: Any?) -> Int? {
+        #if GTNW_CORE
+        // No CFBoolean outside Apple's Foundation: a JSON true/false is the NSNumber whose type is `char` ("c").
+        guard let n = v as? NSNumber, String(cString: n.objCType) != "c" else { return nil }
+        #else
         guard let n = v as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() else { return nil }
+        #endif
         let d = n.doubleValue
         guard d.isFinite else { return nil }
         return Int(max(0, min(100, d)).rounded())
@@ -159,7 +166,11 @@ enum WorldBriefModel {
 
 extension GameEngine {
     /// The brief source; nil under tests (they inject a fixture).
+    #if GTNW_CORE
+    nonisolated(unsafe) static var worldBriefProvider: WorldBriefProvider? = nil   // a GTNWCore host may plug one in
+    #else
     nonisolated(unsafe) static var worldBriefProvider: WorldBriefProvider? = GameStoreService.isTestOrSmokeRun ? nil : GamesDBWorldBriefProvider()
+    #endif
 
     /// At the start of a modern game: fetch the newest brief in the background and apply it when it lands (turn 0
     /// or 1 of the same game). Never blocks; gives up after `WorldBriefModel.timeout` seconds.

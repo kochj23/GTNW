@@ -8,7 +8,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 // MARK: - Alien Invasion Scenario
 
@@ -159,7 +161,7 @@ struct AlienInvasionScenario {
                         relationshipChanges: [:],
                         approvalChange: -40,
                         defconChange: 0,
-                        economicImpact: -500_000_000_000,
+                        economicImpact: -500,   // billions, like every crisis (it was written in dollars): the whole aid budget
                         militaryImpact: -30,
                         triggersWar: false,
                         warTarget: nil,

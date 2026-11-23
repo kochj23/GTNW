@@ -183,12 +183,16 @@ extension Legends {
     @discardableResult
     static func export(_ gs: GameState) -> URL? {
         guard !GameStoreService.isTestOrSmokeRun else { return nil }
+        #if GTNW_CORE
+        return nil   // GTNWCore writes no files (WASI has none to write); a host saves `markdown(gs)` itself
+        #else
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
         let url = dir.appendingPathComponent("GTNW-legends-\(PlayHistory.day(gs.currentDate)).md")
         guard let data = markdown(gs).data(using: .utf8), (try? data.write(to: url, options: .atomic)) != nil else { return nil }
         gs.shadow.post("The chronicle of this presidency is written to \(url.lastPathComponent).", date: gs.currentDate, severity: 1)
         return url
+        #endif
     }
 }
 

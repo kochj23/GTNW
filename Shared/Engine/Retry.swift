@@ -15,7 +15,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import os
+#endif
 
 // MARK: - Policy
 
@@ -57,14 +59,18 @@ struct RetryPolicy: Equatable, Sendable {
 /// Sleeps for the given number of seconds (injectable for tests).
 typealias RetrySleeper = @Sendable (TimeInterval) async -> Void
 
+#if !GTNW_CORE
 /// Performs one HTTP request (injectable for tests).
 typealias HTTPTransport = @Sendable (URLRequest) async throws -> (Data, URLResponse)
+#endif
 
 enum HTTP {
+    #if !GTNW_CORE
     /// The real transport: `URLSession.shared`.
     static let live: HTTPTransport = { request in
         try await URLSession.shared.data(for: request)
     }
+    #endif
 
     /// Transient HTTP statuses worth retrying (rate-limit + server errors).
     static func isRetryableStatus(_ code: Int) -> Bool {
@@ -134,6 +140,7 @@ enum Retry {
         }
     }
 
+    #if !GTNW_CORE
     /// Perform an HTTP request with retry. Retries transport errors and transient
     /// statuses (408/429/5xx); returns immediately on 2xx or on permanent 4xx (thrown).
     static func http(
@@ -154,6 +161,7 @@ enum Retry {
             return (data, response)
         }
     }
+    #endif
 }
 
 /// Internal marker used by `Retry.optional` when an attempt yields nil.

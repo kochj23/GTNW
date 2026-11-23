@@ -49,7 +49,7 @@ enum CyberAttackType: String, Codable, CaseIterable {
         }
     }
 
-    var cost: Int {
+    var cost: Int64 {
         switch self {
         case .reconnaissance: return 10_000_000
         case .dataTheft: return 25_000_000
@@ -291,8 +291,8 @@ enum CyberDefenseLevel: Int, Codable {
         return self.rawValue * 15
     }
 
-    var cost: Int {
-        return self.rawValue * 100_000_000
+    var cost: Int64 {
+        return Int64(self.rawValue) * 100_000_000
     }
 
     var description: String {

@@ -135,7 +135,16 @@ enum GameCalendar {
         return f
     }()
 
+    #if GTNW_CORE
+    /// "Jan 20, 1962" without DateFormatter: WebAssembly's Foundation has no locale data (it prints "M01").
+    static func format(_ date: Date) -> String {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        return "\(months[max(0, min(11, (c.month ?? 1) - 1))]) \(c.day ?? 1), \(c.year ?? 0)"
+    }
+    #else
     static func format(_ date: Date) -> String { shortFormatter.string(from: date) }
+    #endif
 }
 
 // MARK: - Rate scaling

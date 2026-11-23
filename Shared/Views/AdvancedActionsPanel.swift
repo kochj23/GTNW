@@ -190,7 +190,7 @@ struct AdvancedActionsPanel: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.3), lineWidth: 1)))
     }
 
-    private func treasuryLabel(_ amount: Int) -> String {
+    private func treasuryLabel(_ amount: Int64) -> String {
         if amount >= 1_000_000_000_000 { return String(format: "$%.1fT", Double(amount) / 1_000_000_000_000) }
         if amount >= 1_000_000_000 { return String(format: "$%.0fB", Double(amount) / 1_000_000_000) }
         if amount >= 1_000_000 { return String(format: "$%.0fM", Double(amount) / 1_000_000) }

@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 /// Gameplay random numbers, separate from cosmetic ones (after Doom's split of P_Random for play from M_Random for
 /// menus). SplitMix64 (Steele, Lea & Flood 2014), written for GTNW: small, fast and reproducible from its seed; the
@@ -203,7 +205,7 @@ class GameState: ObservableObject, Codable {
 
     /// Standard economic diplomacy amount for this era.
     /// Historically appropriate: thousands in 1800s, billions today.
-    var eraDiplomacyAmount: Int {
+    var eraDiplomacyAmount: Int64 {
         switch currentYear {
         case ..<1800: return 50_000           // $50K (1790s frontier economics)
         case 1800..<1860: return 100_000      // $100K (ante-bellum era)
@@ -1363,6 +1365,7 @@ enum DefconLevel: Int, Codable, CaseIterable {
         }
     }
 
+    #if !GTNW_CORE
     var color: Color {
         switch self {
         case .defcon5: return .blue
@@ -1372,6 +1375,7 @@ enum DefconLevel: Int, Codable, CaseIterable {
         case .defcon1: return AppSettings.terminalRed
         }
     }
+    #endif
 }
 
 /// War between countries

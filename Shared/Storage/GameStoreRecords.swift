@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import CryptoKit
+#endif
 
 extension UUID {
     /// Deterministic UUID from a string (SHA-256, version/variant bits set), so re-importing the same legacy

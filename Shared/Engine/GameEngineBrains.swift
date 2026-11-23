@@ -15,7 +15,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import NovaAIKit
+#endif
 
 /// Whose turn it is, for the UI banner and action gating.
 enum TurnPhase: Equatable {
@@ -62,7 +64,11 @@ extension GameEngine {
         var ruleBasedIDs: [String] = []
         // Global "Use AI" switch: off means every automated country plays the built-in rule-based AI and no
         // brain request leaves the app.
+        #if GTNW_CORE
+        let aiOn = CoreAI.provider != nil   // GTNWCore has no brain transports: an assigned brain falls back at once
+        #else
         let aiOn = AppAI.shared.isEnabled
+        #endif
 
         // While spectating, the player's seat is just another country played by its brain.
         for country in gameState.countries where (spectating || !country.isPlayerControlled) && !country.isDestroyed && !country.isTerritory {
@@ -181,7 +187,9 @@ extension GameEngine {
     @MainActor
     private func askBrains(_ jobs: [(id: String, brain: AIBrain, request: MoveRequest)]) async -> [String: (MoveResponse?, Int)] {
         var config = brainConfig
+        #if !GTNW_CORE
         if config.engine == nil { config.engine = AppAI.shared.engine }
+        #endif
         let override = brainTransportOverride
         return await withTaskGroup(of: (String, MoveResponse?, Int).self) { group in
             for job in jobs {
@@ -208,8 +216,12 @@ extension GameEngine {
         case .kit(let backend, let model): return (backend, model.isEmpty ? nil : model)
         case .liveSession: return ("live_session", nil)
         default:
+            #if GTNW_CORE
+            return (nil, nil)
+            #else
             let t = BrainRoute.target(for: b, gatewayBaseURL: "", gatewayModel: brainConfig.gatewayModel)
             return (t?.backend.rawValue, t?.model)
+            #endif
         }
     }
 
@@ -312,7 +324,7 @@ extension GameEngine {
         if let last = watchCueLastPlayed[id], now.timeIntervalSince(last) < 0.4 { return }
         watchCueLastPlayed[id] = now
         if delay > 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { ShadowPack.shared.play(id, volume: volume) }
+            GameScheduler.after(delay) { ShadowPack.shared.play(id, volume: volume) }
         } else {
             ShadowPack.shared.play(id, volume: volume)
         }

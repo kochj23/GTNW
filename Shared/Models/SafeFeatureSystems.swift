@@ -7,8 +7,10 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import os
 import SwiftUI
+#endif
 
 // MARK: - Intelligence System (Thread-Safe)
 

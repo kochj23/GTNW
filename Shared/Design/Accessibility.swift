@@ -6,11 +6,15 @@
 //  (plain functions of the game state) so the views stay short and the tests can read them.
 //
 
+#if GTNW_CORE
+import Foundation   // GTNWCore compiles `A11y` (the command box reads it); `Motion` is app-only
+#else
 import SwiftUI
 #if os(macOS)
 import AppKit
 #else
 import UIKit
+#endif
 #endif
 
 enum A11y {
@@ -86,6 +90,7 @@ enum A11y {
     }
 }
 
+#if !GTNW_CORE
 /// Reduce Motion: SwiftUI views read `\.accessibilityReduceMotion`; code outside a view asks `Motion`.
 enum Motion {
     /// Tests set this; nil means ask the system.
@@ -103,3 +108,4 @@ enum Motion {
     /// The animation, or none when the player asked for less motion.
     static func allow(_ a: Animation?) -> Animation? { reduced ? nil : a }
 }
+#endif

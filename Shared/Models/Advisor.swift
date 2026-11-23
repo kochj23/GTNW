@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 /// Represents a presidential advisor (cabinet member, military leader, or staff)
 struct Advisor: Identifiable, Codable, Hashable {
@@ -84,10 +86,12 @@ struct Advisor: Identifiable, Codable, Hashable {
         self.portraitColor = portraitColor
     }
 
+    #if !GTNW_CORE
     /// Get color for portrait placeholder
     var colorValue: Color {
         Color(hex: portraitColor) ?? .gray
     }
+    #endif
 
     /// Get advisor's initials for placeholder
     var initials: String {
@@ -486,6 +490,7 @@ extension Advisor {
 }
 
 // Helper extension for Color from hex
+#if !GTNW_CORE
 extension Color {
     init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -504,3 +509,4 @@ extension Color {
         self.init(red: red, green: green, blue: blue)
     }
 }
+#endif

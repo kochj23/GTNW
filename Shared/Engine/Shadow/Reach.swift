@@ -25,15 +25,14 @@ enum Reach {
 
     /// Map outline id → the outlines touching it. Built from the bundled Natural Earth outlines (Alaska split from the
     /// U.S. like `WorldMapData`).
-    static let shapeNeighbors: [String: Set<String>] = neighbors(bundle: .main)
+    static let shapeNeighbors: [String: Set<String>] = neighbors(data: GameResources.data("world_countries"))
 
-    static func neighbors(bundle: Bundle) -> [String: Set<String>] {
+    static func neighbors(data: Data?) -> [String: Set<String>] {
         struct File: Decodable {
             struct C: Decodable { let id: String; let rings: [[Double]] }
             let countries: [C]
         }
-        guard let url = bundle.url(forResource: "world_countries", withExtension: "json"),
-              let data = try? Data(contentsOf: url), let file = try? JSONDecoder().decode(File.self, from: data) else { return [:] }
+        guard let data, let file = try? JSONDecoder().decode(File.self, from: data) else { return [:] }
         struct Cell: Hashable { let x: Int; let y: Int }
         var cells: [Cell: Set<String>] = [:]
         for c in file.countries {

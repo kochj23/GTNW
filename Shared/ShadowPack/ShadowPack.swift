@@ -170,17 +170,7 @@ final class ShadowPack: ObservableObject {
     // MARK: Mapping GTNW concepts to pack ids
 
     /// Shadow President had seven advisors; map a GTNW cabinet title onto the matching portrait key.
-    static func advisorKey(forTitle title: String) -> String? {
-        let t = title.lowercased()
-        if t.contains("national security") { return "nsa" }
-        if t.contains("state") && !t.contains("homeland") { return "state" }
-        if t.contains("defense") || t.contains("of war") || t.contains("joint chiefs") { return "defense" }
-        if t.contains("treasury") || t.contains("economic") || t.contains("commerce") { return "economic" }
-        if t.contains("cia") || t.contains("central intelligence") || t.contains("national intelligence") { return "cia" }
-        if t.contains("chief of staff") { return "whc" }
-        if t.contains("press") { return "press" }
-        return nil
-    }
+    static func advisorKey(forTitle title: String) -> String? { Advisor.roleKey(forTitle: title) }
 
     func advisorPortrait(title: String) -> PackPlatformImage? {
         guard let key = Self.advisorKey(forTitle: title) else { return nil }

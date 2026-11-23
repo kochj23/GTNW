@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 /// Crisis event types that can occur during gameplay
 enum CrisisEventType: String, Codable, CaseIterable {
@@ -65,6 +67,7 @@ enum CrisisSeverity: Int, Codable {
     case critical = 4
     case catastrophic = 5
 
+    #if !GTNW_CORE
     var color: Color {
         switch self {
         case .minor: return .cyan
@@ -74,6 +77,7 @@ enum CrisisSeverity: Int, Codable {
         case .catastrophic: return .red
         }
     }
+    #endif
 
     var description: String {
         switch self {
@@ -243,7 +247,9 @@ class CrisisManager: ObservableObject {
     /// What the world looked like at the last watch (wars, who rules where). Not saved: a loaded game re-baselines.
     var worldBaseline: WorldWatch.Snapshot?
 
-    private var timer: Timer?
+    #if !GTNW_CORE
+    private var timer: Timer?   // the response countdown; GTNWCore has no wall clock (a front end counts down itself)
+    #endif
     /// 3.22.0: told about every decision (the engine logs it for Nova's column), whichever screen or API made it.
     var onResolved: ((CrisisEvent, Int, Bool) -> Void)?
     /// 3.22.2: the game year, so every card is put into its era's words before the President sees it.
@@ -1536,6 +1542,7 @@ class CrisisManager: ObservableObject {
     // MARK: - Timer Management
 
     private func startTimer() {
+        #if !GTNW_CORE
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
@@ -1546,11 +1553,14 @@ class CrisisManager: ObservableObject {
                 self.stopTimer()
             }
         }
+        #endif
     }
 
     private func stopTimer() {
+        #if !GTNW_CORE
         timer?.invalidate()
         timer = nil
+        #endif
         crisisTimeRemaining = 0
     }
 }

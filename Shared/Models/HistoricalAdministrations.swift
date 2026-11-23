@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 /// Historical administration period
 struct Administration: Identifiable, Codable {

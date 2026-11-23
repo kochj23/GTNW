@@ -655,7 +655,11 @@ struct SaveManager {
     func write(_ data: Data, slot: Int, modified: Date?) throws {
         guard StoreValidation.slotRange.contains(slot) else { throw GameStoreError.invalid("slot \(slot) out of range") }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        #if GTNW_CORE
+        try data.write(to: url(slot: slot))   // WASI has no temporary files for an atomic write
+        #else
         try data.write(to: url(slot: slot), options: .atomic)
+        #endif
         if let modified { try FileManager.default.setAttributes([.modificationDate: modified], ofItemAtPath: url(slot: slot).path) }
     }
 

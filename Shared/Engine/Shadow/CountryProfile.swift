@@ -369,8 +369,7 @@ struct NationCharacterTable: Codable, Sendable {
 
     static let shared = load()
 
-    static func load(_ data: Data? = Bundle.main.url(forResource: "nation_characters", withExtension: "json")
-                        .flatMap { try? Data(contentsOf: $0) }) -> NationCharacterTable {
+    static func load(_ data: Data? = GameResources.data("nation_characters")) -> NationCharacterTable {
         data.flatMap { try? JSONDecoder().decode(NationCharacterTable.self, from: $0) } ?? NationCharacterTable()
     }
 

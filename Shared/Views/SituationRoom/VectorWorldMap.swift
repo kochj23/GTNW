@@ -9,16 +9,26 @@
 //  Repository: https://github.com/kochj23/GTNW
 //
 
+#if GTNW_CORE
+import Foundation   // GTNWCore keeps the map data (outline ids, owners by year); the drawing is the app's
+#else
 import SwiftUI
+#endif
 
 // MARK: - Map data
 
 struct MapCountryShape {
     let id: String
     let name: String
+    #if GTNW_CORE
+    /// Bounding-box area in map units (GTNWCore keeps no geometry).
+    let area: Double
+    #else
     /// Outline in map units (x = longitude, y = -latitude).
     let path: Path
     let bounds: CGRect
+    var area: Double { Double(bounds.width * bounds.height) }
+    #endif
 }
 
 final class WorldMapData {
@@ -30,11 +40,15 @@ final class WorldMapData {
         let countries: [C]
     }
 
-    init(bundle: Bundle = .main) {
-        guard let url = bundle.url(forResource: "world_countries", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let file = try? JSONDecoder().decode(File.self, from: data) else { shapes = []; return }
+    init(data: Data? = GameResources.data("world_countries")) {
+        guard let data, let file = try? JSONDecoder().decode(File.self, from: data) else { shapes = []; return }
         func shape(_ id: String, _ name: String, _ rings: [[Double]]) -> MapCountryShape {
+            #if GTNW_CORE
+            let points = rings.filter { $0.count >= 6 }.flatMap { r in stride(from: 0, to: r.count - 1, by: 2).map { (r[$0], r[$0 + 1]) } }
+            let xs = points.map(\.0), ys = points.map(\.1)
+            let area = points.isEmpty ? 0 : (xs.max()! - xs.min()!) * (ys.max()! - ys.min()!)
+            return MapCountryShape(id: id, name: name, area: area)
+            #else
             var p = Path()
             for ring in rings where ring.count >= 6 {
                 p.move(to: CGPoint(x: ring[0], y: -ring[1]))
@@ -43,6 +57,7 @@ final class WorldMapData {
                 p.closeSubpath()
             }
             return MapCountryShape(id: id, name: name, path: p, bounds: p.boundingRect)
+            #endif
         }
         var out: [MapCountryShape] = []
         for c in file.countries {   // Antarctica included since 3.10.0
@@ -56,7 +71,7 @@ final class WorldMapData {
             }
         }
         // 3.28.2: largest first, so smaller lands (enclaves like San Marino, Lesotho) are drawn and hit on top.
-        shapes = out.sorted { $0.bounds.width * $0.bounds.height > $1.bounds.width * $1.bounds.height }
+        shapes = out.sorted { $0.area > $1.area }
     }
 
     /// Successor-state outlines claimed by historical countries when the modern state isn't in the game.
@@ -116,6 +131,7 @@ final class WorldMapData {
     }
 }
 
+#if !GTNW_CORE
 // MARK: - Zoom & filters
 
 enum MapZoom: String, CaseIterable, Identifiable {
@@ -732,3 +748,4 @@ private extension Country {
                 alignment: alignment, stability: 50)
     }
 }
+#endif

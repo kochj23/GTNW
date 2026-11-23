@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The engine in WebAssembly (phase 1):** `Package.swift` builds the engine as `GTNWCore`, pure Swift + Foundation,
+  from the same files the app compiles (no files moved; app-only code sits behind `#if !GTNW_CORE`). `GTNWWasm` is a
+  WASI reactor with a JSON bridge (`newGame`, `act`, `endTurn`, `snapshot`, `save`, `load`) that runs each call to
+  completion on one thread. The golden games (1789, 1962, 2025) play identically natively, in Node and in Chromium.
+  `Wasm/build.sh` builds it, `Wasm/parity.sh` checks it against the app's fixtures, and `swift test` runs the
+  package's tests. Documentation/WASM-PORT.md has the audit, the boundary, the sizes and the phase-2 screen list.
+
+### Changed
+- Money that passes $2.1B is `Int64`: country treasury, GDP and military budget, action and weapons-program costs,
+  cyber costs, era aid amounts and the SDI / economic-diplomacy amounts. The engine plays the same on 64-bit; this keeps
+  it correct where `Int` is 32 bits.
+- Deferred engine work (retaliation, the auto end turn, watch cues) goes through `GameScheduler`, and bundled data
+  through `GameResources` (`Shared/Engine/EnginePlatform.swift`); the app behaves as before.
+
+### Fixed
+- The alien invasion's economic impact was -500,000,000,000 in a field counted in billions; it is -500.
+
 ## [3.34.0] - 2026-11-23 — Give the order
 
 ### Added

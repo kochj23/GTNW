@@ -41,8 +41,7 @@ struct NationCabinets: Decodable {
     let nations: [Nation]
 
     static let shared: NationCabinets? = {
-        guard let url = Bundle.main.url(forResource: "nation_cabinets", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else { return nil }
+        guard let data = GameResources.data("nation_cabinets") else { return nil }
         return try? JSONDecoder().decode(NationCabinets.self, from: data)
     }()
 }

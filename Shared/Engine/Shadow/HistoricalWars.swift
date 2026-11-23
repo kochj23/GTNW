@@ -59,7 +59,7 @@ enum HistoricalWars {
     private struct OpenFile: Codable { var wars: [OpenWar] }
 
     private static func load<T: Decodable>(_ name: String, _ type: T.Type) -> T? {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "json"), let data = try? Data(contentsOf: url) else { return nil }
+        guard let data = GameResources.data(name) else { return nil }
         return try? JSONDecoder().decode(T.self, from: data)
     }
 

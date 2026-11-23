@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 enum NewsSource: String, Codable {
     case cnn, foxNews, bbc, rt, alJazeera, xinhua, ap, reuters
@@ -40,6 +42,7 @@ enum NewsSource: String, Codable {
 enum NewsSeverity: String, Codable {
     case breaking, developing, routine
 
+    #if !GTNW_CORE
     var color: Color {
         switch self {
         case .breaking: return Color.red
@@ -47,6 +50,7 @@ enum NewsSeverity: String, Codable {
         case .routine: return AppSettings.terminalGreen
         }
     }
+    #endif
 
     var prefix: String {
         switch self {

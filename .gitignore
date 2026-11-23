@@ -23,3 +23,6 @@ build/
 # Decoded Shadow President data tables (local pack only)
 scenario_S[0-9].json
 countries_S[0-9].csv
+
+# WebAssembly build output (Wasm/build.sh)
+/Wasm/dist/

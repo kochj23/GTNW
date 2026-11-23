@@ -71,7 +71,7 @@ enum SALTProhibitedWeapon: String, Codable, CaseIterable {
         }
     }
 
-    var developmentCost: Int {
+    var developmentCost: Int64 {
         // Research and deployment cost in dollars
         switch self {
         case .antiBallisticMissiles: return 50_000_000_000 // $50B (Safeguard ABM)

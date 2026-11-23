@@ -8,7 +8,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 /// Event logger for tracking all country actions
 class EventLogger: ObservableObject {
@@ -62,6 +64,7 @@ struct GameEvent: Identifiable, Codable {
         case system = "⚙️"
     }
 
+    #if !GTNW_CORE
     var color: Color {
         switch type {
         case .nuclear: return GTNWColors.terminalRed
@@ -73,4 +76,5 @@ struct GameEvent: Identifiable, Codable {
         case .system: return GTNWColors.terminalAmber
         }
     }
+    #endif
 }

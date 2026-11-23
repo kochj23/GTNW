@@ -1146,7 +1146,7 @@ extension GameEngine {
         gs.actionsUsedThisTurn += 1
         self.gameState = gs
         if gs.actionsUsedThisTurn >= gs.actionsPerTurn {
-            DispatchQueue.main.asyncAfter(deadline: .now() + endTurnDelay) { [weak self] in self?.endTurn() }
+            GameScheduler.after(endTurnDelay) { [weak self] in self?.endTurn() }
         } else {
             addLog("▶ \(gs.actionsRemaining) action(s) left this \(gs.turnLength.displayName.lowercased()).", type: .info)
         }

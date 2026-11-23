@@ -20,7 +20,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import NovaAIKit
+#endif
 
 // MARK: - Brain identity
 
@@ -60,7 +62,11 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
         case .gatewayClaude: return "Gateway-Claude"
         case .model(let id, _, _): return id
         case .kit(let backend, let model):
+            #if GTNW_CORE
+            let name = backend
+            #else
             let name = NovaAIBackend(rawValue: backend)?.displayName ?? backend
+            #endif
             return model.isEmpty ? name : "\(name): \(model)"
         }
     }
@@ -111,9 +117,11 @@ enum AIBrain: Equatable, Hashable, Sendable, Codable {
 
 /// Tunable transport settings. All timeouts guarantee the turn loop never hangs.
 struct BrainConfig: Sendable {
+    #if !GTNW_CORE
     /// The NovaAIKit engine model brains go through (keys, https-only rule, retries, timeouts). Nil = the app's
     /// `AppAI.shared.engine` at the start of the turn; tests inject one with a stub session.
     var engine: NovaAIEngine? = nil
+    #endif
 
     /// Nova Gateway base URL for Gateway-Claude. Nil = Settings → AI → Nova Gateway URL.
     var gatewayBaseURL: String? = nil
@@ -134,12 +142,15 @@ struct BrainConfig: Sendable {
 
     /// The live-session bridge (not an LLM) keeps GTNW's own retry/transport seams.
     var retryPolicy: RetryPolicy = .network
+    #if !GTNW_CORE
     var transport: HTTPTransport = HTTP.live
+    #endif
     var retrySleep: RetrySleeper = Retry.realSleep
 
     static let `default` = BrainConfig()
 }
 
+#if !GTNW_CORE
 // MARK: - Brain routing (pure)
 
 /// Where a model brain's request goes, in NovaAIKit terms.
@@ -199,6 +210,7 @@ enum BrainRoute {
         return e
     }
 }
+#endif
 
 // MARK: - Timeout wrapper
 
@@ -248,6 +260,9 @@ enum BrainClient {
     }
 
     static func requestMove(_ request: MoveRequest, brain: AIBrain, config: BrainConfig) async -> MoveResponse? {
+        #if GTNW_CORE
+        return nil   // GTNWCore has no transports: the caller plays the built-in AI
+        #else
         switch brain {
         case .human, .ruleBased:
             return nil
@@ -273,8 +288,10 @@ enum BrainClient {
                 await modelMove(request, engine: engine, backend: pinned, model: pinned == nil || model.isEmpty ? nil : model)
             }
         }
+        #endif
     }
 
+    #if !GTNW_CORE
     /// One move from a model through NovaAIKit. OpenRouter needs its Keychain key and https: without either the kit
     /// sends nothing (the world state never leaves the Mac) and the country plays rule-based. The reply is
     /// validated by `MoveResponse.decode`; legality is checked by `applyMove`.
@@ -285,6 +302,7 @@ enum BrainClient {
         guard let reply = try? await engine.complete(req) else { return nil }
         return MoveResponse.decode(fromText: reply.text)
     }
+    #endif
 }
 
 // MARK: - Live-session bus (true PvP)
@@ -300,6 +318,7 @@ enum BrainClient {
 /// seen elsewhere; the bridge owns the single PG write/read. See
 /// tools/gtnw_coordination_bridge.py — Jordan must stand this up for end-to-end
 /// live PvP. Until then, calls simply time out and fall back, harmlessly.
+#if !GTNW_CORE
 enum LiveSessionBus {
 
     static func moveKey(_ request: MoveRequest) -> String {
@@ -361,3 +380,4 @@ enum LiveSessionBus {
         return nil
     }
 }
+#endif

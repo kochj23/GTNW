@@ -10,7 +10,7 @@
 //
 
 import Foundation
-#if os(macOS)
+#if os(macOS) && !GTNW_CORE
 import AppKit
 #endif
 
@@ -38,7 +38,7 @@ enum AudioGate {
         return true
     }
 
-    #if os(macOS)
+    #if os(macOS) && !GTNW_CORE
     /// Under XCTest: never activate, and keep any window off the screen.
     static func hideUnderTest() {
         guard underXCTest else { return }

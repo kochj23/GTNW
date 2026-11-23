@@ -8,7 +8,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import SwiftUI
+#endif
 
 // MARK: - Action Categories
 
@@ -35,6 +37,7 @@ enum ActionCategory: String, CaseIterable {
         }
     }
 
+    #if !GTNW_CORE
     var color: Color {
         switch self {
         case .diplomatic: return GTNWColors.terminalGreen
@@ -47,6 +50,7 @@ enum ActionCategory: String, CaseIterable {
         case .propaganda: return GTNWColors.lcarsOrange
         }
     }
+    #endif
 }
 
 // MARK: - Presidential Actions (134 total)
@@ -383,7 +387,8 @@ enum PresidentialAction: String, CaseIterable, Identifiable {
         }
     }
 
-    var cost: Int {
+    /// Dollars. Int64: several costs pass 2^31, and GTNWCore also runs where Int is 32 bits (WebAssembly).
+    var cost: Int64 {
         switch self {
         case .economicAid: return 5_000_000_000
         case .loanMoney: return 10_000_000_000
@@ -431,6 +436,7 @@ enum RiskLevel: String {
     case high = "High Risk"
     case catastrophic = "Catastrophic"
 
+    #if !GTNW_CORE
     var color: Color {
         switch self {
         case .low: return GTNWColors.terminalGreen
@@ -439,6 +445,7 @@ enum RiskLevel: String {
         case .catastrophic: return GTNWColors.terminalRed
         }
     }
+    #endif
 }
 
 // MARK: - Action Result
@@ -448,7 +455,7 @@ struct ActionResult {
     var message: String
     var relationChange: Int
     var approvalChange: Int
-    var economicImpact: Int
+    var economicImpact: Int64   // dollars
     var triggeredWar: Bool
     var triggeredCrisis: Bool
     var detectedProbability: Double

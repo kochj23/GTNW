@@ -12,8 +12,10 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import CryptoKit
 import Security
+#endif
 
 /// Which build this is (3.22.1). The public edition is built with `PUBLIC_EDITION` in
 /// SWIFT_ACTIVE_COMPILATION_CONDITIONS and without the games-pg CA (tools/make_public_dmg.sh): no Games DB by default,
@@ -340,6 +342,7 @@ protocol GameStoreCredentials: Sendable {
     func password(account: String) -> String?
 }
 
+#if !GTNW_CORE
 /// The Games DB passwords in GTNW's own **Data Protection keychain** (`kSecUseDataProtectionKeychain`, service
 /// `nova-games-pg`, account = role name), per NovaGames CONTRACT §11. Items there are bound to the team-signed app
 /// (keychain-access-groups entitlement), so rebuilds never put up a "wants to use your keychain" dialog. The login
@@ -402,6 +405,7 @@ struct KeychainGameStoreCredentials: GameStoreCredentials {
         SecItemDelete(query(account, dataProtection: false) as CFDictionary)
     }
 }
+#endif
 
 /// One-time credential hand-off (CONTRACT §11): fetch the role passwords from core3 over SSH
 /// (`remote.sh getpw <role>`, BatchMode so it can never prompt), or accept a pasted one
@@ -418,7 +422,7 @@ enum GameStoreSetup {
     /// Normalise SSH / clipboard output: strip one trailing newline and surrounding whitespace.
     static func clean(_ raw: String) -> String { raw.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    #if os(macOS)
+    #if os(macOS) && !GTNW_CORE
     /// Runs `ssh -o BatchMode=yes <target> sudo bash …/remote.sh getpw <role>` and stores the result.
     /// Roles are restricted to the two GTNW roles. Returns the roles stored.
     @discardableResult

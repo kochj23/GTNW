@@ -7,9 +7,11 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import os
 import Combine
 import NovaAIKit
+#endif
 
 /// Main game engine - ObservableObject for SwiftUI integration
 class GameEngine: ObservableObject {
@@ -98,7 +100,9 @@ class GameEngine: ObservableObject {
     @Published var diplomacyService = SafeDiplomacyService.shared
     @Published var nlpProcessor = SafeNLPProcessor.shared
 
+    #if !GTNW_CORE
     private var cancellables = Set<AnyCancellable>()
+    #endif
 
     init() {
         // Engine ready to start game
@@ -112,6 +116,7 @@ class GameEngine: ObservableObject {
             if worked, let enemy = crisis.options[option].consequences.warPlanAgainst { self?.executeWarPlan(against: enemy) }
         }
 
+        #if !GTNW_CORE
         // Check the AI backends once (NovaAIKit) and log what the game will use. Not under XCTest: the shared AI is
         // offline there, and a late log line would land in whatever game a test starts next.
         if !AudioGate.underXCTest { Task { @MainActor in
@@ -132,6 +137,7 @@ class GameEngine: ObservableObject {
                 addLog("   To enable: start Ollama or pick a backend in Settings → AI", type: .info)
             }
         } }
+        #endif
     }
 
     // MARK: - Game Lifecycle
@@ -830,7 +836,7 @@ class GameEngine: ObservableObject {
             // AI will retaliate
             if !target.isPlayerControlled {
                 let retaliationWarheads = min(warheads * 2, target.nuclearWarheads)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                GameScheduler.after(1.0) { [weak self] in
                     self?.launchNuclearStrike(from: targetID, to: attackerID, warheads: retaliationWarheads)
                 }
             }
@@ -930,11 +936,16 @@ class GameEngine: ObservableObject {
 
     /// Economic diplomacy - Turn enemy into ally with money
     func economicDiplomacy(from fromID: String, to toID: String, amount: Int) {
+        economicDiplomacy(from: fromID, to: toID, amount: Int64(amount))
+    }
+
+    /// Dollars as Int64: era amounts reach $5B, past a 32-bit Int (WebAssembly).
+    func economicDiplomacy(from fromID: String, to toID: String, amount: Int64) {
         guard let gameState = gameState else { return }
         guard let fromCountry = getCountry(fromID), let toCountry = getCountry(toID) else { return }
 
         // Calculate diplomatic improvement based on amount
-        let relationBoost = amount / 10_000_000 // $10M = +1 relation, $1B = +100
+        let relationBoost = Int(amount / 10_000_000) // $10M = +1 relation, $1B = +100
 
         // Get current relation
         let currentRelation = fromCountry.diplomaticRelations[toID] ?? 0
@@ -993,7 +1004,7 @@ class GameEngine: ObservableObject {
 
     /// Deploy Strategic Defense Initiative (Reagan's Star Wars program)
     /// Based on actual 1980s SDI capabilities and expectations
-    func deploySDI(countryID: String, investmentAmount: Int) {
+    func deploySDI(countryID: String, investmentAmount: Int64) {
         guard let gameState = gameState else { return }
         guard let countryIndex = gameState.countries.firstIndex(where: { $0.id == countryID }) else { return }
 
@@ -1010,8 +1021,8 @@ class GameEngine: ObservableObject {
         // $100B = 40% coverage, 25% interception (basic deployment)
         // $200B = 70% coverage, 35% interception (enhanced deployment)
         // $300B+ = 90% coverage, 45% interception (full deployment)
-        let coverageBonus = min(90, 40 + ((investmentAmount - 100_000_000_000) / 10_000_000_000))
-        let interceptionBonus = min(45, 25 + ((investmentAmount - 100_000_000_000) / 20_000_000_000))
+        let coverageBonus = min(90, 40 + Int((investmentAmount - 100_000_000_000) / 10_000_000_000))
+        let interceptionBonus = min(45, 25 + Int((investmentAmount - 100_000_000_000) / 20_000_000_000))
 
         country.hasSDI = true
         country.sdiCoverage = coverageBonus
@@ -1046,7 +1057,7 @@ class GameEngine: ObservableObject {
     }
 
     /// Upgrade existing SDI system
-    func upgradeSDI(countryID: String, additionalInvestment: Int) {
+    func upgradeSDI(countryID: String, additionalInvestment: Int64) {
         guard let gameState = gameState else { return }
         guard let countryIndex = gameState.countries.firstIndex(where: { $0.id == countryID }) else { return }
 
@@ -1058,8 +1069,8 @@ class GameEngine: ObservableObject {
         }
 
         // Each $50B improves coverage by +10% and interception by +5%
-        let coverageIncrease = min(90 - country.sdiCoverage, (additionalInvestment / 5_000_000_000))
-        let interceptionIncrease = min(45 - country.sdiInterceptionRate, (additionalInvestment / 10_000_000_000))
+        let coverageIncrease = min(90 - country.sdiCoverage, Int(additionalInvestment / 5_000_000_000))
+        let interceptionIncrease = min(45 - country.sdiInterceptionRate, Int(additionalInvestment / 10_000_000_000))
 
         country.sdiCoverage = min(90, country.sdiCoverage + coverageIncrease)
         country.sdiInterceptionRate = min(45, country.sdiInterceptionRate + interceptionIncrease)
@@ -1762,7 +1773,7 @@ class GameEngine: ObservableObject {
         finalScore = nil
         victoryType = nil
         // Next run loop: let the result sheet finish dismissing before the game view it hangs from goes away.
-        DispatchQueue.main.async { [weak self] in
+        GameScheduler.after(0) { [weak self] in
             self?.gameState = nil
             self?.logMessages = []
         }

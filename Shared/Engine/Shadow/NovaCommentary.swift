@@ -15,7 +15,9 @@
 //
 
 import Foundation
+#if !GTNW_CORE
 import NovaAIKit
+#endif
 
 enum NovaCommentary {
     static let defaultsKey = "GTNW.novaCommentary"
@@ -42,7 +44,7 @@ enum NovaCommentary {
         emoji, no quotation marks, no advice.
         """
 
-    #if os(macOS)
+    #if os(macOS) && !GTNW_CORE
     /// Wire the live generators to the game's AI (NovaAIKit: Auto failover, retries, timeouts; the reply must pass
     /// `AIOutputSanitizer`). AI off, nothing reachable or an unusable reply → nil and the template line stands.
     /// Never under XCTest.
@@ -57,6 +59,7 @@ enum NovaCommentary {
     }
     #endif
 
+    #if !GTNW_CORE
     /// One AI line for `prompt`, or nil (AI off / unavailable / rejected twice) so the caller keeps its template.
     @MainActor
     static func liveLine(_ prompt: String, system: String, temperature: Double, maxTokens: Int, ai: NovaAI? = nil) async -> String? {
@@ -66,6 +69,7 @@ enum NovaCommentary {
                                          maxTokens: maxTokens, ai: ai, fallback: { "" })
         return r.isAI ? r.value : nil
     }
+    #endif
 
     /// Stable string hash (Swift's hashValue changes per launch).
     static func stableHash(_ s: String) -> Int { s.utf8.reduce(5381) { ($0 &* 33 &+ Int($1)) & 0x7fffffff } }
