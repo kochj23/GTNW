@@ -1,4 +1,4 @@
-# GTNW in WebAssembly (phase 1: the engine)
+# GTNW in WebAssembly (phase 1: the engine; phase 2: the screens)
 
 Goal: the full GTNW engine runs in a browser, so the web port (NovaGames "GTNW Lite") can become the full game's
 web and Windows front end. Phase 1 (this document) is the engine only: a Swift package that builds the engine from
@@ -129,7 +129,9 @@ switches (`Rules.apply`); `rules: "full"` (the default) plays with everything on
 | op | call | request → reply |
 |---|---|---|
 | 1 | `newGame` | `{"player":"USA","year":1962,"seed":"7aa","difficulty":"Normal","turnLength":"month","rules":"full"}` → `{ok, events, state}` |
+| 1 | | also `{"scenario":"cuba1962"}` or `{"sitting":"sit_cuba"}` (either overrides `year`) |
 | 2 | `act` | `{"action":"Send Ambassador","target":"FRA"}` and/or `{"crisisOption":0}` → `{ok, events, state}` |
+| 2 | | `{"action":…,"target":…,"advised":true,"preset":"standard"}` plays it the app's Advise → Order way (cabinet sizing, default warhead) → `{ok, events, state, report}`; `"decline":true` declines it; `{"advisor":"mcnamara","recommendation":"accept"\|"reject"\|"alternative"}` answers an advisor |
 | 3 | `endTurn` | → `{ok, events, state}`, with the computer's moves resolved |
 | 4 | `snapshot` | → `{ok, state}` |
 | 5 | `save` | → the app's save format (`SaveCodec`: the whole GameState, RNG included) |
@@ -137,6 +139,26 @@ switches (`Rules.apply`); `rules: "full"` (the default) plays with everything on
 | 7 | `setResource` | `"<name>\n" + bytes`: nation_cabinets, nation_characters, world_countries, base_rates, open_wars |
 | 8 | `golden` | `{"year":1962,"seed":"7aa","turns":12}` → one golden game in the fixture format |
 | 9 | `goldenVectors` | → the manifest's RNG vectors |
+| 10 | `query` | `{"q":"country","id":"FRA"}` → `{ok, result}`: a read-only question (below) |
+
+### Queries (phase 2)
+
+`query` never changes the game and never draws from the RNG (`QueryTests` checks a game played with and without
+queries is identical). Each query is one file in `Shared/CoreSupport/Queries/` conforming to `BridgeQuery`
+(`name`, `Args`, `Result`, `run`) and one line in `QueryRegistry.all` (alphabetical), so screens add queries without
+touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/full/bridge/types.ts` in NovaGames.
+
+| query | args | answers |
+|---|---|---|
+| `actions` | `target?` | the escalation ladder (rungs, lead advisor) and every action available this era with cost, risk, odds against the target, why it can't be ordered, whether it is major and how it is sized |
+| `administrations` | | the U.S. administrations (`PresidentialAdministrations`) |
+| `advice` | `action, target` | the cabinet's advice (advisor, stance, reason, odds), the three-line warnings for major actions, the default sizing and warhead |
+| `advisors` | `country?` | the advisor rail in order: status, loyalty, hawkishness, current advice, recommendation, briefing |
+| `country` | `id` | the dossier: a nation (profile, economy, intelligence estimates for foreign military and warheads, anxieties, aid need, factbook) or a colony / pre-state / unclaimed land |
+| `map` | | the map for the game's year: every outline's kind (nation, territory, colony, indigenous, unclaimed) with owner and what clicking selects, dots for nations without outlines and pre-state islands, fleets, live map flashes |
+| `nations` | `year` | the nations that exist in a year (1789–2100) for the new-game picker |
+| `scenarios` | | the historical scenarios and the sittings (short scored challenges) |
+| `topbar` | | the Situation Room top bar: leader, date, turn, popularity and election line, DEFCON (ALERT before 1959), peace index, impeachment, pending offers, scenario / sitting |
 
 `state` carries the golden snapshot's fields (turn, date, DEFCON, radiation, casualties, popularity, game over, RNG
 state, wars, and per nation: warheads, military, stability, approval, destroyed, at war with, relation to the
@@ -240,7 +262,7 @@ reusing Lite's map, ticker, modal and dossier where they exist). The Swift lines
 
 S is under 200 lines of Lite code, M is 200–600, L is over 600. Phase 2 also needs:
 
-- the bridge ops those screens read (a generic `query` op returning a sub-tree of the state is likely enough for most);
-- the CSP directive;
+- the bridge ops those screens read: done as typed queries (op 10, above), one file per query;
+- the CSP directive: done (NovaGames `deploy/Caddyfile`, 2026-11-23);
 - a size pass (FoundationEssentials-only linking);
 - a long Wasm soak game for 32-bit overflow.

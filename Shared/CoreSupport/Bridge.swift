@@ -8,8 +8,11 @@
 //  settled. Errors come back as {"ok":false,"error":"..."}. Documentation/WASM-PORT.md has the API with examples.
 //
 //    newGame({"player":"USA","year":1962,"seed":"7aa","difficulty":"Normal","turnLength":"month","rules":"full"})
+//    newGame({"scenario":"cuba1962"})   newGame({"sitting":"sit_cuba"})
 //    act({"action":"Send Ambassador","target":"FRA"})      act({"crisisOption":0})
-//    endTurn()   snapshot()   save()   load(<save>)   golden(1962, 0x7aa, 12)
+//    act({"action":"Air Strike","target":"CUB","advised":true})   act({"action":"Air Strike","target":"CUB","decline":true})
+//    act({"advisor":"<id>","recommendation":"accept"|"reject"|"alternative"})
+//    endTurn()   snapshot()   save()   load(<save>)   golden(1962, 0x7aa, 12)   query({"q":"map"}) (Queries/)
 //
 
 #if GTNW_CORE
@@ -43,6 +46,10 @@ public enum GTNWBridge {
         var difficulty: String?
         var turnLength: String?
         var rules: Rules?
+        /// A dated scenario (`ScenarioDefinition.find`), or a one-sitting crisis (`OneSitting.find`); `year` is then
+        /// ignored and `turnLength` defaults to the scenario's own.
+        var scenario: String?
+        var sitting: String?
     }
 
     /// One order, in the golden fixtures' `input` shape: answer the waiting crisis and/or give a presidential order.
@@ -50,6 +57,26 @@ public enum GTNWBridge {
         var action: String?
         var target: String?
         var crisisOption: Int?
+        /// As the Situation Room gives it: after the cabinet's advice (AdviceEngine), with its bookkeeping (loyalty,
+        /// resignations, popularity, the action allowance; the turn ends when the last action is used), the standard
+        /// size for a sized attack (or `preset`) and the era's warhead. Without it, `action` is the raw order the
+        /// golden games use.
+        var advised: Bool?
+        /// probe, standard, overwhelming (sized attacks, with `advised`).
+        var preset: String?
+        /// Back off from `action` after hearing the advice.
+        var decline: Bool?
+        /// An advisor's standing recommendation: accept, reject or alternative.
+        var advisor: String?
+        var recommendation: String?
+    }
+
+    /// What an advised order produced (the app's ActionResultSheet).
+    struct Report: Codable, Equatable {
+        var title: String
+        var lines: [String]
+        /// nil = no clear verdict
+        var success: Bool?
     }
 
     struct Crisis: Codable, Equatable {
@@ -108,6 +135,7 @@ public enum GTNWBridge {
         var events: [Event]
         var state: State?
         var error: String?
+        var report: Report?
     }
 
     // MARK: Session
@@ -143,7 +171,23 @@ public enum GTNWBridge {
             return failure("newGame: bad player id")
         }
         let e = GameEngine()
-        e.startNewGame(playerCountryID: player, difficulty: difficulty, turnLength: length, year: req.year, seed: seed)
+        if let id = req.sitting {
+            guard let s = OneSitting.find(id), let def = s.definition else { return failure("newGame: unknown sitting \(id)") }
+            e.startScenario(def, difficulty: difficulty, turnLength: s.turnLength, player: player, seed: seed)
+            // GameEngine.startOneSitting, with the seed: the sitting's clock and its opening line.
+            if let gs = e.gameState {
+                gs.shadow.sittingID = s.id
+                gs.shadow.sittingTurns = s.turns
+                gs.shadow.post("ONE SITTING: \(s.title). \(s.goal) You have \(s.turns) turns.", date: gs.currentDate, severity: 2)
+                e.addLog("ONE SITTING: \(s.title.uppercased()): \(s.goal) \(s.turns) turns.", type: .system)
+            }
+        } else if let id = req.scenario {
+            guard let def = ScenarioDefinition.find(id) else { return failure("newGame: unknown scenario \(id)") }
+            e.startScenario(def, difficulty: difficulty, turnLength: req.turnLength.flatMap(TurnLength.init(rawValue:)), player: player, seed: seed)
+        } else {
+            if let y = req.year, !(1789...2100).contains(y) { return failure("newGame: year must be 1789…2100") }
+            e.startNewGame(playerCountryID: player, difficulty: difficulty, turnLength: length, year: req.year, seed: seed)
+        }
         guard e.gameState?.getPlayerCountry() != nil else { return failure("newGame: no country \(player) in that year") }
         engine = e
         logSeen = 0
@@ -163,16 +207,62 @@ public enum GTNWBridge {
             e.crisisManager.resolveCrisis(optionIndex: option, gameState: &g)
             JobPump.pump()
         }
+        if let id = order.advisor, let verb = order.recommendation {
+            guard gs.advisors.contains(where: { $0.id == id && $0.isActive }) else { return failure("act: no active advisor \(id)") }
+            switch verb {
+            case "accept":
+                e.actionResult = nil
+                guard e.acceptRecommendation(advisorID: id) else { return failure("act: nothing to accept") }
+                JobPump.pump(while: { e.isProcessingAITurn })
+                return reply(report: e.actionResult.map(report))
+            case "reject": e.rejectRecommendation(advisorID: id)
+            case "alternative": e.alternativeRecommendation(advisorID: id)
+            default: return failure("act: recommendation is accept, reject or alternative")
+            }
+            JobPump.pump()
+            return reply()
+        }
         if let name = order.action, name != "none" {
             guard let action = PresidentialAction(rawValue: name) else { return failure("act: unknown action \(name)") }
             guard let target = order.target, let t = gs.getCountry(id: target), !t.isDestroyed else {
                 return failure("act: \(name) needs a live target")
+            }
+            if order.decline == true || order.advised == true {
+                guard let me = gs.getPlayerCountry(), t.id != me.id else { return failure("act: \(name) needs a foreign target") }
+                let advice = AdviceEngine.advise(action: action, player: me, target: t, gameState: gs)
+                if order.decline == true {
+                    e.declineAdvisedAction(advice: advice, action: action, targetID: t.id)
+                    JobPump.pump()
+                    return reply()
+                }
+                guard gs.actionsRemaining > 0 else { return failure("act: no actions left this turn") }
+                guard action.isAvailable(on: gs.currentDate, in: gs) else { return failure("act: \(name) is not available in \(gs.currentYear)") }
+                if action.wmd != nil, let problem = e.wmdProblem(action) { return failure("act: \(problem)") }
+                let kinds = AttackSizing.kinds(for: action)
+                var size: AttackSize?
+                if !kinds.isEmpty {
+                    let preset = order.preset.flatMap(AttackPreset.init(rawValue:)) ?? .standard
+                    size = AttackSizing.preset(preset, for: action, in: gs)
+                }
+                let warhead = kinds.contains(.warheads) ? defaultWarhead(action, year: gs.currentYear) : nil
+                e.actionResult = nil
+                e.performAdvisedAction(action, targetID: t.id, advice: advice, size: size, warhead: warhead)
+                JobPump.pump(while: { e.isProcessingAITurn })
+                return reply(report: e.actionResult.map(report))
             }
             e.executeShadowPresidentAction(action, from: gs.playerCountryID, to: t.id)
             JobPump.pump()
         }
         return reply()
     }
+
+    /// The warhead the ladder picks for a nuclear order (ActionLadderSheet): neutron for a tactical strike once it
+    /// exists, otherwise the era's standard.
+    static func defaultWarhead(_ a: PresidentialAction, year: Int) -> WarheadType {
+        (a == .tacticalNuke && WarheadType.neutron.available(in: year)) ? .neutron : WarheadType.standard(for: year)
+    }
+
+    static func report(_ r: ActionReport) -> Report { Report(title: r.title, lines: r.lines, success: r.success) }
 
     public static func endTurn() -> String {
         guard let e = engine, let gs = e.gameState else { return failure("endTurn: no game") }
@@ -234,11 +324,11 @@ public enum GTNWBridge {
     }
 
     static func failure(_ message: String) -> String {
-        encode(Reply(ok: false, events: [], state: nil, error: message))
+        encode(Reply(ok: false, events: [], state: nil, error: message, report: nil))
     }
 
-    static func reply(events: Bool = true) -> String {
-        encode(Reply(ok: true, events: events ? newEvents() : [], state: engine?.gameState.map(state), error: nil))
+    static func reply(events: Bool = true, report: Report? = nil) -> String {
+        encode(Reply(ok: true, events: events ? newEvents() : [], state: engine?.gameState.map(state), error: nil, report: report))
     }
 
     static func newEvents() -> [Event] {

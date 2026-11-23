@@ -65,7 +65,7 @@ function wasiShim(getMemory, log) {
   };
 }
 
-const OP = { newGame: 1, act: 2, endTurn: 3, snapshot: 4, save: 5, load: 6, setResource: 7, golden: 8, goldenVectors: 9 };
+const OP = { newGame: 1, act: 2, endTurn: 3, snapshot: 4, save: 5, load: 6, setResource: 7, golden: 8, goldenVectors: 9, query: 10 };
 
 /**
  * Instantiate the engine. `source` is the .wasm as bytes, a WebAssembly.Module, or a fetch Response (streamed).
@@ -113,6 +113,7 @@ export async function loadGTNW(source, resources = {}, { log } = {}) {
     load: (save) => JSON.parse(call(OP.load, encoder.encode(save))),
     golden: (year, seed, turns) => json(OP.golden, { year, seed, turns }),
     goldenVectors: () => json(OP.goldenVectors),
+    query: (q, args = {}) => json(OP.query, { ...args, q }),
   };
 }
 

@@ -12,6 +12,7 @@
 //
 //  ops: 1 newGame(json)  2 act(json)  3 endTurn  4 snapshot  5 save  6 load(json)
 //       7 setResource("<name>\n" + bytes)  8 golden({"year":..,"seed":"hex","turns":..})  9 goldenVectors
+//       10 query({"q":"<name>", ...}) (read-only; Shared/CoreSupport/Queries)
 //
 //  Built natively (swift build) this is an empty program; the exports exist only for WASI.
 //
@@ -71,6 +72,7 @@ func gtnwCall(_ op: Int32, _ pointer: UnsafeRawPointer?, _ count: Int32) -> Int3
             out = #"{"ok":false,"error":"golden: {\"year\":Int,\"seed\":\"hex\",\"turns\":Int}"}"#
         }
     case 9: out = GTNWBridge.goldenVectors()
+    case 10: out = GTNWBridge.query(text)
     default: out = #"{"ok":false,"error":"unknown op"}"#
     }
     reply = Array(out.utf8) + [0]

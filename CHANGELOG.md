@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   completion on one thread. The golden games (1789, 1962, 2025) play identically natively, in Node and in Chromium.
   `Wasm/build.sh` builds it, `Wasm/parity.sh` checks it against the app's fixtures, and `swift test` runs the
   package's tests. Documentation/WASM-PORT.md has the audit, the boundary, the sizes and the phase-2 screen list.
+- **WebAssembly phase 2 foundation:** a `query` bridge op (10) with typed read-only queries, one file each in
+  `Shared/CoreSupport/Queries/` (`actions`, `administrations`, `advice`, `advisors`, `country`, `map`, `nations`,
+  `scenarios`, `topbar`); `newGame` takes a scenario or a sitting; `act` takes the app's advised order (sizing, warhead,
+  report), a declined action and an answer to an advisor's recommendation. Queries never change the game or draw from
+  the RNG (`QueryTests`); the golden games still play identically natively and in WebAssembly.
 
 ### Changed
 - Money that passes $2.1B is `Int64`: country treasury, GDP and military budget, action and weapons-program costs,
