@@ -155,14 +155,59 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `administrations` | | the U.S. administrations (`PresidentialAdministrations`) |
 | `advice` | `action, target` | the cabinet's advice (advisor, stance, reason, odds), the three-line warnings for major actions, the default sizing and warhead |
 | `advisors` | `country?` | the advisor rail in order: status, loyalty, hawkishness, current advice, recommendation, briefing; the profile (expertise, influence, public support, interventionism, fiscal conservatism, department, bio, advice areas); `posts`: the seven Situation Room posts with holder, title, briefing and former holders |
+| `aid` | `id` | foreign aid to one country (AidSheet): money left this year, need and sent per kind of aid |
+| `airCampaign` | `target` | the strategic air campaign (AirCampaignSheet): why it can't be ordered, the two aims |
+| `arsenal` | `target?, action?, troops?, aircraft?, warheads?` | the era's weapons under each military order with legal status and treaty (ArsenalLine), and the force-sizing panel for one offensive (AttackSizingPanel) with the cabinet's warnings |
+| `budget` | `draft?` | the federal budget (BudgetView): sliders with limits, the projection for a draft, where the money goes, the era's reset |
+| `coalitions` | `target` | a coalition against a country (CoalitionSheet): members and each candidate's odds of joining |
 | `command` | `text` \| `intent` \| `model` \| `schema` | the command box (3.34.0): `CommandParser` then `CommandPlanner`, as the app runs them → `plan` (card + `GameOrder`s), `clarify` (choices carrying their intent), `answer`, `rejected`, or `unparsed` (ask a model); `model` is a translation in the app's `ModelCommand` shape, checked against the closed lists before planning; `schema` returns the lists |
 | `country` | `id` | the dossier: a nation (profile, economy, intelligence estimates for foreign military and warheads, anxieties, aid need, factbook) or a colony / pre-state / unclaimed land |
 | `crisis` | | the waiting crisis as DetailedCrisisView shows it: severity label, brief, epigraph, time limit, decisions waiting behind it, options with the recommending advisor's name and odds |
+| `fleets` | `target, fleet?, mission?, preset?` | fleet orders (FleetOrderSheet): the era's fleets, missions, commitments, the read-out, why not, warnings, fleets out |
+| `fronts` | | the War Room: every front with troop and damage assessments, momentum, the orders it allows, surrender odds, the War Powers clock, the operations log |
+| `groupAction` | `pick, region?, ids?, saved?, kind, amount?, garrison?, split?, rate?` | a group action's per-nation plan and total (GroupActionSheet) |
+| `manpower` | | troops, the draft in force, and the two call-ups with cost and training (ManpowerSheet) |
 | `map` | | the map for the game's year: every outline's kind (nation, territory, colony, indigenous, unclaimed) with owner and what clicking selects, dots for nations without outlines and pre-state islands, fleets, live map flashes |
+| `messages` | | the diplomatic inbox with the replies each message offers (DiplomaticMessagesView) |
 | `nations` | `year` | the nations that exist in a year (1789–2100) for the new-game picker |
 | `news` | | the news wire (`ShadowState.ticker`, saved with the game) with dates and severities, and the scenario's epigraph |
+| `peace` | | the four peace paths with progress, the conditions, the wars elsewhere to broker (PeaceSheet) |
+| `resources` | | territory income, extraction rates and levies (ResourcesSheet) |
 | `scenarios` | | the historical scenarios and the sittings (short scored challenges) |
+| `settlements` | | surrenders waiting for the President's terms (SettlementSheet): annex or a post-war government, each with the cabinet's take |
 | `topbar` | | the Situation Room top bar: leader, date, turn, popularity and election line, DEFCON (ALERT before 1959), peace index, impeachment, pending offers, scenario / sitting |
+| `treaties` | | treaty offers on the table (TreatyOffersSheet) |
+| `warRecord` | | the Records sheet's WAR, FOG and LEGENDS panels: deliberations and stated reasons, the silences and intelligence age, the debrief and the chronicle |
+
+
+### Verbs (phase 2)
+
+A sheet's button is an order through `act`: `{"verb":"<name>", ...its fields}`. Each verb is one file in
+`Shared/CoreSupport/Verbs/` conforming to `BridgeVerb` and one line in `VerbRegistry.all` (alphabetical), and calls
+the same GameEngine method the app's button calls, so a game played through verbs is the app's game (it may draw
+from the RNG exactly as the button does). A verb that can't be carried out answers `{"ok":false,"error":...}` with
+the app's reason and leaves the game unchanged; some return a `report` (the War Room's notices, an aid reaction,
+a sized order's ActionResultSheet). `WarRoomTests` checks the registry, the read-only queries and that a game played
+through verbs is a function of seed and orders.
+
+| verb | fields | the app's button |
+|---|---|---|
+| `answerMessage` | `id, response` | a reply on a diplomatic message (accept, decline, counter, nonAggression, apology, standFirm, trade, mediation) |
+| `answerTreaty` | `id, accept` | TreatyOffersSheet ACCEPT / DECLINE |
+| `brokerCeasefire` | `front` | War Room BROKER CEASEFIRE (one action) |
+| `brokerPeace` | `a, b` | PeaceSheet BROKER |
+| `callUp`, `standDown` | `kind` (draft, mobilization) | ManpowerSheet CALL / STAND DOWN |
+| `collectLevy`, `setExtraction` | `id`, `rate` | ResourcesSheet |
+| `commitTroops` | `front, side, thousands` (negative recalls) | War Room SEND TO / RECALL |
+| `demandSurrender`, `sueForPeace` | `front` | War Room |
+| `enactBudget` | `draft` | BudgetView ENACT BUDGET |
+| `groupAction`, `saveGroup` | the `groupAction` query's fields; `name, ids` | GroupActionSheet CONFIRM / SAVE GROUP |
+| `orderFleet`, `recallFleet` | `fleet, target, mission, preset`; `id` | FleetOrderSheet |
+| `requestCoalition` | `target` | CoalitionSheet ASK |
+| `sendAid` | `target, humanitarian?, economic?, intelligence?, military?, nuclear?` | AidSheet SEND AID |
+| `settle` | `id, choice, name?` | SettlementSheet ANNEX / INSTALL |
+| `sizedOrder` | `action, target, troops?, aircraft?, warheads?` | an offensive at the size set on AttackSizingPanel |
+| `strategicBombing` | `target, aim` | AirCampaignSheet ORDER THE RAID |
 
 `state` carries the golden snapshot's fields (turn, date, DEFCON, radiation, casualties, popularity, game over, RNG
 state, wars, and per nation: warheads, military, stability, approval, destroyed, at war with, relation to the
