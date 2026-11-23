@@ -49,7 +49,12 @@ final class QueryTests: XCTestCase {
         for q in [#"{"q":"map"}"#, #"{"q":"topbar"}"#, #"{"q":"advisors","country":"RUS"}"#, #"{"q":"advisors"}"#,
                   #"{"q":"country","id":"RUS"}"#, #"{"q":"country","id":"USA"}"#, #"{"q":"actions","target":"CUB"}"#,
                   #"{"q":"advice","action":"Air Strike","target":"CUB"}"#, #"{"q":"advice","action":"Launch Nukes","target":"RUS"}"#,
-                  #"{"q":"nations","year":1914}"#, #"{"q":"scenarios"}"#, #"{"q":"administrations"}"#] {
+                  #"{"q":"nations","year":1914}"#, #"{"q":"scenarios"}"#, #"{"q":"administrations"}"#,
+                  #"{"q":"crisis"}"#, #"{"q":"news"}"#, #"{"q":"command","schema":true}"#,
+                  #"{"q":"command","text":"attack France with all air, naval and army forces that are non-nuclear"}"#,
+                  #"{"q":"command","text":"nuke Russia with 5 warheads"}"#, #"{"q":"command","text":"who can reach me with ICBMs?"}"#,
+                  #"{"q":"command","text":"sanction isr"}"#, #"{"q":"command","text":"make the moon cheese"}"#,
+                  #"{"q":"command","model":{"kind":"order","verb":"sanction","targets":["Cuba"],"ground":false,"air":false,"naval":false,"nuclear":"unspecified","all":false,"topic":"none","field":"none"}}"#] {
             _ = result(q)
         }
         // Compared as JSON values: the save's encoder does not sort keys, so equal dictionaries may print in another order.
@@ -166,5 +171,126 @@ final class QueryTests: XCTestCase {
             XCTAssertEqual(result(#"{"q":"topbar"}"#)["year"] as? Int, year)
         }
         XCTAssertEqual(json(GTNWBridge.newGame(#"{"player":"USA","year":1700}"#))["ok"] as? Bool, false)
+    }
+
+    // MARK: Advisors, crisis, news, command box (screens A)
+
+    func testAdvisorPostsProfilesAndFiring() {
+        startGame()
+        let r = result(#"{"q":"advisors"}"#)
+        let posts = r["posts"] as? [[String: Any]] ?? []
+        XCTAssertEqual(posts.map { $0["role"] as? String ?? "" }, AdviceEngine.roleOrder)
+        XCTAssertEqual(posts.first?["title"] as? String, "Chief of Staff")
+        let list = r["advisors"] as? [[String: Any]] ?? []
+        XCTAssertNotNil(list.first?["bio"])
+        XCTAssertNotNil(list.first?["expertise"])
+        guard let victim = list.first(where: { $0["canFire"] as? Bool == true && $0["status"] as? String == "active" && $0["role"] as? String != nil }),
+              let id = victim["id"] as? String, let role = victim["role"] as? String else { return XCTFail("nobody to fire") }
+        let fired = json(GTNWBridge.act(#"{"verb":"fireAdvisor","id":"\#(id)"}"#))
+        XCTAssertEqual(fired["ok"] as? Bool, true)
+        let after = result(#"{"q":"advisors"}"#)
+        let post = (after["posts"] as? [[String: Any]])?.first { $0["role"] as? String == role }
+        XCTAssertNotEqual(post?["advisorId"] as? String, id, "an acting replacement holds the post")
+        XCTAssertEqual((post?["former"] as? [[String: Any]])?.first?["name"] as? String, victim["name"] as? String)
+        XCTAssertEqual(json(GTNWBridge.act(#"{"verb":"fireAdvisor","id":"\#(id)"}"#))["ok"] as? Bool, false, "already gone")
+        guard let other = (after["advisors"] as? [[String: Any]])?.first(where: { $0["canFire"] as? Bool == true && $0["status"] as? String == "active" }),
+              let oid = other["id"] as? String else { return XCTFail("nobody to dismiss") }
+        XCTAssertEqual(json(GTNWBridge.act(#"{"verb":"dismissAdvisor","id":"\#(oid)"}"#))["ok"] as? Bool, true)
+        let status = (result(#"{"q":"advisors"}"#)["advisors"] as? [[String: Any]])?.first { $0["id"] as? String == oid }?["status"] as? String
+        XCTAssertEqual(status, "fired")
+    }
+
+    func testCrisisAndNews() {
+        XCTAssertEqual(json(GTNWBridge.newGame(#"{"scenario":"cuba1962","seed":"5","rules":"golden"}"#))["ok"] as? Bool, true)
+        var crisis: [String: Any]?
+        for _ in 0..<40 {
+            crisis = result(#"{"q":"crisis"}"#)["crisis"] as? [String: Any]
+            if crisis != nil { break }
+            _ = GTNWBridge.endTurn()
+        }
+        guard let c = crisis else { return XCTFail("no crisis in 40 turns") }
+        XCTAssertNotNil(c["severityLabel"] as? String)
+        XCTAssertFalse((c["options"] as? [Any] ?? []).isEmpty)
+        let ep = c["epigraph"] as? [String: Any]
+        XCTAssertFalse((ep?["text"] as? String ?? "").isEmpty)
+        XCTAssertEqual(result(#"{"q":"crisis"}"#)["crisis"] as? NSDictionary, c as NSDictionary, "stable: the same crisis, the same card")
+        XCTAssertEqual(json(GTNWBridge.act(#"{"crisisOption":0}"#))["ok"] as? Bool, true)
+        let news = result(#"{"q":"news"}"#)
+        XCTAssertFalse((news["items"] as? [Any] ?? []).isEmpty)
+        XCTAssertNotNil(news["scenario"] as? String)
+        XCTAssertNotNil((news["epigraph"] as? [String: Any])?["source"])
+    }
+
+    func command(_ text: String) -> [String: Any] {
+        let body = String(decoding: try! JSONSerialization.data(withJSONObject: ["q": "command", "text": text]), as: UTF8.self)
+        return result(body)
+    }
+
+    func testCommandBoxPlansAsTheAppDoes() {
+        startGame()
+        // The parser and planner the app runs: the same plan the engine would build itself.
+        let r = command("attack France with all air, naval and army forces that are non-nuclear")
+        XCTAssertEqual(r["kind"] as? String, "plan")
+        let plan = r["plan"] as? [String: Any] ?? [:]
+        let intent = CommandParser.parse("attack France with all air, naval and army forces that are non-nuclear")!
+        guard case .plan(let native) = GTNWBridge.engine!.planCommand(intent, source: .parser) else { return XCTFail("no native plan") }
+        XCTAssertEqual(plan["committed"] as? [String], native.committed)
+        XCTAssertEqual(plan["heldBack"] as? [String], native.heldBack)
+        XCTAssertEqual((plan["orders"] as? [Any])?.count, native.orders.count)
+        XCTAssertEqual(plan["nuclear"] as? Bool, false)
+        // Questions, help, the unknown, the ambiguous.
+        XCTAssertEqual(command("who can reach me with ICBMs?")["kind"] as? String, "answer")
+        XCTAssertEqual(command("help")["lines"] as? [String], CommandHelp.lines)
+        XCTAssertEqual(command("make the moon cheese")["kind"] as? String, "unparsed")
+        let nuke = command("nuke Russia with 5 warheads")
+        XCTAssertEqual((nuke["plan"] as? [String: Any])?["nuclear"] as? Bool, true)
+        XCTAssertEqual(((nuke["plan"] as? [String: Any])?["warnings"] as? [[String: Any]])?.first?["text"] as? String,
+                       "NUCLEAR RELEASE. A second confirmation is required.")
+        XCTAssertEqual(json(GTNWBridge.query(#"{"q":"command","text":"   "}"#))["ok"] as? Bool, false)
+    }
+
+    func testCommandClarificationRoundTrip() {
+        startGame()
+        var r = command("sanction guin")
+        if r["kind"] as? String != "clarify" { r = command("sanction kor") }
+        guard r["kind"] as? String == "clarify", let opt = ((r["clarify"] as? [String: Any])?["options"] as? [[String: Any]])?.first,
+              let intent = opt["intent"] else { return XCTFail("no clarification: \(r)") }
+        let body = String(decoding: try! JSONSerialization.data(withJSONObject: ["q": "command", "intent": intent, "source": "parser"]), as: UTF8.self)
+        XCTAssertEqual(result(body)["kind"] as? String, "plan")
+    }
+
+    func testModelTranslationIsCheckedAgainstTheClosedLists() {
+        startGame()
+        func model(_ fields: String) -> [String: Any] { result(#"{"q":"command","model":{\#(fields)}}"#) }
+        let base = #""targets":["Cuba"],"ground":false,"air":true,"naval":false,"nuclear":"no","all":false,"topic":"none","field":"none""#
+        XCTAssertEqual(model(#""kind":"order","verb":"airStrike","# + base)["kind"] as? String, "plan")
+        XCTAssertEqual(model(#""kind":"order","verb":"launchEverything","# + base)["kind"] as? String, "rejected", "a verb off the list")
+        XCTAssertEqual(model(#""kind":"unknown","verb":"none","# + base)["kind"] as? String, "rejected")
+        XCTAssertEqual(model(#""kind":"question","verb":"none","targets":[],"ground":false,"air":false,"naval":false,"nuclear":"unspecified","all":false,"topic":"wars","field":"none""#)["kind"] as? String, "answer")
+        XCTAssertEqual(model(#""kind":"order","verb":"airStrike","targets":["Cuba"],"ground":false,"air":true,"naval":false,"nuclear":"no","all":false,"troops":-5,"topic":"none","field":"none""#)["kind"] as? String, "rejected", "numbers are bounded")
+        let schema = result(#"{"q":"command","schema":true}"#)["schema"] as? [String: Any]
+        XCTAssertEqual(schema?["verbs"] as? [String], CommandVerb.allCases.map(\.rawValue))
+    }
+
+    func testCommandOrdersExecuteThroughAct() {
+        startGame()
+        let r = command("sanction Cuba")
+        guard let plan = r["plan"] as? [String: Any], let orders = plan["orders"] else { return XCTFail("no plan: \(r)") }
+        let before = (json(GTNWBridge.snapshot())["state"] as? [String: Any])?["actionsRemaining"] as? Int ?? 0
+        let body = String(decoding: try! JSONSerialization.data(withJSONObject: ["verb": "executeCommand", "orders": orders, "source": "parser"]), as: UTF8.self)
+        let done = json(GTNWBridge.act(body))
+        XCTAssertEqual(done["ok"] as? Bool, true)
+        let cmd = (done["report"] as? [String: Any])?["command"] as? [String: Any]
+        XCTAssertEqual((cmd?["carried"] as? [Any])?.count, 1)
+        XCTAssertFalse((cmd?["lines"] as? [String] ?? []).isEmpty)
+        let after = (done["state"] as? [String: Any])?["actionsRemaining"] as? Int ?? 0
+        XCTAssertTrue(after == before - 1 || ((done["state"] as? [String: Any])?["turn"] as? Int ?? 0) > 2)
+        XCTAssertEqual(GTNWBridge.engine?.gameState?.shadow.commandLog.last?.orders.first?.action, PresidentialAction.sanctions.rawValue)
+        // A tampered order is checked again and refused (no action spent).
+        let bad = json(GTNWBridge.act(#"{"verb":"executeCommand","orders":[{"kind":"action","target":"CUB","action":"Assassinate Leader"}],"source":"model"}"#))
+        let badCmd = (bad["report"] as? [String: Any])?["command"] as? [String: Any]
+        XCTAssertEqual((badCmd?["carried"] as? [Any])?.count, 0)
+        XCTAssertEqual(((badCmd?["refused"] as? [Any])?.count ?? 0) + ((badCmd?["notReached"] as? [Any])?.count ?? 0), 1)
+        XCTAssertEqual(json(GTNWBridge.act(#"{"verb":"executeCommand","orders":[],"source":"parser"}"#))["ok"] as? Bool, false)
     }
 }

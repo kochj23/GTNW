@@ -31,6 +31,9 @@ protocol BridgeVerb {
 /// Every verb, by name. Alphabetical; one line each.
 enum VerbRegistry {
     static let all: [any BridgeVerb.Type] = [
+        DismissAdvisorVerb.self,
+        ExecuteCommandVerb.self,
+        FireAdvisorVerb.self,
     ]
 
     static let byName: [String: any BridgeVerb.Type] = Dictionary(all.map { ($0.name, $0) }, uniquingKeysWith: { a, _ in a })

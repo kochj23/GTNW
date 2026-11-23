@@ -45,9 +45,12 @@ enum QueryRegistry {
         AdministrationsQuery.self,
         AdviceQuery.self,
         AdvisorsQuery.self,
+        CommandQuery.self,
         CountryQuery.self,
+        CrisisQuery.self,
         MapQuery.self,
         NationsQuery.self,
+        NewsQuery.self,
         ScenariosQuery.self,
         TopBarQuery.self,
     ]

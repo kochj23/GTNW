@@ -79,6 +79,8 @@ public enum GTNWBridge {
         var lines: [String]
         /// nil = no clear verdict
         var success: Bool?
+        /// The command box's orders (Verbs/ExecuteCommandVerb): what was carried out, refused and not reached.
+        var command: CommandResult? = nil
     }
 
     struct Crisis: Codable, Equatable {

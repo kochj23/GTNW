@@ -132,6 +132,7 @@ switches (`Rules.apply`); `rules: "full"` (the default) plays with everything on
 | 1 | | also `{"scenario":"cuba1962"}` or `{"sitting":"sit_cuba"}` (either overrides `year`) |
 | 2 | `act` | `{"action":"Send Ambassador","target":"FRA"}` and/or `{"crisisOption":0}` → `{ok, events, state}` |
 | 2 | | `{"action":…,"target":…,"advised":true,"preset":"standard"}` plays it the app's Advise → Order way (cabinet sizing, default warhead) → `{ok, events, state, report}`; `"decline":true` declines it; `{"advisor":"mcnamara","recommendation":"accept"\|"reject"\|"alternative"}` answers an advisor |
+| 2 | | verbs (`Shared/CoreSupport/Verbs/`): `{"verb":"fireAdvisor","id":…}` fires from the briefing (`departAdvisor`); `{"verb":"dismissAdvisor","id":…}` dismisses from the cabinet view (`fireAdvisor`); `{"verb":"executeCommand","orders":[<GameOrder>…],"source":"parser"\|"model"}` carries out a confirmed command-box plan (`executeCommand`, every order checked again) → `{ok, events, state, report:{title, lines, success, command:{carried, refused, notReached, lines}}}` |
 | 3 | `endTurn` | → `{ok, events, state}`, with the computer's moves resolved |
 | 4 | `snapshot` | → `{ok, state}` |
 | 5 | `save` | → the app's save format (`SaveCodec`: the whole GameState, RNG included) |
@@ -153,10 +154,13 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `actions` | `target?` | the escalation ladder (rungs, lead advisor) and every action available this era with cost, risk, odds against the target, why it can't be ordered, whether it is major and how it is sized |
 | `administrations` | | the U.S. administrations (`PresidentialAdministrations`) |
 | `advice` | `action, target` | the cabinet's advice (advisor, stance, reason, odds), the three-line warnings for major actions, the default sizing and warhead |
-| `advisors` | `country?` | the advisor rail in order: status, loyalty, hawkishness, current advice, recommendation, briefing |
+| `advisors` | `country?` | the advisor rail in order: status, loyalty, hawkishness, current advice, recommendation, briefing; the profile (expertise, influence, public support, interventionism, fiscal conservatism, department, bio, advice areas); `posts`: the seven Situation Room posts with holder, title, briefing and former holders |
+| `command` | `text` \| `intent` \| `model` \| `schema` | the command box (3.34.0): `CommandParser` then `CommandPlanner`, as the app runs them → `plan` (card + `GameOrder`s), `clarify` (choices carrying their intent), `answer`, `rejected`, or `unparsed` (ask a model); `model` is a translation in the app's `ModelCommand` shape, checked against the closed lists before planning; `schema` returns the lists |
 | `country` | `id` | the dossier: a nation (profile, economy, intelligence estimates for foreign military and warheads, anxieties, aid need, factbook) or a colony / pre-state / unclaimed land |
+| `crisis` | | the waiting crisis as DetailedCrisisView shows it: severity label, brief, epigraph, time limit, decisions waiting behind it, options with the recommending advisor's name and odds |
 | `map` | | the map for the game's year: every outline's kind (nation, territory, colony, indigenous, unclaimed) with owner and what clicking selects, dots for nations without outlines and pre-state islands, fleets, live map flashes |
 | `nations` | `year` | the nations that exist in a year (1789–2100) for the new-game picker |
+| `news` | | the news wire (`ShadowState.ticker`, saved with the game) with dates and severities, and the scenario's epigraph |
 | `scenarios` | | the historical scenarios and the sittings (short scored challenges) |
 | `topbar` | | the Situation Room top bar: leader, date, turn, popularity and election line, DEFCON (ALERT before 1959), peace index, impeachment, pending offers, scenario / sitting |
 
