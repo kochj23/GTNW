@@ -65,7 +65,15 @@ func appOnlyPaths() -> [String] {
     return walk("") + notCore
 }
 
-let core: [SwiftSetting] = [.define("GTNW_CORE"), .swiftLanguageMode(.v5)]
+/// WebAssembly links FoundationEssentials, not Foundation: Foundation brings ICU, whose data was 35 MB of the 49 MB
+/// module. There `import Foundation` means FoundationEssentials (a module alias), and the few APIs that need ICU or
+/// the rest of Foundation (String(format:), .formatted(), .capitalized, regular expressions, JSONSerialization,
+/// UserDefaults, NSLock) come from Shared/CoreSupport/Essentials.swift. `GTNW_ESSENTIALS` marks that build.
+let core: [SwiftSetting] = [
+    .define("GTNW_CORE"), .swiftLanguageMode(.v5),
+    .define("GTNW_ESSENTIALS", .when(platforms: [.wasi])),
+    .unsafeFlags(["-module-alias", "Foundation=FoundationEssentials"], .when(platforms: [.wasi])),
+]
 
 let package = Package(
     name: "GTNW",

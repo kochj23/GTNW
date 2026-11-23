@@ -170,9 +170,9 @@ enum ExpansionModel {
         switch year {
         case ..<1919:
             let pop = n <= 6 ? 0.5 : -0.03 * (x - 6)
-            return (pop, 0.5 + 0.003 * pow(max(0, x - 4), 2), 1 + 0.03 * max(0, x - 6))
+            return (pop, 0.5 + 0.003 * GameMath.pow(max(0, x - 4), 2), 1 + 0.03 * max(0, x - 6))
         case ..<1945:
-            return (-0.1 * max(0, x - 3), 2 + 0.006 * pow(max(0, x - 2), 2), 1.5 + 0.05 * max(0, x - 3))
+            return (-0.1 * max(0, x - 3), 2 + 0.006 * GameMath.pow(max(0, x - 2), 2), 1.5 + 0.05 * max(0, x - 3))
         default:
             return (-3, 8 + 0.02 * x * x, 3 + 0.1 * x)
         }

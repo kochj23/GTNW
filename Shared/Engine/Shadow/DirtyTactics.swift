@@ -988,7 +988,7 @@ extension GameEngine {
     /// States (relations below −20) or joins the other side. Pressed men do not go home.
     func processHiredTroops() {
         guard let gs = gameState, !gs.shadow.hiredContingents.isEmpty else { return }
-        for (lender, men) in gs.shadow.hiredContingents {
+        for (lender, men) in gs.shadow.hiredContingents.sorted(by: { $0.key < $1.key }) {
             guard let c = gs.getCountry(id: lender) else { gs.shadow.hiredContingents.removeValue(forKey: lender); continue }
             guard (c.diplomaticRelations[gs.playerCountryID] ?? 0) < -20 || c.atWarWith.contains(gs.playerCountryID) || c.isDestroyed else { continue }
             gs.shadow.hiredContingents.removeValue(forKey: lender)
@@ -1003,7 +1003,7 @@ extension GameEngine {
     /// Each turn: secret programmes come in or leak, and costs that were always coming land.
     func processDirtyTactics() {
         guard let gs = gameState else { return }
-        for (id, p) in gs.shadow.tacticPrograms {
+        for (id, p) in gs.shadow.tacticPrograms.sorted(by: { $0.key < $1.key }) {
             guard let t = DirtyTactics.tactic(id) else { continue }
             if p.ready <= gs.currentDate {
                 gs.shadow.tacticPrograms.removeValue(forKey: id)

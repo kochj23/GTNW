@@ -83,8 +83,8 @@ enum CombatModel {
         let pd = power(troops: dTroops, will: f.defenderWill, strength: defenderStrength, defending: true)
         let ratio = max(0.05, min(20, pa / max(0.001, pd)))
         let luckA = 0.7 + rolls.0 * 0.6, luckD = 0.7 + rolls.1 * 0.6
-        let aLoss = aTroops * 0.012 * pow(1 / ratio, 0.5) * luckD
-        let dLoss = dTroops * 0.012 * pow(ratio, 0.5) * luckA
+        let aLoss = aTroops * 0.012 * GameMath.pow(1 / ratio, 0.5) * luckD
+        let dLoss = dTroops * 0.012 * GameMath.pow(ratio, 0.5) * luckA
         return BattleOutcome(attackerLosses: aLoss, defenderLosses: dLoss, civilianLosses: (aLoss + dLoss) * 0.3,
                              momentumChange: max(-0.25, min(0.25, (ratio - 1) * 0.08)))
     }
@@ -313,7 +313,7 @@ extension CombatModel {
         annex(&c, to: owner)
         let m = max(0.01, troops / AttackSizing.expeditionStandard)
         c.militaryStrength = max(1, min(100, Int((5 * m).rounded())))   // the garrison; there was no army to defeat
-        c.stability = max(30, min(70, 50 + Int((10 * log2(m)).rounded())))
+        c.stability = max(30, min(70, 50 + Int((10 * GameMath.log2(m)).rounded())))
         var p = c.profile
         p.outcry = min(p.outcry, 20)
         c.profile = p
@@ -637,7 +637,7 @@ enum AttritionModel {
     static func homeGround(_ d: Country) -> Double {
         let stability = Double(max(0, min(100, d.stability))) / 100
         let terrain = Double(WorldFactbookDatabase.record(for: d.id).terrainType.invasionPenalty) / 100
-        let size = min(0.4, log10(Double(max(1, d.population))) / 5)
+        let size = min(0.4, GameMath.log10(Double(max(1, d.population))) / 5)
         return 1 + 0.4 * stability + terrain + size
     }
 
@@ -695,8 +695,8 @@ enum AttritionModel {
         let ratio = max(0.05, min(20, pa / max(0.001, pd)))
         let luckA = 0.7 + rolls.0 * 0.6, luckD = 0.7 + rolls.1 * 0.6
         let k = lossScale(year: year)
-        let aLoss = f.attackerTroops * 0.012 * k * pow(1 / ratio, 0.5) * luckD
-        let dLoss = f.defenderTroops * 0.012 * k * pow(ratio, 0.5) * luckA
+        let aLoss = f.attackerTroops * 0.012 * k * GameMath.pow(1 / ratio, 0.5) * luckD
+        let dLoss = f.defenderTroops * 0.012 * k * GameMath.pow(ratio, 0.5) * luckA
         let o = BattleOutcome(attackerLosses: aLoss, defenderLosses: dLoss, civilianLosses: (aLoss + dLoss) * 0.3,
                               momentumChange: max(-0.25, min(0.25, (ratio - 1) * 0.08)))
         f.attackerTroops = max(0, f.attackerTroops - aLoss)

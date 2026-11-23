@@ -126,8 +126,8 @@ enum Reach {
     static func distanceKm(_ a: Coordinates, _ b: Coordinates) -> Double {
         let r = Double.pi / 180
         let dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r
-        let h = sin(dLat / 2) * sin(dLat / 2) + cos(a.lat * r) * cos(b.lat * r) * sin(dLon / 2) * sin(dLon / 2)
-        return 6371 * 2 * atan2(sqrt(h), sqrt(max(0, 1 - h)))
+        let h = GameMath.sin(dLat / 2) * GameMath.sin(dLat / 2) + GameMath.cos(a.lat * r) * GameMath.cos(b.lat * r) * GameMath.sin(dLon / 2) * GameMath.sin(dLon / 2)
+        return 6371 * 2 * GameMath.atan2(sqrt(h), sqrt(max(0, 1 - h)))
     }
 
     /// Shortest distance between anything `a` holds and anything `b` holds (capitals / land centres), km.

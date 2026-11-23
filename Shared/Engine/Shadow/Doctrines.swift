@@ -102,7 +102,7 @@ extension GameEngine {
             r.losses += 1
         }
         gs.shadow.doctrines[k] = r
-        if gs.shadow.doctrines.count > Doctrines.keep, let oldest = gs.shadow.doctrines.first(where: { $0.value.wins == 0 })?.key {
+        if gs.shadow.doctrines.count > Doctrines.keep, let oldest = gs.shadow.doctrines.filter({ $0.value.wins == 0 }).keys.min() {
             gs.shadow.doctrines.removeValue(forKey: oldest)
         }
         if actor == gs.playerCountryID, won {

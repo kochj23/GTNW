@@ -159,7 +159,11 @@ enum NationWords {
 
     static func localize(_ text: String, for me: Country) -> String {
         replacements(for: me).reduce(text) {
+            #if GTNW_ESSENTIALS
+            CoreText.replacingWords(in: $0, $1.0, with: $1.1, tail: .notWordOrDot)
+            #else
             $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "(?![\\w.])", with: $1.1, options: .regularExpression)
+            #endif
         }
     }
 

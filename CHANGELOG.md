@@ -19,8 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scenarios`, `topbar`); `newGame` takes a scenario or a sitting; `act` takes the app's advised order (sizing, warhead,
   report), a declined action and an answer to an advisor's recommendation. Queries never change the game or draw from
   the RNG (`QueryTests`); the golden games still play identically natively and in WebAssembly.
+- **WebAssembly soak:** `Wasm/parity/soak.mjs` plays long games in the WebAssembly engine and the native CLI side by
+  side with a Watch-style seat and compares every reply and every turn's full saved game. `Wasm/parity.sh` runs a short
+  soak; `Wasm/soak.sh` is the long, opt-in one.
 
 ### Changed
+- **The WebAssembly engine is 3.4 MB brotli (was 12.9 MB):** on WASI the core links FoundationEssentials only,
+  without ICU; what Essentials lacks (`String(format:)`, `CharacterSet`, `capitalized`, `JSONSerialization`, the
+  word-boundary regexes…) is hand-rolled for wasm and tested against Foundation. DWARF is stripped at link. The app
+  is unchanged.
+- The engine's math (`pow`, `exp`, `log`, `sin`, `cos`, `atan2`, `hypot`…) goes through `GameMath`, a portable fdlibm
+  port, so Apple platforms and WebAssembly compute the same last bit.
 - Money that passes $2.1B is `Int64`: country treasury, GDP and military budget, action and weapons-program costs,
   cyber costs, era aid amounts and the SDI / economic-diplomacy amounts. The engine plays the same on 64-bit; this keeps
   it correct where `Int` is 32 bits.
@@ -28,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through `GameResources` (`Shared/Engine/EnginePlatform.swift`); the app behaves as before.
 
 ### Fixed
+- The engine no longer depends on Set/Dictionary order (which alliance collapses, a nuclear target, War Powers
+  notices, hired troops, secret programs, restorations), so a seed and its orders play the same game in every process.
+- The era board's opening opinions are seeded; the headless engine keeps the Hall of Infamy in memory, so one game no
+  longer changes the next.
 - The alien invasion's economic impact was -500,000,000,000 in a field counted in billions; it is -500.
 
 ## [3.34.0] - 2026-11-23 — Give the order

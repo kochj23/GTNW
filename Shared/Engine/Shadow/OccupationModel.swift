@@ -226,7 +226,7 @@ extension GameEngine {
     /// year (or with no garrison and no stability) breaks away.
     func processOccupation() {
         guard let gs = gameState else { return }
-        let keep = pow(0.7, gs.turnLength.yearFraction / 0.25)   // ~30% of the way to target every quarter
+        let keep = GameMath.pow(0.7, gs.turnLength.yearFraction / 0.25)   // ~30% of the way to target every quarter
         let states = Set(gs.shadow.statesAdmitted.map(\.id))
         for i in gs.countries.indices where gs.countries[i].territoryOf == gs.playerCountryID && !gs.countries[i].isDestroyed && !states.contains(gs.countries[i].id) {
             let c = gs.countries[i]

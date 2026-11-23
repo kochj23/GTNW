@@ -85,13 +85,18 @@ enum WorldBriefModel {
     }
 
     private static func clamp(_ v: Any?) -> Int? {
-        #if GTNW_CORE
+        #if GTNW_ESSENTIALS
+        // CoreJSON reads every number as a Double and true/false as Bool.
+        guard let d = v as? Double else { return nil }
+        #elseif GTNW_CORE
         // No CFBoolean outside Apple's Foundation: a JSON true/false is the NSNumber whose type is `char` ("c").
         guard let n = v as? NSNumber, String(cString: n.objCType) != "c" else { return nil }
         #else
         guard let n = v as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() else { return nil }
         #endif
+        #if !GTNW_ESSENTIALS
         let d = n.doubleValue
+        #endif
         guard d.isFinite else { return nil }
         return Int(max(0, min(100, d)).rounded())
     }

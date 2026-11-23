@@ -292,7 +292,7 @@ extension GameEngine {
         guard let gs = gameState, Dispatch.enabled || roll != nil, let me = gs.getPlayerCountry() else { return false }
         guard let t = WorldCountriesDatabase.template(id: land) ?? PreStateModel.template(land) else { return false }
         let there = t.toCountry().coordinates
-        let degrees = hypot(me.coordinates.lat - there.lat, me.coordinates.lon - there.lon)
+        let degrees = GameMath.hypot(me.coordinates.lat - there.lat, me.coordinates.lon - there.lon)
         let p = Dispatch.darkChance(year: gs.currentYear, degrees: degrees)
         guard p > 0, (roll ?? Double.random(in: 0..<1, using: &gs.rng)) < p else { return false }
         let months = Dispatch.months(degrees: degrees)

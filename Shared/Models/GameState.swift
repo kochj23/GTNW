@@ -1561,8 +1561,12 @@ enum EraWords {
     static func localize(_ text: String, year: Int) -> String {
         // Whole words only: "UN" must not touch "RUN", "CIA" must not touch "SOCIAL".
         replacements(year).reduce(text) {
+            #if GTNW_ESSENTIALS
+            CoreText.replacingWords(in: $0, $1.0, with: $1.1, tail: .boundary)
+            #else
             $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "\\b", with: $1.1,
                                     options: .regularExpression)
+            #endif
         }
     }
 
@@ -1571,7 +1575,11 @@ enum EraWords {
         guard year < 1959, text.localizedCaseInsensitiveContains("DEFCON") || text.localizedCaseInsensitiveContains("nuclear war") else { return text }
         let keys: Set<String> = ["DEFCON", "NUCLEAR WAR", "Nuclear war", "nuclear war"]
         return replacements(year).filter { keys.contains($0.0) }.reduce(text) {
+            #if GTNW_ESSENTIALS
+            CoreText.replacingWords(in: $0, $1.0, with: $1.1, tail: .boundary)
+            #else
             $0.replacingOccurrences(of: "\\b" + NSRegularExpression.escapedPattern(for: $1.0) + "\\b", with: $1.1, options: .regularExpression)
+            #endif
         }
     }
 

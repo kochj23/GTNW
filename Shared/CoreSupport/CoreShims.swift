@@ -18,10 +18,30 @@
 //  | SHA256              | CryptoKit                               | FIPS 180-4 in Swift                            |
 //  | Int.random(…GameRNG)| the standard library (64-bit Int)       | the same 64-bit draws where Int is 32 bits     |
 //  | CoreRunLoop         | the main dispatch queue (EnginePlatform) | deferred work the host drains                  |
+//  | UserDefaults        | Foundation (the user's preferences)     | in memory, for the life of the process         |
 //
 
 #if GTNW_CORE
 import Foundation
+
+/// `UserDefaults` as an in-memory store that lasts as long as the process: the core keeps nothing on its host
+/// (the CLI, the package tests and WebAssembly all start from the defaults, and two runs play alike).
+final class UserDefaults: @unchecked Sendable {
+    static let standard = UserDefaults()
+    private var values: [String: Any] = [:]
+
+    init() {}
+    init?(suiteName: String?) {}
+
+    func object(forKey key: String) -> Any? { values[key] }
+    func set(_ value: Any?, forKey key: String) { values[key] = value }
+    func removeObject(forKey key: String) { values[key] = nil }
+    func data(forKey key: String) -> Data? { values[key] as? Data }
+    func string(forKey key: String) -> String? { values[key] as? String }
+    func bool(forKey key: String) -> Bool { values[key] as? Bool ?? false }
+    func integer(forKey key: String) -> Int { values[key] as? Int ?? 0 }
+    func double(forKey key: String) -> Double { values[key] as? Double ?? 0 }
+}
 
 /// Combine's `ObservableObject`, without change notification (the core has no views to tell).
 protocol ObservableObject: AnyObject {}

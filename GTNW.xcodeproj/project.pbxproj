@@ -140,6 +140,7 @@
 		533F72387DFB4F90133E498F /* BrainAssignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E866DC6935A2078861E1D4C /* BrainAssignmentView.swift */; };
 		546CF60D64294145CFF77039 /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */; };
 		E7A1C0DE00000000000000A2 /* EnginePlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE00000000000000A1 /* EnginePlatform.swift */; };
+		E7A1C0DE00000000000000B2 /* GameMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE00000000000000B1 /* GameMath.swift */; };
 		1A7E5C00337EB50AD464131B /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033FCF024DF62C312 /* Log.swift */; };
 		54E317E2332711DF31570AF2 /* NovaCommentary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E317E2332711DF31570AF1 /* NovaCommentary.swift */; };
 		54E317E2332711DF31570AF3 /* NovaCommentary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E317E2332711DF31570AF1 /* NovaCommentary.swift */; };
@@ -149,6 +150,7 @@
 		5B51E2D1A374CBC57D3A29CA /* ModernCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75BFDEE85E6AE222B571791D /* ModernCommandView.swift */; };
 		5B9E44DEA8EF98AD03BD72E7 /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */; };
 		E7A1C0DE00000000000000A3 /* EnginePlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE00000000000000A1 /* EnginePlatform.swift */; };
+		E7A1C0DE00000000000000B3 /* GameMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE00000000000000B1 /* GameMath.swift */; };
 		1A7E5C0033A5FBF909CD6899 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033FCF024DF62C312 /* Log.swift */; };
 		5C26A6F901262E80A187FD40 /* TheLivingRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3AFE577AA206EFC80AC0CE /* TheLivingRoom.swift */; };
 		5D18AD76DBCA881E2BC6DC05 /* LegacyStoreImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B461821C69E93A2EC585B98 /* LegacyStoreImport.swift */; };
@@ -510,6 +512,7 @@
 		A49D733873BC4FDD74DBBAF1 /* TerritoryData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TerritoryData.swift; sourceTree = "<group>"; };
 		A57E66BC543A1CBA41B4C6CF /* LocalGameStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalGameStore.swift; sourceTree = "<group>"; };
 		A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
+		E7A1C0DE00000000000000B1 /* GameMath.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameMath.swift; sourceTree = "<group>"; };
 		E7A1C0DE00000000000000A1 /* EnginePlatform.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EnginePlatform.swift; sourceTree = "<group>"; };
 		1A7E5C0033FCF024DF62C312 /* Log.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		A6C1C6823465A248C2FB6EB4 /* AdviceEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdviceEngine.swift; sourceTree = "<group>"; };
@@ -610,6 +613,7 @@
 				4551BAADF5536A897DEAD970 /* Shadow */,
 				A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */,
 				E7A1C0DE00000000000000A1 /* EnginePlatform.swift */,
+				E7A1C0DE00000000000000B1 /* GameMath.swift */,
 				1A7E5C0033FCF024DF62C312 /* Log.swift */,
 			);
 			path = Engine;
@@ -1317,6 +1321,7 @@
 				6ACB1A18F707E5038095F571 /* WarRoomView.swift in Sources */,
 				546CF60D64294145CFF77039 /* Retry.swift in Sources */,
 				E7A1C0DE00000000000000A2 /* EnginePlatform.swift in Sources */,
+				E7A1C0DE00000000000000B2 /* GameMath.swift in Sources */,
 				1A7E5C00337EB50AD464131B /* Log.swift in Sources */,
 				A9E75A226CF210E7D779B8FA /* GameStore.swift in Sources */,
 				A0D629D4905F5D8B2818170F /* GameStoreRecords.swift in Sources */,
@@ -1508,6 +1513,7 @@
 				84AEEC2EDF1D3058CDCA2CA6 /* WarRoomView.swift in Sources */,
 				5B9E44DEA8EF98AD03BD72E7 /* Retry.swift in Sources */,
 				E7A1C0DE00000000000000A3 /* EnginePlatform.swift in Sources */,
+				E7A1C0DE00000000000000B3 /* GameMath.swift in Sources */,
 				1A7E5C0033A5FBF909CD6899 /* Log.swift in Sources */,
 				D96A769C818141FC253BF887 /* GameStore.swift in Sources */,
 				344295DE32C9A541C84D522B /* GameStoreRecords.swift in Sources */,

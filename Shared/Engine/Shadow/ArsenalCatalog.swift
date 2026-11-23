@@ -303,7 +303,7 @@ extension GameEngine {
     /// Each turn: restarted programs risk discovery until they are ready.
     func processWMDPrograms() {
         guard let gs = gameState else { return }
-        for (key, p) in gs.shadow.wmdPrograms where !p.discovered {
+        for (key, p) in gs.shadow.wmdPrograms.sorted(by: { $0.key < $1.key }) where !p.discovered {
             if p.ready <= gs.currentDate { continue }
             if Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: ArsenalCatalog.restartDiscoveryAnnual) {
                 gs.shadow.wmdPrograms[key]?.discovered = true

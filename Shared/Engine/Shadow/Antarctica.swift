@@ -53,7 +53,7 @@ extension GameEngine {
               let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
         let months = gs.turnLength.yearFraction * 12
         let g = gs.shadow.garrisons[Antarctica.id] ?? Antarctica.neededGarrison
-        let left = max(0.5, g * pow(1 - Antarctica.monthlyAttrition, months))
+        let left = max(0.5, g * GameMath.pow(1 - Antarctica.monthlyAttrition, months))
         gs.shadow.garrisons[Antarctica.id] = left
         gs.countries[pi].gdp -= left * Antarctica.upkeepPerThousand * gs.turnLength.yearFraction / 1000
         if let ai = gs.countries.firstIndex(where: { $0.id == Antarctica.id }) {

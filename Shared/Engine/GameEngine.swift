@@ -340,8 +340,8 @@ class GameEngine: ObservableObject {
     /// Generate country decision using AI Backend Manager
     @MainActor
     private func generateCountryDecisionWithAI(country: Country, gameState: GameState) async -> String? {
-        let wars = Array(country.atWarWith).joined(separator: ", ")
-        let allies = Array(country.alliances).joined(separator: ", ")
+        let wars = country.atWarWith.sorted().joined(separator: ", ")
+        let allies = country.alliances.sorted().joined(separator: ", ")
         let otherCountries = gameState.countries
             .filter { !$0.isPlayerControlled && !$0.isDestroyed && $0.id != country.id }
             .prefix(8)
@@ -497,7 +497,7 @@ class GameEngine: ObservableObject {
             if country.nuclearWarheads > 0 && gameState.defconLevel.rawValue <= 2 {
                 let roll = Int.random(in: 1...100, using: &gameState.rng)
                 if roll <= effectiveAggression * 5 {  // 40-50% for aggressive nations
-                    if let enemy = country.atWarWith.first {
+                    if let enemy = country.atWarWith.min() {
                         return .launchNuclearStrike(target: enemy, warheads: min(3, country.nuclearWarheads))
                     }
                 }
@@ -550,7 +550,7 @@ class GameEngine: ObservableObject {
             if gameState.defconLevel.rawValue <= 2 && country.nuclearWarheads > 0 {
                 let shouldLaunch = Int.random(in: 1...100, using: &gameState.rng) <= (country.aggressionLevel / 2)
                 if shouldLaunch {
-                    if let target = country.atWarWith.first {
+                    if let target = country.atWarWith.min() {
                         return .launchNuclearStrike(target: target, warheads: min(5, country.nuclearWarheads))
                     }
                 }

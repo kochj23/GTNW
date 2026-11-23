@@ -22,7 +22,7 @@ enum PopularityModel {
 
     /// Popularity drifts halfway to equilibrium every ~6 game months.
     static func drift(_ current: Double, toward target: Double, scale: TurnScale) -> Double {
-        let keep = pow(0.5, scale.yearFraction / 0.5)
+        let keep = GameMath.pow(0.5, scale.yearFraction / 0.5)
         return current * keep + target * (1 - keep)
     }
 

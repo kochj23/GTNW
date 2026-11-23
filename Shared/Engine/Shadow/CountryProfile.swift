@@ -203,7 +203,7 @@ struct CountryProfile: Codable, Hashable {
 
         let ideology = ideologyFor(c, jitter: jitter)
         let perCapita = c.population > 0 ? (c.gdp * 1000) / Double(c.population) : 0       // $ thousands per person
-        let wealth = min(100, max(0, log10(max(perCapita, 0.3)) * 35 + 20))                   // ~0.3k→2, 60k→82
+        let wealth = min(100, max(0, GameMath.log10(max(perCapita, 0.3)) * 35 + 20))                   // ~0.3k→2, 60k→82
         let qol = min(100, max(3, wealth * 0.6 + Double(c.stability) * 0.25 + Double(c.economicStrength) * 0.15))
         let leadership = min(100, max(5, Double(c.stability) * 0.6 + Double(c.publicApproval) * 0.25 + jitter * 15))
         let strategic = min(100, max(2, Double(c.militaryStrength) * 0.4 + Double(c.economicStrength) * 0.35
@@ -244,7 +244,7 @@ struct CountryProfile: Codable, Hashable {
 
 extension Double {
     func rounded(toPlaces p: Int) -> Double {
-        let m = pow(10.0, Double(p))
+        let m = GameMath.pow(10.0, Double(p))
         return (self * m).rounded() / m
     }
 }
@@ -271,7 +271,7 @@ enum AnxietyModel {
         let hostileNukes = hostile.reduce(0) { $0 + $1.nuclearWarheads }
         let defconFear = Double(5 - gs.defconLevel.rawValue) * 12
         let strikeFear = gs.nuclearStrikes.contains { $0.target == c.id } ? 60 : Double(min(gs.nuclearStrikes.count, 5)) * 6
-        t.nuclear = min(100, log10(Double(hostileNukes) + 1) * 14 + defconFear + strikeFear)
+        t.nuclear = min(100, GameMath.log10(Double(hostileNukes) + 1) * 14 + defconFear + strikeFear)
 
         // Military: open wars, hostile neighbours' strength versus our own, war room fronts.
         let warFear = Double(c.atWarWith.count) * 25
@@ -297,7 +297,7 @@ enum AnxietyModel {
 
     /// Move anxieties toward their targets. Half of the gap closes every ~3 game months, regardless of turn length.
     static func step(_ current: ThreatAnxieties, toward target: ThreatAnxieties, scale: TurnScale) -> ThreatAnxieties {
-        let keep = pow(0.5, scale.yearFraction / 0.25)
+        let keep = GameMath.pow(0.5, scale.yearFraction / 0.25)
         var out = current
         for k in ThreatAnxieties.Kind.allCases {
             out[k] = current[k] * keep + target[k] * (1 - keep)
@@ -469,7 +469,7 @@ enum PersonalityAI {
         if let w = weakEnemy, c.atWarWith.isEmpty {
             // War is the rare, ambition-driven option: ~0 for restrained leaders, real for ruthless ones.
             // 3.14.0: a floor of 0.4 so cautious monarchies still go to war sometimes.
-            options.append((.attack(w.id), (pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty * ch.aggression))
+            options.append((.attack(w.id), (GameMath.pow(max(0, ambition - 2), 1.6) * 0.35 + 0.4) * difficulty * ch.aggression))
         }
         // 3.32.3: a nation's own habits. What worked for it once pulls it toward the same instrument again.
         for (move, doctrine) in [(WorldMove.covertAction(rival?.id ?? c.id), Doctrine.covert),

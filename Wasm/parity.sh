@@ -9,6 +9,7 @@
 # Documentation/GOLDEN.md):
 #   1. GTNWCore natively (swift build: gtnw-golden)
 #   2. GTNWCore as WebAssembly under Node (Wasm/build.sh, Wasm/parity/play-wasm.mjs)
+# then a short soak: three games played in both at once, compared after every call (Wasm/parity/soak.mjs).
 # Exits 1 on the first game that differs. The fixtures default to NovaGames' copy; FRESH=1 exports new ones from the
 # app first (xcodebuild, one test class, a few minutes). SKIP_WASM_BUILD=1 reuses Wasm/dist/gtnw.wasm.
 # No network: the toolchain, the SDK and Node must be installed (Wasm/build.sh says how).
@@ -30,10 +31,14 @@ fi
 
 echo "== native (GTNWCore, swift build)"
 xcrun --sdk macosx "$TOOLCHAIN/usr/bin/swift" build -c release --product gtnw-golden --scratch-path "$DERIVED/spm-release" -q
-"$(xcrun --sdk macosx "$TOOLCHAIN/usr/bin/swift" build -c release --product gtnw-golden --scratch-path "$DERIVED/spm-release" --show-bin-path)/gtnw-golden" . > "$OUT/native.json"
+NATIVE="$(xcrun --sdk macosx "$TOOLCHAIN/usr/bin/swift" build -c release --product gtnw-golden --scratch-path "$DERIVED/spm-release" --show-bin-path)/gtnw-golden"
+"$NATIVE" . > "$OUT/native.json"
 node Wasm/parity/compare.mjs "$FIXTURES" "$OUT/native.json" native
 
 echo "== WebAssembly (GTNWWasm under Node)"
 [ "${SKIP_WASM_BUILD:-0}" = 1 ] || Wasm/build.sh release
 node Wasm/parity/play-wasm.mjs Wasm/dist/gtnw.wasm . > "$OUT/wasm.json"
 node Wasm/parity/compare.mjs "$FIXTURES" "$OUT/wasm.json" wasm
+
+echo "== soak, short (WebAssembly vs native, every turn's replies and saved game; Wasm/soak.sh is the long one)"
+node Wasm/parity/soak.mjs Wasm/dist/gtnw.wasm "$NATIVE" . 1962:1962:60:full:RUS 2025:2025:40:full:CHN 1789:1789:40:full:USA:week

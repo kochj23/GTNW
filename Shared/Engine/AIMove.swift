@@ -172,8 +172,8 @@ extension GameEngine {
         guard let gameState = gameState,
               let country = gameState.getCountry(id: countryID) else { return nil }
 
-        let wars = Array(country.atWarWith).compactMap { gameState.getCountry(id: $0)?.name }
-        let allies = Array(country.alliances).compactMap { gameState.getCountry(id: $0)?.name }
+        let wars = country.atWarWith.sorted().compactMap { gameState.getCountry(id: $0)?.name }
+        let allies = country.alliances.sorted().compactMap { gameState.getCountry(id: $0)?.name }
         let neighbors = gameState.countries
             .filter { $0.id != country.id && !$0.isDestroyed }
             .sorted { $0.militaryStrength > $1.militaryStrength }

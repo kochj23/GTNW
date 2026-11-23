@@ -126,6 +126,7 @@ enum GameCalendar {
         return false
     }
 
+    #if !GTNW_ESSENTIALS
     static let shortFormatter: DateFormatter = {
         let f = DateFormatter()
         f.calendar = calendar
@@ -134,6 +135,7 @@ enum GameCalendar {
         f.dateFormat = "MMM d, yyyy"
         return f
     }()
+    #endif
 
     #if GTNW_CORE
     /// "Jan 20, 1962" without DateFormatter: WebAssembly's Foundation has no locale data (it prints "M01").
@@ -161,7 +163,7 @@ struct TurnScale {
     func probability(annual p: Double) -> Double {
         let clamped = min(max(p, 0), 1)
         if clamped >= 1 { return 1 }
-        return 1 - pow(1 - clamped, yearFraction)
+        return 1 - GameMath.pow(1 - clamped, yearFraction)
     }
 
     /// An annual amount spread over one turn.
@@ -181,7 +183,7 @@ struct TurnScale {
     }
 
     /// Exponential drift: the per-turn multiplier for an annual growth rate `g` (0.03 = 3%/year).
-    func growthFactor(annual g: Double) -> Double { pow(1 + g, yearFraction) }
+    func growthFactor(annual g: Double) -> Double { GameMath.pow(1 + g, yearFraction) }
 
     /// How many turns cover `years` (at least one).
     func turns(forYears years: Double) -> Int { max(1, Int((years / yearFraction).rounded())) }

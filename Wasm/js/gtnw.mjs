@@ -114,6 +114,8 @@ export async function loadGTNW(source, resources = {}, { log } = {}) {
     golden: (year, seed, turns) => json(OP.golden, { year, seed, turns }),
     goldenVectors: () => json(OP.goldenVectors),
     query: (q, args = {}) => json(OP.query, { ...args, q }),
+    /** One call by op number, with the reply as the engine wrote it (the soak compares replies byte for byte). */
+    raw: (op, text) => call(op, text === undefined ? undefined : encoder.encode(text)),
   };
 }
 

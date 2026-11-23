@@ -51,7 +51,8 @@ Every platform dependency in `Shared/`, and where it ended up:
 | UserDefaults | settings, key bindings, Nova commentary memory | Settings and key bindings are app-only. Commentary keeps its in-memory suite. |
 | FileManager / file I/O | `SaveManager` (local saves), `Legends.export` | Local saves write non-atomically in the core (WASI has no atomic rename); the bridge's `save()`/`load()` hand JSON to the host instead. `Legends.export` returns nil. |
 | `Bundle.main` | data files (nation cabinets and characters, map outlines, war base rates), `Log.subsystem` | Through `GameResources` with a host-supplied provider (`GTNWBridge.setResource`). `Bundle.main` traps on WASI. |
-| DateFormatter | `GameCalendar.format` ("Jan 20, 1962") | The core formats by hand: WASI Foundation has no locale data and prints "M01 20, 1962". |
+| DateFormatter | `GameCalendar.format` ("Jan 20, 1962"), `PlayHistory.day` | The core formats by hand (FoundationEssentials has no formatters). |
+| libm (`pow`, `exp`, `log`, `sin`, `cos`, `atan2`, `hypot`…) | 44 call sites in the engine | `GameMath` (`Shared/Engine/GameMath.swift`), an fdlibm port in plain IEEE arithmetic, used by the app and the core. Darwin's libm and WASI's musl differ in the last bit (atan2 on 15% of inputs, pow on 0.2%), and the soak found a GDP that drifted from it. `testEngineUsesGameMath` keeps bare libm calls out of Engine/ and Models/. |
 | `Date()` / randomness | the game draws everything from the seeded `GameRNG` (state saved with the game). `Date()` is only used for log timestamps | No change. A game is a function of seed and orders. |
 
 ### 32-bit WebAssembly
@@ -69,8 +70,8 @@ Every platform dependency in `Shared/`, and where it ended up:
   as an overload, so callers are unchanged. The alien invasion's `economicImpact` was -500,000,000,000 in a field that
   is in billions everywhere else; it is -500 now.
 
-The golden games run without an overflow trap on wasm32. Overflow is still possible in paths they don't reach; a
-trap shows up as a `RuntimeError: unreachable` from the bridge call, so phase 2 should run a long soak game in Wasm.
+The golden games and the soak games (Step 4) run without an overflow trap on wasm32. A trap in a path they don't
+reach shows up as a `RuntimeError: unreachable` from the bridge call.
 
 ## Step 2: the core boundary
 
@@ -250,18 +251,38 @@ and the waiting crisis with its options. `events` holds the log lines and ticker
 The imports are 34 WASI preview-1 functions. The engine really uses clock, random and stdout; the loader shims those
 and answers ENOSYS/EBADF for the rest (no files, no preopens). It also supplies argv `["gtnw"]`.
 
-Sizes (release, Swift 6.4.2, Foundation statically linked):
+### Size: FoundationEssentials only
+
+On WASI the core imports `FoundationEssentials` under the name `Foundation` (`-module-alias` in `Package.swift`), so
+neither Foundation's ICU tables (time zones, currencies, converters, character names: 35.5 MB of data) nor
+`FoundationInternationalization` is linked. The engine files are unchanged; what Essentials lacks is hand-rolled in
+`Shared/CoreSupport/Essentials.swift` under `GTNW_ESSENTIALS` (wasm only), with a few `#if` sites in the engine:
+
+| Missing in Essentials | Replacement |
+|---|---|
+| `String(format:)` | `CoreText.format`: one printf directive at a time through `vsnprintf` |
+| `Int.formatted()` | en_US digit grouping |
+| `capitalized`, `folding(options:)`, `localizedCaseInsensitiveContains` | NSString's word rules; Latin diacritics table; lowercased `contains` |
+| `CharacterSet`, `trimmingCharacters`, `components(separatedBy:)`, `range(of:options:)` | Unicode general categories, as Foundation defines each set |
+| `NSRegularExpression` (`\bword\b` substitutions in GameState, CrisisEvents) | `CoreText.replacingWords` |
+| `JSONSerialization`, `NSNull`, `NSNumber` | a `JSONDecoder`-backed reader and a sorted-key writer |
+| `DateFormatter`, `NSLock` | by hand; no-op (one thread) |
+
+`EssentialsTests` runs each replacement natively against Foundation: every `String(format:)` literal in the core,
+every BMP scalar for the character sets, the word substitutions against `NSRegularExpression`. The native app and the
+native core still use Foundation, so their output is unchanged.
+
+The link drops DWARF (`--strip-debug`); `wasm-opt -Oz` also drops the name section. Release, Swift 6.4.2:
 
 | | raw | brotli -q 11 |
 |---|---|---|
-| `gtnw.wasm` | 72.7 MB (72,696,226 B) | 15.9 MB (15,854,224 B) |
-| `gtnw.opt.wasm` (`wasm-opt -Oz --strip-debug`) | 49.1 MB (49,090,169 B) | 12.9 MB (12,896,532 B) |
+| before: `gtnw.wasm` (Foundation + ICU) | 72.7 MB (72,696,592 B) | 15.9 MB (15,857,893 B) |
+| before: `gtnw.opt.wasm` | 49.1 MB (49,090,169 B) | 12.9 MB (12,898,538 B) |
+| after: `gtnw.wasm` (Essentials, names kept) | 25.3 MB (25,330,109 B) | 4.4 MB (4,447,058 B) |
+| after: `gtnw.opt.wasm` (`wasm-opt -Oz`) | 13.0 MB (12,984,073 B) | 3.4 MB (3,351,889 B) |
 
-Most of it is data: 35.5 MB of the optimized module's 49.1 MB is data segments, mainly ICU's tables (time zones,
-currencies, converters, character names) that the statically linked Foundation pulls in. The data files the engine
-reads come on top: 1.6 MB of JSON, 0.28 MB brotli. Phase 2 options, in order of payoff: link
-`FoundationEssentials` only (drop ICU), lazy-load the .wasm after the title screen (the harness already does), and
-cache it with a hashed name.
+"After" includes the phase-2 queries and verbs (without them: 11.2 MB raw, 3.0 MB brotli). `gtnw.opt.wasm` is the one to ship. Most of what is left is code (the engine and the Swift runtime and standard
+library); the data files the engine reads come on top: 1.6 MB of JSON, 0.28 MB brotli.
 
 ## Step 4: parity
 
@@ -279,9 +300,33 @@ The JSON is identical, not just equal within a tolerance. The same check runs in
 `tests/unit/wasm-engine.test.ts` (Node) and `tests/functional/wasm.test.ts` (Chromium), whenever
 `public/wasm/gtnw.wasm` is present.
 
-Set/Dictionary iteration order was a risk (Swift seeds hashing per process). The games are identical across runs, and
-with `SWIFT_DETERMINISTIC_HASHING`, so the engine's random draws don't depend on hash order. The parity check would
-catch a change.
+### Soak
+
+`Wasm/parity/soak.mjs` plays long games in the WebAssembly engine and the native CLI (`gtnw-golden --serve`) at once,
+with a Watch-style seat: each turn it answers crises with the likeliest option, gives a rotating diplomatic or (hawk
+games) military order, and ends the turn. Every reply must be byte-identical, and every turn's full saved game must
+match after UUIDs and wall-clock dates are masked and Set-backed arrays sorted. `Wasm/parity.sh` runs three short
+games (140 turns); `Wasm/soak.sh` is the long, opt-in one: 1789, 1914, 1962 and 2025
+for 330 weekly turns each, plus a 1962 hawk game with nuclear launches. `WASM=native Wasm/soak.sh` runs two native
+processes, which shows what differs between runs.
+
+| Soak (Wasm vs native) | turns compared | divergences |
+|---|---|---|
+| `gtnw.opt.wasm`, the default games: 1789 (330), 1914 (315, then a peace victory), 1962 (330), 2025 (330), 1962 hawk (82, assassination) | 1,387 turns, 3,148 bridge calls | 0 |
+| `Wasm/parity.sh` short soak | 140 turns | 0 |
+| native vs native, per-process hashing | 102 games (42 monthly, 60 weekly), 19,143 turns | 0 after the fixes (3 weekly games found the outbreak id) |
+
+What the soak found and fixed:
+
+- **libm**: last-bit differences between Darwin and musl (a GDP figure on turn 30). Fixed by `GameMath`.
+- **Hash order**: Swift seeds hashing per process, and wasm32 hashes differently from 64-bit even when seeded the
+  same. Code that picked from a Set or Dictionary by iteration order (the alliance that collapses, a nuclear target,
+  the War Powers notice order, hired troops, tactic and WMD programs, restorations, doctrines, outbreak waves) now
+  sorts first.
+- **Unseeded draws**: the era board's opening opinions are seeded from the year.
+- **The Hall of Infamy** was kept in the real `UserDefaults`, so one game changed the next; the core keeps it in memory.
+- **An engineered outbreak's id** was a fresh UUID prefix; it comes from the origin and turn now.
+- Crisis epigraphs are chosen with a fresh UUID: cosmetic, masked in the comparison.
 
 ## Step 5: harness in GTNW Lite
 
@@ -346,5 +391,5 @@ S is under 200 lines of Lite code, M is 200–600, L is over 600. Phase 2 also n
 
 - the bridge ops those screens read: done as typed queries (op 10, above), one file per query;
 - the CSP directive: done (NovaGames `deploy/Caddyfile`, 2026-11-23);
-- a size pass (FoundationEssentials-only linking);
-- a long Wasm soak game for 32-bit overflow.
+- a size pass (FoundationEssentials-only linking): done (Step 3);
+- a long Wasm soak game for 32-bit overflow: done (Step 4).

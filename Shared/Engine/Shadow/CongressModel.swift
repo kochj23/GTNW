@@ -168,7 +168,7 @@ extension GameEngine {
               let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
         let targets = hostilitiesTargets().filter { !isAuthorized($0) }
         for key in gs.shadow.warPowersClocks.keys where !targets.contains(key) { gs.shadow.warPowersClocks.removeValue(forKey: key) }
-        for t in targets {
+        for t in targets.sorted() {
             let name = gs.getCountry(id: t)?.name ?? t
             guard var clock = gs.shadow.warPowersClocks[t] else {
                 gs.shadow.warPowersClocks[t] = WarPowersClock(target: t, started: gs.currentDate)
@@ -203,7 +203,7 @@ extension GameEngine {
     func driftCongress(scale: TurnScale) {
         guard let gs = gameState, let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
         let target = CongressModel.congressTarget(popularity: gs.shadow.popularity, ruthlessness: gs.shadow.ruthlessness)
-        let keep = pow(0.5, scale.yearFraction / 0.5)
+        let keep = GameMath.pow(0.5, scale.yearFraction / 0.5)
         let c = Double(gs.countries[pi].congressionalSupport)
         gs.countries[pi].congressionalSupport = Int((c * keep + target * (1 - keep)).rounded())
         self.gameState = gs

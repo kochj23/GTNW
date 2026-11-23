@@ -229,7 +229,7 @@ extension GameEngine {
     private func distance(_ c: Country, _ land: String) -> Double {
         guard let t = WorldCountriesDatabase.template(id: land) else { return .infinity }
         let l = t.toCountry().coordinates
-        return hypot(c.coordinates.lat - l.lat, c.coordinates.lon - l.lon)
+        return GameMath.hypot(c.coordinates.lat - l.lat, c.coordinates.lon - l.lon)
     }
 
     /// The powers answer U.S. expansion: protests, proxy revolts, seizing weakly held territories, and coalitions.
@@ -285,7 +285,7 @@ extension GameEngine {
         guard let gs = gameState else { return }
         let act = WorldPolitics.activity(gs.difficultyLevel)
         for c in gs.liveCountries where c.id != gs.playerCountryID {
-            for ally in c.alliances where ally != gs.playerCountryID && (c.diplomaticRelations[ally] ?? 0) < -10
+            for ally in c.alliances.sorted() where ally != gs.playerCountryID && (c.diplomaticRelations[ally] ?? 0) < -10
                 && Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: 0.5 * act) {
                 breakAlliance(c.id, ally)
             }
@@ -316,7 +316,7 @@ extension GameEngine {
     /// win its independence (30% a year).
     func processAITerritories() {
         guard let gs = gameState else { return }
-        let keep = pow(0.7, gs.turnLength.yearFraction / 0.25)
+        let keep = GameMath.pow(0.7, gs.turnLength.yearFraction / 0.25)
         for i in gs.countries.indices {
             let c = gs.countries[i]
             guard let owner = c.territoryOf, owner != gs.playerCountryID, !c.isDestroyed,
@@ -367,11 +367,13 @@ extension GameEngine {
 // MARK: - Era transitions (3.15.0)
 
 extension GameState {
-    /// The board a new game in `year` would have (names, governments, flags), for era transitions.
+    /// The board a new game in `year` would have (names, governments, flags), for era transitions. Seeded by the
+    /// year: a nation founded mid-game takes its opening opinion and relations from here, and an unseeded board
+    /// rolled them afresh in every run (the WebAssembly soak found two runs of one game parting at Malta's founding).
     static func eraBoard(year: Int) -> [Country] {
         let admin = Advisor.allAdministrations().last { $0.startYear <= year }
         return GameState(playerCountryID: "USA", administration: admin, startDate: GameCalendar.date(year: year, month: 1, day: 20),
-                         boardYear: year).countries
+                         boardYear: year, seed: 0x6E52_A0B0_0000_0000 | UInt64(max(0, year))).countries
     }
 }
 
@@ -549,7 +551,7 @@ extension GameEngine {
             logPlayEvent("nation_absorbed", detail: ["land": land, "by": by, "game_date": PlayHistory.day(gs.currentDate)])
         }
         // Restorations: on the table's date, or when the era board has the nation again.
-        for (land, by) in gs.shadow.historicalAbsorptions {
+        for (land, by) in gs.shadow.historicalAbsorptions.sorted(by: { $0.key < $1.key }) {
             let restoreYear = WorldPolitics.absorptions.first { $0.land == land && $0.by == by && $0.from <= y }?.until
             guard (restoreYear.map { y >= $0 } ?? false) || (ids.contains(land) && !lastBoard.contains(land)),
                   let t = gs.countries.firstIndex(where: { $0.id == land }), gs.countries[t].territoryOf == by,

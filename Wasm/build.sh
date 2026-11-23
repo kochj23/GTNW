@@ -3,7 +3,10 @@
 # build.sh: build the GTNW engine as WebAssembly (GTNWWasm reactor) with the Swift SDK for WebAssembly.
 #
 #   Wasm/build.sh [debug|release]      → Wasm/dist/gtnw.wasm
-#   OPT=1 Wasm/build.sh                 also → Wasm/dist/gtnw.opt.wasm (wasm-opt -Oz, a few minutes)
+#   OPT=1 Wasm/build.sh                 also → Wasm/dist/gtnw.opt.wasm (wasm-opt -Oz, names stripped: the one to ship)
+#
+# The link drops DWARF (--strip-debug) and keeps the name section, so a trap in gtnw.wasm still names its function.
+# The core links FoundationEssentials, not Foundation (Package.swift); Documentation/WASM-PORT.md has the sizes.
 #
 # Needs the swift.org toolchain that matches the SDK (Xcode's toolchain cannot target WASI) and the SDK itself.
 # Defaults are the /Volumes/Data installs; override with SWIFT_TOOLCHAIN, SWIFT_SDKS_PATH, SWIFT_SDK, WASM_OPT.
@@ -24,7 +27,7 @@ WASM_OPT="${WASM_OPT:-$(command -v wasm-opt || echo /Volumes/Data/tools/binaryen
 
 "$TOOLCHAIN/usr/bin/swift" build -c "$CONFIG" --product GTNWWasm --swift-sdk "$SDK" --swift-sdks-path "$SDKS" \
   --scratch-path "$SCRATCH" -Xswiftc -Xclang-linker -Xswiftc -mexec-model=reactor \
-  -Xlinker --export=_initialize
+  -Xlinker --export=_initialize -Xlinker --strip-debug
 
 BIN="$("$TOOLCHAIN/usr/bin/swift" build -c "$CONFIG" --product GTNWWasm --swift-sdk "$SDK" --swift-sdks-path "$SDKS" \
   --scratch-path "$SCRATCH" --show-bin-path)/GTNWWasm.wasm"

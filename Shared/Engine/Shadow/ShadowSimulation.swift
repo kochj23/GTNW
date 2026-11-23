@@ -210,7 +210,7 @@ extension GameEngine {
             let c = gs.countries[i]
             var outcryTarget = Double(max(0, 50 - c.stability)) * 0.8 + (100 - p.qualityOfLife) * 0.2
             if c.isPlayerControlled { outcryTarget += max(0, 40 - gs.shadow.popularity) * 1.5 }
-            let keep = pow(0.5, scale.yearFraction / 0.5)
+            let keep = GameMath.pow(0.5, scale.yearFraction / 0.5)
             p.outcry = min(100, max(0, p.outcry * keep + outcryTarget * (1 - keep)))
             // Leadership tracks stability.
             p.leadership = min(100, max(5, p.leadership * keep + (Double(c.stability) * 0.7 + 15) * (1 - keep)))
@@ -889,7 +889,7 @@ extension GameEngine {
         guard let gs = gameState, let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return }
         let player = gs.countries[pi]
         let proj = BudgetModel.project(gs.shadow.budget, atWar: !player.atWarWith.isEmpty)
-        gs.shadow.ruthlessness *= pow(0.7, scale.yearFraction)
+        gs.shadow.ruthlessness *= GameMath.pow(0.7, scale.yearFraction)
         let hits = gs.nuclearStrikes.filter { $0.target == player.id }.count
         let income = ExpansionModel.ledger(gs).reduce(0) { $0 + $1.income }   // 3.7.0: territory wealth is popular at home
         let target = PopularityModel.equilibrium(usQoL: player.profile.qualityOfLife, growth: proj.growth,

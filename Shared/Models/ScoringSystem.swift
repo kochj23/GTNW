@@ -182,11 +182,13 @@ struct LeaderboardEntry: Identifiable, Codable {
             ?? UUID.stable("gtnw-leaderboard|\(playerName)|\(score.finalScore)|\(score.playerCountry)|\(score.dateAchieved.timeIntervalSince1970)")
     }
 
+    #if !GTNW_ESSENTIALS
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter.string(from: score.dateAchieved)
     }
+    #endif
 }
 
 /// The in-memory, ranked leaderboard. Durable storage is `GameStoreService` (Games DB + local cache);

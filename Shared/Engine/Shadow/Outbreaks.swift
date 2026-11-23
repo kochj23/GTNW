@@ -150,7 +150,7 @@ extension GameEngine {
                     guard let tc = gs.getCountry(id: t), !tc.isDestroyed else { continue }
                     let home = t == gs.playerCountryID ? Outbreaks.homeFactors(o, in: gs).spread : 1
                     let era = gs.currentYear < 1900 ? 0.5 : 1
-                    let p = 1 - pow(1 - min(0.9, o.spread * home * era), turnWeeks)
+                    let p = 1 - GameMath.pow(1 - min(0.9, o.spread * home * era), turnWeeks)
                     if Double.random(in: 0..<1, using: &gs.rng) < p {
                         o.waves[t] = 0
                         if t == gs.playerCountryID {
@@ -234,7 +234,7 @@ extension GameEngine {
             gs.shadow.outbreaks[k].vaccineReady = GameCalendar.calendar.date(byAdding: .month, value: gs.currentYear >= 2000 ? 10 : 6, to: gs.currentDate)
         case "aid":
             spendFunds(2)
-            for c in gs.shadow.outbreaks[k].waves.keys where c != gs.playerCountryID { modifyDiplomaticRelation(from: c, to: gs.playerCountryID, by: 10) }
+            for c in gs.shadow.outbreaks[k].waves.keys.sorted() where c != gs.playerCountryID { modifyDiplomaticRelation(from: c, to: gs.playerCountryID, by: 10) }
             gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 1)
         default:
             gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 2)
@@ -282,7 +282,8 @@ extension GameEngine {
     @discardableResult
     func startEngineeredOutbreak(origin: String, by: String?) -> Outbreak {
         let gs = gameState
-        var o = Outbreak(id: "engineered-\(UUID().uuidString.prefix(8))", name: "Outbreak of unknown origin", origin: origin,
+        // The id comes from the game, not a fresh UUID, so a seed and its orders replay the same save.
+        var o = Outbreak(id: "engineered-\(origin)-\(gs?.turn ?? 0)-\(gs?.shadow.outbreaks.count ?? 0)", name: "Outbreak of unknown origin", origin: origin,
                          started: gs?.currentDate ?? Date(), engineered: true, by: by, lethality: Outbreaks.engineeredLethality,
                          economy: Outbreaks.engineeredEconomy, spread: Outbreaks.engineeredSpread, waveWeeks: Outbreaks.engineeredWeeks)
         o.waves[origin] = 0

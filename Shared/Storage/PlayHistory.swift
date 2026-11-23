@@ -67,6 +67,12 @@ enum PlayHistory {
     static let orderLines = 4
 
     /// `yyyy-MM-dd` in the game calendar's time zone.
+    #if GTNW_ESSENTIALS
+    static func day(_ d: Date) -> String {
+        let c = GameCalendar.calendar.dateComponents([.year, .month, .day], from: d)
+        return CoreText.format("%04d-%02d-%02d", [c.year ?? 0, c.month ?? 1, c.day ?? 1])
+    }
+    #else
     static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.calendar = GameCalendar.calendar
@@ -77,6 +83,7 @@ enum PlayHistory {
     }()
 
     static func day(_ d: Date) -> String { dayFormatter.string(from: d) }
+    #endif
 
     static func text(_ s: String) -> String { StoreValidation.clean(s, max: maxText) }
 

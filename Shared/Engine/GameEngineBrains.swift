@@ -258,7 +258,7 @@ extension GameEngine {
         guard let gs = gameState, let country = gs.getCountry(id: countryID) else { return }
         // Countries at war in the nuclear age may escalate; ruthless leaders far more readily.
         if !country.atWarWith.isEmpty, country.nuclearWarheads > 0, gs.defconLevel.rawValue <= 2,
-           let enemy = country.atWarWith.first,
+           let enemy = country.atWarWith.min(),
            Double.random(in: 0..<1, using: &gs.rng) < Double(country.profile.ambition) / 6 * 0.25 * gs.difficultyLevel.aiAggressionMultiplier
                * NationCharacterTable.shared.character(for: country, difficulty: gs.difficultyLevel).risk {
             executeAIAction(.launchNuclearStrike(target: enemy, warheads: min(3, country.nuclearWarheads)), for: country, reason: nil)

@@ -42,7 +42,7 @@ struct RetryPolicy: Equatable, Sendable {
     /// Delay to wait *after* failed attempt `attempt` (1-based) before the next one.
     func delay(afterAttempt attempt: Int) -> TimeInterval {
         let n = max(1, attempt)
-        let raw = max(0, baseDelay) * pow(max(1, multiplier), Double(n - 1))
+        let raw = max(0, baseDelay) * GameMath.pow(max(1, multiplier), Double(n - 1))
         return min(raw, max(0, maxDelay))
     }
 

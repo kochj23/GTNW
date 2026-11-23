@@ -243,7 +243,7 @@ enum ElectionCycle {
         let remaining = electors - thirdEV
         let s = min(0.99, max(0.01, share / 100 + stateNoise * 0.015))
         let k = 6.0
-        let frac = pow(s, k) / (pow(s, k) + pow(1 - s, k))
+        let frac = GameMath.pow(s, k) / (GameMath.pow(s, k) + GameMath.pow(1 - s, k))
         let pEV = Int((Double(remaining) * frac).rounded())
         let scale = (100 - thirdPopular) / 100
         return Tally(playerEV: pEV, opponentEV: remaining - pEV, thirdEV: thirdEV,
@@ -282,7 +282,7 @@ enum ElectionCycle {
     static func opponentName(year: Int, party: PartyCode, incumbent: String) -> String {
         let other = party.opposition(in: year)
         if let n = ElectionHistory.nominees[year]?[other], n != incumbent { return n }
-        if let n = ElectionHistory.nominees[year]?.first(where: { $0.value != incumbent && $0.key != party })?.value { return n }
+        if let n = ElectionHistory.nominees[year]?.sorted(by: { "\($0.key)" < "\($1.key)" }).first(where: { $0.value != incumbent && $0.key != party })?.value { return n }
         return PopularityModel.challenger(for: year)
     }
 

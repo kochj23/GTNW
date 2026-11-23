@@ -666,7 +666,12 @@ struct SaveManager {
     /// Raw bytes of a slot, refusing anything over the payload cap before reading it.
     func data(slot: Int) throws -> Data {
         let u = url(slot: slot)
+        #if GTNW_ESSENTIALS
+        let raw = try FileManager.default.attributesOfItem(atPath: u.path)[.size]
+        let size = (raw as? Int) ?? (raw as? UInt64).map { Int(clamping: $0) } ?? 0
+        #else
         let size = (try FileManager.default.attributesOfItem(atPath: u.path)[.size] as? NSNumber)?.intValue ?? 0
+        #endif
         guard size <= StoreValidation.maxPayloadBytes else { throw GameStoreError.invalid("save file is \(size) bytes") }
         return try Data(contentsOf: u)
     }

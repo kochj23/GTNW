@@ -7,6 +7,7 @@
 //
 //  Usage: gtnw-golden <repo root> [year:seedhex:turns ...]   (default: the fixtures' 1789, 1962 and 2025 games)
 //         gtnw-golden <repo root> --bench [year] [turns]      times each endTurn (full rules), one line per turn
+//         gtnw-golden <repo root> --serve                     the bridge over stdin/stdout, for the soak
 //  The data files come from the repo (Shared/Resources, Documentation/wars), as the app bundles them.
 //
 
@@ -26,6 +27,26 @@ for (name, dir) in [("nation_cabinets", "Shared/Resources"), ("nation_characters
         exit(1)
     }
     GTNWBridge.setResource(name, data)
+}
+
+if args.dropFirst().first == "--serve" {
+    // The bridge over stdin/stdout, for the soak (Wasm/parity/soak.mjs): one request per line, "<op> <payload>", with
+    // gtnw_call's op numbers (1 newGame, 2 act, 3 endTurn, 4 snapshot, 5 save, 6 load); one reply per line.
+    while let line = readLine(strippingNewline: true) {
+        let op = line.prefix { $0 != " " }, payload = String(line.dropFirst(op.count + 1))
+        let out: String
+        switch op {
+        case "1": out = GTNWBridge.newGame(payload)
+        case "2": out = GTNWBridge.act(payload)
+        case "3": out = GTNWBridge.endTurn()
+        case "4": out = GTNWBridge.snapshot()
+        case "5": out = GTNWBridge.save()
+        case "6": out = GTNWBridge.load(payload)
+        default: out = #"{"ok":false,"error":"unknown op"}"#
+        }
+        FileHandle.standardOutput.write(Data((out + "\n").utf8))
+    }
+    exit(0)
 }
 
 if args.dropFirst().first == "--bench" {

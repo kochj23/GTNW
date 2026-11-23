@@ -117,8 +117,8 @@ enum NavalModel {
     /// Great-circle distance, km.
     static func distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
         let r = 6371.0, d = Double.pi / 180
-        let a = pow(sin((lat2 - lat1) * d / 2), 2) + cos(lat1 * d) * cos(lat2 * d) * pow(sin((lon2 - lon1) * d / 2), 2)
-        return 2 * r * asin(min(1, a.squareRoot()))
+        let a = GameMath.pow(GameMath.sin((lat2 - lat1) * d / 2), 2) + GameMath.cos(lat1 * d) * GameMath.cos(lat2 * d) * GameMath.pow(GameMath.sin((lon2 - lon1) * d / 2), 2)
+        return 2 * r * GameMath.asin(min(1, a.squareRoot()))
     }
 
     /// Days at sea: distance ÷ era speed, rounded up, at least one.

@@ -102,7 +102,7 @@ struct CityLayout: Equatable {
         levels[.industry] = band(wealth, max: 5)
         levels[.military] = band(Double(c.militaryStrength), max: 11)
         levels[.parks] = band(max(0, p.qualityOfLife - Double(c.radiationLevel)), max: 9)
-        let nukeScore = c.nuclearWarheads == 0 ? 0 : min(100, 20 + log10(Double(c.nuclearWarheads) + 1) * 20)
+        let nukeScore = c.nuclearWarheads == 0 ? 0 : min(100, 20 + GameMath.log10(Double(c.nuclearWarheads) + 1) * 20)
         levels[.nuclear] = band(nukeScore, max: 6)
         levels[.airport] = band(wealth * 0.7 + Double(c.stability) * 0.3, max: 4)
         if c.damageLevel > 0 {
