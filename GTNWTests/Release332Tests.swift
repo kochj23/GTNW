@@ -785,7 +785,7 @@ final class Release332FrameTests: XCTestCase {
         let (e, gs) = try R329.game(1890)
         gs.rng = GameRNG(seed: 5)
         for _ in 0..<3 { gs.turn += 1; e.collectIntelligence() }
-        e.dispatchGoesDark(land: gs.unclaimedLandIDs.sorted().first ?? "ATA", kind: "claim_land", roll: 0)
+        _ = e.dispatchGoesDark(land: gs.unclaimedLandIDs.sorted().first ?? "ATA", kind: "claim_land", roll: 0)
         e.deliberateWar(actor: "DEU", target: "FRA", roll: 0.8)
         e.writePeaceTerms(victor: "DEU", loser: "FRA", negotiated: true)
         e.recordDoctrine(.blockade, actor: "USA", won: true, note: "it worked")

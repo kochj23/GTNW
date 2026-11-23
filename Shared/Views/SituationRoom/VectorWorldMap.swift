@@ -319,6 +319,8 @@ struct VectorWorldMap: View {
                         ctx.stroke(dot, with: .color(borderColor), lineWidth: 1)
                     }
                 }
+                // Rasterized on the GPU (Metal) instead of the CPU: hundreds of borders and hatches per redraw.
+                .drawingGroup()
                 // 3.28.0: who just did what to whom. Both sides of an action, or the land a disaster struck, blink.
                 // ponytail: the timeline idles (draws nothing) after the last flash expires until the next state change.
                 if !gameState.mapFlashes.isEmpty {
@@ -345,6 +347,7 @@ struct VectorWorldMap: View {
                                 if let f = tone(c.id) { ring(CGPoint(x: c.coordinates.lon, y: -c.coordinates.lat).applying(t), Self.flashColor(f)) }
                             }
                         }
+                        .drawingGroup()   // blinks at 8 fps; GPU rasterizes it
                         // 3.28.1: what the blinking means, steady (not blinking) until it expires.
                         VStack(alignment: .leading, spacing: 3) {
                             ForEach(Array(gameState.mapFlashes.filter { $0.until > tl.date && !$0.text.isEmpty }.suffix(4).enumerated()), id: \.offset) { _, f in

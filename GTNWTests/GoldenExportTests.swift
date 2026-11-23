@@ -90,7 +90,8 @@ enum GoldenExporter {
 
     /// Write the manifest and one file per game into `dir` (created if missing). Writes nothing else, anywhere.
     @discardableResult
-    static func export(to dir: URL, games: [(year: Int, seed: UInt64, turns: Int)] = games) async throws -> Manifest {
+    static func export(to dir: URL, games: [(year: Int, seed: UInt64, turns: Int)]? = nil) async throws -> Manifest {
+        let games = games ?? Self.games
         guard dir.isFileURL, dir.path.hasPrefix("/") else { throw CocoaError(.fileWriteInvalidFileName) }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let enc = JSONEncoder()

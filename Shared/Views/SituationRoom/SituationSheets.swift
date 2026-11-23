@@ -371,6 +371,7 @@ struct BurningOverlay: View {
                     g.fill(Path(ellipseIn: r), with: .color(i % 2 == 0 ? (Theme.isRetro ? EGA.lightRed : .red) : (Theme.isRetro ? EGA.yellow : .orange)))
                 }
             }
+            .drawingGroup()   // animated fire, GPU-rasterized
         }
         .allowsHitTesting(false)
     }

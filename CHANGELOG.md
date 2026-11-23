@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.33.2] - 2026-11-23 — The map draws on the GPU
+
+### Changed
+- **World map on Metal:** the Situation Room map (hundreds of borders and hatched colonies per redraw), its blinking
+  action flashes and the burning-city overlay are now rasterized on the GPU with `.drawingGroup()` instead of by
+  Core Graphics on the CPU. Panning, hover and the 8 fps flash layer no longer redraw every outline on the CPU.
+
+### Fixed
+- Four test-only compiler warnings (unlabeled trailing closures, an unused result, a main-actor default argument).
+
 ## [3.33.1] - 2026-11-19 — A readable end screen
 
 ### Fixed

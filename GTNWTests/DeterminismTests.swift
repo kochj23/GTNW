@@ -159,8 +159,8 @@ final class DeterminismFunctionalTests: XCTestCase {
     @MainActor
     func testDifferentSeedsDiverge() async {
         var a: [ScriptedGame.Snapshot] = [], b: [ScriptedGame.Snapshot] = []
-        await ScriptedGame.play(year: 2025, seed: 1, turns: 3) { a.append($1) }
-        await ScriptedGame.play(year: 2025, seed: 2, turns: 3) { b.append($1) }
+        await ScriptedGame.play(year: 2025, seed: 1, turns: 3, onTurn: { a.append($1) })
+        await ScriptedGame.play(year: 2025, seed: 2, turns: 3, onTurn: { b.append($1) })
         XCTAssertNotEqual(a, b)
     }
 }
@@ -174,8 +174,8 @@ final class DeterminismIntegrationTests: XCTestCase {
     func testSameSeedSameOrdersSameGameAcrossEras() async {
         for year in [1789, 1913, 1962, 2025] {
             var a: [(ScriptedGame.Input, ScriptedGame.Snapshot)] = [], b: [(ScriptedGame.Input, ScriptedGame.Snapshot)] = []
-            await ScriptedGame.play(year: year, seed: 0xC0FFEE &+ UInt64(year), turns: 12) { a.append(($0, $1)) }
-            await ScriptedGame.play(year: year, seed: 0xC0FFEE &+ UInt64(year), turns: 12) { b.append(($0, $1)) }
+            await ScriptedGame.play(year: year, seed: 0xC0FFEE &+ UInt64(year), turns: 12, onTurn: { a.append(($0, $1)) })
+            await ScriptedGame.play(year: year, seed: 0xC0FFEE &+ UInt64(year), turns: 12, onTurn: { b.append(($0, $1)) })
             XCTAssertEqual(a.count, b.count, "\(year)")
             XCTAssertGreaterThan(a.count, 0, "\(year)")
             for (x, y) in zip(a, b) {
