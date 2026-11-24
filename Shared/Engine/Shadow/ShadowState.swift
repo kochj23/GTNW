@@ -255,6 +255,8 @@ struct ShadowState: Codable {
     /// 3.34.0: what the command box carried out, as resolved orders (never the typed text), newest last.
     var commandLog: [CommandRecord] = []
     static let commandLogCap = 200
+    /// 3.36.0: the record a court could charge, alliance councils, refugee waves, lands that broke away.
+    var consequences = ConsequenceState()
 
     // Scenario
     var scenarioID: String?
@@ -300,6 +302,7 @@ struct ShadowState: Codable {
         case deliberations, casusLog, doneTests, statedCasus, intel, worldIntel, dispatches, peaceTerms
         case doctrines, sittingID, sittingTurns, sittingDebrief
         case commandLog
+        case consequences
     }
 
     init() {}
@@ -409,6 +412,7 @@ struct ShadowState: Codable {
         sittingTurns = try? c.decodeIfPresent(Int.self, forKey: .sittingTurns)
         sittingDebrief = (try? c.decodeIfPresent([String].self, forKey: .sittingDebrief)) ?? []
         commandLog = (try? c.decodeIfPresent([CommandRecord].self, forKey: .commandLog)) ?? []
+        consequences = (try? c.decodeIfPresent(ConsequenceState.self, forKey: .consequences)) ?? ConsequenceState()
     }
 }
 

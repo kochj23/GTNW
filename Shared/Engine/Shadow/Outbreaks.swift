@@ -414,6 +414,8 @@ enum ShadowChoice {
             case "outbreak" where f.count == 3: engine?.respondToOutbreak(f[1], response: f[2])
             case "posture" where f.count == 2: gs.shadow.intelPosture = min(3, max(0, gs.shadow.intelPosture + (Double(f[1]) ?? 0)))
             case "ruthless" where f.count == 2: gs.shadow.ruthlessness += Double(f[1]) ?? 0
+            case "refugees" where f.count == 4:   // 3.36.0
+                Consequences.applyRefugeeChoice(wave: f[1], choice: f[2], cost: Double(f[3]) ?? 0, to: gs)
             case "funds" where f.count == 2: gs.shadow.aidRemaining = max(0, gs.shadow.aidRemaining - max(0, Double(f[1]) ?? 0))
             default: break
             }

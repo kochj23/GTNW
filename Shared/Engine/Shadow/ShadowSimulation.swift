@@ -103,6 +103,7 @@ extension GameEngine {
         collectIntelligence()    // 3.32.1: reports with an age, a source and a reach
         processDispatches()      // 3.32.1: orders sent before the telegraph, arriving at last
         processPeaceTerms()      // 3.32.2: reparations paid, caps enforced, treaties eroding and breaking
+        processConsequenceTurn() // 3.36.0: alliance councils expel or reprimand
         checkOneSitting()        // 3.32.3: a one-sitting game's clock
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)

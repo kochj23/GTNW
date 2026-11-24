@@ -56,6 +56,7 @@
 		1A7E5C0029A0000000000032 /* CovertAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000031 /* CovertAgents.swift */; };
 		1A7E5C0029A0000000000035 /* Outbreaks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000034 /* Outbreaks.swift */; };
 		1A7E5C0029A0000000000038 /* ChemicalThreats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000037 /* ChemicalThreats.swift */; };
+		1D3360000000000000000002 /* Consequences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3360000000000000000001 /* Consequences.swift */; };
 		1A7E5C0029A0000000000022 /* HistoricalWars.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000021 /* HistoricalWars.swift */; };
 		1A7E5C0029A0000000000003 /* Empire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000001 /* Empire.swift */; };
 		1A7E5C0029A0000000000049 /* Doctrines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000047 /* Doctrines.swift */; };
@@ -67,6 +68,7 @@
 		1A7E5C0029A0000000000033 /* CovertAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000031 /* CovertAgents.swift */; };
 		1A7E5C0029A0000000000036 /* Outbreaks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000034 /* Outbreaks.swift */; };
 		1A7E5C0029A0000000000039 /* ChemicalThreats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000037 /* ChemicalThreats.swift */; };
+		1D3360000000000000000003 /* Consequences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3360000000000000000001 /* Consequences.swift */; };
 		1A7E5C0029A0000000000023 /* HistoricalWars.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000021 /* HistoricalWars.swift */; };
 		1A7E5C0029A0000000000005 /* Faiths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000004 /* Faiths.swift */; };
 		1A7E5C0029A0000000000006 /* Faiths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000004 /* Faiths.swift */; };
@@ -77,6 +79,7 @@
 		1A7E5C0029A0000000000012 /* Release329Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000011 /* Release329Tests.swift */; };
 		1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003A /* Release331Tests.swift */; };
 		1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003F /* Release332Tests.swift */; };
+		1D3360000000000000000005 /* ConsequencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3360000000000000000004 /* ConsequencesTests.swift */; };
 		1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */; };
 		1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */; };
 		1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */; };
@@ -415,6 +418,7 @@
 		1A7E5C0029A0000000000031 /* CovertAgents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CovertAgents.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000034 /* Outbreaks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Outbreaks.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000037 /* ChemicalThreats.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChemicalThreats.swift; sourceTree = "<group>"; };
+		1D3360000000000000000001 /* Consequences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Consequences.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000021 /* HistoricalWars.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalWars.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000004 /* Faiths.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Faiths.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000007 /* Reach.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Reach.swift; sourceTree = "<group>"; };
@@ -422,6 +426,7 @@
 		1A7E5C0029A0000000000011 /* Release329Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release329Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003A /* Release331Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release331Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003F /* Release332Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release332Tests.swift; sourceTree = "<group>"; };
+		1D3360000000000000000004 /* ConsequencesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConsequencesTests.swift; sourceTree = "<group>"; };
 		1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeterminismTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RepoHygieneTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccessibilityTests.swift; sourceTree = "<group>"; };
@@ -733,6 +738,7 @@
 				1A7E5C0029A0000000000011 /* Release329Tests.swift */,
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
+				1D3360000000000000000004 /* ConsequencesTests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
 				1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */,
 				1A7E5C35B7A69EE281A21D92 /* ChatTests.swift */,
@@ -793,6 +799,7 @@
 				1A7E5C0029A0000000000031 /* CovertAgents.swift */,
 				1A7E5C0029A0000000000034 /* Outbreaks.swift */,
 				1A7E5C0029A0000000000037 /* ChemicalThreats.swift */,
+				1D3360000000000000000001 /* Consequences.swift */,
 				1A7E5C0029A0000000000021 /* HistoricalWars.swift */,
 				1A7E5C0029A0000000000004 /* Faiths.swift */,
 				1A7E5C0029A0000000000007 /* Reach.swift */,
@@ -1328,6 +1335,7 @@
 				1A7E5C0029A0000000000032 /* CovertAgents.swift in Sources */,
 				1A7E5C0029A0000000000035 /* Outbreaks.swift in Sources */,
 				1A7E5C0029A0000000000038 /* ChemicalThreats.swift in Sources */,
+				1D3360000000000000000002 /* Consequences.swift in Sources */,
 				1A7E5C0029A0000000000022 /* HistoricalWars.swift in Sources */,
 				1A7E5C0029A0000000000005 /* Faiths.swift in Sources */,
 				1A7E5C0029A0000000000008 /* Reach.swift in Sources */,
@@ -1405,6 +1413,7 @@
 				1A7E5C0029A0000000000012 /* Release329Tests.swift in Sources */,
 				1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */,
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
+				1D3360000000000000000005 /* ConsequencesTests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
 				1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */,
 				1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */,
@@ -1527,6 +1536,7 @@
 				1A7E5C0029A0000000000033 /* CovertAgents.swift in Sources */,
 				1A7E5C0029A0000000000036 /* Outbreaks.swift in Sources */,
 				1A7E5C0029A0000000000039 /* ChemicalThreats.swift in Sources */,
+				1D3360000000000000000003 /* Consequences.swift in Sources */,
 				1A7E5C0029A0000000000023 /* HistoricalWars.swift in Sources */,
 				1A7E5C0029A0000000000006 /* Faiths.swift in Sources */,
 				1A7E5C0029A0000000000009 /* Reach.swift in Sources */,

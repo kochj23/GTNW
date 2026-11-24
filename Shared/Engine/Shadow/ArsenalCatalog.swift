@@ -265,6 +265,7 @@ extension GameEngine {
         if !gs.countries[ti].atWarWith.contains(player.id) { declareWar(aggressor: player.id, defender: target) }
         if var p = gs.shadow.wmdPrograms[kind.rawValue] { p.discovered = true; gs.shadow.wmdPrograms[kind.rawValue] = p }
         applyWMDCost(status, kind: kind, target: target)
+        if status == .treatyBanned { noteBannedWeapon(kind.title, target: target) }   // 3.36.0: on the record
         let label = ArsenalCatalog.treatyLabel(kind, year: year)
         gs.shadow.post("The United States uses \(kind.title.lowercased()) weapons against \(tName).\(label.map { " \($0)." } ?? "")",
                        date: date, severity: 3)

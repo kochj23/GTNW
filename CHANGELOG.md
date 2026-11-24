@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Consequences.** Striking a nation that has surrendered to you, is at peace with you under signed terms, or is a
+  friend (relations above +40): the command card warns before EXECUTE; afterwards an international tribunal opens a
+  case (the dirty-tactics tribunal, from 1945), allies distance themselves and approval falls. A nuclear strike's
+  fallout drifts to nearby nations by distance and prevailing wind (radiation, deaths, unrest, anger at the striker),
+  with news lines. Refugees flee struck or invaded nations into their neighbors, and toward the player's borders when
+  close, where the cabinet offers take them in / aid the region / close the border. Attacking an ally calls an
+  emergency alliance council; if the attack goes on past the next turn the alliance expels the player, its members
+  turn away, the victim's territories react and lands the map draws under the victim govern themselves (Greenland,
+  when Denmark is invaded). When a presidency ends (removed, beaten, served out) and the record holds such acts or a
+  treaty-banned weapon, the end screen adds a trial: the charges as recorded, a verdict that follows from them.
+  Deterministic (no RNG draws); kept in `shadow.consequences`, which older saves load empty.
+
 ## [3.35.1] - 2026-11-24 — Whole continents
 
 ### Added

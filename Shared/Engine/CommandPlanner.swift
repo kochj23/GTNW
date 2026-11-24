@@ -655,6 +655,7 @@ extension GameEngine {
             plan.warnings.append(CommandWarning(text: "Out of reach: no shared border, sea route or air range to \(target.name) in \(gs.currentYear).", level: 2))
         }
         addTreatyWarnings(target, in: gs, to: &plan)
+        plan.warnings += consequenceWarnings(target, in: gs, nuclear: nuclear)   // 3.36.0
         if target.nuclearWarheads > 0 {
             plan.warnings.append(CommandWarning(text: "\(target.name) has \(target.nuclearWarheads.formatted()) nuclear warheads: this risks a nuclear exchange.", level: 2))
         }

@@ -116,6 +116,7 @@ enum Debrief {
                 }.joined(separator: "\n")))
             }
         }
+        if let trial = Consequences.trial(gs) { out.append(trial) }   // 3.36.0
         return out
     }
 }

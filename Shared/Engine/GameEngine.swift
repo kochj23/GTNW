@@ -843,6 +843,7 @@ class GameEngine: ObservableObject {
         }
 
         self.gameState = gameState
+        nuclearAftermath(attacker: attackerID, target: targetID, radiation: radiationSpread, casualties: casualties)   // 3.36.0
 
         // Trigger MAD (Mutually Assured Destruction) chain
         checkMAD()
@@ -858,6 +859,7 @@ class GameEngine: ObservableObject {
               let defenderCountry = getCountry(defender) else { return }
         // 3.28.0: already at war: nothing to declare (no second war record, no second DEFCON step).
         if aggressorCountry.atWarWith.contains(defender) { return }
+        if aggressor == gameState.playerCountryID { playerWarConsequences(on: defender) }   // 3.36.0: allies, refugees
         // The council's paper is written for every computer-run war, but a declaration that arrives here has already
         // been decided — by the nation's own cabinet (executeAIAction, which asks the council first and can step
         // back), by a revolt, an ally's treaty, a blockade that went too far. Nothing second-guesses an order at the

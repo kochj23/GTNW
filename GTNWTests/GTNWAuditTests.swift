@@ -271,7 +271,8 @@ final class NuclearStrikeMathTests: XCTestCase {
 
         engine.launchNuclearStrike(from: "USA", to: targetID, warheads: warheads, type: .fission)
 
-        XCTAssertEqual(gs.totalCasualties, warheads * 1_000_000,
+        // 3.36.0: fallout drift adds deaths in neighboring nations to the world total; the strike's own toll is fixed.
+        XCTAssertEqual(gs.nuclearStrikes.first?.casualties, warheads * 1_000_000,
                        "1,000,000 casualties per penetrating warhead (fission baseline)")
         XCTAssertEqual(gs.globalRadiation, warheads * 10,
                        "10 radiation points per penetrating warhead (fission baseline)")

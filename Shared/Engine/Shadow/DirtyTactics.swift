@@ -851,14 +851,9 @@ extension GameEngine {
             g.shadow.popularity = PopularityModel.clamp(g.shadow.popularity - ArsenalCatalog.cost(status).popularity * (DirtyTactics.coverUpFactor - 1))
             self.gameState = g
         }
-        guard tribunalRoll < DirtyTactics.tribunalChance(year: gs.currentYear, status: status), let g = gameState else { return }
-        g.shadow.ruthlessness += 20
-        g.shadow.popularity = PopularityModel.clamp(g.shadow.popularity - 10)
-        g.shadow.impeachmentStage = max(g.shadow.impeachmentStage, 2)
-        g.shadow.post("An international tribunal opens an inquiry into American conduct. Congress drafts articles of impeachment.",
-                      date: g.currentDate, severity: 3)
-        logPlayEvent("tactic_tribunal", detail: ["tactic": t.id, "game_date": PlayHistory.day(g.currentDate)])
-        self.gameState = g
+        guard tribunalRoll < DirtyTactics.tribunalChance(year: gs.currentYear, status: status) else { return }
+        openWarCrimesTribunal("An international tribunal opens an inquiry into American conduct. Congress drafts articles of impeachment.",
+                              event: "tactic_tribunal", detail: ["tactic": t.id])
     }
 
     /// A covert use comes out: the full price, the cover-up on top, and a line nobody forgets.
