@@ -67,8 +67,8 @@ enum ChatTools {
 
     static let specs: [ChatToolSpec] = [
         spec("game_status", "The President's top bar: nation, leader, date, actions left this turn, DEFCON or alert level, popularity, next election, free troops, wars and allies.", [:]),
-        spec("country", "Dossier on one nation or land as the President sees it: government, leader, stability, approval, economy, military (foreign forces are intelligence estimates), warheads, relations with you, its wars and allies. Also colonies and unclaimed land.",
-             ["name": str("Nation or land name, an era name, an ISO code, or 'me'")], required: ["name"]),
+        spec("country", "Dossier on one nation or land as the President sees it: government, leader, stability, approval, economy, military (foreign forces are intelligence estimates), warheads, relations with you, its wars and allies, and its states and provinces (holder, occupation, unrest). Also colonies, unclaimed land, and one state or province by name (its holder, people, unrest, electoral votes).",
+             ["name": str("Nation, land, state or province name, an era name, an ISO code, or 'me'")], required: ["name"]),
         spec("forces", "Military by type. Your own forces exactly (troops free, aircraft, navy, warheads, missiles, bombers, fleets); another nation's only as the intelligence estimate.",
              ["name": str("Nation name; omit for your own forces")]),
         spec("reach", "Who can hit whom: with 'target', whether you can reach that nation and how; without it, which nations can reach you (weapon: any, missiles, bombers or nuclear).",
@@ -190,6 +190,8 @@ enum ChatTools {
         let target: ResolvedTarget
         if ["me", "us", "my country", "my nation", "our country", "myself", "you"].contains(key) {
             target = .nation(me.id)
+        } else if let p = CommandTargets.state(raw, in: gs) {
+            return ok(stateDossier(p, gs))   // 3.36.0
         } else {
             switch CommandTargets.resolve(raw, in: gs) {
             case .none: return error("No nation or land called \"\(String(raw.prefix(40)))\" in \(gs.currentYear).")
@@ -240,6 +242,33 @@ enum ChatTools {
         if let bloc = MilitaryAllianceSystem.allianceName(year: gs.currentYear, forCountryID: c.id) { d["alliance_bloc"] = bloc }
         if let owner = c.territoryOf { d["territory_of"] = gs.getCountry(id: owner)?.name ?? owner }
         if !mine, let line = e.intelLine(about: c.id) { d["intelligence"] = line }
+        // 3.36.0: its states and provinces, most populous first (owner when not its own, occupation, unrest).
+        let holders = gs.provinceHolders()
+        let subs = Subdivisions.all.filter { holders.home[$0.id] == c.id || holders.owner[$0.id] == c.id }
+        if !subs.isEmpty {
+            let shares = Dictionary(uniqueKeysWithValues: subs.map { ($0.id, gs.populationShare($0.id)) })
+            let sorted = subs.sorted { (shares[$0.id] ?? 0, $1.id) > (shares[$1.id] ?? 0, $0.id) }
+            d["states_and_provinces"] = sorted.prefix(60).map { gs.provinceLine($0) }
+            if subs.count > 60 { d["states_and_provinces_more"] = subs.count - 60 }
+        }
+        return d
+    }
+
+    /// 3.36.0: one state or province.
+    static func stateDossier(_ p: Subdivision, _ gs: GameState) -> [String: Any] {
+        let h = Subdivisions.historical(p, on: gs.currentDate)
+        var d: [String: Any] = ["name": gs.provinceName(p.id), "kind": h.kind.lowercased(),
+                                "population_share_percent": round1(gs.populationShare(p.id) * 100),
+                                "unrest": Int((gs.shadow.provinces.unrest[p.id] ?? 0).rounded())]
+        if gs.shadow.provinces.names[p.id] != nil { d["real_name"] = h.name }
+        if let home = gs.provinceHomeNation(p.id) { d["nation"] = gs.getCountry(id: home)?.name ?? home }
+        if let o = gs.provinceOwner(p.id) { d["held_by"] = gs.getCountry(id: o)?.name ?? o }
+        if let o = gs.shadow.provinces.occupied[p.id] { d["occupied_by"] = gs.getCountry(id: o)?.name ?? o }
+        if p.nation == "USA", Subdivisions.isUSState(p.id, on: gs.currentDate) || p.id == "US-DC",
+           let e = USStatesHistory.electors(p.id, year: GameCalendar.year(of: GameCalendar.nextElection(after: gs.currentDate))), e > 0 {
+            d["electoral_votes"] = e
+        }
+        if let v = gs.shadow.provinces.lastElection[p.id] { d["your_ticket_last_election_percent"] = round1(v) }
         return d
     }
 

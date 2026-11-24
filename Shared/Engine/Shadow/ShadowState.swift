@@ -260,6 +260,8 @@ struct ShadowState: Codable {
     /// 3.36.0: presidential power plays: acquisition campaigns, emergency orders and the courts, capture raids,
     /// limited strikes, and the President's names for map features and departments (ForeignPowerPlays.swift).
     var powerPlays = PowerPlayState()
+    /// 3.36.0: states and provinces: names, transfers, occupation, unrest, the last election state by state.
+    var provinces = ProvinceLedger()
 
     // Scenario
     var scenarioID: String?
@@ -310,6 +312,7 @@ struct ShadowState: Codable {
         case consequences
         case presidency
         case powerPlays
+        case provinces
     }
 
     init() {}
@@ -422,6 +425,7 @@ struct ShadowState: Codable {
         consequences = (try? c.decodeIfPresent(ConsequenceState.self, forKey: .consequences)) ?? ConsequenceState()
         presidency = (try? c.decodeIfPresent(PresidencyRecord.self, forKey: .presidency)) ?? PresidencyRecord()
         powerPlays = (try? c.decodeIfPresent(PowerPlayState.self, forKey: .powerPlays)) ?? PowerPlayState()
+        provinces = (try? c.decodeIfPresent(ProvinceLedger.self, forKey: .provinces)) ?? ProvinceLedger()
     }
 }
 

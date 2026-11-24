@@ -224,6 +224,11 @@ enum ElectionCycle {
         var thirdPopular: Double
         var electors: Int
         var majority: Int
+        /// 3.36.0: state by state, the President's ticket's share of the two-party vote, and the electors each state
+        /// cast; the states a third candidate carried.
+        var shares: [String: Double] = [:]
+        var stateElectors: [String: Int] = [:]
+        var thirdStates: Set<String> = []
 
         var outcome: Outcome {
             if playerEV >= majority { return .won }
@@ -237,7 +242,14 @@ enum ElectionCycle {
     /// College count. Winner-take-all states amplify a popular lead (a cube-law curve, exponent 6); `stateNoise` in
     /// -1…1 shifts the Electoral College against the popular vote by up to ±1.5 points, so a popular-vote winner can
     /// lose the College, as in 1824, 1876, 1888, 2000 and 2016.
-    static func tally(year: Int, twoPartyShare share: Double, thirdPopular: Double = 0, stateNoise: Double = 0) -> Tally {
+    /// 3.36.0: counted state by state (`stateTally`) whenever the year has states with electors (always, from 1788);
+    /// `electorate` is the states voting (the historical ones by default) and `swing` each state's own swing.
+    static func tally(year: Int, twoPartyShare share: Double, thirdPopular: Double = 0, stateNoise: Double = 0,
+                      electorate: [String: Int]? = nil, swing: [String: Double] = [:]) -> Tally {
+        let states = electorate ?? historicalElectorate(year: year)
+        if !states.isEmpty {
+            return stateTally(year: year, share: share, thirdPopular: thirdPopular, stateNoise: stateNoise, electorate: states, swing: swing)
+        }
         let electors = ElectionHistory.electors(year)
         let thirdEV = thirdPopular >= 10 ? Int((Double(electors) * (thirdPopular - 8) * 1.2 / 100).rounded()) : 0
         let remaining = electors - thirdEV
@@ -705,7 +717,8 @@ extension GameEngine {
             share = min(75, max(25, 50 + (gs.shadow.popularity - 50) * 0.5 + c.successorBoost + Double.random(in: -3...3, using: &gs.rng)))
             playerName = "Your party's nominee"
         }
-        let t = ElectionCycle.tally(year: year, twoPartyShare: share, thirdPopular: third?.popular ?? 0, stateNoise: Double.random(in: -1...1, using: &gs.rng))
+        let t = ElectionCycle.tally(year: year, twoPartyShare: share, thirdPopular: third?.popular ?? 0, stateNoise: Double.random(in: -1...1, using: &gs.rng),
+                                    electorate: gs.electorate(on: day), swing: gs.stateSwing())   // 3.36.0: state by state
         var result = ElectionResult(date: day, playerShare: t.playerPopular, opponentShare: t.opponentPopular,
                                     won: t.outcome == .won, opponentName: opponent)
         result.playerEV = t.playerEV; result.opponentEV = t.opponentEV; result.totalEV = t.electors
@@ -713,6 +726,7 @@ extension GameEngine {
         result.popularVoteRecorded = rules.hasPopularVote
         result.playerName = playerName
         gs.shadow.lastElection = result
+        recordStateResults(t, year: year, opponent: opponent, on: day)   // 3.36.0
         ShadowPack.shared.play("sfx.election_speech\(Int.random(in: 1...3))")   // rng: cosmetic
         var tallyDetail: [String: Any] = [
             "year": year, "on_the_ballot": c.running, "opponent": PlayHistory.text(opponent),

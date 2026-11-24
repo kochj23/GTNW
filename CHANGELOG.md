@@ -58,6 +58,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Renaming seas, straits, mountains and your own departments.** Features use their names for the era ("Peak XV",
     "Formosa Strait"). Nations on a feature's shores either adopt the new name or resent it, the news gives both names,
     and your map shows yours.
+- **States and provinces.** The U.S. states by real admission date (the 13 originals in 1789, 48 in 1950, 50 from
+  1959), with the organized territories before them (Northwest Territory, Dakota Territory, Indian Territory…) and
+  the seceded states held by the Confederacy in 1861–65 while it stands. Canada, Mexico, Brazil, Russia, China,
+  India, Australia, Germany, France (regions), the UK's four nations, Japan, Ukraine, Italy, Spain, Argentina, South
+  Africa, South Korea, Indonesia and Pakistan have their modern subdivisions from about when they took shape (after
+  1945 for most; Germany from 1990), undivided before. 516 in all, from Natural Earth admin-1 (public domain) via
+  `tools/natural_earth_admin1_to_gtnw.py`.
+- **On the map:** faint inner borders in both skins (the **States** toggle in the map controls), names when zoomed
+  in (the President's names in amber), and hover or tap for a state's name, share of the people, holder,
+  occupation and unrest. A province held by someone other than its nation is filled in the holder's color; one an
+  army holds is hatched in the occupier's. The geometry (473 KB, 154 KB compressed) ships with the app only;
+  GTNWCore and the WebAssembly build carry just the 25 KB table of names and weights.
+- **Elections state by state:** the national share from the popularity model is the start in every state; each
+  state leans its own way for a generation, swings on the night, and swings against a President it is restless
+  under or whose name for it it never chose. Winner takes all, with each election's real electors (1788–2024); a
+  state the Union doesn't hold casts none, a state the President admitted casts three. The news names the state that
+  decided it, and the end screen shows the map.
+- **Unrest and secession:** each province's unrest follows its nation's stability and outcry and what happened there
+  (an army, a foreign flag, a new name, radiation, a lost election). In a nation near collapse with a reason to go (a
+  war, nuclear strikes, civil war at home), a province past the breaking point may declare independence and becomes
+  a nation on the map. A civil war at home names the states that rise.
+- **Occupation and the peace:** a won ground war records the provinces the army holds (the border first, more for a
+  rout), and the surrender sheet gains **ANNEX PROVINCES**: take only those, while the loser keeps its government and
+  pays like any loser. The terms list the provinces.
+- **Chief of staff and orders:** the `country` tool lists a nation's states and provinces (holder, occupation,
+  unrest) and answers for one by name (people, electoral votes, last result); orders accept state names ("sanction
+  Bavaria" goes to Germany), and claim/buy/liberate on a province point to the peace table.
 
 ||||||| parent of 616c6a8 (Names: content check on every name, rename your country and held lands, Hall of Cartography (3.36, unreleased))
 - **Names (rename at will):** rename your own country (its name on the map, in the logs, the news, the scoreboard and

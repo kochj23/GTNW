@@ -246,6 +246,9 @@ struct VectorWorldMap: View {
     @Binding var zoom: MapZoom
     @Binding var filter: MapFilter
     @State private var hoverID: String?
+    /// 3.36.0: the state or province under the pointer, or last tapped (phones have no pointer).
+    @State private var provinceID: String?
+    @AppStorage(SubdivisionMapSetting.key) private var showSubdivisions = true
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     private var reduceMotion: Bool { systemReduceMotion || Motion.override == true }
 
@@ -262,6 +265,7 @@ struct VectorWorldMap: View {
             let unclaimed = gameState.unclaimedLandIDs
             // 3.13.0: pre-state land on every continent: colonies (owner's colour, hatched) and indigenous-held land.
             let pre = Dictionary(uniqueKeysWithValues: PreStateModel.lands.compactMap { id in gameState.preState(id).map { (id, $0) } })
+            let provinces: SubdivisionLayer? = SubdivisionLayer(gameState, borders: showSubdivisions)   // 3.36.0
             ZStack(alignment: .bottomLeading) {
                 Canvas { ctx, size in
                     ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(oceanColor))
@@ -308,6 +312,8 @@ struct VectorWorldMap: View {
                             ctx.stroke(path, with: .color(borderColor), lineWidth: zoom == .world ? 0.5 : 1)
                         }
                     }
+                    // 3.36.0: states and provinces: faint inner borders, and provinces that changed hands or are occupied.
+                    provinces?.draw(&ctx, transform: t, size: size, zoom: zoom) { filter.color($0, player: player) }
                     // Fleets at sea (3.5.0): a dashed wake from home port to where the fleet is now.
                     for d in gameState.shadow.fleetDeployments {
                         let now = d.position(at: gameState.currentDate)
@@ -392,22 +398,28 @@ struct VectorWorldMap: View {
                 }
                 markers(transform: t, byID: byID, unclaimed: unclaimed)
                 preStateTags(transform: t, pre: pre)
-                hoverLabel(byID: byID, unclaimed: unclaimed, pre: pre)
+                if let provinces, showSubdivisions { provinceTags(provinces, transform: t) }
+                hoverLabel(byID: byID, unclaimed: unclaimed, pre: pre, provinces: provinces)
             }
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onEnded { v in
-                if let id = hit(v.location, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys)) {
+                provinceID = provinces.flatMap { $0.borders ? SubdivisionGeometry.shared.hit(v.location.applying(t.inverted()), live: $0.live) : nil }
+                if let id = hit(v.location, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys), provinces: provinces) {
                     selectedCountryID = id
                     if zoom == .world { ShadowPack.shared.play("sfx.boop", volume: 0.4) }
                 }
             })
-            .modifier(HoverTracker { loc in hoverID = loc.flatMap { hit($0, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys)) } })
+            .modifier(HoverTracker { loc in
+                hoverID = loc.flatMap { hit($0, transform: t, present: present, unclaimed: unclaimed, pre: Set(pre.keys), provinces: provinces) }
+                if let provinces, provinces.borders { provinceID = loc.flatMap { SubdivisionGeometry.shared.hit($0.applying(t.inverted()), live: provinces.live) } }
+            })
             .clipped()
             // 3.33.0: VoiceOver. The map is drawn on a Canvas, so each nation is given as an element of its own that
             // reads its standing with you and selects it on activation.
             .accessibilityElement(children: .contain)
             .accessibilityLabel(A11y.mapLabel)
-            .accessibilityValue(A11y.mapValue(gameState, selected: selectedCountryID))
+            .accessibilityValue(A11y.mapValue(gameState, selected: selectedCountryID)
+                                + (provinceID.flatMap { id in provinces.map { ". " + $0.describe(id) } } ?? ""))
             .accessibilityChildren {
                 ForEach(A11y.mapNations(gameState)) { n in
                     Rectangle()
@@ -480,6 +492,7 @@ struct VectorWorldMap: View {
 
     private func hasShape(_ id: String) -> Bool {
         data.shapes.contains { $0.id == id } || WorldMapData.historicalOwners[id] != nil
+            || SubdivisionGeometry.shared.outlines[id] != nil   // 3.36.0: a seceded state is drawn as its province
     }
 
     @ViewBuilder
@@ -552,9 +565,27 @@ struct VectorWorldMap: View {
         }
     }
 
-    private func hoverLabel(byID: [String: Country], unclaimed: Set<String>, pre: [String: PreStateStatus]) -> some View {
+    /// 3.36.0: province names, zoomed in, where there is room (the President's names in amber).
+    @ViewBuilder
+    private func provinceTags(_ layer: SubdivisionLayer, transform t: CGAffineTransform) -> some View {
+        ForEach(layer.labels(transform: t, zoom: zoom), id: \.id) { l in
+            let renamed = gameState.shadow.provinces.names[l.id] != nil
+            Text(verbatim: l.text)
+                .font(ThemeFont.mono(zoom == .country ? 9 : 7, renamed ? .heavy : .regular))
+                .foregroundColor(renamed ? (Theme.isRetro ? EGA.yellow : GTNWColors.terminalAmber)
+                                 : (Theme.isRetro ? EGA.lightGray : Color.white.opacity(0.55)))
+                .shadow(color: .black, radius: 1)
+                .fixedSize()
+                .position(l.at)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private func hoverLabel(byID: [String: Country], unclaimed: Set<String>, pre: [String: PreStateStatus],
+                            provinces: SubdivisionLayer?) -> some View {
         let id = hoverID ?? selectedCountryID
         let text: String = {
+            if let p = provinceID, let provinces, provinces.live.contains(p) { return provinces.describe(p) }
             if let id, let st = pre[id] {
                 if Islands.byID[id] != nil {   // 3.28.0
                     return st.era.kind == .colony ? "🏝️ \(st.label.uppercased()) — ISLAND"
@@ -643,8 +674,13 @@ struct VectorWorldMap: View {
         return CGAffineTransform(a: sx, b: 0, c: 0, d: sy, tx: -rect.minX * sx, ty: -rect.minY * sy)
     }
 
-    private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>, pre: Set<String> = []) -> String? {
+    private func hit(_ location: CGPoint, transform t: CGAffineTransform, present: Set<String>, unclaimed: Set<String>, pre: Set<String> = [],
+                     provinces: SubdivisionLayer? = nil) -> String? {
         let p = location.applying(t.inverted())
+        // 3.36.0: a province held by someone other than its nation selects its holder (a seceded state, annexed land).
+        if let provinces, !provinces.held.isEmpty, let sub = SubdivisionGeometry.shared.hit(p, live: Set(provinces.held.keys)) {
+            return provinces.held[sub]
+        }
         // 3.28.0: island dots. 3.28.2: a dot wins only on a direct hit (4 pt), so a dot near a coast (Navassa) no longer
         // takes clicks meant for Jamaica or Haiti; in open sea it still answers within 10 points.
         let scale = max(abs(t.a), 0.0001), reach = 10 / scale

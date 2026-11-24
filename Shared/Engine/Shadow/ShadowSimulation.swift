@@ -92,6 +92,7 @@ extension GameEngine {
         processWorldPolitics()   // 3.14.0: the living world
         processCivilWarRecognition()   // 3.18.x: Britain/France weigh recognizing a side
         processOccupation()
+        processSubdivisions()    // 3.36.0: states and provinces: unrest, secession, the provinces a won war holds
         processAntarctica()
         processPreState()
         processLandMarket()      // 3.29.0: rival bids, auctions, powers selling land they want rid of

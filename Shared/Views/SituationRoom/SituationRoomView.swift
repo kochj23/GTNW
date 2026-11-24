@@ -18,6 +18,7 @@ struct SituationRoomView: View {
     @State private var selectedCountryID: String?
     @State private var zoom: MapZoom = .world
     @State private var filter: MapFilter = .alignment
+    @AppStorage(SubdivisionMapSetting.key) private var showSubdivisions = true   // 3.36.0
     @State private var ladderRung: EscalationRung?
     @State private var briefingRole: String?
     @State private var sheet: SituationSheet?
@@ -167,6 +168,9 @@ struct SituationRoomView: View {
             ScaledMenuPicker(selection: $filter, options: MapFilter.allCases.map { ($0, $0.rawValue) },
                              textColor: Theme.isRetro ? .black : .primary)
                 .frame(width: FontScale.of(150))
+            Toggle(isOn: $showSubdivisions) { Text("States").foregroundColor(Theme.isRetro ? .black : .primary) }   // 3.36.0
+                .toggleStyle(.button)
+                .accessibilityHint("Show state and province borders and names on the map")
             Spacer()
             Button { sheet = .warRoom } label: { Label("War Room", systemImage: "shield.lefthalf.filled") }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalRed))

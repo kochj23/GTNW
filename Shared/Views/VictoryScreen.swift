@@ -56,6 +56,11 @@ struct VictoryScreen: View {
                 // Statistics
                 statsDisplay()
 
+                // 3.36.0: the last presidential election, state by state.
+                if !gameState.shadow.provinces.lastElection.isEmpty {
+                    ElectionStateMap(gameState: gameState).padding(.horizontal, 40)
+                }
+
                 // 3.32.3: the counterfactual debrief — what was decided, what almost happened, what was believed.
                 debriefDisplay()
 

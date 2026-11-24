@@ -207,6 +207,7 @@ through verbs is a function of seed and orders.
 | verb | fields | the app's button |
 |---|---|---|
 | `acceptAcquisition` | `id` | accept a historical purchase |
+| `annexProvinces` | `id` | SettlementSheet ANNEX PROVINCES (3.36.0): only the provinces the army holds |
 | `answerMessage` | `id, response` | a reply on a diplomatic message (accept, decline, counter, nonAggression, apology, standFirm, trade, mediation) |
 | `answerTreaty` | `id, accept` | TreatyOffersSheet ACCEPT / DECLINE |
 | `askCongress` | `target, kind` | ask for a declaration of war or an authorization to use force |

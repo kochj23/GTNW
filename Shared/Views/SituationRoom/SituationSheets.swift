@@ -629,6 +629,7 @@ struct SettlementSheet: View {
                            choice: .annex, button: "ANNEX", color: GTNWColors.terminalRed)
                     TerritoryNameField(text: $annexName, placeholder: "Rename it (optional) — blank keeps \(loser?.name ?? "its name")", live: scrolls)
                     CabinetWarningsView(warnings: gameEngine.advisorWarnings(for: .annex(country: settlement.loser)))
+                    OccupiedProvincesOption(gameState: gameState, settlement: settlement)   // 3.36.0
                     Text("OR LET \((loser?.name ?? "IT").uppercased()) FORM A NEW GOVERNMENT:")
                         .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber).padding(.top, 6)
                     ForEach(PostWarGovernment.allCases) { g in

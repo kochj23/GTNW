@@ -97,6 +97,15 @@ Everything happens on one screen:
 - **Bordered world map** built from Natural Earth outlines (public domain). Hover or click any country. Zoom to
   World, Region or Country, and pick one of 23 map filters: alliances, ideology, wealth, quality of life, ethic,
   ambition, the five worries, aid need, and more.
+- **States and provinces (3.36.0)**: faint inner borders (the **States** toggle in the map controls), names when
+  zoomed in, and hover or tap for a state's name, share of the people, holder and unrest. The U.S. goes state by
+  state by real admission date (the 13 originals in 1789, Dakota Territory before 1889, 50 from 1959; the seceded
+  states fly the Confederacy's colors while it stands); Canada, Mexico, Brazil, Russia, China, India, Australia,
+  Germany, France, the UK's four nations, Japan and eight more have their modern provinces from about when they
+  took shape (mostly after 1945), undivided before. Rename any you hold. Elections are counted state by state with
+  real electors for each year, and close states decide close elections (the end screen shows the map). A province
+  of a nation in collapse can secede and become a nation; a won war records the provinces the army holds, and the
+  surrender sheet can annex just those. The chief of staff lists a nation's states, and orders accept state names.
 - **Advisor rail**: seven cabinet posts with names, portraits and briefings.
 - **Country dossier**: leadership, quality of life, influence and unrest, the leader's ambition and ethic, the five
   worries, and aid needed by category. City View is opened from here.
@@ -2025,6 +2034,9 @@ MIT License, Copyright (c) 2025-2026 Jordan Koch. See [LICENSE](LICENSE).
   and public figures, each attributed in place. List: [Documentation/QUOTATION_SOURCES.md](Documentation/QUOTATION_SOURCES.md).
 - **Map outlines:** [Natural Earth](https://www.naturalearthdata.com) 1:50m Admin 0 (public domain), simplified by
   `tools/natural_earth_to_gtnw.py`.
+- **States and provinces:** [Natural Earth](https://www.naturalearthdata.com) 1:10m Admin 1 States and Provinces and
+  Populated Places (public domain), simplified by `tools/natural_earth_admin1_to_gtnw.py`. U.S. admission dates,
+  territories and electors per election: the official electoral returns (National Archives).
 - ***Shadow President*** (D.C. True, 1993) inspired the Situation Room's mechanics. None of its art, sound, text or
   data is in this repository.
 - **Voice cloning:** F5-TTS. **Local AI:** Ollama and MLX.

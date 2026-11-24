@@ -32,6 +32,7 @@ protocol BridgeVerb {
 enum VerbRegistry {
     static let all: [any BridgeVerb.Type] = [
         AcceptAcquisitionVerb.self,
+        AnnexProvincesVerb.self,
         AnswerMessageVerb.self,
         AnswerTreatyVerb.self,
         AskCongressVerb.self,
