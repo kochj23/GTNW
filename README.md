@@ -2,7 +2,7 @@
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 ![Tests](https://img.shields.io/badge/tests-1087-brightgreen)
-![Version](https://img.shields.io/badge/version-3.35.0-blue)
+![Version](https://img.shields.io/badge/version-3.35.1-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.1-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
@@ -104,7 +104,7 @@ Everything happens on one screen:
 - **News ticker** and sheets for Budget, Foreign Aid, War Room, World Evaluation, City View, Save/Load and Election
   Night.
 
-### Your chief of staff (new in 3.35.0, unreleased)
+### Your chief of staff (new in 3.35.0)
 
 Press **⌘K** (Orders → Chief of Staff…, or the `>` prompt under the world brief) and talk it through, the way you'd
 talk to a person: "How do we stand with France?" "And their allies?" "Who can hit us, and with what?" "Why did my

@@ -150,6 +150,22 @@ enum CommandTargets {
         }
     }
 
+    /// 3.35.1: a continent or region typed as a target ("South America", "all of Africa", "the Middle East").
+    static func region(_ raw: String) -> WorldRegion? {
+        var n = CommandParser.normalize(raw)
+        for p in ["all of ", "every nation in ", "all nations in ", "all the nations of ", "the whole of ", "the "] where n.hasPrefix(p) {
+            n = String(n.dropFirst(p.count))
+        }
+        if n == "mideast" || n == "mid east" { return .middleEast }
+        return WorldRegion.allCases.first { CommandParser.normalize($0.rawValue) == n }
+    }
+
+    /// The independent nations in a region the President could act against: alive, not a territory, not their own.
+    static func regionMembers(_ r: WorldRegion, in gs: GameState) -> [ResolvedTarget] {
+        gs.countries.filter { $0.region == r && !$0.isDestroyed && $0.territoryOf == nil && $0.id != gs.playerCountryID }
+            .sorted { $0.name < $1.name }.map { .nation($0.id) }
+    }
+
     /// Resolve one typed name. Exact id or code, the era name, an alias, the modern map name (with a note when the
     /// land is something else this year), a pre-state name, then a unique word prefix; several prefixes → choices.
     static func resolve(_ raw: String, in gs: GameState) -> TargetResolution {
@@ -259,8 +275,10 @@ extension GameEngine {
         }
         // Names → targets (or a question back).
         var targets: [ResolvedTarget] = []
+        /// Nations added by a region name: one that can't take the order is skipped, not a refusal of the whole plan.
+        var regionIDs = Set<String>()
         if let picked = intent.confirmedTargets {
-            for id in picked.prefix(CommandParser.maxTargets) {
+            for id in picked.prefix(CommandParser.maxRegionTargets) {
                 switch CommandTargets.resolve(id, in: gs) {
                 case .one(let t, _): targets.append(t)
                 default: return .rejected("That choice is no longer on the board.")
@@ -272,6 +290,13 @@ extension GameEngine {
                 return .rejected("Name a nation or a land, for example \"\(verb == .attack ? "attack" : verb.title.lowercased()) France\".")
             }
             for name in names {
+                if let r = CommandTargets.region(name) {
+                    let members = CommandTargets.regionMembers(r, in: gs).filter { m in !targets.contains(m) }
+                    guard !members.isEmpty else { return .rejected("No nation in \(r.rawValue) can take that order in \(gs.currentYear).") }
+                    targets += members
+                    regionIDs.formUnion(members.map(\.id))
+                    continue
+                }
                 switch CommandTargets.resolve(name, in: gs) {
                 case .none:
                     if source == .parser {
@@ -304,13 +329,28 @@ extension GameEngine {
         // Orders for each target.
         var plan = CommandPlan(title: verb.title, target: "", orders: [], committed: [], heldBack: [], warnings: [],
                                actionsNeeded: 0, actionsLeft: gs.actionsRemaining, source: source)
-        plan.target = targets.map { CommandTargets.label($0, in: gs) }.joined(separator: ", ") + ", \(gs.currentYear)"
+        var skipped: [String] = []
         for t in targets {
+            if regionIDs.contains(t.id) {
+                var trial = plan
+                if addOrders(verb, intent.forces, against: t, to: &trial, in: gs) == nil,
+                   !trial.orders.dropFirst(plan.orders.count).contains(where: { orderProblem($0) != nil }) {
+                    plan = trial
+                } else {
+                    skipped.append(CommandTargets.label(t, in: gs))
+                }
+                continue
+            }
             if t.id == me.id { return .rejected("That is your own nation.") }
             if case .nation(let id) = t, gs.getCountry(id: id)?.territoryOf == me.id {
                 return .rejected("\(gs.getCountry(id: id)?.name ?? id) flies your own flag.")
             }
             if let refusal = addOrders(verb, intent.forces, against: t, to: &plan, in: gs) { return .rejected(refusal) }
+        }
+        let planned = targets.filter { t in !skipped.contains(CommandTargets.label(t, in: gs)) }
+        plan.target = planned.map { CommandTargets.label($0, in: gs) }.joined(separator: ", ") + ", \(gs.currentYear)"
+        if !skipped.isEmpty {
+            plan.warnings.append(CommandWarning(text: "Left out (that order can't be carried out against them): \(skipped.joined(separator: ", ")).", level: 1))
         }
         guard !plan.orders.isEmpty else {
             return .rejected(plan.warnings.first?.text ?? "Nothing in that order can be carried out in \(gs.currentYear).")

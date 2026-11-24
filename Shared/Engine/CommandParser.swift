@@ -154,6 +154,8 @@ struct CommandIntent: Codable, Equatable, Sendable {
 enum CommandParser {
     static let maxInput = 200
     static let maxTargets = 4
+    /// Targets one plan may hold when a region name expands to its nations.
+    static let maxRegionTargets = 80
 
     /// Trim, drop control characters, and cap the length (the prompt-injection and memory bound).
     static func sanitize(_ raw: String) -> String {

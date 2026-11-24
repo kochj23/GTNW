@@ -89,7 +89,8 @@ enum ChatTools {
                 "type": "object",
                 "properties": [
                     "verb": ["type": "string", "enum": CommandVerb.allCases.map(\.rawValue)],
-                    "targets": ["type": "array", "items": ["type": "string", "maxLength": maxArgString], "maxItems": CommandParser.maxTargets],
+                    "targets": ["type": "array", "items": ["type": "string", "maxLength": maxArgString], "maxItems": CommandParser.maxTargets,
+                                "description": "Nation or land names. A region name (\(WorldRegion.allCases.map(\.rawValue).joined(separator: ", "))) means every independent nation in it."] as [String: Any],
                     "ground": ["type": "boolean"], "air": ["type": "boolean"], "naval": ["type": "boolean"],
                     "nuclear": ["type": "string", "enum": ["yes", "no", "unspecified"]],
                     "all": ["type": "boolean"], "light": ["type": "boolean"],

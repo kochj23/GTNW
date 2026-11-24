@@ -70,7 +70,8 @@ final class ChatAgent {
         if you have a concern, say it in one sentence (the card shows the warnings). It only shows the President a card; \
         nothing happens until the President presses EXECUTE. Nuclear strikes are orders like any other: propose them when \
         asked (the card makes the President confirm twice). Never say an order was carried out unless a game record in the conversation says so. You cannot execute \
-        anything yourself and you cannot skip the confirmation.
+        anything yourself and you cannot skip the confirmation. A continent or region (North America, South America, Europe, \
+        Asia, Middle East, Africa, Oceania) is a valid target: pass its name and the card lists every nation in it.
         3. Read the conversation for what "they", "them", "their allies", "the same", "that" refer to. If an order is \
         ambiguous (which nation, which forces), ask one short clarifying question instead of guessing.
         4. When asked for advice, give a recommendation with reasons taken from the tool results (relations, reach, forces, \

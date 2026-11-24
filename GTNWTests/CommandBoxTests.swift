@@ -243,6 +243,23 @@ final class CommandBoxFunctionalTests: XCTestCase {
         XCTAssertTrue(p.warnings.contains { $0.text.hasPrefix("Needs 3 actions") }, "three orders, two actions a month")
     }
 
+    /// 3.35.1: a continent is a target: every independent nation in it, never the player's own.
+    func testRegionTargetsEveryNationInIt() throws {
+        XCTAssertEqual(CommandTargets.region("all of South America"), .southAmerica)
+        XCTAssertEqual(CommandTargets.region("the Middle East"), .middleEast)
+        XCTAssertNil(CommandTargets.region("France"))
+        let e = CmdFixtures.engine(year: 2025)
+        let gs = e.gameState!
+        let members = CommandTargets.regionMembers(.southAmerica, in: gs)
+        XCTAssertGreaterThan(members.count, 4)
+        let p = try XCTUnwrap(CmdFixtures.confirmedPlan(e, "declare war on South America"))
+        XCTAssertGreaterThan(Set(p.orders.map(\.target)).count, 4, "more than the four-name cap")
+        XCTAssertTrue(p.target.contains("Brazil"), p.target)
+        XCTAssertTrue(p.warnings.contains { $0.text.hasPrefix("Needs ") }, "one action per nation")
+        let europe = CommandTargets.regionMembers(.europe, in: CmdFixtures.engine(year: 2025, player: "FRA").gameState!)
+        XCTAssertFalse(europe.contains(.nation("FRA")), "never the player's own nation")
+    }
+
     func testNuclearOrdersNeedTwoConfirmations() async throws {
         let e = CmdFixtures.engine(year: 2025)
         let m = CommandBoxModel(engine: e, translator: StubTranslator(.unavailable("off")))
