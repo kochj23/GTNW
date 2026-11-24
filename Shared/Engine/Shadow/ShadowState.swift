@@ -257,6 +257,9 @@ struct ShadowState: Codable {
     static let commandLogCap = 200
     /// 3.36.0: the record a court could charge, alliance councils, refugee waves, lands that broke away.
     var consequences = ConsequenceState()
+    /// 3.36.0: presidential power plays: acquisition campaigns, emergency orders and the courts, capture raids,
+    /// limited strikes, and the President's names for map features and departments (ForeignPowerPlays.swift).
+    var powerPlays = PowerPlayState()
 
     // Scenario
     var scenarioID: String?
@@ -306,6 +309,7 @@ struct ShadowState: Codable {
         case commandLog
         case consequences
         case presidency
+        case powerPlays
     }
 
     init() {}
@@ -417,6 +421,7 @@ struct ShadowState: Codable {
         commandLog = (try? c.decodeIfPresent([CommandRecord].self, forKey: .commandLog)) ?? []
         consequences = (try? c.decodeIfPresent(ConsequenceState.self, forKey: .consequences)) ?? ConsequenceState()
         presidency = (try? c.decodeIfPresent(PresidencyRecord.self, forKey: .presidency)) ?? PresidencyRecord()
+        powerPlays = (try? c.decodeIfPresent(PowerPlayState.self, forKey: .powerPlays)) ?? PowerPlayState()
     }
 }
 

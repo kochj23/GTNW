@@ -104,6 +104,7 @@ extension GameEngine {
         processDispatches()      // 3.32.1: orders sent before the telegraph, arriving at last
         processPeaceTerms()      // 3.32.2: reparations paid, caps enforced, treaties eroding and breaking
         processConsequenceTurn() // 3.36.0: alliance councils expel or reprimand
+        processPowerPlays()      // 3.36.0: campaigns, emergency orders and the courts, raids, limited strikes
         checkOneSitting()        // 3.32.3: a one-sitting game's clock
         processEconomy(from: from, to: to, scale: scale)
         driftCongress(scale: scale)
@@ -370,7 +371,7 @@ extension GameEngine {
             gs.countries[i].gdp = max(0.001, gs.countries[i].gdp * 0.995)
             gs.aiActionSummary.append("\(flag) \(name) 🪖 expands its armed forces")
         case .nuclearBuildup:
-            guard gs.currentYear >= 1945 else { break }
+            guard gs.currentYear >= 1945, !nuclearProgramDelayed(country.id) else { break }   // 3.36.0: a struck programme waits
             gs.countries[i].nuclearWarheads += max(1, gs.countries[i].nuclearWarheads / 50)
             if gs.countries[i].nuclearStatus == .none { gs.countries[i].nuclearStatus = .developing }
             gs.aiActionSummary.append("\(flag) \(name) ☢️ expands its nuclear program")
@@ -1049,6 +1050,7 @@ extension GameEngine {
         gs.flash([gs.playerCountryID, targetID], action.isHostile ? .hostile : .friendly,
                  "\(gs.getPlayerCountry()?.name ?? "You"): \(action.rawValue) → \(gs.getCountry(id: targetID)?.name ?? targetID)")
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size, warhead: warhead)
+        if action == .imposeTariffs || action == .removeTariffs { noteTariffOrder(action, target: targetID) }   // 3.36.0: on the record, in court
         reportActionOutcome(action, targetID: targetID, from: logStart)
         // Nuclear launches record their own fallout in launchNuclearStrike.
         if action.rung != .nuclear { recordPlayerAction(rung: action.rung, hostile: action.isHostile, detected: false) }

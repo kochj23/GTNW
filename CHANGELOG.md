@@ -39,6 +39,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   template's), the presidential library's name (from the leader, the country's name and his newest held rename), and
   fifty years later (his names survive on held lands with stability 40 or more, else the original returns; a name that
   breaks the content rules is struck from the record). Older saves load with an empty record.
+- Power plays (Situation Room POWER PLAYS, the command box, and the chief of staff). Each one shows a confirmation card
+  with the odds and the cabinet's warnings, and every result is deterministic:
+  - **Acquisition campaigns.** "offer to buy Greenland" (or "buy" aimed at a whole nation or a land drawn under one)
+    opens a campaign with these steps: an offer, then tariffs on the objectors, then military posturing, then a
+    framework deal or escalation to war. Leverage is weighed against resistance, protests rise in the target, and the
+    owner's allies push back.
+  - **Emergency powers and the courts.** You can declare a national emergency. Every order records its legal
+    authority, and the courts rule months later based on that authority's strength and the era. You can reissue an
+    order under another authority at a political cost. Emergency tariffs come first, and there is a hook for other
+    orders such as domestic deployments. Ordinary tariffs now appear on the same record.
+  - **Leader capture raid.** The odds come from intelligence, military strength and distance, and the Attorney
+    General gives a legality warning first. A success opens the regime-change path. A failure brings a hostage crisis
+    or a war, and either way the world condemns the raid.
+  - **Limited strikes without a declared war.** Precision, boat, facility and nuclear-facility strikes start the War
+    Powers clock. Repeated strikes add up toward war and force a vote in Congress; an overridden veto bars further
+    strikes. A nuclear-facility strike delays the target's program and risks retaliation.
+  - **Renaming seas, straits, mountains and your own departments.** Features use their names for the era ("Peak XV",
+    "Formosa Strait"). Nations on a feature's shores either adopt the new name or resent it, the news gives both names,
+    and your map shows yours.
 
 ## [3.35.1] - 2026-11-24 — Whole continents
 

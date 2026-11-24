@@ -459,6 +459,20 @@ flowchart LR
   drive allies away. Members send a tenth of their forces to the front and **share the world's reaction**; those who
   refuse cool a little. The sheet shows each nation's odds from the same formula.
 
+### Power plays (unreleased)
+
+Select a nation and press POWER PLAYS, or type the order:
+- **Buy a land or a nation:** "offer to buy Greenland". The campaign then moves through tariffs on the objectors,
+  posturing, and a framework deal or war.
+- **Emergency powers:** "declare a national emergency over trade", then "emergency tariffs on Canada under section
+  232". Each order lists its legal authority and the date of its court ruling. A struck-down order can be reissued
+  under another authority.
+- **Leader capture raid:** "capture the leader of X". The card shows the odds and the legal warnings.
+- **Limited strikes:** "precision strike on X", "strike boats off X", or "strike X's nuclear facilities". These are
+  not a declared war, but they start the War Powers clock.
+- **Renaming:** "rename the Gulf of Mexico to …" or "rename the Department of Defense to …". Your map uses your names,
+  and other nations decide whether to use them.
+
 ### Fighting dirty (new in 3.17)
 
 Jordan's rule for this part of the game: **it's only illegal if you get caught.** The **TACTICS** panel lists what

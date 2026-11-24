@@ -84,6 +84,7 @@ enum ChatTools {
              ["count": ["type": "integer", "minimum": 1, "maximum": 20]]),
         spec("actions", "Orders available this year with their verb, cost, risk and description; with a target, also the odds shown for each against it.",
              ["target": str("Nation name (optional)"), "category": ["type": "string", "enum": ["military", "diplomatic", "economic", "covert", "treaty", "all"]]]),
+        spec("power_plays", "The President's power plays under way: the national emergency, emergency orders with their legal authority and court status, acquisition campaigns with leverage and resistance, limited strikes, capture raids and Congress's votes on them.", [:]),
         spec("propose_orders", "Put orders in front of the President for confirmation. Nothing runs until the President presses EXECUTE. One step per order, in order, at most 5 steps. Use the verbs from the actions tool.",
              ["steps": ["type": "array", "maxItems": maxSteps, "items": [
                 "type": "object",
@@ -97,6 +98,8 @@ enum ChatTools {
                     "troops": ["type": "number", "minimum": 0, "description": "in thousands: 50 means 50,000 troops"],
                     "aircraft": ["type": "integer", "minimum": 0], "warheads": ["type": "integer", "minimum": 0],
                     "fleet": ["type": "string", "maxLength": maxArgString],
+                    "detail": ["type": "string", "maxLength": maxArgString,
+                               "description": "power plays only: limitedStrike kind (precision, boats, facility, nuclearFacility); emergencyTariffs/reissue legal authority (e.g. nationalSecurity232, emergencyEconomic); emergency reason (trade, security, border, publicOrder, energy)"],
                 ] as [String: Any],
                 "required": ["verb", "targets"],
              ] as [String: Any]] as [String: Any]], required: ["steps"]),
@@ -140,6 +143,7 @@ enum ChatTools {
         case "advisors": return advisors(args.string("action"), args.string("target"), engine, gs, me)
         case "news": return ok(news(min(20, max(1, args.int("count") ?? 10)), engine, gs))
         case "actions": return actions(args.string("target"), args.string("category"), gs, me)
+        case "power_plays": return ok(powerPlays(engine, gs))   // 3.36.0
         case "propose_orders": return propose(arguments, engine: engine, planID: planID)
         default: return error("No tool named \(name).")
         }
@@ -422,7 +426,10 @@ enum ChatTools {
         var d: [String: Any] = ["actions_left": gs.actionsRemaining, "orders": rows]
         if category == nil || category == "military" || category == "all" {
             d["also"] = ["attack (any mix of ground, air and naval; set all for everything)", "declareWar", "navalStrike", "showOfForce",
-                         "claim (unclaimed land)", "buy (a colony)", "liberate (back a colony's independence)"]
+                         "claim (unclaimed land)", "buy (a colony)", "liberate (back a colony's independence)",
+                         "limitedStrike (detail: precision, boats, facility or nuclearFacility; no declaration of war)", "captureLeader (a raid to seize the head of government)",
+                         "acquire / pressure / posture / frameworkDeal / escalateCampaign (a campaign to buy a land or nation)",
+                         "emergency, endEmergency, emergencyTariffs and reissue (detail: legal authority)"]
         }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }
@@ -481,6 +488,7 @@ enum ChatTools {
                 ?? actionFor(vs).flatMap({ a in verbActions.first(where: { $0.1 == a })?.0 }) else {
             throw ChatToolError(message: "\(String(vs.prefix(30))) is not an order on the list. Use a verb from the actions tool.")
         }
+        if verb.isPowerPlay { return try powerPlayIntent(verb, o) }   // 3.36.0
         var targets: [String] = []
         if let t = o["targets"] as? [Any] { targets = t.compactMap { $0 as? String } }
         else if let t = o["targets"] as? String { targets = [t] }

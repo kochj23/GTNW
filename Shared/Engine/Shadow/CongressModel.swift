@@ -159,7 +159,7 @@ extension GameEngine {
         for f in gs.shadow.fronts where f.status == .fighting && f.usSide != nil && f.attacker != p && f.defender != p {
             out.insert(f.usSide == f.attacker ? f.defender : f.attacker)
         }
-        return out
+        return out.union(limitedStrikeHostilities())   // 3.36.0: limited strikes and raids count too
     }
 
     /// Each turn (from Nov 1973): start, advance and enforce the War Powers clock on unauthorized hostilities.

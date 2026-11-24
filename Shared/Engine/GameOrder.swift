@@ -29,6 +29,13 @@ enum OrderKind: String, Codable, CaseIterable, Sendable {
     case buyColony
     /// A colony's independence backed (`supportIndependence`).
     case backIndependence
+    /// 3.36.0 power plays (ForeignPowerPlays.swift): a step of an acquisition campaign (`mission` = `CampaignStep`), an
+    /// emergency order (`mission` = `EmergencyStep`, `detail` = the reason or the legal basis), a leader-capture raid,
+    /// and a limited strike (`mission` = `StrikeKind`). `renamePlace`: a sea, mountain or department (`target` = its
+    /// id in MapFeatures.swift, `detail` = the new name).
+    case acquire, emergency, captureLeader, limitedStrike, renamePlace
+
+    var isPowerPlay: Bool { [.acquire, .emergency, .captureLeader, .limitedStrike, .renamePlace].contains(self) }
 }
 
 /// One resolved order: what the engine is asked to do, against whom, with exactly which forces.
@@ -46,8 +53,13 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
     var fleet: String? = nil
     var mission: String? = nil
     var preset: String? = nil
+    /// 3.36.0: a power play's parameter: an emergency's reason or an order's legal basis (closed lists, checked again).
+    var detail: String? = nil
 
     var presidentialAction: PresidentialAction? { action.flatMap(PresidentialAction.init(rawValue:)) }
+
+    /// 3.36.0: a rename and ending the emergency take no action, so they run with none left.
+    var costsNoAction: Bool { kind == .renamePlace || (kind == .emergency && mission == "end") }
 
     var isNuclear: Bool { presidentialAction.map { OrderWhitelist.nuclear.contains($0) } ?? false }
 
@@ -62,6 +74,11 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         case .seizeColony: what = "Seize Colony"
         case .buyColony: what = "Buy Colony"
         case .backIndependence: what = "Back Independence"
+        case .acquire: what = "Acquire (\(mission ?? "?"))"
+        case .emergency: what = "Emergency (\(mission ?? "?")\(detail.map { ", \($0)" } ?? ""))"
+        case .captureLeader: what = "Capture Leader"
+        case .limitedStrike: what = "Limited Strike (\(mission ?? "?"))"
+        case .renamePlace: what = "Rename (\(detail ?? "?"))"
         }
         var sizes: [String] = []
         if let t = troops { sizes.append("\(Int(t))K troops") }
@@ -81,6 +98,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         if let fleet { d["fleet"] = fleet }
         if let mission { d["mission"] = mission }
         if let preset { d["preset"] = preset }
+        if let detail { d["detail"] = detail }
         return d
     }
 }
@@ -145,6 +163,7 @@ extension GameEngine {
         for v in [o.troops, o.aircraft.map(Double.init), o.warheads.map(Double.init)] {
             if let v, !v.isFinite || v < 0 || v > 100_000_000 { return "Force size out of range." }
         }
+        if o.kind.isPowerPlay { return powerPlayProblem(o) }   // 3.36.0
         if o.target == me.id { return "That is your own nation." }
         let nation = gs.getCountry(id: o.target).flatMap { $0.isDestroyed ? nil : $0 }
         if let n = nation, n.territoryOf == me.id { return "\(n.name) flies your own flag." }
@@ -172,6 +191,8 @@ extension GameEngine {
             return (o.troops ?? 0) >= 1 ? nil : "An expedition needs troops."
         case .buyColony, .backIndependence:
             return colonyTarget(o.target) == nil ? "Not a colony in \(gs.currentYear)." : nil
+        case .acquire, .emergency, .captureLeader, .limitedStrike, .renamePlace:
+            return powerPlayProblem(o)
         }
     }
 
@@ -213,6 +234,8 @@ extension GameEngine {
             return purchaseColony(o.target) != nil
         case .backIndependence:
             return supportIndependence(o.target) != nil
+        case .acquire, .emergency, .captureLeader, .limitedStrike, .renamePlace:
+            return executePowerPlay(o)
         }
     }
 
@@ -234,7 +257,7 @@ extension GameEngine {
         guard let gs = gameState else { out.notReached = orders; return out }
         let turn = gs.turn, date = gs.currentDate
         for (i, o) in orders.enumerated() {
-            guard let now = gameState, !now.gameOver, now.actionsRemaining > 0 else {
+            guard let now = gameState, !now.gameOver, now.actionsRemaining > 0 || o.costsNoAction else {
                 out.notReached = Array(orders[i...])
                 break
             }

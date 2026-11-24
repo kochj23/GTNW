@@ -24,6 +24,7 @@ struct SituationRoomView: View {
 
     enum SituationSheet: String, Identifiable {
         case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space, airCampaign, unclaimed
+        case powerPlays   // 3.36.0
         var id: String { rawValue }
     }
 
@@ -80,6 +81,7 @@ struct SituationRoomView: View {
             case .airCampaign: AirCampaignSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
+            case .powerPlays: PowerPlaysSheet(gameState: gameState, targetID: selectedCountryID ?? gameState.playerCountryID).environmentObject(gameEngine)
             case .fleet:
                 FleetOrderSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .nameClaim, .rename:
@@ -779,6 +781,8 @@ struct CountryDossier: View {
                             Button("SEND AID") { onSheet(.aid) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))
                         }
                         Button("CITY VIEW") { onSheet(.city) }.buttonStyle(ThemedButtonStyle())
+                        Button("POWER PLAYS") { onSheet(.powerPlays) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))   // 3.36.0
+                            .help(c.isPlayerControlled ? "National emergency and emergency orders" : "Buy it, strike it, raid it, tariff it")
                         if c.isPlayerControlled && gameState.playerCountryID == "USA" {   // 3.18.18: domestic National Guard
                             Button("NAT'L GUARD") { gameEngine.callNationalGuard() }
                                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))

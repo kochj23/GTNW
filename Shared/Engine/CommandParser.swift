@@ -28,6 +28,9 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
     case deployTroops, withdrawTroops, exercise, caseForWar
     // Land
     case claim, buy, liberate
+    // Power plays (3.36.0, PowerPlayPlanner.swift): an acquisition campaign's steps, emergency powers, a raid, a strike
+    case acquire, pressure, posture, frameworkDeal, escalateCampaign, emergency, endEmergency, emergencyTariffs, reissue
+    case captureLeader, limitedStrike, renamePlace
 
     /// The Situation Room action a simple (non-force) verb runs; nil for the force and land verbs.
     var simpleAction: PresidentialAction? {
@@ -88,7 +91,7 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
         case .claim: return "CLAIM LAND"
         case .buy: return "BUY COLONY"
         case .liberate: return "BACK INDEPENDENCE"
-        default: return (simpleAction?.rawValue ?? rawValue).uppercased()
+        default: return powerPlayTitle ?? (simpleAction?.rawValue ?? rawValue).uppercased()
         }
     }
 }
@@ -147,6 +150,8 @@ struct CommandIntent: Codable, Equatable, Sendable {
     var question: CommandQuestion?
     /// Ids the player picked in a clarification; they skip the name resolver and its questions.
     var confirmedTargets: [String]?
+    /// 3.36.0: a power play's parameter (a strike kind, a legal authority, an emergency's reason), from a closed list.
+    var detail: String?
 
     static func ask(_ q: CommandQuestion) -> CommandIntent { CommandIntent(question: q) }
 }
@@ -273,6 +278,7 @@ enum CommandParser {
     static func parse(_ raw: String) -> CommandIntent? {
         let text = normalize(sanitize(raw))
         guard !text.isEmpty else { return nil }
+        if let p = PowerPlayParser.parseRename(raw) ?? PowerPlayParser.parse(text) { return p }   // 3.36.0
         if questionStarts.contains(where: { text == $0 || text.hasPrefix($0 + " ") }) || helpWords.contains(text) {
             return parseQuestion(text, raw: raw).map(CommandIntent.ask)
         }

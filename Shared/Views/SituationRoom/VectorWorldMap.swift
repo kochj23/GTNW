@@ -334,6 +334,15 @@ struct VectorWorldMap: View {
                         ctx.fill(dot, with: .color(fill))
                         ctx.stroke(dot, with: .color(borderColor), lineWidth: 1)
                     }
+                    // 3.36.0: seas, straits and mountains by name (MapFeatures): the player's own names on the player's map.
+                    // At world zoom only the ones he has renamed, so the map stays readable.
+                    for f in MapFeatures.all where f.exists(in: gameState.currentYear)
+                        && (zoom != .world || gameState.shadow.powerPlays.featureNames[f.id] != nil) {
+                        let pt = CGPoint(x: f.lon, y: -f.lat).applying(t)
+                        guard CGRect(origin: .zero, size: size).contains(pt) else { continue }
+                        ctx.draw(Text(MapFeatures.shownName(f, in: gameState)).font(ThemeFont.mono(zoom == .world ? 8 : 10)).italic()
+                                    .foregroundColor(Theme.isRetro ? EGA.lightCyan : Color.white.opacity(0.75)), at: pt)
+                    }
                 }
                 // Rasterized on the GPU (Metal) instead of the CPU: hundreds of borders and hatches per redraw.
                 .drawingGroup()
