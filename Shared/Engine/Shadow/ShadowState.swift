@@ -21,6 +21,8 @@ enum DomesticEnding: String, Codable, CaseIterable {
     case termLimited, retired, deniedRenomination
     // How leaders of other nations fall (3.11.0).
     case noConfidence, coup, revolution, partyCongress, juntaDecision, royalDismissal
+    /// 3.36.0: the President stayed in power past his term (defied the limit or postponed the election, and won).
+    case ruleExtended
 
     /// 3.28.0: the presidency ran its full course (term limit or chose not to run): a finish, not a defeat.
     var servedOut: Bool { self == .termLimited || self == .retired }
@@ -40,6 +42,7 @@ enum DomesticEnding: String, Codable, CaseIterable {
         case .partyCongress: return "The party congress removes you from the leadership."
         case .juntaDecision: return "The junta votes to replace you."
         case .royalDismissal: return "The monarch dismisses you from office."
+        case .ruleExtended: return "No election is held. You remain in office indefinitely; the republic you swore to preserve is not the one you lead."
         }
     }
 }
@@ -266,6 +269,9 @@ struct ShadowState: Codable {
     var provinces = ProvinceLedger()
     /// 3.36.0: land development, approval causes and war counts for the game reports (ReportBooks.swift).
     var books = ReportBooks()
+    /// 3.36.0: power plays at home (troops in the states, the numbers, the central bank, stakes, term limits,
+    /// the missile shield, nuclear tests).
+    var homeFront = HomeFrontState()
 
     // Scenario
     var scenarioID: String?
@@ -318,6 +324,7 @@ struct ShadowState: Codable {
         case powerPlays
         case provinces
         case books
+        case homeFront
     }
 
     init() {}
@@ -432,6 +439,7 @@ struct ShadowState: Codable {
         powerPlays = (try? c.decodeIfPresent(PowerPlayState.self, forKey: .powerPlays)) ?? PowerPlayState()
         provinces = (try? c.decodeIfPresent(ProvinceLedger.self, forKey: .provinces)) ?? ProvinceLedger()
         books = (try? c.decodeIfPresent(ReportBooks.self, forKey: .books)) ?? ReportBooks()
+        homeFront = (try? c.decodeIfPresent(HomeFrontState.self, forKey: .homeFront)) ?? HomeFrontState()
     }
 }
 

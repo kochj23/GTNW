@@ -82,8 +82,8 @@ enum ChatTools {
              ["action": str("An order verb from the actions tool (optional)"), "target": str("Nation name (with action)")]),
         spec("news", "The news wire, the latest game log lines, and the orders you carried out recently.",
              ["count": ["type": "integer", "minimum": 1, "maximum": 20]]),
-        spec("actions", "Orders available this year with their verb, cost, risk and description; with a target, also the odds shown for each against it.",
-             ["target": str("Nation name (optional)"), "category": ["type": "string", "enum": ["military", "diplomatic", "economic", "covert", "treaty", "all"]]]),
+        spec("actions", "Orders available this year with their verb, cost, risk and description; with a target, also the odds shown for each against it. 'at_home' lists the power plays at home (troops in your states, the statistics office, the central bank, equity stakes, term limits, the missile shield, nuclear tests).",
+             ["target": str("Nation name (optional)"), "category": ["type": "string", "enum": ["military", "diplomatic", "economic", "covert", "treaty", "domestic", "all"]]]),
         spec("power_plays", "The President's power plays under way: the national emergency, emergency orders with their legal authority and court status, acquisition campaigns with leverage and resistance, limited strikes, capture raids and Congress's votes on them.", [:]),
         spec("propose_orders", "Put orders in front of the President for confirmation. Nothing runs until the President presses EXECUTE. One step per order, in order, at most 5 steps. Use the verbs from the actions tool. Verb rename (no action spent) renames the President's own country, lands he holds, seas, straits, mountains or departments; several renames go in one step's renames list.",
              ["steps": ["type": "array", "maxItems": maxSteps, "items": [
@@ -378,7 +378,7 @@ enum ChatTools {
 
     private static func economy(_ gs: GameState, _ me: Country) -> [String: Any] {
         let p = BudgetModel.project(gs.shadow.budget, atWar: !me.atWarWith.isEmpty)
-        return [
+        var d: [String: Any] = [
             "nation": me.name, "output_trillions": round2(me.gdp), "economic_strength": me.economicStrength,
             "budget_year": gs.currentYear,
             "revenue_percent_gdp": round1(p.revenue), "spending_percent_gdp": round1(p.spending),
@@ -388,6 +388,8 @@ enum ChatTools {
             "foreign_aid_pool_billions": round1(gs.shadow.budget.aidPool(gdpTrillions: me.gdp)),
             "budget_review_pending": gs.shadow.budgetReviewPending,
         ]
+        HomePlayCommands.annotate(&d, gs)   // 3.36.0: the figures as the government reports them
+        return d
     }
 
     private static func politics(_ gs: GameState, _ me: Country) -> [String: Any] {
@@ -460,7 +462,7 @@ enum ChatTools {
             "diplomatic": OrderWhitelist.diplomatic.union(OrderWhitelist.treaties),
             "economic": OrderWhitelist.economic, "covert": OrderWhitelist.covert, "treaty": OrderWhitelist.treaties,
         ]
-        let pool = category.flatMap { groups[$0] } ?? OrderWhitelist.actions
+        let pool: Set<PresidentialAction> = category == "domestic" ? [] : category.flatMap { groups[$0] } ?? OrderWhitelist.actions
         var rows: [String] = []
         for (verb, a) in verbActions where pool.contains(a) && a.isAvailable(on: gs.currentDate, in: gs) {
             var row = "\(verb.rawValue): \(a.rawValue), $\(money(a.cost)), risk \(a.riskLevel.rawValue.lowercased())"
@@ -476,6 +478,9 @@ enum ChatTools {
                          "renamePlace (the same as rename)",
                          "develop (invest in your territory)"]
         }
+        // 3.36.0: the power plays at home, in full for "domestic", by name otherwise (the list stays under the cap).
+        if category == "domestic" { d["at_home"] = HomePlayCommands.toolRows() }
+        else if category == nil || category == "all" { d["orders_at_home"] = HomePlay.allCases.map { "\($0.rawValue) (\($0.modes.joined(separator: "|")))" } }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }
         return ok(d)
@@ -540,7 +545,7 @@ enum ChatTools {
         else if let t = o["targets"] as? String { targets = [t] }
         else if let t = o["target"] as? String { targets = [t] }
         targets = targets.prefix(CommandParser.maxTargets).map { String(CommandParser.sanitize($0).prefix(maxArgString)) }.filter { !$0.isEmpty }
-        guard !targets.isEmpty else { throw ChatToolError(message: "name at least one target nation or land.") }
+        guard !targets.isEmpty || HomePlay(verb: verb) != nil else { throw ChatToolError(message: "name at least one target nation or land.") }
         var f = ForceRequest()
         func flag(_ k: String) -> Bool? { (o[k] as? Bool) ?? (o[k] as? String).map { $0.lowercased() == "true" } }
         func number(_ k: String) throws -> Double? {

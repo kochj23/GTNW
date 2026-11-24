@@ -761,6 +761,9 @@ class GameEngine: ObservableObject {
             }
         }
 
+        // 3.36.0: the President's missile shield stops a fixed share of what is still coming.
+        penetratingWarheads -= missileShieldIntercepts(target: target.id, incoming: penetratingWarheads)
+
         // Warhead generation scales the strike (3.18.x): thermonuclear megatons are far deadlier; a neutron bomb
         // kills people but spares the buildings and leaves little lasting fallout.
         let warhead = type ?? WarheadType.standard(for: gameState.currentYear)

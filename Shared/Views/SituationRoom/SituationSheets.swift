@@ -69,7 +69,7 @@ struct BudgetView: View {
                     row("Revenue", String(format: "%.1f%% of GDP", proj.revenue))
                     row("Spending", String(format: "%.1f%% of GDP", proj.spending))
                     row(proj.deficit >= 0 ? "Deficit" : "Surplus", String(format: "%.1f%% of GDP", abs(proj.deficit)), bad: proj.deficit > 4)
-                    row("GDP growth", String(format: "%+.1f%% / yr", proj.growth), bad: proj.growth < 1)
+                    row(gameState.numbersCooked ? "GDP growth (official)" : "GDP growth", String(format: "%+.1f%% / yr", proj.growth + gameState.officialGrowthBias), bad: proj.growth + gameState.officialGrowthBias < 1)
                     row("Quality of life", String(format: "%+.1f / yr", proj.qualityOfLifeChange), bad: proj.qualityOfLifeChange < 0)
                     row("Military strength", String(format: "%+.1f / yr", proj.militaryChange), bad: proj.militaryChange < 0)
                     row("Popularity at year end", String(format: "%+.1f", proj.popularityChange), bad: proj.popularityChange < 0)
@@ -565,6 +565,7 @@ struct DomesticEndingBanner: View {
             case .partyCongress: drawn("person.3.fill", "REMOVED BY THE PARTY")
             case .juntaDecision: drawn("star.slash.fill", "REPLACED BY THE JUNTA")
             case .royalDismissal: drawn("crown.fill", "DISMISSED BY THE CROWN")
+            case .ruleExtended: drawn("building.columns.fill", "NO ELECTION")
             }
         }
         .frame(maxHeight: FontScale.h(220))

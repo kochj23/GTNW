@@ -77,7 +77,7 @@ enum BudgetQuery: BridgeQuery {
                 Row(label: "Revenue", value: f(p.revenue), bad: false),
                 Row(label: "Spending", value: f(p.spending), bad: false),
                 Row(label: p.deficit >= 0 ? "Deficit" : "Surplus", value: f(abs(p.deficit)), bad: p.deficit > 4),
-                Row(label: "GDP growth", value: String(format: "%+.1f%% / yr", p.growth), bad: p.growth < 1),
+                Row(label: gs.numbersCooked ? "GDP growth (official)" : "GDP growth", value: String(format: "%+.1f%% / yr", p.growth + gs.officialGrowthBias), bad: p.growth + gs.officialGrowthBias < 1),
                 Row(label: "Quality of life", value: String(format: "%+.1f / yr", p.qualityOfLifeChange), bad: p.qualityOfLifeChange < 0),
                 Row(label: "Military strength", value: String(format: "%+.1f / yr", p.militaryChange), bad: p.militaryChange < 0),
                 Row(label: "Popularity at year end", value: String(format: "%+.1f", p.popularityChange), bad: p.popularityChange < 0),

@@ -48,6 +48,7 @@
 		1A7E5C0029A0000000000028 /* open_wars.json in Resources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000027 /* open_wars.json */; };
 		0899F4AA30B7933E26B52CF7 /* SnapshotRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B8A1F1D3F1DDA366112DF4 /* SnapshotRenderTests.swift */; };
 		09DCCE9CD5FEABEC8F5510A8 /* AdvicePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C809C1E54E2B35FFA722B3 /* AdvicePanel.swift */; };
+		5D5D1238E20BA02FDFDD93B0 /* HomeFrontSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B13BE68DF9CDE0F7BF505DC /* HomeFrontSheet.swift */; };
 		0AF81EFA232DADCE28B225B6 /* ShadowPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B8FFED8139DFE067BA5221 /* ShadowPack.swift */; };
 		0CD5072A8BED2D2318681AF2 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
 		1A7E5C0028A0000000000002 /* Islands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0028A0000000000001 /* Islands.swift */; };
@@ -121,10 +122,18 @@
 		F33600000000000000000B03 /* USStatesHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000000B01 /* USStatesHistory.swift */; };
 		F33600000000000000000A02 /* SubdivisionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000000A01 /* SubdivisionData.swift */; };
 		F33600000000000000000A03 /* SubdivisionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000000A01 /* SubdivisionData.swift */; };
+		85786841B3EFD3C99663BD5E /* HomeFrontTroops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCB087FBBE14EE793242002 /* HomeFrontTroops.swift */; };
+		7ED97C84B189D8AA17661D87 /* HomeFrontCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4571822105E5BBA238B17F2D /* HomeFrontCommands.swift */; };
+		889B4FBA82BBA743146E7886 /* HomeFrontEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9861B7E469B9AAF1A28CB308 /* HomeFrontEngine.swift */; };
+		5AF5718124E157E3A4DD99BC /* HomeFront.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F8D597F78436E617D8A0970 /* HomeFront.swift */; };
 		14C825C7503C08B10B6DFAF3 /* Antarctica.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C825C7503C08B10B6DFAF1 /* Antarctica.swift */; };
 		336B00000000000000000002 /* ReportBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000001 /* ReportBooks.swift */; };
 		336B00000000000000000003 /* ReportBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000001 /* ReportBooks.swift */; };
 		336B00000000000000000005 /* ReportBooksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000004 /* ReportBooksTests.swift */; };
+		FF1788BFE92D7152235E2998 /* HomeFrontTroops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCB087FBBE14EE793242002 /* HomeFrontTroops.swift */; };
+		C4100EE523A00421DA08D256 /* HomeFrontCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4571822105E5BBA238B17F2D /* HomeFrontCommands.swift */; };
+		85E679CC3D0DCD9E214EF940 /* HomeFrontEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9861B7E469B9AAF1A28CB308 /* HomeFrontEngine.swift */; };
+		D0E392CFA3F36A70348EEB75 /* HomeFront.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F8D597F78436E617D8A0970 /* HomeFront.swift */; };
 		14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
 		14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
 		160C08066A20A4CC24846137 /* ShadowSimulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3E55C52277C2CE8729F821 /* ShadowSimulation.swift */; };
@@ -155,6 +164,7 @@
 		36F45112B4A97FEBA8AB8651 /* CyberWarfare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846D958A103EA494AAC732D1 /* CyberWarfare.swift */; };
 		3B5833B7A6A5BB3E04047D23 /* NovaAPIServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEB803289CF2B22BD2D87B /* NovaAPIServer.swift */; };
 		3E54B0A4F07F41A7AF717735 /* ShadowSystemsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4A019381A252777158DFB /* ShadowSystemsTests.swift */; };
+		320BCCB109AFBA54F1B17CBD /* HomeFrontTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77416CF40F69786424552B38 /* HomeFrontTests.swift */; };
 		3E6D8A6DDBD679FC3C5D2EF7 /* HistoricalCrises.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F79596501F45D8917DD587 /* HistoricalCrises.swift */; };
 		3F3776463616B38201BA5954 /* SimpleModernWorldMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F952F761C5E733975CC193F5 /* SimpleModernWorldMap.swift */; };
 		40BA548AC1F96838707E22F5 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
@@ -230,6 +240,7 @@
 		77F73EEA76F8AE0C5CA7E30C /* PostgresNIO in Frameworks */ = {isa = PBXBuildFile; productRef = A3420262EC9EDA07B5B6168F /* PostgresNIO */; };
 		78CA70333D5C2D79D5AC047D /* PresidentialPowers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C5FC8E90BB415A941883B2 /* PresidentialPowers.swift */; };
 		795148B3244DF428277E4506 /* AdvicePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C809C1E54E2B35FFA722B3 /* AdvicePanel.swift */; };
+		B8E2E42F6F314B721275F7D5 /* HomeFrontSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B13BE68DF9CDE0F7BF505DC /* HomeFrontSheet.swift */; };
 		79602484A81ED37C5DB339E6 /* AchievementEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EDD0F24DB212B6E82F9582 /* AchievementEngine.swift */; };
 		7ABDEF5D1B4F33715640E692 /* AdvisorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D0B51B989A94270AE3580D /* AdvisorViews.swift */; };
 		7B58B87BA586678F7FB2A833 /* NewsFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC468BB40351CE42893C87 /* NewsFeed.swift */; };
@@ -506,6 +517,10 @@
 		F33600000000000000000A01 /* SubdivisionData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubdivisionData.swift; sourceTree = "<group>"; };
 		336B00000000000000000001 /* ReportBooks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportBooks.swift; sourceTree = "<group>"; };
 		336B00000000000000000004 /* ReportBooksTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportBooksTests.swift; sourceTree = "<group>"; };
+		5CCB087FBBE14EE793242002 /* HomeFrontTroops.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFrontTroops.swift; sourceTree = "<group>"; };
+		4571822105E5BBA238B17F2D /* HomeFrontCommands.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFrontCommands.swift; sourceTree = "<group>"; };
+		9861B7E469B9AAF1A28CB308 /* HomeFrontEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFrontEngine.swift; sourceTree = "<group>"; };
+		6F8D597F78436E617D8A0970 /* HomeFront.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFront.swift; sourceTree = "<group>"; };
 		15C61B45692E5ECBC414422A /* CombatModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CombatModel.swift; sourceTree = "<group>"; };
 		16128088EEBC501C77066EB8 /* AIOutputSanitizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIOutputSanitizer.swift; sourceTree = "<group>"; };
 		19B45E868695D0EB48133AB0 /* AIOptionsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIOptionsTests.swift; sourceTree = "<group>"; };
@@ -633,6 +648,7 @@
 		F33600000000000000001001 /* SubdivisionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubdivisionTests.swift; path = GTNWTests/SubdivisionTests.swift; sourceTree = SOURCE_ROOT; };
 		D5839EBF9AF8DD2721EDA0F4 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D6C809C1E54E2B35FFA722B3 /* AdvicePanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdvicePanel.swift; sourceTree = "<group>"; };
+		3B13BE68DF9CDE0F7BF505DC /* HomeFrontSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFrontSheet.swift; sourceTree = "<group>"; };
 		D7ECEDC77508A1E557396BF0 /* PredictiveIntelligence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PredictiveIntelligence.swift; sourceTree = "<group>"; };
 		D856B041446F1FA1E01777EB /* GTNWFrameTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GTNWFrameTests.swift; sourceTree = "<group>"; };
 		D9ABF650AA6646237E6281BB /* GTNWIntegrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GTNWIntegrationTests.swift; sourceTree = "<group>"; };
@@ -643,6 +659,7 @@
 		E76389057B2DD82D0D8ACAF1 /* AdvisorWarnings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdvisorWarnings.swift; sourceTree = "<group>"; };
 		E7840FA926BF3040BC40D754 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		E7C4A019381A252777158DFB /* ShadowSystemsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShadowSystemsTests.swift; path = GTNWTests/ShadowSystemsTests.swift; sourceTree = SOURCE_ROOT; };
+		77416CF40F69786424552B38 /* HomeFrontTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeFrontTests.swift; path = GTNWTests/HomeFrontTests.swift; sourceTree = SOURCE_ROOT; };
 		EA8C17B9452950CE85EAF02B /* GTNW_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GTNW_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EB143AE0043E5C63428554A5 /* world_countries.json */ = {isa = PBXFileReference; includeInIndex = 1; name = world_countries.json; path = Shared/Resources/world_countries.json; sourceTree = SOURCE_ROOT; };
 		F33600000000000000000E01 /* subdivisions.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; name = subdivisions.json; path = Shared/Resources/subdivisions.json; sourceTree = SOURCE_ROOT; };
@@ -806,6 +823,7 @@
 				9CA3E7FC67216FDA941511B3 /* GTNWAuditTests.swift */,
 				9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */,
 				E7C4A019381A252777158DFB /* ShadowSystemsTests.swift */,
+				77416CF40F69786424552B38 /* HomeFrontTests.swift */,
 				85B8A1F1D3F1DDA366112DF4 /* SnapshotRenderTests.swift */,
 				87B18B020054C4C3F928E69B /* GTNWRetryTests.swift */,
 				2F16417C930132804BBFF9F6 /* GTNWPerformanceTests.swift */,
@@ -898,6 +916,10 @@
 				F33600000000000000000B01 /* USStatesHistory.swift */,
 				F33600000000000000000A01 /* SubdivisionData.swift */,
 				336B00000000000000000001 /* ReportBooks.swift */,
+				5CCB087FBBE14EE793242002 /* HomeFrontTroops.swift */,
+				4571822105E5BBA238B17F2D /* HomeFrontCommands.swift */,
+				9861B7E469B9AAF1A28CB308 /* HomeFrontEngine.swift */,
+				6F8D597F78436E617D8A0970 /* HomeFront.swift */,
 				741E9954966E3FD4CF3B0AF1 /* OccupationModel.swift */,
 				ACEAF08957D1E924BD21FAF1 /* ManpowerModel.swift */,
 				E76389057B2DD82D0D8ACAF1 /* AdvisorWarnings.swift */,
@@ -1062,6 +1084,7 @@
 			isa = PBXGroup;
 			children = (
 				D6C809C1E54E2B35FFA722B3 /* AdvicePanel.swift */,
+				3B13BE68DF9CDE0F7BF505DC /* HomeFrontSheet.swift */,
 				55391330E97B3EE4AC209C0C /* VectorWorldMap.swift */,
 				F33600000000000000000F01 /* SubdivisionMap.swift */,
 				60C2DF9147061D64BD249A28 /* SituationRoomView.swift */,
@@ -1456,6 +1479,10 @@
 				F33600000000000000000B02 /* USStatesHistory.swift in Sources */,
 				F33600000000000000000A02 /* SubdivisionData.swift in Sources */,
 				336B00000000000000000002 /* ReportBooks.swift in Sources */,
+				85786841B3EFD3C99663BD5E /* HomeFrontTroops.swift in Sources */,
+				7ED97C84B189D8AA17661D87 /* HomeFrontCommands.swift in Sources */,
+				889B4FBA82BBA743146E7886 /* HomeFrontEngine.swift in Sources */,
+				5AF5718124E157E3A4DD99BC /* HomeFront.swift in Sources */,
 				741E9954966E3FD4CF3B0AF2 /* OccupationModel.swift in Sources */,
 				ACEAF08957D1E924BD21FAF2 /* ManpowerModel.swift in Sources */,
 				E76389057B2DD82D0D8ACAF2 /* AdvisorWarnings.swift in Sources */,
@@ -1475,6 +1502,7 @@
 				0CE9F626FF8F1B7F1D828879 /* ShadowSimulation.swift in Sources */,
 				06ED6231B77CA9F4C76BB3F0 /* Theme.swift in Sources */,
 				795148B3244DF428277E4506 /* AdvicePanel.swift in Sources */,
+				B8E2E42F6F314B721275F7D5 /* HomeFrontSheet.swift in Sources */,
 				C6DC00A26597B903EF3B284F /* VectorWorldMap.swift in Sources */,
 				F33600000000000000000F02 /* SubdivisionMap.swift in Sources */,
 				67A1A98CBC34E55CB4401301 /* SituationRoomView.swift in Sources */,
@@ -1529,6 +1557,7 @@
 				99BD19A6521D9A063A32D7A6 /* GTNWAuditTests.swift in Sources */,
 				471CAF9CFF65EE7E4D0EB572 /* ShadowPackTests.swift in Sources */,
 				3E54B0A4F07F41A7AF717735 /* ShadowSystemsTests.swift in Sources */,
+				320BCCB109AFBA54F1B17CBD /* HomeFrontTests.swift in Sources */,
 				0899F4AA30B7933E26B52CF7 /* SnapshotRenderTests.swift in Sources */,
 				4E070956D299BFBFE9D58CC9 /* GTNWRetryTests.swift in Sources */,
 				A1A434CC1BCC8F1578B59E0D /* GTNWPerformanceTests.swift in Sources */,
@@ -1683,6 +1712,10 @@
 				F33600000000000000000B03 /* USStatesHistory.swift in Sources */,
 				F33600000000000000000A03 /* SubdivisionData.swift in Sources */,
 				336B00000000000000000003 /* ReportBooks.swift in Sources */,
+				FF1788BFE92D7152235E2998 /* HomeFrontTroops.swift in Sources */,
+				C4100EE523A00421DA08D256 /* HomeFrontCommands.swift in Sources */,
+				85E679CC3D0DCD9E214EF940 /* HomeFrontEngine.swift in Sources */,
+				D0E392CFA3F36A70348EEB75 /* HomeFront.swift in Sources */,
 				741E9954966E3FD4CF3B0AF3 /* OccupationModel.swift in Sources */,
 				ACEAF08957D1E924BD21FAF3 /* ManpowerModel.swift in Sources */,
 				E76389057B2DD82D0D8ACAF3 /* AdvisorWarnings.swift in Sources */,
@@ -1702,6 +1735,7 @@
 				160C08066A20A4CC24846137 /* ShadowSimulation.swift in Sources */,
 				B53FC608F112D59453DF010A /* Theme.swift in Sources */,
 				09DCCE9CD5FEABEC8F5510A8 /* AdvicePanel.swift in Sources */,
+				5D5D1238E20BA02FDFDD93B0 /* HomeFrontSheet.swift in Sources */,
 				8AAB9E7E1F5847BAEFA57E08 /* VectorWorldMap.swift in Sources */,
 				F33600000000000000000F03 /* SubdivisionMap.swift in Sources */,
 				D61F1C729DBCF0AA783F12FF /* SituationRoomView.swift in Sources */,

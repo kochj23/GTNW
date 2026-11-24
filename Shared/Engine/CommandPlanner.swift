@@ -298,6 +298,7 @@ extension GameEngine {
         if gs.actionsRemaining == 0 {
             return .rejected("No actions left this \(gs.turnLength.displayName.lowercased()). End the turn first.")
         }
+        if let play = HomePlay(verb: verb) { return planHomePlay(play, intent, source: source) }   // 3.36.0
         // Names → targets (or a question back).
         var targets: [ResolvedTarget] = []
         /// Nations added by a region name: one that can't take the order is skipped, not a refusal of the whole plan.
@@ -822,6 +823,8 @@ enum CommandHelp {
         "  ally with Britain · sanction Iran · lift sanctions on Cuba · send aid to Kenya",
         "  send an ambassador to China · condemn Iraq · spy on Germany · sabotage Libya",
         "  deploy the seventh fleet to Japan · claim Madagascar · buy Alaska · liberate Brazil",
+        "  at home: fire the chief statistician · pressure the Fed to cut rates · buy a stake in steel",
+        "  build a missile shield · conduct an underground nuclear test · postpone the election",
         "Questions (answered from the game, nothing changes):",
         "  who can reach me with ICBMs? · can I reach Brazil? · what's France's stability?",
         "  who am I at war with? · who are my allies? · how many actions left? · where are my fleets?",

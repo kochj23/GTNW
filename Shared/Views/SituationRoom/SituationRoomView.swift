@@ -80,6 +80,7 @@ struct SituationRoomView: View {
             case .tutorial: TutorialSheet()
             case .space: SpaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .airCampaign: AirCampaignSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
+            case .homeFront: HomeFrontSheet(gameState: gameState).environmentObject(gameEngine)   // 3.36.0
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .powerPlays: PowerPlaysSheet(gameState: gameState, targetID: selectedCountryID ?? gameState.playerCountryID).environmentObject(gameEngine)
@@ -301,6 +302,7 @@ struct SituationTopBar: View {
             }
             Button("PEACE") { onSheet(.peace) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))   // 3.16.0
             Button("TACTICS") { onSheet(.tactics) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))   // 3.17.0: dirty tactics
+            Button("HOME FRONT") { onSheet(.homeFront) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))   // 3.36.0: power plays at home
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy
             Button("UNCLAIMED") { onSheet(.unclaimed) }.buttonStyle(ThemedButtonStyle(color: VectorWorldMap.claimableColor))   // 3.28.1
             Button("FACTBOOK") { onSheet(.factbook) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))   // 3.18.13: reference tab

@@ -108,6 +108,7 @@ extension GameEngine {
         processPowerPlays()      // 3.36.0: campaigns, emergency orders and the courts, raids, limited strikes
         checkOneSitting()        // 3.32.3: a one-sitting game's clock
         processEconomy(from: from, to: to, scale: scale)
+        processHomeFront()      // 3.36.0: power plays at home (numbers, central bank, stakes, shield, power bids)
         driftCongress(scale: scale)
         processDomesticPolitics(from: from, to: to, scale: scale)
         processTerritoryEconomy()   // after the poll, so its impeachment warning always precedes the next one
@@ -827,7 +828,7 @@ extension GameEngine {
             gs.shadow.lastBudgetYear = gs.currentYear
             gs.shadow.budgetReviewPending = true
             let summary = String(format: "New fiscal year: GDP growth %.1f%%, deficit %.1f%% of GDP. The budget for %d is ready for your review.",
-                                 proj.growth, proj.deficit, gs.currentYear)
+                                 proj.growth + gs.officialGrowthBias, proj.deficit, gs.currentYear)
             gs.shadow.post(summary, date: to, severity: 1)
             addLog("💵 \(summary)", type: .info)
         }

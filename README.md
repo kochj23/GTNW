@@ -224,6 +224,24 @@ Press **⌘K** (Orders → Command Box…, or the `>` prompt under the world bri
   - 6 kinds of pardon
   - Presidential addresses with cooldowns
   - Cabinet firings, which have knock-on effects on loyalty and approval
+- **The home front** (new in 3.36.0; the HOME FRONT button, the command box and the chief of staff): power plays any
+  President in any era can try, each with the cabinet's honest read-out and a bill that comes due later.
+  - *Troops in your own states* over a governor's objection: order restored in a state in turmoil, unrest in a quiet
+    one; the state votes against you, the governor sues, and a state pushed past its breaking point may try to leave.
+  - *Fixing the numbers*: fire the chief statistician and the official figures look better, with an error that grows
+    each month. The true figures stay in the engine and leak sooner or later; markets and the polls react. The sheet
+    marks every figure OFFICIAL or LEAKED.
+  - *The central bank* (the Bank of the United States 1791–1811, the Second Bank 1816–36, the Federal Reserve from
+    1914; none in between): pressure it or overrule it for growth and approval now, inflation and borrowing costs later.
+  - *Equity stakes* in strategic industries of the era (railroads to semiconductors): dividends and leverage, and
+    conflict-of-interest scandals.
+  - *Staying in power*: defy the 22nd Amendment or postpone the election (Congress, the courts, the states and the
+    military each get a say; success is its own ending, failure almost always removal), or seek the amendment's repeal
+    lawfully. Before 1951 a third term is legal and only costs votes.
+  - *A missile shield* (from 1957; it breaks the ABM Treaty 1972–2002): years and billions, then it stops a fixed share
+    of the warheads aimed at you (10–30% by era, never most of them).
+  - *Nuclear tests*: deterrence up, relations down; atmospheric tests violate the Limited Test Ban Treaty from 1963
+    and leave fallout, underground ones break the 1992 moratorium.
 
 ### The election cycle (new in 3.21.0)
 
@@ -1274,6 +1292,7 @@ the game.)
 | **Served out your presidency** (3.28.0): reaching the 22nd Amendment's limit, or choosing not to run again. A better victory earned by then still counts | |
 | Survival: 100 game years through a nuclear winter | Assassination |
 | **WOPR ending**: 50 game years with zero wars and zero launches | Civil war |
+| | **No election** (3.36.0): you stayed in power past your term; the republic did not survive it |
 
 In the WOPR ending, WOPR takes over and runs 2,005 war scenarios, all ending in "WINNER: NONE". It then gives its
 verdict: *"A strange game. The only winning move is not to play."*

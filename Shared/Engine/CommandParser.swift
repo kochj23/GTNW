@@ -35,6 +35,8 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
     case rename
     /// 3.36.0: invest in a territory the President holds (six months of development).
     case develop
+    // 3.36.0: power plays at home (`HomePlay`, planned by `planHomePlay`)
+    case troopsHome, fixNumbers, leanOnBank, buyStake, stayInPower, missileShield, nuclearTest
 
     /// The Situation Room action a simple (non-force) verb runs; nil for the force and land verbs.
     var simpleAction: PresidentialAction? {
@@ -97,7 +99,7 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
         case .liberate: return "BACK INDEPENDENCE"
         case .rename: return "RENAME"
         case .develop: return "INVEST"
-        default: return powerPlayTitle ?? (simpleAction?.rawValue ?? rawValue).uppercased()
+        default: return powerPlayTitle ?? HomePlay(verb: self)?.title ?? (simpleAction?.rawValue ?? rawValue).uppercased()
         }
     }
 }
@@ -322,6 +324,7 @@ enum CommandParser {
             }
         }
         body = body.trimmingCharacters(in: .whitespaces)
+        if let home = HomePlayCommands.parse(body) { return home }   // 3.36.0: power plays at home
         guard let (phrase, verb0) = phrases.first(where: { body == $0.0 || body.hasPrefix($0.0 + " ") }) else { return nil }
         var verb = verb0
         let rest = String(body.dropFirst(phrase.count)).trimmingCharacters(in: .whitespaces)

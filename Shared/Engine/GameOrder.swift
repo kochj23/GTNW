@@ -41,6 +41,9 @@ enum OrderKind: String, Codable, CaseIterable, Sendable {
     case rename
     /// 3.36.0: invest in a territory the President holds (`investInLand`, one action, era-priced).
     case developLand
+    /// 3.36.0: a power play at home (`executeHomePlay`): `action` is a `HomePlay`, `mission` its mode, `target` a
+    /// state, an industry or the President's own nation.
+    case homePlay
 }
 
 /// One resolved order: what the engine is asked to do, against whom, with exactly which forces.
@@ -66,7 +69,10 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
     /// 3.36.0: a rename and ending the emergency take no action, so they run with none left.
     var costsNoAction: Bool { kind == .rename || kind == .renamePlace || (kind == .emergency && mission == "end") }
 
-    var isNuclear: Bool { presidentialAction.map { OrderWhitelist.nuclear.contains($0) } ?? false }
+    var isNuclear: Bool {
+        if kind == .homePlay { return action == HomePlay.nuclearTest.rawValue }   // a test needs the second press too
+        return presidentialAction.map { OrderWhitelist.nuclear.contains($0) } ?? false
+    }
 
     /// One line for logs and the play history: "Air Strike → FRA (300 aircraft)".
     var summary: String {
@@ -86,6 +92,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         case .renamePlace: what = "Rename (\(detail ?? "?"))"
         case .rename: what = "Rename (\(detail ?? "?"))"
         case .developLand: what = "Invest"
+        case .homePlay: what = "\(action ?? "?") \(mission ?? "")"
         }
         var sizes: [String] = []
         if let t = troops { sizes.append("\(Int(t))K troops") }
@@ -163,6 +170,7 @@ extension GameEngine {
     func orderProblem(_ o: GameOrder) -> String? {
         guard let gs = gameState, let me = gs.getPlayerCountry() else { return "No game in progress." }
         if gs.gameOver { return "The game is over." }
+        if o.kind == .homePlay { return homePlayProblem(o) }   // 3.36.0: aimed at home, checked there
         guard !o.target.isEmpty, o.target.count <= 16,
               o.target.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || $0 == "_" }) else {
             return "Not a target."
@@ -205,6 +213,8 @@ extension GameEngine {
             return nil   // checked above
         case .developLand:
             return LandDevelopment.problem(o.target, in: gs)
+        case .homePlay:
+            return homePlayProblem(o)
         }
     }
 
@@ -252,6 +262,8 @@ extension GameEngine {
             return rename(RenameTarget.from(id: o.target, in: gs), to: o.detail ?? "").succeeded
         case .developLand:
             return investInLand(o.target)
+        case .homePlay:
+            return executeHomePlay(o)
         }
     }
 

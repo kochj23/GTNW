@@ -89,6 +89,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Chief of staff and orders:** the `country` tool lists a nation's states and provinces (holder, occupation,
   unrest) and answers for one by name (people, electoral votes, last result); orders accept state names ("sanction
   Bavaria" goes to Germany), and claim/buy/liberate on a province point to the peace table.
+- **The home front: power plays at home** (the Situation Room's HOME FRONT sheet, the command box and the chief of
+  staff's `propose_orders`; each one action, a confirmation card and the cabinet's read-out with the engine's numbers;
+  overruled advisers lose loyalty). Generic mechanics for any President in any era:
+  - *Troops in your own states* ("send federal troops into Texas"): over the governor's objection; order restored or
+    unrest rising, the state's own election swing, a court ruling, and a secession risk past the breaking point.
+  - *Fixing the numbers* ("fire the chief statistician"): official growth and inflation look better, with an error
+    that grows each month; the true figures stay in the engine and leak (seeded chance rising each year), then
+    markets sell off and approval falls. Figures are marked OFFICIAL or LEAKED; the chief of staff sees the official.
+  - *The central bank* ("pressure the Fed to cut rates", "overrule the Fed"): growth and approval now, inflation and
+    borrowing costs later. Era-aware: the Bank of the United States, the Second Bank, none 1837–1913, the Federal
+    Reserve from 1914; other nations by their central bank's founding.
+  - *Government equity stakes* ("buy a stake in steel"): era industries, dividends, a little leverage, and
+    conflict-of-interest scandals that grow with the number of stakes.
+  - *Staying in power* ("postpone the election", "defy the 22nd Amendment", "repeal the 22nd Amendment"): Congress,
+    the courts, the states and the military in turn; success ends the game (**No election**), failure means removal
+    (85%) or a humiliating climb-down. Repeal is lawful and lifts the limit. Before 1951 a third term is legal and
+    only breaks tradition.
+  - *Missile shield* ("build a missile shield"): from 1957, 4–6 years at 0.2% of GDP a year, then it stops a fixed
+    share of incoming warheads in strike resolution (10–30% by era, rounded down, no dice). Breaks the ABM Treaty
+    1972–2002; nuclear rivals take it badly.
+  - *Nuclear tests* ("conduct an underground nuclear test"): a warhead spent, rivals more cautious, relations down;
+    atmospheric tests violate the Limited Test Ban Treaty from October 1963 and leave fallout, underground tests from
+    1957 and against the 1992 moratorium. A test needs the second confirmation like a strike.
+- Saves keep all of it (`shadow.homeFront`); older saves load with nothing in play, and a game that never uses these
+  orders draws nothing extra from the RNG.
 
 - **INVEST in a territory** (one action, era-priced: half a year of its full output, at least $0.1B before 1900, $0.5B
   before 1950, $2.5B after; paid from the funds or up to 2% of output): six months of development at once. Each

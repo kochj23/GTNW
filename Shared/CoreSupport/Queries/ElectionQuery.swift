@@ -194,6 +194,7 @@ enum ElectionQuery: BridgeQuery {
         case .partyCongress: return "REMOVED BY THE PARTY"
         case .juntaDecision: return "REPLACED BY THE JUNTA"
         case .royalDismissal: return "DISMISSED BY THE CROWN"
+        case .ruleExtended: return "NO ELECTION"
         }
     }
 }
