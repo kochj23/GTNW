@@ -805,9 +805,7 @@ extension GameEngine {
             guard let first = card.options.first else { continue }
             gs.shadow.post("Your campaign staff decided \"\(card.title)\" for you: \(first.title).", date: gs.currentDate)
             ElectionCycle.apply(first.consequences, to: gs)
-            if first.consequences.approvalChange != 0 {
-                gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + Double(first.consequences.approvalChange))
-            }
+            gs.applyCardApproval(first.consequences.approvalChange, title: card.title)   // 3.36.0: capped, with its reason
         }
         self.gameState = gs
     }

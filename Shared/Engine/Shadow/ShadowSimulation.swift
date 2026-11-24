@@ -503,7 +503,7 @@ extension GameEngine {
         let player = gs.playerCountryID
         if verdict == .attackerWon {
             if gs.countries[di].isPlayerControlled {
-                gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 25)
+                gs.shadow.moveApproval(-25, because: "defeat by \(aName)")
                 gs.shadow.post("The United States accepts humiliating terms from \(aName).", date: gs.currentDate, severity: 3)
             } else if f.attacker == player || f.usSide == f.attacker {
                 // A U.S. victory: the President decides the country's future (annex it, or choose its government).
@@ -519,7 +519,7 @@ extension GameEngine {
                 self.gameState = gs
                 writePeaceTerms(victor: f.attacker, loser: f.defender, negotiated: false)   // 3.32.2
             }
-            if f.attacker == player || f.usSide == f.attacker { gs.warsWon += 1; gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 6) }
+            if f.attacker == player || f.usSide == f.attacker { gs.warsWon += 1; gs.shadow.moveApproval(6, because: "victory over \(dName)") }
             // 3.32.3: a war won in a season teaches the room that wars are won in a season.
             self.gameState = gs
             recordDoctrine(.rapidWar, actor: f.attacker, won: true,
@@ -529,14 +529,15 @@ extension GameEngine {
             gs.countries[ai].stability = max(0, gs.countries[ai].stability - 15)
             gs.countries[ai].profile.outcry = min(100, gs.countries[ai].profile.outcry + 15)
             gs.shadow.post("\(aName)'s offensive collapses; its forces withdraw from \(dName).", date: gs.currentDate, severity: 2)
-            if f.defender == player || f.usSide == f.defender { gs.warsWon += 1; gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + 4) }
-            if f.attacker == player { gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - 15) }
+            if f.defender == player || f.usSide == f.defender { gs.warsWon += 1; gs.shadow.moveApproval(4, because: "\(aName)'s offensive beaten back") }
+            if f.attacker == player { gs.shadow.moveApproval(-15, because: "the failed offensive against \(dName)") }
             self.gameState = gs
             recordDoctrine(.rapidWar, actor: f.attacker, won: false, note: "the offensive against \(dName) failed")
         }
         gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(verdict == .attackerWon ? "\(dName) surrendered to \(aName)" : "\(aName) withdrew from \(dName)").")
         ShadowPack.shared.play(verdict == .attackerWon ? "sfx.war6" : "sfx.negotiation")
         self.gameState = gs
+        recordPlayerWarEnd(attacker: f.attacker, defender: f.defender, usSide: f.usSide, attackerWon: verdict == .attackerWon)   // 3.36.0
     }
 
     /// Carry out the President's decision for a vanquished country. Unknown ids are ignored.
@@ -651,7 +652,7 @@ extension GameEngine {
             modifyDiplomaticRelation(from: gs.countries[i].id, to: owner.id, by: Int((base * f).rounded()))
         }
         gs.shadow.ruthlessness += politics.ruthlessness
-        gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + politics.popularity)
+        gs.shadow.moveApproval(politics.popularity, because: "land claims")
         // 3.10.0: claiming Antarctica breaks the Antarctic Treaty from 23 Jun 1961 (restricted since signing in 1959).
         let antarcticStatus = id == Antarctica.id ? Antarctica.legalStatus(on: gs.currentDate) : .legal
         if antarcticStatus != .legal {
@@ -890,17 +891,23 @@ extension GameEngine {
                                                  warsInvolvingPlayer: player.atWarWith.count,
                                                  ruthlessness: gs.shadow.ruthlessness, nuclearHitsOnPlayer: hits)
             + ExpansionModel.prosperityBonus(incomePerYear: income)
+        let beforeDrift = gs.shadow.popularity
         gs.shadow.popularity = PopularityModel.drift(gs.shadow.popularity, toward: target, scale: scale)
+        gs.shadow.noteApproval(gs.shadow.popularity - beforeDrift, because: PopularityModel.driftCause)   // 3.36.0
 
         // Polls on the first of each month.
         let cal = GameCalendar.calendar
         let newMonth = cal.component(.month, from: from) != cal.component(.month, from: to) || GameCalendar.year(of: from) != GameCalendar.year(of: to)
         if newMonth {
             let last = gs.shadow.polls.last?.popularity ?? gs.shadow.popularity
-            gs.shadow.polls.append(PollRecord(date: to, popularity: gs.shadow.popularity))
+            // 3.36.0: a move over 10 points names its main cause, in the news and on the poll.
+            let move = gs.shadow.popularity - last
+            let cause = abs(move) > PopularityModel.explainedPollMove ? gs.shadow.pollCause(change: move) : nil
+            gs.shadow.books.approvalCauses = [:]
+            gs.shadow.polls.append(PollRecord(date: to, popularity: gs.shadow.popularity, cause: cause))
             if gs.shadow.polls.count > 240 { gs.shadow.polls.removeFirst() }
             let phrase = PopularityModel.pollPhrase(from: last, to: gs.shadow.popularity)
-            gs.shadow.post("Press Secretary: \(phrase)", date: to)
+            gs.shadow.post("Press Secretary: \(phrase)\(cause.map { " Main cause: \($0)." } ?? "")", date: to, severity: cause == nil ? 0 : 2)
             if gs.shadow.popularity < last - 5 { ShadowPack.shared.play("sfx.popularity_hit") }
 
             // Congress watches the polls.
@@ -1135,7 +1142,8 @@ extension GameEngine {
     /// Domestic fallout of an action.
     func recordPlayerAction(rung: EscalationRung, hostile: Bool, detected: Bool) {
         guard let gs = gameState else { return }
-        gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity + PopularityModel.actionEffect(rung: rung, hostile: hostile, detected: detected))
+        gs.shadow.moveApproval(PopularityModel.actionEffect(rung: rung, hostile: hostile, detected: detected),
+                               because: "your \(rung.title.lowercased()) orders")
         gs.shadow.ruthlessness += PopularityModel.ruthlessnessEffect(rung: rung, hostile: hostile)
         self.gameState = gs
     }

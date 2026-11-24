@@ -599,6 +599,27 @@ struct CountryDossier: View {
         }
     }
 
+    /// 3.36.0: when the land develops and what it will pay, or plainly that it pays nothing; INVEST brings it closer.
+    @ViewBuilder
+    private func landDevelopment(_ c: Country) -> some View {
+        if let note = LandDevelopment.note(c, in: gameState) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: note).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalAmber)
+                    .fixedSize(horizontal: false, vertical: true)
+                if LandDevelopment.canDevelop(c.id, in: gameState) {
+                    let cost = LandDevelopment.investCost(c, in: gameState)
+                    let problem = LandDevelopment.problem(c.id, in: gameState)
+                    Button(String(format: "INVEST ($%.2fB)", cost)) { gameEngine.investInLand(c.id) }
+                        .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
+                        .disabled(problem != nil)
+                        .help(problem ?? "One action: six months of development at once.")
+                        .accessibilityLabel(String(format: "Invest %.2f billion dollars in %@", cost, c.name))
+                        .accessibilityHint(problem ?? "Uses one action. Brings full output six months closer.")
+                }
+            }
+        }
+    }
+
     /// Unclaimed land (3.3.0): nobody to talk to, nobody to fight. One action sends an expedition to take it.
     private func landDossier(_ id: String) -> some View {
         let land = WorldCountriesDatabase.template(id: id)
@@ -745,6 +766,7 @@ struct CountryDossier: View {
                         Text(String(format: "LAND $%.2fB/YR · %@", ExpansionModel.landYield(c, in: gameState),
                                     ExpansionModel.landResources(c.id, year: gameState.currentYear).map(\.rawValue).joined(separator: ", ").uppercased()))
                             .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen).fixedSize(horizontal: false, vertical: true)
+                        if o == gameState.playerCountryID { landDevelopment(c) }   // 3.36.0
                         if o == gameState.playerCountryID, Islands.byID[c.id] != nil { islandDevelopment(c) }
                         if o != gameState.playerCountryID { foreignTerritoryActions(c) }   // 3.28.2
                     }

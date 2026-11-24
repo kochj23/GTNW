@@ -91,7 +91,7 @@ enum ChatTools {
                 "properties": [
                     "verb": ["type": "string", "enum": CommandVerb.allCases.map(\.rawValue)],
                     "targets": ["type": "array", "items": ["type": "string", "maxLength": maxArgString], "maxItems": CommandParser.maxTargets,
-                                "description": "Nation or land names. A region name (\(WorldRegion.allCases.map(\.rawValue).joined(separator: ", "))) means every independent nation in it."] as [String: Any],
+                                "description": "Nation or land names. A region name (\(WorldRegion.allCases.map(\.rawValue).joined(separator: ", "))) means every independent nation in it; with claim, buy, liberate or develop, every land in it that can take the order."] as [String: Any],
                     "ground": ["type": "boolean"], "air": ["type": "boolean"], "naval": ["type": "boolean"],
                     "nuclear": ["type": "string", "enum": ["yes", "no", "unspecified"]],
                     "all": ["type": "boolean"], "light": ["type": "boolean"],
@@ -192,6 +192,11 @@ enum ChatTools {
             target = .nation(me.id)
         } else if let p = CommandTargets.state(raw, in: gs) {
             return ok(stateDossier(p, gs))   // 3.36.0
+        } else if let part = CommandTargets.partOf(raw, in: gs), let owner = gs.getCountry(id: part.owner) {
+            // 3.36.0: a land drawn as part of a nation ("Greenland" in 2025): say whose it is, in one plain line.
+            let whose = owner.id == me.id ? "your own nation" : owner.name
+            return ok(["name": part.name, "status": "\(part.name): part of \(whose) in \(gs.currentYear), not a separate land or territory in the game.",
+                       "part_of": owner.name])
         } else {
             switch CommandTargets.resolve(raw, in: gs) {
             case .none: return error("No nation or land called \"\(String(raw.prefix(40)))\" in \(gs.currentYear).")
@@ -221,6 +226,7 @@ enum ChatTools {
             case .unclaimed: d["kind"] = "unclaimed land"
             case .nation: break
             }
+            d["status"] = CommandTargets.ownershipLine(t, in: gs, engine: e)   // 3.36.0: who holds it, plainly
             return d
         }
         let mine = c.id == me.id
@@ -241,6 +247,8 @@ enum ChatTools {
         if gs.currentYear >= 1945, c.nuclearWarheads > 0 { d["nuclear_warheads"] = estimate(c.nuclearWarheads, mine: mine, gs) }
         if let bloc = MilitaryAllianceSystem.allianceName(year: gs.currentYear, forCountryID: c.id) { d["alliance_bloc"] = bloc }
         if let owner = c.territoryOf { d["territory_of"] = gs.getCountry(id: owner)?.name ?? owner }
+        d["status"] = CommandTargets.ownershipLine(t, in: gs, engine: e)   // 3.36.0: who holds it, plainly
+        if c.territoryOf == me.id, let note = LandDevelopment.note(c, in: gs) { d["development"] = note }
         if !mine, let line = e.intelLine(about: c.id) { d["intelligence"] = line }
         // 3.36.0: its states and provinces, most populous first (owner when not its own, occupation, unrest).
         let holders = gs.provinceHolders()
@@ -465,7 +473,8 @@ enum ChatTools {
                          "claim (unclaimed land)", "buy (a colony)", "liberate (back a colony's independence)",
                          "limitedStrike", "captureLeader", "acquire", "pressure", "posture", "frameworkDeal", "escalateCampaign",
                          "emergency", "endEmergency", "emergencyTariffs", "reissue", "rename (your country, a land you hold, a sea, strait, mountain or department; no action)",
-                         "renamePlace (the same as rename)"]
+                         "renamePlace (the same as rename)",
+                         "develop (invest in your territory)"]
         }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }

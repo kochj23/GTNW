@@ -271,8 +271,14 @@ enum PlaySummary {
             "casualties": max(0, gs.totalCasualties),
             "nuclear_strikes": gs.nuclearStrikes.count,
             "warheads_launched": gs.totalWarheadsLaunched,
-            "wars_started": gs.warsStarted,
+            "wars_started": gs.playerWarsStartedTotal,   // 3.36.0: declarations count (was call-ups only)
             "wars_won": gs.warsWon,
+            "wars_won_as_attacker": sh.books.warsWonAttacking,
+            "wars_won_as_defender": sh.books.warsWonDefending,
+            "wars_lost": sh.books.warsLost,
+            // 3.36.0: what the land pays (the "now producing" event's first week is only a sliver of it).
+            "land_income_b_per_year": PlayHistory.num(ExpansionModel.ledger(gs).reduce(0) { $0 + $1.income } + sh.acquisitionIncome, places: 100),
+            "land_earned_b": PlayHistory.num(sh.resourceEarnings, places: 100),
             "covert_ops_succeeded": gs.successfulCovertOps,
             "conflicts_mediated": gs.conflictsMediated,
             "sanctions_imposed": gs.sanctionsImposed,
@@ -317,7 +323,11 @@ enum PlaySummary {
         var polls60 = Array(sh.polls.suffix(60)), ticker60 = Array(sh.ticker.filter { $0.severity >= 1 }.suffix(60))
         var log40 = Array(sh.warLog.suffix(40))
         while true {
-            s["polls"] = polls60.map { ["date": PlayHistory.day($0.date), "popularity": PlayHistory.num($0.popularity)] as [String: Any] }
+            s["polls"] = polls60.map { p -> [String: Any] in
+                var row: [String: Any] = ["date": PlayHistory.day(p.date), "popularity": PlayHistory.num(p.popularity)]
+                if let c = p.cause { row["cause"] = PlayHistory.text(c) }   // 3.36.0: why a move over 10 points happened
+                return row
+            }
             s["ticker"] = ticker60.map {
                 ["date": PlayHistory.day($0.date), "severity": $0.severity, "text": PlayHistory.text($0.text)] as [String: Any]
             }

@@ -289,7 +289,7 @@ extension GameEngine {
             modifyDiplomaticRelation(from: o.id, to: player.id, by: -(c.world + (o.alliances.contains(player.id) ? c.allies : 0)))
         }
         gs.shadow.ruthlessness += c.ruthlessness
-        gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - c.popularity)
+        gs.shadow.moveApproval(-c.popularity, because: "breaking a treaty")   // 3.36.0: named at the next poll
         if c.sanctions > 0, let pi = gs.countries.firstIndex(where: { $0.id == player.id }) {
             gs.countries[pi].gdp *= 1 - c.sanctions
             gs.shadow.post("Trading partners impose sanctions on the United States.", date: gs.currentDate, severity: 2)

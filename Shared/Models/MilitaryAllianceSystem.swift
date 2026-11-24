@@ -408,7 +408,8 @@ extension GameEngine {
 
         if !membersJoined.isEmpty {
             addLog("Entering war: \(membersJoined.joined(separator: ", "))", type: .warning)
-            gameState.warsStarted += membersJoined.count
+            // 3.36.0: only the President's own aggression counts as wars they started.
+            if aggressorID == gameState.playerCountryID { gameState.warsStarted += membersJoined.count }
 
             // Raise DEFCON — a major alliance war is extremely dangerous
             if gameState.defconLevel.rawValue > 2 {

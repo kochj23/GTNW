@@ -377,6 +377,7 @@ extension GameEngine {
     /// Resolve a power play's target: the usual resolver, then (for acquisitions) a land the map draws under another
     /// nation ("Greenland").
     func resolvePowerTarget(_ raw: String, verb: CommandVerb, in gs: GameState) -> PowerTarget {
+        if verb.campaignStep != nil, let id = dependentLandID(raw) { return .found(id, note: nil) }
         if verb.campaignStep != nil, let id = acquisitionID(raw, in: gs) {
             if case .one(let t, _) = CommandTargets.resolve(raw, in: gs), t.id != id { return .found(t.id, note: nil) }
             return .found(id, note: nil)
@@ -390,14 +391,21 @@ extension GameEngine {
         }
     }
 
+    /// A dependent land named outright ("Greenland"), open to a campaign. Checked before the resolver, which says
+    /// such a land is part of its nation (CommandTargets.partOf).
+    private func dependentLandID(_ raw: String) -> String? {
+        let n = CommandParser.normalize(raw)
+        guard let t = Consequences.dependentLands.values.flatMap({ $0 }).first(where: { CommandParser.normalize($0.name) == n }),
+              acquisitionTarget(t.id) != nil || openCampaign(t.id) != nil else { return nil }
+        return t.id
+    }
+
     /// The land or nation id an acquisition means, including lands with no country of their own.
     func acquisitionID(_ raw: String, in gs: GameState) -> String? {
+        if let id = dependentLandID(raw) { return id }
         if case .one(let t, _) = CommandTargets.resolve(raw, in: gs), acquisitionTarget(t.id) != nil || openCampaign(t.id) != nil
             || gs.shadow.powerPlays.campaigns.contains(where: { $0.owner == t.id && $0.stage.isOpen }) { return t.id }
         if let id = CommandTargets.modernNames[CommandParser.normalize(raw)], acquisitionTarget(id) != nil || openCampaign(id) != nil { return id }
-        let n = CommandParser.normalize(raw)
-        if let t = Consequences.dependentLands.values.flatMap({ $0 }).first(where: { CommandParser.normalize($0.name) == n }),
-           acquisitionTarget(t.id) != nil || openCampaign(t.id) != nil { return t.id }
         let upper = raw.uppercased()
         if gs.shadow.powerPlays.campaigns.contains(where: { $0.land == upper && $0.stage.isOpen }) { return upper }
         return nil

@@ -122,6 +122,9 @@
 		F33600000000000000000A02 /* SubdivisionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000000A01 /* SubdivisionData.swift */; };
 		F33600000000000000000A03 /* SubdivisionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000000A01 /* SubdivisionData.swift */; };
 		14C825C7503C08B10B6DFAF3 /* Antarctica.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C825C7503C08B10B6DFAF1 /* Antarctica.swift */; };
+		336B00000000000000000002 /* ReportBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000001 /* ReportBooks.swift */; };
+		336B00000000000000000003 /* ReportBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000001 /* ReportBooks.swift */; };
+		336B00000000000000000005 /* ReportBooksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000004 /* ReportBooksTests.swift */; };
 		14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */; };
 		14D9713BA6589C1C175D1240 /* GlobalThermalNuclearWarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD940D0C1ECB58725DFFA4E /* GlobalThermalNuclearWarApp.swift */; };
 		160C08066A20A4CC24846137 /* ShadowSimulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3E55C52277C2CE8729F821 /* ShadowSimulation.swift */; };
@@ -501,6 +504,8 @@
 		F33600000000000000000C01 /* Subdivisions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Subdivisions.swift; sourceTree = "<group>"; };
 		F33600000000000000000B01 /* USStatesHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = USStatesHistory.swift; sourceTree = "<group>"; };
 		F33600000000000000000A01 /* SubdivisionData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubdivisionData.swift; sourceTree = "<group>"; };
+		336B00000000000000000001 /* ReportBooks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportBooks.swift; sourceTree = "<group>"; };
+		336B00000000000000000004 /* ReportBooksTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportBooksTests.swift; sourceTree = "<group>"; };
 		15C61B45692E5ECBC414422A /* CombatModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CombatModel.swift; sourceTree = "<group>"; };
 		16128088EEBC501C77066EB8 /* AIOutputSanitizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIOutputSanitizer.swift; sourceTree = "<group>"; };
 		19B45E868695D0EB48133AB0 /* AIOptionsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIOptionsTests.swift; sourceTree = "<group>"; };
@@ -814,6 +819,7 @@
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1D3360000000000000000004 /* ConsequencesTests.swift */,
 				000000000000E3360E030001 /* PresidencyRecordTests.swift */,
+				336B00000000000000000004 /* ReportBooksTests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
 				1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */,
 				0CF8397D11AC0DEC90DBE71E /* ForeignPowerPlaysTests.swift */,
@@ -891,6 +897,7 @@
 				F33600000000000000000C01 /* Subdivisions.swift */,
 				F33600000000000000000B01 /* USStatesHistory.swift */,
 				F33600000000000000000A01 /* SubdivisionData.swift */,
+				336B00000000000000000001 /* ReportBooks.swift */,
 				741E9954966E3FD4CF3B0AF1 /* OccupationModel.swift */,
 				ACEAF08957D1E924BD21FAF1 /* ManpowerModel.swift */,
 				E76389057B2DD82D0D8ACAF1 /* AdvisorWarnings.swift */,
@@ -1448,6 +1455,7 @@
 				F33600000000000000000C02 /* Subdivisions.swift in Sources */,
 				F33600000000000000000B02 /* USStatesHistory.swift in Sources */,
 				F33600000000000000000A02 /* SubdivisionData.swift in Sources */,
+				336B00000000000000000002 /* ReportBooks.swift in Sources */,
 				741E9954966E3FD4CF3B0AF2 /* OccupationModel.swift in Sources */,
 				ACEAF08957D1E924BD21FAF2 /* ManpowerModel.swift in Sources */,
 				E76389057B2DD82D0D8ACAF2 /* AdvisorWarnings.swift in Sources */,
@@ -1534,6 +1542,7 @@
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
 				1D3360000000000000000005 /* ConsequencesTests.swift in Sources */,
 				000000000000E3360E030002 /* PresidencyRecordTests.swift in Sources */,
+				336B00000000000000000005 /* ReportBooksTests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
 				1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */,
 				1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */,
@@ -1673,6 +1682,7 @@
 				F33600000000000000000C03 /* Subdivisions.swift in Sources */,
 				F33600000000000000000B03 /* USStatesHistory.swift in Sources */,
 				F33600000000000000000A03 /* SubdivisionData.swift in Sources */,
+				336B00000000000000000003 /* ReportBooks.swift in Sources */,
 				741E9954966E3FD4CF3B0AF3 /* OccupationModel.swift in Sources */,
 				ACEAF08957D1E924BD21FAF3 /* ManpowerModel.swift in Sources */,
 				E76389057B2DD82D0D8ACAF3 /* AdvisorWarnings.swift in Sources */,

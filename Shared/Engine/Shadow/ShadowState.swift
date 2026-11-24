@@ -48,6 +48,8 @@ enum DomesticEnding: String, Codable, CaseIterable {
 struct PollRecord: Codable, Hashable {
     var date: Date
     var popularity: Double
+    /// 3.36.0: the main cause of a move over 10 points since the previous poll (nil otherwise and in older saves).
+    var cause: String? = nil
 }
 
 /// The result of an election night.
@@ -262,6 +264,8 @@ struct ShadowState: Codable {
     var powerPlays = PowerPlayState()
     /// 3.36.0: states and provinces: names, transfers, occupation, unrest, the last election state by state.
     var provinces = ProvinceLedger()
+    /// 3.36.0: land development, approval causes and war counts for the game reports (ReportBooks.swift).
+    var books = ReportBooks()
 
     // Scenario
     var scenarioID: String?
@@ -313,6 +317,7 @@ struct ShadowState: Codable {
         case presidency
         case powerPlays
         case provinces
+        case books
     }
 
     init() {}
@@ -426,6 +431,7 @@ struct ShadowState: Codable {
         presidency = (try? c.decodeIfPresent(PresidencyRecord.self, forKey: .presidency)) ?? PresidencyRecord()
         powerPlays = (try? c.decodeIfPresent(PowerPlayState.self, forKey: .powerPlays)) ?? PowerPlayState()
         provinces = (try? c.decodeIfPresent(ProvinceLedger.self, forKey: .provinces)) ?? ProvinceLedger()
+        books = (try? c.decodeIfPresent(ReportBooks.self, forKey: .books)) ?? ReportBooks()
     }
 }
 

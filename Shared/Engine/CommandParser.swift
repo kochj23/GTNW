@@ -33,6 +33,8 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
     case captureLeader, limitedStrike, renamePlace
     // Names (3.36.0): the President's own country or a land he holds; no action spent
     case rename
+    /// 3.36.0: invest in a territory the President holds (six months of development).
+    case develop
 
     /// The Situation Room action a simple (non-force) verb runs; nil for the force and land verbs.
     var simpleAction: PresidentialAction? {
@@ -94,6 +96,7 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
         case .buy: return "BUY COLONY"
         case .liberate: return "BACK INDEPENDENCE"
         case .rename: return "RENAME"
+        case .develop: return "INVEST"
         default: return powerPlayTitle ?? (simpleAction?.rawValue ?? rawValue).uppercased()
         }
     }
@@ -274,6 +277,7 @@ enum CommandParser {
             .buy: ["buy", "purchase"],
             .liberate: ["back the independence of", "back independence of", "support independence of", "support the independence of",
                         "liberate", "free"],
+            .develop: ["invest in", "develop", "build up"],
         ]
         return table.flatMap { verb, list in list.map { ($0, verb) } }.sorted { $0.0.count > $1.0.count }
     }()
@@ -365,6 +369,13 @@ enum CommandParser {
             words = Array(words[(to + 1)...])
         }
         while let first = words.first, leadIns.contains(first) { words.removeFirst() }
+        // 3.36.0: "claim all of Africa", "the whole of Africa": a region, not the force word "all".
+        for lead in [["all", "of"], ["whole", "of"], ["every", "nation", "in"], ["all", "nations", "in"], ["all", "lands", "in"],
+                     ["all", "land", "in"], ["every", "land", "in"]] where words.count > lead.count && Array(words.prefix(lead.count)) == lead {
+            words.removeFirst(lead.count)
+            if words.first == "the", words.count > 1 { words.removeFirst() }
+            break
+        }
         var s = " " + words.joined(separator: " ") + " "
         for b in clauseBreaks { if let r = s.range(of: b) { s = String(s[..<r.lowerBound]) + " " } }
         // Force words that end the names without a preposition ("attack france all air").

@@ -1450,7 +1450,7 @@ class CrisisManager: ObservableObject {
         let success = Double.random(in: 0...1, using: &gameState.rng) < option.successChance
 
         if success {
-            applyConsequences(option.consequences, to: &gameState)
+            applyConsequences(option.consequences, to: &gameState, title: crisis.title)
         } else {
             // Failed attempt has worse consequences
             gameState.totalCasualties += Int.random(in: 1000...10000, using: &gameState.rng)
@@ -1476,7 +1476,7 @@ class CrisisManager: ObservableObject {
     }
 
     /// Apply consequences to game state
-    private func applyConsequences(_ consequences: CrisisConsequences, to gameState: inout GameState) {
+    private func applyConsequences(_ consequences: CrisisConsequences, to gameState: inout GameState, title: String = "a crisis") {
         // Apply relationship changes
         for (countryID, change) in consequences.relationshipChanges {
             gameState.modifyRelation(from: gameState.playerCountryID, to: countryID, by: change)
@@ -1491,9 +1491,8 @@ class CrisisManager: ObservableObject {
         // 3.18.14: approval, dollars and military toll — previously declared on CrisisConsequences but never
         // applied, so every crisis's stated approval/economic cost was silently a no-op. Now they land, mapped to
         // the shadow-president model (approval = popularity; economicImpact = $B of spendable funds).
-        if consequences.approvalChange != 0 {
-            gameState.shadow.popularity = PopularityModel.clamp(gameState.shadow.popularity + Double(consequences.approvalChange))
-        }
+        // 3.36.0: at most ±10 a card, never above 90, and remembered as the poll's cause (ReportBooks.swift).
+        gameState.applyCardApproval(consequences.approvalChange, title: title)
         if consequences.economicImpact != 0 {
             gameState.shadow.aidRemaining = max(0, gameState.shadow.aidRemaining + Double(consequences.economicImpact))
         }
@@ -1526,6 +1525,8 @@ class CrisisManager: ObservableObject {
             gameState.countries[pi].atWarWith.insert(enemy)
             gameState.countries[ei].atWarWith.insert(gameState.playerCountryID)
             gameState.activeWars.append(War(aggressor: gameState.playerCountryID, defender: enemy, startTurn: gameState.turn, intensity: 6))
+            gameState.warsStarted += 1   // 3.36.0: the President took the country into it
+            gameState.shadow.playerWarsStarted += 1
         }
 
         // 3.21.0: campaign decisions.

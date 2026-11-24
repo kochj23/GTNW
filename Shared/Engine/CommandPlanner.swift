@@ -252,6 +252,10 @@ enum CommandTargets {
         let pre = Set(PreStateModel.eras.filter { CommandParser.normalizedName($0.name) == n }.map(\.land))
             .filter { gs.preState($0).map { CommandParser.normalizedName($0.era.name) == n } == true }
         if pre.count == 1, let id = pre.first, let t = landTarget(id) { return .one(t, note: nil) }
+        // 5b. 3.36.0: a land drawn as part of a nation this year ("Greenland" → Denmark), said plainly.
+        if let part = partOf(n, in: gs), gs.preState(part.owner) == nil, let c = gs.getCountry(id: part.owner) {
+            return .one(.nation(c.id), note: "\(part.name) is part of \(c.name) in \(year), not a separate land.")
+        }
         // 6. A word prefix, only when it picks one ("isra" → Israel); several → the choices.
         let words = n.split(separator: " ").map(String.init)
         func matches(normalized nn: String) -> Bool {
@@ -312,8 +316,14 @@ extension GameEngine {
             }
             for name in names {
                 if let r = CommandTargets.region(name) {
-                    let members = CommandTargets.regionMembers(r, in: gs).filter { m in !targets.contains(m) }
-                    guard !members.isEmpty else { return .rejected("No nation in \(r.rawValue) can take that order in \(gs.currentYear).") }
+                    // 3.36.0: a land verb takes the region's lands (free land to claim, colonies to buy or free, your own
+                    // territories to develop); every other verb its independent nations.
+                    let lands = verb.isLand || verb == .develop
+                    let pool = lands ? CommandTargets.regionLands(r, verb: verb, in: gs, engine: self) : CommandTargets.regionMembers(r, in: gs)
+                    let members = Array(pool.filter { m in !targets.contains(m) }.prefix(CommandParser.maxRegionTargets))
+                    guard !members.isEmpty else {
+                        return .rejected("No \(lands ? "land" : "nation") in \(r.rawValue) can take that order in \(gs.currentYear).")
+                    }
                     targets += members
                     regionIDs.formUnion(members.map(\.id))
                     continue
@@ -363,7 +373,7 @@ extension GameEngine {
                 continue
             }
             if t.id == me.id { return .rejected("That is your own nation.") }
-            if case .nation(let id) = t, gs.getCountry(id: id)?.territoryOf == me.id {
+            if case .nation(let id) = t, gs.getCountry(id: id)?.territoryOf == me.id, verb != .develop {
                 return .rejected("\(gs.getCountry(id: id)?.name ?? id) flies your own flag.")
             }
             if let refusal = addOrders(verb, intent.forces, against: t, to: &plan, in: gs) { return .rejected(refusal) }
@@ -397,6 +407,18 @@ extension GameEngine {
         let year = gs.currentYear
         let name = CommandTargets.label(t, in: gs)
         if f.nuclear == false && verb == .nuke { return "A nuclear strike that is non-nuclear is not an order. Say which you mean." }
+        // 3.36.0: INVEST in a territory the President holds.
+        if verb == .develop {
+            guard case .nation(let id) = t, let c = gs.getCountry(id: id), c.territoryOf == me.id else {
+                return "\(name) is not your territory. Only land you hold can be developed."
+            }
+            if let p = LandDevelopment.problem(id, in: gs), !p.hasPrefix("No actions") { return p }
+            plan.orders.append(GameOrder(kind: .developLand, target: id))
+            let m = LandDevelopment.monthsToDevelop(id, in: gs)
+            plan.committed.append(String(format: "Invest $%.2fB in %@: %@", LandDevelopment.investCost(c, in: gs), c.name,
+                                         m > 0 ? "six months of development (full output in \(m) months now)." : "stations, a harbour and fisheries."))
+            return nil
+        }
 
         // Land that is not a nation: claim, seize, buy, free.
         switch t {

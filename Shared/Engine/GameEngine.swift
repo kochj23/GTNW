@@ -805,7 +805,7 @@ class GameEngine: ObservableObject {
             let retaliating = gameState.nuclearStrikes.contains { $0.attacker == targetID && $0.target == attackerID }
             let context = EraMood.useContext(atWar: attacker.atWarWith.contains(targetID), retaliating: retaliating)
             let hit = EraMood.nuclearTaboo(year: gameState.currentYear) * context * Double(penetratingWarheads) * 2
-            gameState.shadow.popularity = PopularityModel.clamp(gameState.shadow.popularity - hit)
+            gameState.shadow.moveApproval(-hit, because: "the nuclear strike on \(getCountry(targetID)?.name ?? targetID)")
         }
 
         // Domestic fallout and casualties among the cabinet
@@ -884,6 +884,12 @@ class GameEngine: ObservableObject {
         if aggressor == gameState.playerCountryID {
             gameState.shadow.playerWarsStarted += 1   // 3.16.0
             notePlayerWar(on: defender)               // 3.36.0
+            gameState.warsStarted += 1   // 3.36.0: the end-game stats and the play history count declarations too
+        }
+        if aggressor == gameState.playerCountryID || defender == gameState.playerCountryID {
+            logPlayEvent("war_declared", detail: ["attacker": aggressor, "defender": defender,
+                                                  "by_you": aggressor == gameState.playerCountryID,
+                                                  "game_date": PlayHistory.day(gameState.currentDate)])
         }
         self.gameState = gameState
         stateCasus(actor: aggressor, target: defender,

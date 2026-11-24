@@ -39,6 +39,8 @@ enum OrderKind: String, Codable, CaseIterable, Sendable {
     /// 3.36.0: anything the President may rename (`RenameTarget.from(id:)`: his country, a land he holds, a sea, mountain
     /// or department), through `rename`, no action spent. `detail` is the new name (checked by `NameScreen` again).
     case rename
+    /// 3.36.0: invest in a territory the President holds (`investInLand`, one action, era-priced).
+    case developLand
 }
 
 /// One resolved order: what the engine is asked to do, against whom, with exactly which forces.
@@ -83,6 +85,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         case .limitedStrike: what = "Limited Strike (\(mission ?? "?"))"
         case .renamePlace: what = "Rename (\(detail ?? "?"))"
         case .rename: what = "Rename (\(detail ?? "?"))"
+        case .developLand: what = "Invest"
         }
         var sizes: [String] = []
         if let t = troops { sizes.append("\(Int(t))K troops") }
@@ -171,7 +174,7 @@ extension GameEngine {
         if o.kind.isPowerPlay { return powerPlayProblem(o) }   // 3.36.0
         if o.target == me.id { return "That is your own nation." }
         let nation = gs.getCountry(id: o.target).flatMap { $0.isDestroyed ? nil : $0 }
-        if let n = nation, n.territoryOf == me.id { return "\(n.name) flies your own flag." }
+        if let n = nation, n.territoryOf == me.id, o.kind != .developLand { return "\(n.name) flies your own flag." }
         switch o.kind {
         case .action:
             guard let a = o.presidentialAction, OrderWhitelist.allows(a) else { return "That order is not one the command box can give." }
@@ -200,6 +203,8 @@ extension GameEngine {
             return powerPlayProblem(o)
         case .rename, .renamePlace:
             return nil   // checked above
+        case .developLand:
+            return LandDevelopment.problem(o.target, in: gs)
         }
     }
 
@@ -245,6 +250,8 @@ extension GameEngine {
             return executePowerPlay(o)
         case .rename, .renamePlace:
             return rename(RenameTarget.from(id: o.target, in: gs), to: o.detail ?? "").succeeded
+        case .developLand:
+            return investInLand(o.target)
         }
     }
 

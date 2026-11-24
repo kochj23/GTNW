@@ -1052,7 +1052,7 @@ extension GameEngine {
         guard let gs = gameState else { return }
         for a in gs.shadow.aftermath where a.due <= gs.currentDate {
             gs.shadow.ruthlessness += a.ruthlessness
-            gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - a.popularity)
+            gs.shadow.moveApproval(-a.popularity, because: "the aftermath of your dirty tactics")
             if a.world > 0 {
                 for o in gs.countries where o.id != gs.playerCountryID && !o.isDestroyed && !o.isTerritory {
                     modifyDiplomaticRelation(from: o.id, to: gs.playerCountryID, by: -a.world)

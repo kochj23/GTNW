@@ -111,17 +111,21 @@ enum ExpansionModel {
     }
 
     /// $B a year a territory produces now. Annexed countries without a table entry pay 2% of their GDP a year.
-    static func annualIncome(_ c: Country, in gs: GameState) -> Double {
+    /// `developed` (3.36.0): what it pays once fully developed (the "develops in N months" figure).
+    static func annualIncome(_ c: Country, in gs: GameState, developed: Bool = false) -> Double {
         let year = gs.currentYear
         let tabled = deposits[c.id] != nil || WorldCountriesDatabase.postColonialAfrica.contains(c.id)
-        let base = tabled ? deposits(for: c.id, year: year).reduce(0) { $0 + $1.value } : c.gdp * 1000 * 0.02
+        // 3.36.0: science is prestige, not money.
+        let base = tabled ? deposits(for: c.id, year: year).reduce(0) { $0 + LandDevelopment.money($1) } : c.gdp * 1000 * 0.02
         let held = gs.shadow.claimDates[c.id].map { GameCalendar.years(from: $0, to: gs.currentDate) } ?? 10
+        let ramp = developed ? 1 : rampUp(yearsHeld: held + LandDevelopment.bought(c.id, in: gs))   // 3.36.0: investment speeds it
         // 3.13.1: the extraction rate and self-rule's share apply here, so every view shows the same figure.
         let share = gs.shadow.territoryPolicies[c.id]?.governance.incomeShare ?? 1
         let built = gs.shadow.islandProjects[c.id, default: []].reduce(0) { $0 + $1.income }   // 3.28.0
         // 3.29.0: the land itself pays (Factbook resources, farmland, coast), and more the longer it is developed.
-        let land = landYield(c, in: gs) * maturity(yearsHeld: held)
-        return ((base + land) * rampUp(yearsHeld: held) * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
+        // 3.36.0: Antarctica's own yield pays only once developed.
+        let land = LandDevelopment.landYieldPays(c.id, in: gs) ? landYield(c, in: gs) * maturity(yearsHeld: held) : 0
+        return ((base + land) * ramp * holdFactor(stability: c.stability, garrison: gs.shadow.garrisons[c.id] ?? AttackSizing.expeditionStandard)
             * rate(c.id, in: gs).incomeMultiplier + built) * share
     }
 
@@ -235,9 +239,14 @@ extension GameEngine {
             if firstTime {
                 gs.shadow.producing.insert(c.id)
                 let what = kinds.map(\.title).joined(separator: ", ")
-                gs.shadow.post("\(c.name) is now producing \(what).", date: gs.currentDate, severity: 1)
+                // 3.36.0: the first turn's income is a sliver of the ramp-up; say what it pays once developed, and when.
+                let full = ExpansionModel.annualIncome(c, in: gs, developed: true)
+                let months = LandDevelopment.monthsToDevelop(c.id, in: gs)
+                gs.shadow.post(String(format: "%@ is now producing %@: $%.2fB a year at full output%@.", c.name, what, full,
+                                      months > 0 ? ", reached in \(months) month\(months == 1 ? "" : "s")" : ""), date: gs.currentDate, severity: 1)
                 logPlayEvent("territory_producing", detail: ["land": c.id, "name": PlayHistory.text(c.name), "resources": what,
-                                                             "income_b": PlayHistory.num(income), "game_date": PlayHistory.day(gs.currentDate)])
+                                                             "income_b": PlayHistory.num(full, places: 100), "income_now_b": PlayHistory.num(income, places: 100),
+                                                             "develops_months": months, "game_date": PlayHistory.day(gs.currentDate)])
             }
         }
         total += gs.shadow.acquisitionIncome   // 3.13.0: purchases like Louisiana pay too
@@ -321,7 +330,7 @@ extension ExpansionModel {
     /// A levy takes half a year's base income, at least $0.2B.
     static func levyAmount(_ c: Country, in gs: GameState) -> Double {
         let tabled = deposits[c.id] != nil || WorldCountriesDatabase.postColonialAfrica.contains(c.id)
-        let base = tabled ? deposits(for: c.id, year: gs.currentYear).reduce(0) { $0 + $1.value } : c.gdp * 1000 * 0.02
+        let base = tabled ? deposits(for: c.id, year: gs.currentYear).reduce(0) { $0 + LandDevelopment.money($1) } : c.gdp * 1000 * 0.02
         return max(0.2, base * 0.5)
     }
 

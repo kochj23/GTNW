@@ -91,6 +91,11 @@ enum TerritoryQuery: BridgeQuery {
         var titleWord: String
         var actionsRemaining: Int
         var fleetOrders: Bool
+        /// 3.36.0: when the land develops and what it will pay ("develops in N months…"), or that it pays nothing.
+        var developNote: String? = nil
+        /// 3.36.0: the INVEST order on the player's own land: its cost, and why not (nil = it can be given).
+        var investCost: Double? = nil
+        var investProblem: String? = nil
     }
 
     static func run(_ args: Args, engine: GameEngine?) throws -> Result {
@@ -118,6 +123,11 @@ enum TerritoryQuery: BridgeQuery {
             out.yieldLine = String(format: "LAND $%.2fB/YR · %@", ExpansionModel.landYield(c, in: gs),
                                    ExpansionModel.landResources(c.id, year: gs.currentYear).map(\.rawValue).joined(separator: ", ").uppercased())
             if owner == gs.playerCountryID {
+                out.developNote = LandDevelopment.note(c, in: gs)
+                if LandDevelopment.canDevelop(c.id, in: gs) {
+                    out.investCost = QueryText.round2(LandDevelopment.investCost(c, in: gs))
+                    out.investProblem = LandDevelopment.problem(c.id, in: gs)
+                }
                 out.kind = "mine"
                 out.canRename = !c.isDestroyed
                 if Islands.byID[c.id] != nil {
@@ -186,6 +196,7 @@ enum TerritoryQuery: BridgeQuery {
         if id == Antarctica.id {
             let claims = Antarctica.claims(by: gs.currentYear)
             notes.append(claims.isEmpty ? "No nation has claimed it yet." : "Overlapping claims, none sovereign: " + claims.joined(separator: ", ") + ".")
+            notes.append("Pays no money once whaling ends unless developed: science brings prestige, not income.")   // 3.36.0
             let status = Antarctica.legalStatus(on: gs.currentDate)
             if status != .legal {
                 notes.append(status == .treatyBanned ? "TREATY-BANNED — Antarctic Treaty (in force 23 Jun 1961)" : "RESTRICTED — Antarctic Treaty signed 1 Dec 1959")

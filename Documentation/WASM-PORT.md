@@ -222,6 +222,7 @@ through verbs is a function of seed and orders.
 | `commitTroops` | `front, side, thousands` (negative recalls) | War Room SEND TO / RECALL |
 | `demandSurrender`, `sueForPeace` | `front` | War Room |
 | `developIsland` | `id, project` | build on one of the player's islands |
+| `investLand` | `id` | INVEST in one of the player's territories: six months of development, one action (3.36) |
 | `dirtyTactic` | `id, target?, covert?, preset?, stance?` | use a tactic, or put a standing policy in force / lift it |
 | `enactBudget` | `draft` | BudgetView ENACT BUDGET |
 | `governTerritory` | `id, garrison?, governance?` | a territory's garrison and government |

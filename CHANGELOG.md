@@ -90,29 +90,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unrest) and answers for one by name (people, electoral votes, last result); orders accept state names ("sanction
   Bavaria" goes to Germany), and claim/buy/liberate on a province point to the peace table.
 
-||||||| parent of 616c6a8 (Names: content check on every name, rename your country and held lands, Hall of Cartography (3.36, unreleased))
-- **Names (rename at will):** rename your own country (its name on the map, in the logs, the news, the scoreboard and
-  the chief of staff's replies) and any land you hold (annexed, claimed, bought or seized), any time, at no action
-  cost: RENAME on the dossier (your own country's too), "rename Kenya to New Albion" / "rename my country to
-  Freedonia" in the command box (a RENAME card, runs even with no actions left), or the chief of staff, who can put up
-  to 20 renames on one card ("rename every colony after a letter") and leaves out, by name, what can't be renamed.
-- **Names have consequences:** a renamed land's people react (stability and unrest; at home, approval), a mocking or
-  gibberish name costing more than a dignified one, and up to ten capitals (the great powers and the land's
-  neighbors) recognize the name or refuse it, with a small relations change and a news line. Restoring a land's real
-  name calms it. All drawn from the game's seeded RNG.
-- **Hall of Cartography:** RECORDS → NAMES now also lists every name you have used in any game (game, date in that
-  game, old → new), kept beside the local game store, never in a save. `CartographyHall.lastName(forLand:)` gives
-  other features the last name you gave a land.
+- **INVEST in a territory** (one action, era-priced: half a year of its full output, at least $0.1B before 1900, $0.5B
+  before 1950, $2.5B after; paid from the funds or up to 2% of output): six months of development at once. Each
+  territory you hold says "Develops in N months: $X a year at full output (now $Y)" until it is developed. The dossier
+  has the button (both skins, VoiceOver); the command box and the chief of staff take "invest in Madagascar" and
+  "develop all of Africa" (`OrderKind.developLand`, `CommandVerb.develop`); the web bridge has `investLand`.
+- **Regions for land orders:** "claim all of Africa" takes every free land there (unclaimed and peoples' land), "buy"
+  and "liberate" every colony another power holds there; what can't be taken is left out, as with nations. Each land's
+  region comes from its own template.
 
 ### Fixed
-- **Names are checked for content:** every name you give (territories, your country, saved groups, the annex name,
-  the command box, the chief of staff, the WebAssembly bridge) passes `NameScreen`, which reuses the chat's DEFCON 1
-  screen and also reads names the way they are built ("RacismLand", "Nazistan", "N a z i"): slurs, hate terms,
-  sexual terms, names mocking a faith and hostility toward a people are refused with a neutral one-line reason;
-  crude jokes and gibberish ("ShitGibbon", "asdfasdf") stay allowed. An old save holding a name that is now refused
-  shows the land's real name instead (map, news, war log, name book).
-- **One rename path:** seas, straits, mountains and departments (power plays) are renamed through the same RENAME
-  card, check and Hall of Cartography as your country and your lands; the chief of staff can mix them on one card.
+- **Claimed land "paid $0".** It always paid after its two-year ramp-up, but the "now producing" line and the play
+  history reported the first week's sliver. They now give the income at full output and when it is reached, and the
+  session summary carries the land's yearly income and its earnings so far. Science is prestige, not money: Antarctica
+  pays no money after the whaling era unless developed, and says so plainly.
+- **Approval 48.3 → 94.8 in one poll (1923).** Crisis and election cards were written when their approval effects were
+  no-ops (3.18.14 made them land, at up to +50), so two good cards could double approval in a month. One card now
+  moves approval at most 10 points and good news never lifts it past 90. Every poll that moves more than 10 points
+  names its main cause in the news and on the poll (`polls[].cause` in the play history).
+- **"Wars started: 0" after seven wars won.** The count only included alliance call-ups (anyone's). Declarations by the
+  President, colonies seized and wars joined from a crisis card count; other nations' call-ups don't. The summary adds
+  wars won as attacker, as defender and lost; `war_declared` and `war_ended` events match the war log.
+- **Greenland garbled by the chief of staff (2025).** It wasn't a name the game knew, so the model guessed. A land
+  drawn as part of a nation now resolves to it ("Greenland is part of Denmark in 2025"), and every `country` result
+  carries a plain `status` line (an independent nation, your territory, territory of X, unclaimed land).
+- "claim all of Africa" typed in the command box lost the region to the force word "all".
 
 ## [3.35.1] - 2026-11-24 — Whole continents
 
