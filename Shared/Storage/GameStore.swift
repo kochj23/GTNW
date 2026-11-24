@@ -264,6 +264,7 @@ enum SaveCodec {
         let gs: GameState
         do { gs = try SaveManager.decodeUnchecked(data) } catch { throw GameStoreError.invalid("save is not a valid game: \(type(of: error))") }
         try validate(gs)
+        gs.repairBlockedNames()   // 3.36.0: a name the content rules now refuse is shown as the land's real name
         return gs
     }
 

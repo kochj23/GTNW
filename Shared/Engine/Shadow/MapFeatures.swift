@@ -200,17 +200,15 @@ extension GameEngine {
         return (yes, no)
     }
 
-    /// Why a sea, mountain or department can't take this name, or nil. The same check as every name in the game:
-    /// one line, length, nothing the content rules forbid, no addresses.
+    /// Why a sea, mountain or department can't take this name, or nil: the same check as every name in the game
+    /// (`renameCheck`, `NameScreen`), and the name it already has.
     func renamePlaceProblem(_ id: String, to raw: String) -> String? {
         guard let gs = gameState else { return "No game in progress." }
-        let isFeature = MapFeatures.feature(id).map { $0.exists(in: gs.currentYear) } ?? false
-        let isDept = Departments.current(in: gs).contains { $0.id == id }
-        guard isFeature || isDept else { return "Nothing by that name to rename in \(gs.currentYear)." }
-        guard let name = CombatModel.validTerritoryName(raw) else { return "A name is 1–\(CombatModel.maxTerritoryNameLength) characters on one line." }
-        if ChatSafety.violates(name) || ChatSafety.scrubHosts(name) != name { return "That name can't be used." }
-        let current = isFeature ? MapFeatures.feature(id).map { MapFeatures.shownName($0, in: gs) } : Departments.department(id).map { Departments.shownName($0, in: gs) }
-        return current == name ? "It already has that name." : nil
+        let t = RenameTarget.from(id: id, in: gs)
+        guard t.isPlace, t.isHeld(in: gs) else { return "Nothing by that name to rename in \(gs.currentYear)." }
+        let check = renameCheck(t, to: raw)
+        guard let name = check.name else { return check.refusal }
+        return t.currentName(in: gs) == name ? "It already has that name." : nil
     }
 
     /// The cabinet's read before a rename.
@@ -227,11 +225,17 @@ extension GameEngine {
         return [AdvisorWarning(who: "Vice President", text: "The statute keeps the old name; Congress will grumble.", level: gameState?.playerCountryID == "USA" ? 1 : 0)]
     }
 
-    /// Rename a sea, mountain or department (no action spent). Back to the real name clears it.
+    /// Rename a sea, mountain or department (no action spent), through `rename`. Back to the real name clears it.
     @discardableResult
     func renamePlace(_ id: String, to raw: String) -> Bool {
-        guard renamePlaceProblem(id, to: raw) == nil, let gs = gameState, let name = CombatModel.validTerritoryName(raw),
-              let me = gs.getPlayerCountry() else { return false }
+        guard let gs = gameState, renamePlaceProblem(id, to: raw) == nil else { return false }
+        return rename(RenameTarget.from(id: id, in: gs), to: raw).succeeded
+    }
+
+    /// `rename`'s step for a sea, mountain or department: the President's maps or government use `name`, the shore
+    /// nations take a position (relations), and the news gives both names. `name` has passed the checks.
+    func applyPlaceName(_ id: String, _ name: String) {
+        guard let gs = gameState, let me = gs.getPlayerCountry() else { return }
         if let f = MapFeatures.feature(id) {
             let real = f.name(in: gs.currentYear)
             let old = MapFeatures.shownName(f, in: gs)
@@ -256,6 +260,5 @@ extension GameEngine {
             logPlayEvent("renamed_department", detail: ["department": id, "name": PlayHistory.text(name), "game_date": PlayHistory.day(gs.currentDate)])
         }
         self.gameState = gs
-        return true
     }
 }

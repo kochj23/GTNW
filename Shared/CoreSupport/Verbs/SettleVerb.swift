@@ -22,9 +22,7 @@ enum SettleVerb: BridgeVerb {
         else if let g = PostWarGovernment(rawValue: a.choice) { choice = .government(g) }
         else { throw QueryError("unknown choice \(a.choice)") }
         let rename = choice == .annex && !(a.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        if rename, CombatModel.validTerritoryName(a.name ?? "") == nil {
-            throw QueryError("1–\(CombatModel.maxTerritoryNameLength) characters on one line.")
-        }
+        if rename, let why = NameScreen.check(a.name ?? "").reason { throw QueryError(why) }
         let loser = gs.shadow.pendingSettlements.first { $0.id == id }?.loser ?? ""
         guard e.settle(id, choice: choice) else { throw QueryError("Those orders can't be carried out.") }
         if rename { e.renameTerritory(loser, to: a.name ?? "") }

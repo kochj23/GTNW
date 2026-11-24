@@ -270,6 +270,7 @@ extension GameEngine {
         if spectating { return .rejected("You are watching. Take the seat before giving orders.") }
         if gs.gameOver { return .rejected("The game is over.") }
         if isProcessingAITurn { return .rejected("The world is moving. Wait for your turn.") }
+        if verb == .rename || verb == .renamePlace { return planRenames(intent, source: source) }   // 3.36.0: one rename path, no action (RenamePlanner.swift)
         if let p = planPowerPlay(intent, verb: verb, source: source) { return p }   // 3.36.0: PowerPlayPlanner.swift
         if gs.actionsRemaining == 0 {
             return .rejected("No actions left this \(gs.turnLength.displayName.lowercased()). End the turn first.")

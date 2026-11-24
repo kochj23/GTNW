@@ -221,7 +221,6 @@ extension GameEngine {
             return planPowerPlay(i, verb: .acquire, source: source)
         }
         guard verb.isPowerPlay else { return nil }
-        if verb == .renamePlace { return planRenamePlace(intent, source: source) }
         if gs.actionsRemaining == 0 {
             return .rejected("No actions left this \(gs.turnLength.displayName.lowercased()). End the turn first.")
         }
@@ -367,23 +366,6 @@ extension GameEngine {
         default:
             return nil
         }
-    }
-
-    /// The card for renaming a sea, mountain or department (no action spent).
-    func planRenamePlace(_ intent: CommandIntent, source: CommandSource) -> CommandOutcome {
-        guard let gs = gameState else { return .rejected("No game in progress.") }
-        let raw = intent.targets.first ?? ""
-        guard let (id, old) = MapFeatures.match(raw, in: gs).map({ ($0.id, MapFeatures.shownName($0, in: gs)) })
-                ?? Departments.match(raw, in: gs).map({ ($0.id, Departments.shownName($0, in: gs)) }) else {
-            return .rejected("No sea, strait, mountain or department called \"\(String(raw.prefix(40)))\" in \(gs.currentYear).")
-        }
-        let new = intent.detail ?? ""
-        let o = GameOrder(kind: .renamePlace, target: id, detail: new)
-        if let p = powerPlayProblem(o) { return .rejected(p) }
-        var plan = CommandPlan(title: "RENAME", target: "\(old), \(gs.currentYear)", orders: [o], committed: ["Rename \(old) to \(new) (no action)."],
-                               heldBack: [], warnings: [], actionsNeeded: 0, actionsLeft: gs.actionsRemaining, source: source)
-        plan.warnings = renamePlaceWarnings(id).map { CommandWarning(text: "\($0.who): \($0.text)", level: $0.level) }
-        return .plan(plan)
     }
 
     enum PowerTarget {

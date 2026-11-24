@@ -674,7 +674,8 @@ struct TerritoryNameField: View {
     var live = true
 
     var body: some View {
-        let invalid = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && CombatModel.validTerritoryName(text) == nil
+        let problem = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : NameScreen.check(text).reason   // 3.36.0
+        let invalid = problem != nil
         VStack(alignment: .leading, spacing: 2) {
             Group {
                 if live {
@@ -689,9 +690,10 @@ struct TerritoryNameField: View {
             .padding(6)
             .background(Theme.isRetro ? EGA.black : Color.white.opacity(0.08))
             .overlay(Rectangle().stroke(invalid ? GTNWColors.terminalRed : GTNWColors.neonCyan, lineWidth: 1))
-            if invalid {
-                Text("1–\(CombatModel.maxTerritoryNameLength) characters on one line.")
+            if let problem {
+                Text(verbatim: problem)
                     .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+                    .accessibilityLabel("Name not accepted: \(problem)")
             }
         }
     }
@@ -722,10 +724,11 @@ struct TerritoryNameSheet: View {
         let owner = gameState.getPlayerCountry()
         let title = CombatModel.territoryTitle(ownerID: owner?.id ?? "USA", ownerName: owner?.name ?? "")
         let valid = CombatModel.validTerritoryName(name)
+        let own = countryID == gameState.playerCountryID   // 3.36.0: the President's own country
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: newlyClaimed ? "flag.fill" : "pencil")
-                Text(newlyClaimed ? "NAME THE NEW TERRITORY" : "RENAME TERRITORY")
+                Text(newlyClaimed ? "NAME THE NEW TERRITORY" : own ? "RENAME YOUR COUNTRY" : "RENAME TERRITORY")
                 Spacer()
                 Text(gameState.currentDateLabel.uppercased()).font(ThemeFont.mono(11, .bold))
             }
@@ -733,20 +736,21 @@ struct TerritoryNameSheet: View {
             .foregroundColor(GTNWColors.terminalAmber)
             Text(verbatim: newlyClaimed
                  ? "> THE FLAG FLIES OVER \((c?.name ?? countryID).uppercased()). IT IS NOW A \(title). WHAT SHALL WE CALL IT, MR. PRESIDENT?"
+                 : own ? "> WHAT SHOULD \((c?.name ?? countryID).uppercased()) BE CALLED FROM NOW ON? THE WORLD WILL DECIDE WHETHER TO GO ALONG."
                  : "> \((c?.name ?? countryID).uppercased()) IS A \(title). WHAT SHOULD IT BE CALLED?")
                 .font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.neonCyan)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            TerritoryNameField(text: $name, placeholder: "Territory name", live: live)
+            TerritoryNameField(text: $name, placeholder: own ? "Country name" : "Territory name", live: live)
             HStack {
                 Button { dismiss() } label: { Text(verbatim: "KEEP \((c?.name ?? "").uppercased())").lineLimit(1) }
                     .buttonStyle(ThemedButtonStyle())
                 Spacer()
                 Button(newlyClaimed ? "NAME IT" : "RENAME") {
-                    if gameEngine.renameTerritory(countryID, to: name) { dismiss() }
+                    if gameEngine.rename(.country(countryID), to: name).succeeded { dismiss() }
                 }
                 .buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen, prominent: true))
-                .disabled(valid == nil || c?.territoryOf != gameState.playerCountryID)
+                .disabled(valid == nil || !RenameTarget.country(countryID).isHeld(in: gameState))
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -1756,22 +1760,26 @@ struct RecordsSheet: View {
         .background(Theme.isRetro ? EGA.blue : Color.black)
     }
 
-    /// 3.29.0: every land the President renamed, original → current, with the date.
+    /// 3.29.0: every land the President renamed, original → current, with the date. 3.36.0: and the Hall of
+    /// Cartography, every name he has used in any game.
     @ViewBuilder private var names: some View {
         Text("YOUR NAMES ON THE MAP").font(ThemeFont.mono(16, .bold)).foregroundColor(GTNWColors.terminalAmber)
         let book = gameState.nameBook
         if book.isEmpty {
-            Text("No lands renamed yet. RENAME in a territory's dossier.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            Text("No lands renamed yet. RENAME in a territory's dossier or your own country's.").font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
         }
         ForEach(book.prefix(40), id: \.land) { n in
+            let real = gameState.realName(of: n.land)
             HStack {
-                Text(verbatim: "\(n.original) → \(n.current)").font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
+                Text(verbatim: "\(NameScreen.shown(n.original, fallback: real)) → \(NameScreen.shown(n.current, fallback: real))")
+                    .font(ThemeFont.mono(10, .bold)).foregroundColor(Theme.isRetro ? EGA.white : .white)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 Text(verbatim: GameCalendar.format(n.date)).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
             }
             .padding(3).themedPanel(retroFill: EGA.black)
         }
+        CartographyHallList()
     }
 
     /// 3.32.3: the debrief, and the chronicle the game writes for itself.

@@ -59,6 +59,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     "Formosa Strait"). Nations on a feature's shores either adopt the new name or resent it, the news gives both names,
     and your map shows yours.
 
+||||||| parent of 616c6a8 (Names: content check on every name, rename your country and held lands, Hall of Cartography (3.36, unreleased))
+- **Names (rename at will):** rename your own country (its name on the map, in the logs, the news, the scoreboard and
+  the chief of staff's replies) and any land you hold (annexed, claimed, bought or seized), any time, at no action
+  cost: RENAME on the dossier (your own country's too), "rename Kenya to New Albion" / "rename my country to
+  Freedonia" in the command box (a RENAME card, runs even with no actions left), or the chief of staff, who can put up
+  to 20 renames on one card ("rename every colony after a letter") and leaves out, by name, what can't be renamed.
+- **Names have consequences:** a renamed land's people react (stability and unrest; at home, approval), a mocking or
+  gibberish name costing more than a dignified one, and up to ten capitals (the great powers and the land's
+  neighbors) recognize the name or refuse it, with a small relations change and a news line. Restoring a land's real
+  name calms it. All drawn from the game's seeded RNG.
+- **Hall of Cartography:** RECORDS → NAMES now also lists every name you have used in any game (game, date in that
+  game, old → new), kept beside the local game store, never in a save. `CartographyHall.lastName(forLand:)` gives
+  other features the last name you gave a land.
+
+### Fixed
+- **Names are checked for content:** every name you give (territories, your country, saved groups, the annex name,
+  the command box, the chief of staff, the WebAssembly bridge) passes `NameScreen`, which reuses the chat's DEFCON 1
+  screen and also reads names the way they are built ("RacismLand", "Nazistan", "N a z i"): slurs, hate terms,
+  sexual terms, names mocking a faith and hostility toward a people are refused with a neutral one-line reason;
+  crude jokes and gibberish ("ShitGibbon", "asdfasdf") stay allowed. An old save holding a name that is now refused
+  shows the land's real name instead (map, news, war log, name book).
+
 ## [3.35.1] - 2026-11-24 — Whole continents
 
 ### Added

@@ -718,6 +718,11 @@ struct CountryDossier: View {
                                 Text(verbatim: leader).font(ThemeFont.mono(9)).foregroundColor(Theme.isRetro ? EGA.white : .white).lineLimit(2)
                             }
                         }
+                        if c.id == gameState.playerCountryID {   // 3.36.0: rename your own country
+                            Spacer()
+                            Button("RENAME") { onSheet(.rename) }.buttonStyle(ThemedButtonStyle())
+                                .accessibilityLabel("Rename \(c.name)")
+                        }
                     }
                     if let o = c.territoryOf {
                         HStack {

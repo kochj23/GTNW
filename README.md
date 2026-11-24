@@ -78,6 +78,7 @@ AI versus AI, narrated by Nova (an AI voice). Two local models play each other; 
 | **Faith** | Theocracies of 57 faiths, each from its founding year: world religions, new religious movements, neopagan, African and diaspora, ancient and indigenous, East Asian | 3.29 |
 | **Realistic war** | Attacks only where a nation can reach (borders, navies, the era's bombers and missiles), wars of attrition with outside aid, a daily real-world brief from Nova's feeds for modern games, base rates from 800 historical wars | 3.29–3.30 |
 | **Covert programmes and plagues** | An MKUltra-style covert agent programme (hallucinogenic, stimulant or depressant agents by water, food or air), an engineered pandemic that spreads along real borders and trade and can come home, real pandemics on their dates from the cholera waves to COVID-19, chemical terrorism (Tokyo 1995) and state chemical attacks (Halabja 1988) as crises; all abstract, no substances or methods | 3.31 |
+| **Names** | Rename your own country and any land you hold, any time and at no action cost, from its dossier, the command box ("rename my country to Freedonia") or the chief of staff (several on one card); a content check refuses slurs, hate and sexual terms and names that mock a faith, while crude jokes and gibberish pass; the people and the world react to the name; the Hall of Cartography keeps every name across games | 3.36 (unreleased) |
 | **Chief of staff** | The command box becomes a conversation: talk it through, follow-ups and pronouns, advice grounded only in the game's tools, multi-step plans as numbered cards that run only on your EXECUTE, a grounding guard and DEFCON 1 content rules, any Settings → AI backend with native tool calls, and a model benchmark | 3.35 (unreleased) |
 | **Command box** | Type orders in plain English ("attack Madagascar with all air, naval, and army forces that are non-nuclear"); a built-in parser first, the local Ollama model only as a translator into whitelisted orders; a confirmation card with era names, forces committed and held back, and warnings; questions answered from the game; saves and replays keep the orders, not the text | 3.34 (unreleased) |
 | **Quality** | Text size, two skins, a silent test mode, a durable Games DB with play history, 1054 tests in seven categories, full determinism from a seed, golden fixtures for GTNW Lite | 3.1–3.33 |
@@ -619,7 +620,11 @@ genocides has a matching tactic id.
     it; it then lands 1 a day/week, 2 a month or 6 a year under the ordinary claim rules until done, out of free
     troops, or out of money. CANCEL calls it off.
   - **Your names on the map**: renamed lands are labelled in bold on the map; RECORDS → NAMES lists original → your
-    name, with dates. The news uses the current name.
+    name, with dates. The news uses the current name. 3.36: your own country can be renamed too (RENAME on its
+    dossier, "rename my country to …" in the command box, or ask the chief of staff); a mocking or unpronounceable
+    name costs some stability (or approval at home) and most capitals refuse to use it, a dignified one is mostly
+    recognized. Slurs, hate and sexual terms and names that mock a faith are refused with a one-line reason. RECORDS →
+    NAMES also shows the Hall of Cartography: every name you have used, in every game.
   - **Land market**: a rival power may outbid you on a purchase or a historical acquisition (40% before 1919, 25%
     after): RAISE once or WALK AWAY. Powers auction or offer you colonies they want rid of (unstable, in revolt, or
     over 6,000 km from home), with a deadline. All under LAND MARKET in the top bar.

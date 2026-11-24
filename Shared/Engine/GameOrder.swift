@@ -32,10 +32,13 @@ enum OrderKind: String, Codable, CaseIterable, Sendable {
     /// 3.36.0 power plays (ForeignPowerPlays.swift): a step of an acquisition campaign (`mission` = `CampaignStep`), an
     /// emergency order (`mission` = `EmergencyStep`, `detail` = the reason or the legal basis), a leader-capture raid,
     /// and a limited strike (`mission` = `StrikeKind`). `renamePlace`: a sea, mountain or department (`target` = its
-    /// id in MapFeatures.swift, `detail` = the new name).
+    /// id in MapFeatures.swift, `detail` = the new name); 3.36.0 runs it through `rename` like `.rename`.
     case acquire, emergency, captureLeader, limitedStrike, renamePlace
 
     var isPowerPlay: Bool { [.acquire, .emergency, .captureLeader, .limitedStrike, .renamePlace].contains(self) }
+    /// 3.36.0: anything the President may rename (`RenameTarget.from(id:)`: his country, a land he holds, a sea, mountain
+    /// or department), through `rename`, no action spent. `detail` is the new name (checked by `NameScreen` again).
+    case rename
 }
 
 /// One resolved order: what the engine is asked to do, against whom, with exactly which forces.
@@ -59,7 +62,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
     var presidentialAction: PresidentialAction? { action.flatMap(PresidentialAction.init(rawValue:)) }
 
     /// 3.36.0: a rename and ending the emergency take no action, so they run with none left.
-    var costsNoAction: Bool { kind == .renamePlace || (kind == .emergency && mission == "end") }
+    var costsNoAction: Bool { kind == .rename || kind == .renamePlace || (kind == .emergency && mission == "end") }
 
     var isNuclear: Bool { presidentialAction.map { OrderWhitelist.nuclear.contains($0) } ?? false }
 
@@ -79,6 +82,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         case .captureLeader: what = "Capture Leader"
         case .limitedStrike: what = "Limited Strike (\(mission ?? "?"))"
         case .renamePlace: what = "Rename (\(detail ?? "?"))"
+        case .rename: what = "Rename (\(detail ?? "?"))"
         }
         var sizes: [String] = []
         if let t = troops { sizes.append("\(Int(t))K troops") }
@@ -163,6 +167,7 @@ extension GameEngine {
         for v in [o.troops, o.aircraft.map(Double.init), o.warheads.map(Double.init)] {
             if let v, !v.isFinite || v < 0 || v > 100_000_000 { return "Force size out of range." }
         }
+        if o.kind == .rename || o.kind == .renamePlace { return renameCheck(RenameTarget.from(id: o.target, in: gs), to: o.detail ?? "").refusal }
         if o.kind.isPowerPlay { return powerPlayProblem(o) }   // 3.36.0
         if o.target == me.id { return "That is your own nation." }
         let nation = gs.getCountry(id: o.target).flatMap { $0.isDestroyed ? nil : $0 }
@@ -191,8 +196,10 @@ extension GameEngine {
             return (o.troops ?? 0) >= 1 ? nil : "An expedition needs troops."
         case .buyColony, .backIndependence:
             return colonyTarget(o.target) == nil ? "Not a colony in \(gs.currentYear)." : nil
-        case .acquire, .emergency, .captureLeader, .limitedStrike, .renamePlace:
+        case .acquire, .emergency, .captureLeader, .limitedStrike:
             return powerPlayProblem(o)
+        case .rename, .renamePlace:
+            return nil   // checked above
         }
     }
 
@@ -234,8 +241,10 @@ extension GameEngine {
             return purchaseColony(o.target) != nil
         case .backIndependence:
             return supportIndependence(o.target) != nil
-        case .acquire, .emergency, .captureLeader, .limitedStrike, .renamePlace:
+        case .acquire, .emergency, .captureLeader, .limitedStrike:
             return executePowerPlay(o)
+        case .rename, .renamePlace:
+            return rename(RenameTarget.from(id: o.target, in: gs), to: o.detail ?? "").succeeded
         }
     }
 

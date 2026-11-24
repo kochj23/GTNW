@@ -85,7 +85,7 @@ enum ChatTools {
         spec("actions", "Orders available this year with their verb, cost, risk and description; with a target, also the odds shown for each against it.",
              ["target": str("Nation name (optional)"), "category": ["type": "string", "enum": ["military", "diplomatic", "economic", "covert", "treaty", "all"]]]),
         spec("power_plays", "The President's power plays under way: the national emergency, emergency orders with their legal authority and court status, acquisition campaigns with leverage and resistance, limited strikes, capture raids and Congress's votes on them.", [:]),
-        spec("propose_orders", "Put orders in front of the President for confirmation. Nothing runs until the President presses EXECUTE. One step per order, in order, at most 5 steps. Use the verbs from the actions tool.",
+        spec("propose_orders", "Put orders in front of the President for confirmation. Nothing runs until the President presses EXECUTE. One step per order, in order, at most 5 steps. Use the verbs from the actions tool. Verb rename (no action spent) renames the President's own country, lands he holds, seas, straits, mountains or departments; several renames go in one step's renames list.",
              ["steps": ["type": "array", "maxItems": maxSteps, "items": [
                 "type": "object",
                 "properties": [
@@ -100,6 +100,12 @@ enum ChatTools {
                     "fleet": ["type": "string", "maxLength": maxArgString],
                     "detail": ["type": "string", "maxLength": maxArgString,
                                "description": "power plays only: limitedStrike kind (precision, boats, facility, nuclearFacility); emergencyTariffs/reissue legal authority (e.g. nationalSecurity232, emergencyEconomic); emergency reason (trade, security, border, publicOrder, energy)"],
+                    // 3.36.0: verb "rename": the President's country ("me") or lands he holds, each with its new name.
+                    "name": ["type": "string", "maxLength": NameScreen.maxLength, "description": "verb rename: the new name for the one target"],
+                    "renames": ["type": "array", "maxItems": CommandParser.maxRenames,
+                                "description": "verb rename, several at once: [{target, name}]; target 'me' is the President's own country. Only his country and lands he holds (game_status held_lands).",
+                                "items": ["type": "object", "properties": ["target": str("Land or 'me'"), "name": ["type": "string", "maxLength": NameScreen.maxLength]],
+                                          "required": ["target", "name"]] as [String: Any]] as [String: Any],
                 ] as [String: Any],
                 "required": ["verb", "targets"],
              ] as [String: Any]] as [String: Any]], required: ["steps"]),
@@ -165,6 +171,7 @@ enum ChatTools {
         }
         if gs.gameOver { d["game_over"] = gs.gameOverReason }
         if e.isProcessingAITurn { d["note"] = "The world is moving; orders wait for your turn." }
+        d["held_lands"] = gs.renamableTargets.dropFirst().prefix(40).compactMap { $0.currentName(in: gs) }   // 3.36.0: what he may rename
         return d
     }
 
@@ -428,7 +435,7 @@ enum ChatTools {
             d["also"] = ["attack (any mix of ground, air and naval; set all for everything)", "declareWar", "navalStrike", "showOfForce",
                          "claim (unclaimed land)", "buy (a colony)", "liberate (back a colony's independence)",
                          "limitedStrike", "captureLeader", "acquire", "pressure", "posture", "frameworkDeal", "escalateCampaign",
-                         "emergency", "endEmergency", "emergencyTariffs", "reissue", "renamePlace (power plays: see the power_plays tool)"]
+                         "emergency", "endEmergency", "emergencyTariffs", "reissue", "rename (your country, a land you hold, a sea, strait, mountain or department; no action)"]
         }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }
@@ -487,6 +494,7 @@ enum ChatTools {
                 ?? actionFor(vs).flatMap({ a in verbActions.first(where: { $0.1 == a })?.0 }) else {
             throw ChatToolError(message: "\(String(vs.prefix(30))) is not an order on the list. Use a verb from the actions tool.")
         }
+        if verb == .rename || verb == .renamePlace { return try renameIntent(o) }   // 3.36.0: one rename path
         if verb.isPowerPlay { return try powerPlayIntent(verb, o) }   // 3.36.0
         var targets: [String] = []
         if let t = o["targets"] as? [Any] { targets = t.compactMap { $0 as? String } }
@@ -518,6 +526,33 @@ enum ChatTools {
         f.warheads = try number("warheads").map { Int($0) }
         if let fl = o["fleet"] as? String { f.fleet = String(CommandParser.sanitize(fl).prefix(maxArgString)) }
         return CommandIntent(verb: verb, targets: targets, forces: f)
+    }
+
+    /// 3.36.0: a rename step: `renames: [{target, name}]`, or `targets: [X]` with `name`. Names are screened by the planner.
+    static func renameIntent(_ o: [String: Any]) throws -> CommandIntent {
+        func clean(_ v: Any?, _ cap: Int) -> String? {
+            guard let s = v as? String else { return nil }
+            let c = String(CommandParser.sanitize(s).prefix(cap))
+            return c.isEmpty ? nil : c
+        }
+        var out: [RenameRequest] = []
+        if let list = o["renames"] as? [Any] {
+            guard list.count <= CommandParser.maxRenames else { throw ChatToolError(message: "at most \(CommandParser.maxRenames) renames on one card.") }
+            for item in list {
+                guard let d = item as? [String: Any], let t = clean(d["target"] ?? d["land"], maxArgString),
+                      let n = clean(d["name"] ?? d["new_name"], NameScreen.maxLength + 20) else { throw ChatToolError(message: "each rename needs target and name.") }
+                out.append(RenameRequest(target: t, name: n))
+            }
+        } else {
+            let t = (o["targets"] as? [Any])?.first ?? o["targets"] ?? o["target"]
+            guard let target = clean(t, maxArgString) else {
+                throw ChatToolError(message: "rename needs targets: [land or 'me'] and name, or renames: [{target, name}].")
+            }
+            // A missing name is planned anyway: the planner's refusal tells the model what is wrong.
+            out.append(RenameRequest(target: target, name: clean(o["name"] ?? o["new_name"] ?? o["detail"], NameScreen.maxLength + 20) ?? ""))
+        }
+        guard !out.isEmpty else { throw ChatToolError(message: "name at least one land to rename.") }
+        return CommandIntent(verb: .rename, targets: out.map(\.target), renames: out)
     }
 
     static func describe(_ outcome: CommandOutcome, step: Int) -> [String: Any] {

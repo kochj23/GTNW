@@ -177,7 +177,7 @@ extension GameEngine {
             }
         case .captureLeader:
             return captureProblem(o.target)
-        case .renamePlace:
+        case .renamePlace:   // 3.36.0: one rename path (Renaming.swift)
             return renamePlaceProblem(o.target, to: o.detail ?? "")
         case .limitedStrike:
             guard let k = o.mission.flatMap(StrikeKind.init(rawValue:)) else { return "Not a strike." }

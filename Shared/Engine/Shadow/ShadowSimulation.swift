@@ -719,22 +719,11 @@ extension GameEngine {
 
     /// Give one of the President's territories a new name (3.3.0). False for an invalid name (see
     /// `CombatModel.validTerritoryName`) or a country that isn't the player's territory. Renaming to the current
-    /// name is accepted and changes nothing, so a resubmitted sheet is harmless.
+    /// name is accepted and changes nothing, so a resubmitted sheet is harmless. 3.36.0: through `rename` (Renaming.swift).
     @discardableResult
     func renameTerritory(_ id: String, to raw: String) -> Bool {
-        guard let gs = gameState, let name = CombatModel.validTerritoryName(raw),
-              let i = gs.countries.firstIndex(where: { $0.id == id && $0.territoryOf == gs.playerCountryID }) else { return false }
-        let old = gs.countries[i].name
-        guard name != old else { return true }
-        gs.countries[i].name = name
-        gs.shadow.renames.append(RenameRecord(land: id, from: old, to: name, date: gs.currentDate))   // 3.29.0: the Names tab
-        if gs.shadow.renames.count > 500 { gs.shadow.renames.removeFirst(gs.shadow.renames.count - 500) }
-        gs.shadow.post("\(old) is renamed \(name) by order of the President.", date: gs.currentDate, severity: 1)
-        gs.shadow.logWar("\(GameCalendar.format(gs.currentDate)): \(old) renamed \(name).")
-        logPlayEvent("renamed_territory", detail: ["land": id, "old_name": PlayHistory.text(old), "name": PlayHistory.text(name),
-                                                   "game_date": PlayHistory.day(gs.currentDate)])
-        self.gameState = gs
-        return true
+        guard let gs = gameState, gs.getCountry(id: id)?.territoryOf == gs.playerCountryID else { return false }
+        return rename(.country(id), to: raw).succeeded
     }
 
     /// 3.28.0: the war card's "Declare war on X": war, troops on the move, a blockade, and a call to our allies.

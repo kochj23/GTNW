@@ -31,6 +31,8 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
     // Power plays (3.36.0, PowerPlayPlanner.swift): an acquisition campaign's steps, emergency powers, a raid, a strike
     case acquire, pressure, posture, frameworkDeal, escalateCampaign, emergency, endEmergency, emergencyTariffs, reissue
     case captureLeader, limitedStrike, renamePlace
+    // Names (3.36.0): the President's own country or a land he holds; no action spent
+    case rename
 
     /// The Situation Room action a simple (non-force) verb runs; nil for the force and land verbs.
     var simpleAction: PresidentialAction? {
@@ -91,6 +93,7 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
         case .claim: return "CLAIM LAND"
         case .buy: return "BUY COLONY"
         case .liberate: return "BACK INDEPENDENCE"
+        case .rename: return "RENAME"
         default: return powerPlayTitle ?? (simpleAction?.rawValue ?? rawValue).uppercased()
         }
     }
@@ -152,12 +155,22 @@ struct CommandIntent: Codable, Equatable, Sendable {
     var confirmedTargets: [String]?
     /// 3.36.0: a power play's parameter (a strike kind, a legal authority, an emergency's reason), from a closed list.
     var detail: String?
+    /// 3.36.0: for `.rename`, each land (as typed, or "me" for the President's own country) and its new name.
+    var renames: [RenameRequest]?
 
     static func ask(_ q: CommandQuestion) -> CommandIntent { CommandIntent(question: q) }
 }
 
+/// One rename asked for: the land as typed and the new name exactly as typed (case and punctuation kept).
+struct RenameRequest: Codable, Equatable, Sendable {
+    var target: String
+    var name: String
+}
+
 enum CommandParser {
     static let maxInput = 200
+    /// Renames one plan may hold (the chief of staff's "rename every colony…").
+    static let maxRenames = 20
     static let maxTargets = 4
     /// Targets one plan may hold when a region name expands to its nations.
     static let maxRegionTargets = 80
@@ -278,7 +291,9 @@ enum CommandParser {
     static func parse(_ raw: String) -> CommandIntent? {
         let text = normalize(sanitize(raw))
         guard !text.isEmpty else { return nil }
-        if let p = PowerPlayParser.parseRename(raw) ?? PowerPlayParser.parse(text) { return p }   // 3.36.0
+        // 3.36.0: renames (a sea, mountain or department first, then a country or land; RenamePlanner.swift), power plays.
+        if let r = PowerPlayParser.parseRename(raw) ?? parseRename(sanitize(raw)) { return r }
+        if let p = PowerPlayParser.parse(text) { return p }
         if questionStarts.contains(where: { text == $0 || text.hasPrefix($0 + " ") }) || helpWords.contains(text) {
             return parseQuestion(text, raw: raw).map(CommandIntent.ask)
         }
@@ -313,6 +328,33 @@ enum CommandParser {
         if verb == .nuke { forces.nuclear = forces.nuclear ?? true }
         let targets = targetNames(in: rest, verb: verb)
         return CommandIntent(verb: verb, targets: targets, forces: forces)
+    }
+
+    /// Words that mean the President's own country in a rename ("rename my country to …").
+    static let selfNames: Set<String> = ["me", "my country", "my nation", "our country", "our nation", "us", "the country", "my own country",
+                                         "this country", "my homeland", "our homeland", "home", "my state", "my people"]
+
+    /// "rename X to Y", "rename X as Y", "rename my country to Y". The new name keeps its case and punctuation;
+    /// quotes around it are dropped. Nil when the text is not a rename.
+    static func parseRename(_ raw: String) -> CommandIntent? {
+        var body = raw.trimmingCharacters(in: .whitespaces)
+        for p in ["please ", "i want to ", "let's ", "lets ", "now ", "go ahead and ", "i order you to ", "we should "]
+        where body.lowercased().hasPrefix(p) { body = String(body.dropFirst(p.count)) }
+        guard body.lowercased().hasPrefix("rename ") else { return nil }
+        body = String(body.dropFirst("rename ".count))
+        let lower = body.lowercased()
+        guard let r = lower.range(of: " to ") ?? lower.range(of: " as ") else {
+            return CommandIntent(verb: .rename, renames: [])
+        }
+        let what = String(body[..<r.lowerBound])
+        var name = String(body[r.upperBound...]).trimmingCharacters(in: .whitespaces)
+        if name.hasSuffix(".") || name.hasSuffix("!") { name.removeLast() }
+        name = name.trimmingCharacters(in: CharacterSet(charactersIn: "\"'“”‘’ "))
+        var target = normalize(what)
+        for lead in ["the "] where target.hasPrefix(lead) && target.count > lead.count + 2 && !selfNames.contains(target) { target = String(target.dropFirst(lead.count)) }
+        if selfNames.contains(target) { target = "me" }
+        guard !target.isEmpty else { return CommandIntent(verb: .rename, renames: []) }
+        return CommandIntent(verb: .rename, targets: [target], renames: [RenameRequest(target: target, name: name)])
     }
 
     /// The names between the verb and the force clause: "madagascar", or "iran and iraq" → two.
