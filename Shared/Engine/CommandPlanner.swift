@@ -284,6 +284,12 @@ extension GameEngine {
         if gs.gameOver { return .rejected("The game is over.") }
         if isProcessingAITurn { return .rejected("The world is moving. Wait for your turn.") }
         if verb == .rename || verb == .renamePlace { return planRenames(intent, source: source) }   // 3.36.0: one rename path, no action (RenamePlanner.swift)
+        // 3.36.0: land changes hands by province only at the peace table (the annex-provinces term), not by purchase.
+        if [.claim, .buy, .liberate, .acquire].contains(verb), intent.confirmedTargets == nil,
+           let p = intent.targets.lazy.compactMap({ CommandTargets.state(CommandParser.sanitize($0), in: gs) }).first {
+            return .rejected("\(gs.provinceName(p.id)) is a \(Subdivisions.historical(p, on: gs.currentDate).kind.lowercased()), not a land "
+                             + "on its own. Provinces change hands at the peace table: win the war, then annex the occupied provinces.")
+        }
         if let p = planPowerPlay(intent, verb: verb, source: source) { return p }   // 3.36.0: PowerPlayPlanner.swift
         if gs.actionsRemaining == 0 {
             return .rejected("No actions left this \(gs.turnLength.displayName.lowercased()). End the turn first.")
@@ -311,11 +317,6 @@ extension GameEngine {
                     targets += members
                     regionIDs.formUnion(members.map(\.id))
                     continue
-                }
-                // 3.36.0: land changes hands by province only at the peace table (the annex-provinces term).
-                if [.claim, .buy, .liberate].contains(verb), let p = CommandTargets.state(name, in: gs) {
-                    return .rejected("\(gs.provinceName(p.id)) is a \(Subdivisions.historical(p, on: gs.currentDate).kind.lowercased()), not a land "
-                                     + "on its own. Provinces change hands at the peace table: win the war, then annex the occupied provinces.")
                 }
                 switch CommandTargets.resolve(name, in: gs) {
                 case .none:

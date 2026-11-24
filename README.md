@@ -102,7 +102,7 @@ Everything happens on one screen:
   state by real admission date (the 13 originals in 1789, Dakota Territory before 1889, 50 from 1959; the seceded
   states fly the Confederacy's colors while it stands); Canada, Mexico, Brazil, Russia, China, India, Australia,
   Germany, France, the UK's four nations, Japan and eight more have their modern provinces from about when they
-  took shape (mostly after 1945), undivided before. Rename any you hold. Elections are counted state by state with
+  took shape (mostly after 1945), undivided before. Rename any you hold (POWER PLAYS → NAMES). Elections are counted state by state with
   real electors for each year, and close states decide close elections (the end screen shows the map). A province
   of a nation in collapse can secede and become a nation; a won war records the provinces the army holds, and the
   surrender sheet can annex just those. The chief of staff lists a nation's states, and orders accept state names.

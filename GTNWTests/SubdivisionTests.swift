@@ -293,6 +293,40 @@ final class ProvinceGameplayTests: XCTestCase {
     }
 }
 
+// MARK: - Renaming
+
+final class ProvinceRenameTests: XCTestCase {
+
+    @MainActor
+    func testRenameAHeldStateThroughTheNameCheck() {
+        let e = SubFixtures.engine(year: 2025)
+        let gs = e.gameState!
+        XCTAssertTrue(e.renamePlace("US-OH", to: "Buckeye Land"))
+        XCTAssertEqual(gs.provinceName("US-OH"), "Buckeye Land")
+        XCTAssertEqual(Subdivisions.find("Buckeye Land", in: gs)?.id, "US-OH", "the new name is a target")
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("renames Ohio Buckeye Land") })
+        XCTAssertEqual(gs.stateSwing()["US-OH"], -2, "a name nobody there chose costs votes")
+        XCTAssertTrue(SubdivisionLayer(gs).describe("US-OH").hasPrefix("Buckeye Land — State (Ohio)"))
+        // The same checks as every name: one line, no addresses, a length, only what he holds.
+        XCTAssertNotNil(e.renamePlaceProblem("US-OH", to: "Two\nLines"))
+        XCTAssertNotNil(e.renamePlaceProblem("US-OH", to: "see https://example.com"))
+        XCTAssertNotNil(e.renamePlaceProblem("US-OH", to: String(repeating: "A", count: 200)))
+        XCTAssertNotNil(e.renamePlaceProblem("DE-BY", to: "Lederhosen"), "not his to rename")
+        // Its real name back clears the record.
+        XCTAssertTrue(e.renamePlace("US-OH", to: "Ohio"))
+        XCTAssertNil(gs.shadow.provinces.names["US-OH"])
+    }
+
+    @MainActor
+    func testRenameOrderNamesAState() {
+        let e = SubFixtures.engine(year: 2025)
+        var intent = CommandIntent(verb: .renamePlace, targets: ["Texas"])
+        intent.detail = "Lone Star"
+        guard case .plan(let plan) = e.planCommand(intent, source: .parser) else { return XCTFail("rename Texas") }
+        XCTAssertEqual(plan.orders.first?.target, "US-TX")
+    }
+}
+
 // MARK: - Chief of staff and orders
 
 final class ProvinceCommandTests: XCTestCase {
