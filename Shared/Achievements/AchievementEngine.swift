@@ -22,7 +22,7 @@ class AchievementEngine: ObservableObject {
     private var achievementPosters: [String: Data] = [:]
 
     private init() {
-        loadUnlocked()
+        reload()
     }
 
     // MARK: - Achievement Definitions
@@ -300,7 +300,13 @@ class AchievementEngine: ObservableObject {
                 icon: "heart",
                 rarity: .epic
             )
-        ]
+        ] + Self.presidencyAchievements
+    }
+
+    /// 3.36.0: the record of his presidency (PresidencyRecord.swift), earned at game over and kept across games.
+    static let presidencyAchievements: [Achievement] = PresidencyAwards.all.map { a in
+        Achievement(id: a.id, name: a.name, description: a.description, category: .presidency, requirement: 1,
+                    icon: a.icon, rarity: AchievementRarity(rawValue: a.rarity) ?? .rare)
     }
 
     // MARK: - Check Achievements
@@ -437,7 +443,8 @@ class AchievementEngine: ObservableObject {
             return gameState.gameOver && gameState.militaryActionsUsed == 0 && gameState.victoryType != nil
 
         default:
-            return false
+            // 3.36.0: presidency awards are decided at game over; the career remembers them.
+            return PresidencyAwards.award(achievement.id) != nil && PresidencyCareer.load().awards.contains(achievement.id)
         }
     }
 
@@ -484,6 +491,12 @@ class AchievementEngine: ObservableObject {
         for id in unlockedAchievements.subtracting(known) { GameStoreService.shared.unlockAchievement(id) }
     }
 
+    /// 3.36.0: re-read the store after the engine unlocked awards at game over.
+    func reload() {
+        loadUnlocked()
+        unlockedAchievements.formUnion(PresidencyCareer.load().awards)
+    }
+
     func isUnlocked(_ id: String) -> Bool {
         return unlockedAchievements.contains(id)
     }
@@ -518,6 +531,7 @@ enum AchievementCategory: String {
     case survival = "Survival"
     case collection = "Collection"
     case special = "Special"
+    case presidency = "The Record"
 }
 
 enum AchievementRarity: String {

@@ -1,7 +1,7 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-1101-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1127-brightgreen)
 ![Version](https://img.shields.io/badge/version-3.35.1-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.1-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
@@ -1246,6 +1246,22 @@ the game.)
 In the WOPR ending, WOPR takes over and runs 2,005 war scenarios, all ending in "WINNER: NONE". It then gives its
 verdict: *"A strange game. The only winning move is not to play."*
 
+### The record of the presidency (new in 3.36.0)
+
+- **Awards for how you actually play**, earned at game over and kept across games (Records → AWARDS, and the
+  achievements list): Removed in Under Five Minutes (real time), Impeached on Easy, Fired by Afghanistan (a war lost
+  to a much smaller power), Colonized the Alphabet (five lands renamed with one letter), Nuked a Friend, Nuked the
+  Surrendered, Antarctica, Again (claimed in five games), Keyboard Smash Cartographer, Served the Full Term, Many Wars,
+  Few Wins (your career line, e.g. "72 wars, 2 wins"), Gave Zero Orders and Still Got Removed, Ignored the Whole
+  Cabinet, With Friends Like These, Overkill, Ran It Like a Museum and Cartographer General. Each one is logged to play
+  history (`achievement_unlocked`) so Nova's journal can quote it.
+- **"I told you so."** Every warning you overrule is kept word for word with its date. An adviser overruled twice
+  leaks it to the press (approval −1.5); one who resigns quotes it in a one-line statement; when Congress moves to
+  impeach, the overruled testify and the news quotes the warning and the day it was given. No dice: the record decides.
+- **After the presidency** (end screen): the history books' one-paragraph verdict, built from the record (a local AI
+  may polish it but must keep every name and number, or the template stands), the name of your presidential library,
+  and *fifty years later*: your names survive on lands still held and stable; everywhere else the old name comes back.
+
 ### Also included
 
 - **Leaderboard and achievements**, synced through the Games DB.
@@ -1842,7 +1858,7 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **1101 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **1127 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 

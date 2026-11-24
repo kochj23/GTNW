@@ -714,6 +714,9 @@ class GameEngine: ObservableObject {
             addLog("❌ \(attacker.name) doesn't have enough warheads!", type: .error)
             return
         }
+        if attackerID == gameState.playerCountryID {   // 3.36.0: the record (a friend? the surrendered?)
+            notePlayerNuke(targetID: targetID, relation: attacker.diplomaticRelations[targetID] ?? 0)
+        }
         watchCue("sfx.nuke_strike")                              // 3.27.1: Watch mode hears the launch...
         watchCue("sfx.nuke_city", after: 1.5)                    // ...and the detonation
 
@@ -878,7 +881,10 @@ class GameEngine: ObservableObject {
             gameState.countries[defenderIndex].atWarWith.insert(aggressor)
         }
 
-        if aggressor == gameState.playerCountryID { gameState.shadow.playerWarsStarted += 1 }   // 3.16.0
+        if aggressor == gameState.playerCountryID {
+            gameState.shadow.playerWarsStarted += 1   // 3.16.0
+            notePlayerWar(on: defender)               // 3.36.0
+        }
         self.gameState = gameState
         stateCasus(actor: aggressor, target: defender,
                    casus: CasusBelli(rawValue: gameState.shadow.statedCasus[defender] ?? ""), applyReaction: !scripted)
@@ -1841,6 +1847,7 @@ class GameEngine: ObservableObject {
 
     /// Leaderboard + game history + scenario progress for a finished game.
     func recordGameOver(_ gameState: GameState, score: GameScore, victory: VictoryType?) {
+        closePresidencyRecord(gameState, victory: victory)   // 3.36.0: awards and the verdict, before the session closes
         // The game_history row shares the play session's id (a fresh UUID when no session is running).
         let id = finishPlaySession(score: score, victory: victory) ?? UUID()
         // 3.26.0: a watch game is in play history (spectator) but never in the leaderboard or game history.

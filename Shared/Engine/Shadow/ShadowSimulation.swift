@@ -114,6 +114,7 @@ extension GameEngine {
         adoptOwnColonies()   // 3.28.2
         processAdvisorFates(scale: scale)
         processHallOfInfamy()
+        processPresidencyRecord()   // 3.36.0: leaks and testimony from the overruled
 
         // Peace streak (years of peace = peaceTurns × turn length).
         if let p = gs.getPlayerCountry(), p.atWarWith.isEmpty { gs.peaceTurns += 1 } else { gs.peaceTurns = 0 }
@@ -489,6 +490,7 @@ extension GameEngine {
         var f = gs.shadow.fronts[i]
         f.status = verdict
         gs.shadow.fronts[i] = f
+        noteFrontResolved(f, verdict: verdict)   // 3.36.0: who surrendered, and whether we lost
         guard let ai = gs.countries.firstIndex(where: { $0.id == f.attacker }),
               let di = gs.countries.firstIndex(where: { $0.id == f.defender }) else { return }
         let aName = gs.countries[ai].name, dName = gs.countries[di].name
@@ -1042,6 +1044,8 @@ extension GameEngine {
         let popularityBefore = gs.shadow.popularity
         let warnings = MajorAction.isMajor(action) && AdvisorWarnings.enabled()
             ? advisorWarnings(for: .attack(action, target: targetID, size: size)) : []
+        let relationBefore = gs.getPlayerCountry()?.diplomaticRelations[targetID] ?? 0   // 3.36.0: the record
+        let orderLabel = "\(action.rawValue) → \(gs.getCountry(id: targetID)?.name ?? targetID)"
         gs.flash([gs.playerCountryID, targetID], action.isHostile ? .hostile : .friendly,
                  "\(gs.getPlayerCountry()?.name ?? "You"): \(action.rawValue) → \(gs.getCountry(id: targetID)?.name ?? targetID)")
         executeShadowPresidentAction(action, from: gs.playerCountryID, to: targetID, size: size, warhead: warhead)
@@ -1051,7 +1055,7 @@ extension GameEngine {
         var resignation: String?
         if let a = advice, let id = a.advisorID, let i = gs.advisors.firstIndex(where: { $0.id == id }) {
             if a.stance == .oppose {
-                if let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs) {
+                if let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs, warning: a.reason, order: orderLabel) {
                     resignation = msg
                     gs.advisors.append(AdviceEngine.appointActing(replacing: gs.advisors[i], sequence: gs.advisors.count))
                     gs.shadow.post(msg, date: gs.currentDate, severity: 2)
@@ -1061,7 +1065,9 @@ extension GameEngine {
                 AdviceEngine.registerFollowed(advisorIndex: i, in: gs)
             }
         }
+        ToldYouSo.recordDangers(gs, warnings: warnings, order: orderLabel)   // 3.36.0: "I told you so"
         self.gameState = gs
+        notePresidentialOrder(action, targetID: targetID, relationBefore: relationBefore)
         if let d = Doctrine.of(action) {   // 3.32.3: what worked becomes what the room recommends
             recordDoctrine(d, actor: gs.playerCountryID, won: actionResult?.success != false,
                            note: "\(action.rawValue.lowercased()) against \(gs.getCountry(id: targetID)?.name ?? targetID)")
@@ -1105,7 +1111,8 @@ extension GameEngine {
     func rejectRecommendation(advisorID: String) {
         guard let gs = gameState, let i = gs.advisors.firstIndex(where: { $0.id == advisorID }) else { return }
         let adv = gs.advisors[i]
-        let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs)
+        let msg = AdviceEngine.registerOverrule(advisorIndex: i, in: gs, warning: adv.currentAdvice,
+                                                order: "Rejected: \(adv.recommendedAction ?? "a recommendation")")
         if let msg {
             gs.advisors.append(AdviceEngine.appointActing(replacing: gs.advisors[i], sequence: gs.advisors.count))
             gs.shadow.post(msg, date: gs.currentDate, severity: 2)

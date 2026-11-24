@@ -297,15 +297,17 @@ enum AdviceEngine {
     ]
 
     /// After the player overrules an advisor: loyalty drops and repeated defiance ends in resignation.
-    static func registerOverrule(advisorIndex i: Int, in gs: GameState) -> String? {
+    /// 3.36.0: `warning` (what they said, verbatim) and `order` go on the record; a resignation quotes the first one.
+    static func registerOverrule(advisorIndex i: Int, in gs: GameState, warning: String? = nil, order: String = "") -> String? {
         guard gs.advisors.indices.contains(i), gs.advisors[i].isActive else { return nil }
+        if let warning { ToldYouSo.record(gs, advisor: gs.advisors[i], text: warning, order: order) }
         let id = gs.advisors[i].id
         gs.advisors[i].loyalty = max(0, gs.advisors[i].loyalty - 8)
         let grievances = (gs.shadow.advisorGrievances[id] ?? 0) + 1
         gs.shadow.advisorGrievances[id] = grievances
         if grievances >= 3 && gs.advisors[i].loyalty < 70 {
             gs.advisors[i].status = .resigned
-            return "\(gs.advisors[i].name) has resigned as \(gs.advisors[i].title), citing \"fundamental disagreements over policy.\""
+            return ToldYouSo.resignation(gs, advisor: gs.advisors[i])
         }
         return nil
     }
@@ -313,6 +315,7 @@ enum AdviceEngine {
     /// Following advice rebuilds trust.
     static func registerFollowed(advisorIndex i: Int, in gs: GameState) {
         guard gs.advisors.indices.contains(i) else { return }
+        gs.shadow.presidency.followed += 1
         gs.advisors[i].loyalty = min(100, gs.advisors[i].loyalty + 3)
         gs.shadow.advisorGrievances[gs.advisors[i].id] = max(0, (gs.shadow.advisorGrievances[gs.advisors[i].id] ?? 0) - 1)
     }

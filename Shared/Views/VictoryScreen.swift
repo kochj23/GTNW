@@ -59,6 +59,9 @@ struct VictoryScreen: View {
                 // 3.32.3: the counterfactual debrief — what was decided, what almost happened, what was believed.
                 debriefDisplay()
 
+                // 3.36.0: after the presidency — the history books, the library, fifty years later, the awards.
+                PresidencyEpilogueView(gameState: gameState, victoryType: victoryType)
+
                 // Buttons
                 HStack(spacing: 20) {
                     Button(action: onViewLeaderboard) {

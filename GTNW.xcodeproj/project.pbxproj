@@ -34,6 +34,7 @@
 		01E15CF63F9E705ECCA7F579 /* PresidentialPowersViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003177A629E84F33BCF55FD0 /* PresidentialPowersViews.swift */; };
 		02BB184B6291884B9F2FF82E /* CrisisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */; };
 		03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
+		000000000000E3360E020002 /* PresidencyEpilogueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000E3360E020001 /* PresidencyEpilogueView.swift */; };
 		03E52911A7DE17E85DD58483 /* ModernDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CF53E773D67381802521E1 /* ModernDesign.swift */; };
 		046B1519ECF4EB00E06F93C5 /* GTNWAIViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED7011F371BCF8B66DB5E6B /* GTNWAIViews.swift */; };
 		06ED6231B77CA9F4C76BB3F0 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DA0AC7158FC18AE8575791A /* Theme.swift */; };
@@ -49,6 +50,7 @@
 		1A7E5C0029A0000000000002 /* Empire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000001 /* Empire.swift */; };
 		1A7E5C0029A0000000000048 /* Doctrines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000047 /* Doctrines.swift */; };
 		1A7E5C0029A000000000004B /* Chronicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000004A /* Chronicle.swift */; };
+		000000000000E3360E010002 /* PresidencyRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000E3360E010001 /* PresidencyRecord.swift */; };
 		1A7E5C0029A000000000004E /* OneSitting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000004D /* OneSitting.swift */; };
 		1A7E5C0029A0000000000045 /* Settlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000044 /* Settlements.swift */; };
 		1A7E5C0029A0000000000042 /* Intelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000041 /* Intelligence.swift */; };
@@ -61,6 +63,7 @@
 		1A7E5C0029A0000000000003 /* Empire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000001 /* Empire.swift */; };
 		1A7E5C0029A0000000000049 /* Doctrines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000047 /* Doctrines.swift */; };
 		1A7E5C0029A000000000004C /* Chronicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000004A /* Chronicle.swift */; };
+		000000000000E3360E010003 /* PresidencyRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000E3360E010001 /* PresidencyRecord.swift */; };
 		1A7E5C0029A000000000004F /* OneSitting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000004D /* OneSitting.swift */; };
 		1A7E5C0029A0000000000046 /* Settlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000044 /* Settlements.swift */; };
 		1A7E5C0029A0000000000043 /* Intelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A0000000000041 /* Intelligence.swift */; };
@@ -80,6 +83,7 @@
 		1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003A /* Release331Tests.swift */; };
 		1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0029A000000000003F /* Release332Tests.swift */; };
 		1D3360000000000000000005 /* ConsequencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3360000000000000000004 /* ConsequencesTests.swift */; };
+		000000000000E3360E030002 /* PresidencyRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000E3360E030001 /* PresidencyRecordTests.swift */; };
 		1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */; };
 		1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */; };
 		1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */; };
@@ -90,6 +94,7 @@
 		0CD5072A8BED2D2318681AF3 /* Coalitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD5072A8BED2D2318681AF1 /* Coalitions.swift */; };
 		0CE9F626FF8F1B7F1D828879 /* ShadowSimulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3E55C52277C2CE8729F821 /* ShadowSimulation.swift */; };
 		0F4B5D2A37DF76925230F475 /* VictoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07228E319CC144294BA9F6FA /* VictoryScreen.swift */; };
+		000000000000E3360E020003 /* PresidencyEpilogueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000E3360E020001 /* PresidencyEpilogueView.swift */; };
 		0F7E9E4D982D8759934A3C5D /* PropagandaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77A18618B97CC2F0FBC4F8DA /* PropagandaEngine.swift */; };
 		0F93F8EFF462E5D42DE5E5F7 /* UnifiedCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B400729F98A7E5CDA2AD /* UnifiedCommandCenter.swift */; };
 		0FC984047BA949597F006083 /* ShadowPresidentMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3150526F252FC0C1C2E60919 /* ShadowPresidentMenu.swift */; };
@@ -404,6 +409,7 @@
 		0313A94FFF5E440D5D14BD3E /* CountryProfile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CountryProfile.swift; sourceTree = "<group>"; };
 		036AA603358401CC4A9A2EFD /* SituationSheets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SituationSheets.swift; path = Shared/Views/SituationRoom/SituationSheets.swift; sourceTree = SOURCE_ROOT; };
 		07228E319CC144294BA9F6FA /* VictoryScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VictoryScreen.swift; sourceTree = "<group>"; };
+		000000000000E3360E020001 /* PresidencyEpilogueView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidencyEpilogueView.swift; sourceTree = "<group>"; };
 		07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalAdministrations_PreNuclear.swift; sourceTree = "<group>"; };
 		0854B72805C89C5B61BF7D87 /* TextCommandInterface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextCommandInterface.swift; sourceTree = "<group>"; };
 		0A3AFE577AA206EFC80AC0CE /* TheLivingRoom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TheLivingRoom.swift; sourceTree = "<group>"; };
@@ -411,6 +417,7 @@
 		1A7E5C0029A0000000000001 /* Empire.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Empire.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000047 /* Doctrines.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Doctrines.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000004A /* Chronicle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Chronicle.swift; sourceTree = "<group>"; };
+		000000000000E3360E010001 /* PresidencyRecord.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidencyRecord.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000004D /* OneSitting.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OneSitting.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000044 /* Settlements.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Settlements.swift; sourceTree = "<group>"; };
 		1A7E5C0029A0000000000041 /* Intelligence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Intelligence.swift; sourceTree = "<group>"; };
@@ -427,6 +434,7 @@
 		1A7E5C0029A000000000003A /* Release331Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release331Tests.swift; sourceTree = "<group>"; };
 		1A7E5C0029A000000000003F /* Release332Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Release332Tests.swift; sourceTree = "<group>"; };
 		1D3360000000000000000004 /* ConsequencesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConsequencesTests.swift; sourceTree = "<group>"; };
+		000000000000E3360E030001 /* PresidencyRecordTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PresidencyRecordTests.swift; sourceTree = "<group>"; };
 		1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeterminismTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033AD6B2A05DD09B3 /* RepoHygieneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RepoHygieneTests.swift; sourceTree = "<group>"; };
 		1A7E5C0033005F5A353ED0A9 /* AccessibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccessibilityTests.swift; sourceTree = "<group>"; };
@@ -739,6 +747,7 @@
 				1A7E5C0029A000000000003A /* Release331Tests.swift */,
 				1A7E5C0029A000000000003F /* Release332Tests.swift */,
 				1D3360000000000000000004 /* ConsequencesTests.swift */,
+				000000000000E3360E030001 /* PresidencyRecordTests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
 				1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */,
 				1A7E5C35B7A69EE281A21D92 /* ChatTests.swift */,
@@ -792,6 +801,7 @@
 				1A7E5C0029A0000000000001 /* Empire.swift */,
 				1A7E5C0029A0000000000047 /* Doctrines.swift */,
 				1A7E5C0029A000000000004A /* Chronicle.swift */,
+				000000000000E3360E010001 /* PresidencyRecord.swift */,
 				1A7E5C0029A000000000004D /* OneSitting.swift */,
 				1A7E5C0029A0000000000044 /* Settlements.swift */,
 				1A7E5C0029A0000000000041 /* Intelligence.swift */,
@@ -858,6 +868,7 @@
 				1A7E5C35BC9EB0DFAA553A4D /* ChatView.swift */,
 				1FF51CEFAC2F147C20DF9897 /* CrisisView.swift */,
 				07228E319CC144294BA9F6FA /* VictoryScreen.swift */,
+				000000000000E3360E020001 /* PresidencyEpilogueView.swift */,
 				E7305F3AFA9C060C23E34953 /* LeaderboardView.swift */,
 				75BFDEE85E6AE222B571791D /* ModernCommandView.swift */,
 				2D09E4DB87F6D9C2F4963C70 /* ModernCountryPicker.swift */,
@@ -1272,6 +1283,7 @@
 				4CF3D7350109DEA2300DD6D0 /* ScoringSystem.swift in Sources */,
 				7B58B87BA586678F7FB2A833 /* NewsFeed.swift in Sources */,
 				0F4B5D2A37DF76925230F475 /* VictoryScreen.swift in Sources */,
+				000000000000E3360E020003 /* PresidencyEpilogueView.swift in Sources */,
 				14D53F3903123E56A9210037 /* LeaderboardView.swift in Sources */,
 				4E8047CD4CEA8BC1E4C4BA7C /* ModernDesignSystem.swift in Sources */,
 				E783177D41BC2CC35FB83780 /* ModernCommandView.swift in Sources */,
@@ -1328,6 +1340,7 @@
 				1A7E5C0029A0000000000002 /* Empire.swift in Sources */,
 				1A7E5C0029A0000000000048 /* Doctrines.swift in Sources */,
 				1A7E5C0029A000000000004B /* Chronicle.swift in Sources */,
+				000000000000E3360E010002 /* PresidencyRecord.swift in Sources */,
 				1A7E5C0029A000000000004E /* OneSitting.swift in Sources */,
 				1A7E5C0029A0000000000045 /* Settlements.swift in Sources */,
 				1A7E5C0029A0000000000042 /* Intelligence.swift in Sources */,
@@ -1414,6 +1427,7 @@
 				1A7E5C0029A000000000003B /* Release331Tests.swift in Sources */,
 				1A7E5C0029A0000000000040 /* Release332Tests.swift in Sources */,
 				1D3360000000000000000005 /* ConsequencesTests.swift in Sources */,
+				000000000000E3360E030002 /* PresidencyRecordTests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
 				1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */,
 				1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */,
@@ -1465,6 +1479,7 @@
 				BAF1EAEAFAD80B5751A45D7B /* ScoringSystem.swift in Sources */,
 				40BA548AC1F96838707E22F5 /* NewsFeed.swift in Sources */,
 				03B1D4DB5E585DBA779A712A /* VictoryScreen.swift in Sources */,
+				000000000000E3360E020002 /* PresidencyEpilogueView.swift in Sources */,
 				B746AF0BA4E999B1AAA41F68 /* LeaderboardView.swift in Sources */,
 				9DC12054C5A84DD1809A0902 /* ModernDesignSystem.swift in Sources */,
 				5B51E2D1A374CBC57D3A29CA /* ModernCommandView.swift in Sources */,
@@ -1529,6 +1544,7 @@
 				1A7E5C0029A0000000000003 /* Empire.swift in Sources */,
 				1A7E5C0029A0000000000049 /* Doctrines.swift in Sources */,
 				1A7E5C0029A000000000004C /* Chronicle.swift in Sources */,
+				000000000000E3360E010003 /* PresidencyRecord.swift in Sources */,
 				1A7E5C0029A000000000004F /* OneSitting.swift in Sources */,
 				1A7E5C0029A0000000000046 /* Settlements.swift in Sources */,
 				1A7E5C0029A0000000000043 /* Intelligence.swift in Sources */,

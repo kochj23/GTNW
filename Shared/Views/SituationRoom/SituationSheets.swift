@@ -1730,7 +1730,7 @@ struct RecordsSheet: View {
     @ObservedObject var gameState: GameState
     var hall: [InfamyRecord: InfamyEntry] = HallOfInfamy.load()
     /// 3.29.0: Infamy | Names | Empire.
-    enum Tab: String, CaseIterable { case infamy = "INFAMY", names = "NAMES", empire = "EMPIRE", war = "WAR", fog = "FOG", legends = "LEGENDS" }
+    enum Tab: String, CaseIterable { case infamy = "INFAMY", names = "NAMES", empire = "EMPIRE", war = "WAR", fog = "FOG", legends = "LEGENDS", awards = "AWARDS" }
     @State var tab: Tab = .infamy
 
     var body: some View {
@@ -1747,6 +1747,7 @@ struct RecordsSheet: View {
             case .war: warRoomRecord
             case .fog: fogPanel
             case .legends: legends
+            case .awards: PresidencyAwardsPanel(gameState: gameState)   // 3.36.0
             }
             HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
         }

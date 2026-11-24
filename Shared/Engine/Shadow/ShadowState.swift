@@ -276,6 +276,8 @@ struct ShadowState: Codable {
     var playSessionID: UUID?
     /// Wall-clock time the current play session started.
     var playSessionStartedAt: Date?
+    /// 3.36.0: the record of this presidency — overruled warnings, leaks, testimony, awards (PresidencyRecord.swift).
+    var presidency = PresidencyRecord()
 
     mutating func post(_ text: String, date: Date, severity: Int = 0) {
         ticker.append(TickerItem(date: date, text: EraWords.localizeAlert(text, year: GameCalendar.year(of: date)), severity: severity))
@@ -303,6 +305,7 @@ struct ShadowState: Codable {
         case doctrines, sittingID, sittingTurns, sittingDebrief
         case commandLog
         case consequences
+        case presidency
     }
 
     init() {}
@@ -413,6 +416,7 @@ struct ShadowState: Codable {
         sittingDebrief = (try? c.decodeIfPresent([String].self, forKey: .sittingDebrief)) ?? []
         commandLog = (try? c.decodeIfPresent([CommandRecord].self, forKey: .commandLog)) ?? []
         consequences = (try? c.decodeIfPresent(ConsequenceState.self, forKey: .consequences)) ?? ConsequenceState()
+        presidency = (try? c.decodeIfPresent(PresidencyRecord.self, forKey: .presidency)) ?? PresidencyRecord()
     }
 }
 

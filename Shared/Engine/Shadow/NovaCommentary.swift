@@ -56,6 +56,10 @@ enum NovaCommentary {
         roastGenerator = { prompt in
             await liveLine(prompt, system: roastSystemPrompt, temperature: 0.95, maxTokens: 90)
         }
+        // 3.36.0: the history books' verdict, polished (the template stands if this fails or strays from the facts).
+        PresidencyEpilogue.polisher = { prompt in
+            await liveLine(prompt, system: PresidencyEpilogue.polishSystemPrompt, temperature: 0.6, maxTokens: 260)
+        }
     }
     #endif
 

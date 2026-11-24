@@ -19,6 +19,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when Denmark is invaded). When a presidency ends (removed, beaten, served out) and the record holds such acts or a
   treaty-banned weapon, the end screen adds a trial: the charges as recorded, a verdict that follows from them.
   Deterministic (no RNG draws); kept in `shadow.consequences`, which older saves load empty.
+- **The record of the presidency.** Sixteen awards for how the game is actually played, decided at game over from
+  the end state and kept across games (`PresidencyCareer`, local like the Hall of Infamy): Removed in Under Five
+  Minutes (real time, a game played start to finish in one sitting), Impeached on Easy, Fired by Afghanistan (a war
+  lost to a power with a fifth of our economy or less), Colonized the Alphabet, Nuked a Friend (relations above 40),
+  Nuked the Surrendered, Antarctica, Again (five games), Keyboard Smash Cartographer, Served the Full Term, Many Wars,
+  Few Wins (ten or more wars across games, at most one won in ten; the career line reads "72 wars, 2 wins"), Gave Zero
+  Orders and Still Got Removed, Ignored the Whole Cabinet (four posts overruled, no advice ever taken), With Friends
+  Like These, Overkill (a strike on a nation under a million people), Ran It Like a Museum and Cartographer General.
+  They are in the achievements list and a new Records → AWARDS tab, and each is logged as an `achievement_unlocked`
+  play event (with `history_verdict`, `advisor_leak` and `advisor_testified`) for Nova's journal.
+- **"I told you so."** Overruled warnings (an opposed order, a rejected recommendation, a danger warning clicked past)
+  are kept verbatim with the date and the order (`shadow.presidency`). An adviser overruled twice leaks the warning
+  (approval −1.5, once); a resignation quotes the adviser's first warning in a one-line statement; each time Congress
+  moves an impeachment stage, one of the overruled testifies (the departed first) and the news quotes the warning and
+  its date. Deterministic, no rolls.
+- **After the presidency** on the end screen, its own section: the history books' one-paragraph verdict from the
+  record (optional polish through the existing NovaAIKit path, rejected unless every number and name is the
+  template's), the presidential library's name (from the leader, the country's name and his newest held rename), and
+  fifty years later (his names survive on held lands with stability 40 or more, else the original returns; a name that
+  breaks the content rules is struck from the record). Older saves load with an empty record.
 
 ## [3.35.1] - 2026-11-24 — Whole continents
 
