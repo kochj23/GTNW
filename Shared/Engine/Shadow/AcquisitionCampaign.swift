@@ -133,10 +133,16 @@ extension GameEngine {
             guard !c.isDestroyed, c.territoryOf == nil, c.id != me.id else { return nil }
             return (.nation, c, c.name)
         }
-        guard gs.preState(id) == nil, let t = WorldCountriesDatabase.template(id: id),
+        guard gs.preState(id) == nil, let t = acquisitionTemplate(id),
               let o = WorldMapData.owner(of: id, in: Set(gs.countries.map(\.id)), year: gs.currentYear), o != me.id,
               let owner = gs.getCountry(id: o), !owner.isDestroyed, owner.territoryOf == nil else { return nil }
         return (.land, owner, t.name)
+    }
+
+    /// A land's template: the world database's, or a land the map draws under a nation with no government of its
+    /// own in the game (Greenland, Consequences.dependentLands).
+    func acquisitionTemplate(_ id: String) -> CountryTemplate? {
+        WorldCountriesDatabase.template(id: id) ?? Consequences.dependentLands.values.flatMap { $0 }.first { $0.id == id }
     }
 
     /// The campaign open on a land, if any.
@@ -376,7 +382,18 @@ extension GameEngine {
         case .colony:
             if let col = colonyTarget(c.land) { takeColony(c.land, col, troops: 1, stability: 55, outcry: outcry) }
         case .land:
-            annexLand(c.land, troops: 1, stability: 55, outcry: outcry)
+            if annexLand(c.land, troops: 1, stability: 55, outcry: outcry) == nil, let t = acquisitionTemplate(c.land),
+               let pi = gs.countries.firstIndex(where: { $0.id == me.id }) {
+                var n = CombatModel.claim(t, for: me, troops: 1)
+                n.stability = 55
+                n.profile.outcry = outcry
+                gs.countries.append(n)
+                gs.countries[pi].alliances.insert(n.id)
+                gs.countries[pi].diplomaticRelations[n.id] = 100
+                gs.shadow.garrisons[n.id] = 1
+                gs.shadow.claimDates[n.id] = gs.currentDate
+                self.gameState = gs
+            }
         case .nation:
             guard let li = gs.countries.firstIndex(where: { $0.id == c.land }) else { break }
             var n = gs.countries[li]

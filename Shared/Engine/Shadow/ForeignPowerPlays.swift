@@ -219,3 +219,17 @@ extension GameEngine {
         }
     }
 }
+
+// MARK: - Consequences (Consequences.swift)
+
+extension GameEngine {
+    /// A strike or raid on a nation that surrendered to the player, or on an ally: the tribunal case and the
+    /// alliance council the same as any other attack. No dice.
+    func powerPlayConsequences(_ target: String, how: String) {
+        guard let gs = gameState else { return }
+        if Consequences.protection(of: target, in: gs) == .surrendered {
+            punishProtectedAttack(target, protection: .surrendered, nuclear: false)
+        }
+        if Consequences.alliance(with: target, in: gs) != nil { attackOnAlly(target, how: how) }
+    }
+}

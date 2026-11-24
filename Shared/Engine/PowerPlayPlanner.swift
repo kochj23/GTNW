@@ -216,8 +216,8 @@ extension GameEngine {
                   let t = acquisitionTarget(id), t.kind != .colony else { return nil }
             var i = intent
             i.verb = .acquire
-            i.targets = [id]
-            i.confirmedTargets = nil
+            i.targets = []
+            i.confirmedTargets = [id]
             return planPowerPlay(i, verb: .acquire, source: source)
         }
         guard verb.isPowerPlay else { return nil }
@@ -312,6 +312,7 @@ extension GameEngine {
             }
             plan.committed.append("Leverage \(Int(c.leverage)) of \(Int(campaignResistance(c))) resistance so far.")
             warn(campaignWarnings(land, step: step))
+            if step == .escalate { plan.warnings += consequenceWarnings(t.owner, in: gs, nuclear: false) }
             return finish(GameOrder(kind: .acquire, target: land, mission: step.rawValue), target: t.label)
         }
 
@@ -353,6 +354,7 @@ extension GameEngine {
             plan.committed = ["Special forces raid on \(nation.capital) to seize the head of government of \(nation.name). Odds \(Int(captureOdds(id) * 100))%.",
                               "If it works, you choose \(nation.name)'s next government."]
             warn(captureWarnings(id))
+            plan.warnings += consequenceWarnings(nation, in: gs, nuclear: false)   // Consequences.swift
             return finish(GameOrder(kind: .captureLeader, target: id), target: nation.name)
         case .limitedStrike:
             let kind = intent.detail.flatMap(StrikeKind.init(rawValue:)) ?? .precision
@@ -360,6 +362,7 @@ extension GameEngine {
                               "No declaration of war."]
             if let me = gs.getPlayerCountry(), me.nuclearWarheads > 0 { plan.heldBack.append("Nuclear: all \(me.nuclearWarheads.formatted()) warheads held back.") }
             warn(strikeWarnings(id, kind: kind))
+            plan.warnings += consequenceWarnings(nation, in: gs, nuclear: false)
             return finish(GameOrder(kind: .limitedStrike, target: id, mission: kind.rawValue), target: nation.name)
         default:
             return nil
@@ -410,6 +413,9 @@ extension GameEngine {
         if case .one(let t, _) = CommandTargets.resolve(raw, in: gs), acquisitionTarget(t.id) != nil || openCampaign(t.id) != nil
             || gs.shadow.powerPlays.campaigns.contains(where: { $0.owner == t.id && $0.stage.isOpen }) { return t.id }
         if let id = CommandTargets.modernNames[CommandParser.normalize(raw)], acquisitionTarget(id) != nil || openCampaign(id) != nil { return id }
+        let n = CommandParser.normalize(raw)
+        if let t = Consequences.dependentLands.values.flatMap({ $0 }).first(where: { CommandParser.normalize($0.name) == n }),
+           acquisitionTarget(t.id) != nil || openCampaign(t.id) != nil { return t.id }
         let upper = raw.uppercased()
         if gs.shadow.powerPlays.campaigns.contains(where: { $0.land == upper && $0.stage.isOpen }) { return upper }
         return nil

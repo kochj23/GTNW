@@ -200,7 +200,7 @@ extension GameEngine {
     /// costs no action, the 3.28.2 rule).
     @discardableResult
     func executeOrder(_ o: GameOrder) -> Bool {
-        guard orderProblem(o) == nil, let gs = gameState, gs.actionsRemaining > 0 else { return false }
+        guard orderProblem(o) == nil, let gs = gameState, gs.actionsRemaining > 0 || o.costsNoAction else { return false }
         switch o.kind {
         case .action:
             guard let a = o.presidentialAction else { return false }

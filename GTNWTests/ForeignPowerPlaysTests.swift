@@ -387,6 +387,7 @@ final class AcquisitionCampaignTests: XCTestCase {
         let owner = try XCTUnwrap(e.colonyTarget(land)?.owner.id)
         if let oi = gs.countries.firstIndex(where: { $0.id == owner }) {
             gs.countries[oi].militaryStrength = 1
+            gs.countries[oi].gdp = 0.001
             gs.countries[oi].alliances = []
             gs.countries[oi].diplomaticRelations["USA"] = 100
         }
@@ -454,7 +455,9 @@ final class PowerPlaysIntegrationTests: XCTestCase {
     @MainActor
     func testChiefOfStaffProposesPowerPlaysAndReadsThem() throws {
         let e = PPFixtures.engine()
-        let before = try JSONEncoder().encode(e.gameState!.shadow)
+        let enc = JSONEncoder()
+        enc.outputFormatting = .sortedKeys
+        let before = try enc.encode(e.gameState!.shadow)
         let out = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "limitedStrike", "targets": ["Iran"], "detail": "nuclearFacility"],
                                                                          ["verb": "acquire", "targets": ["Greenland"]],
                                                                          ["verb": "emergency", "detail": "border"]]], engine: e, planID: 1)
@@ -465,7 +468,7 @@ final class PowerPlaysIntegrationTests: XCTestCase {
         XCTAssertEqual(plan.steps[2].plan?.orders.first?.detail, EmergencyReason.border.rawValue)
         let read = ChatTools.run("power_plays", arguments: [:], engine: e)
         XCTAssertFalse(read.isError)
-        XCTAssertEqual(try JSONEncoder().encode(e.gameState!.shadow), before, "tools never write the game")
+        XCTAssertEqual(try enc.encode(e.gameState!.shadow), before, "tools never write the game")
         let bad = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "emergencyTariffs", "targets": ["Canada"], "detail": "the vibes"]]], engine: e)
         XCTAssertTrue(bad.isError)
     }
@@ -502,7 +505,9 @@ final class PowerPlaysIntegrationTests: XCTestCase {
             _ = e.campaignStep("GRL", step: .pressure); PPFixtures.refill(e)
             PPFixtures.advance(e, months: 8)
             let gs = try XCTUnwrap(e.gameState)
-            return (try JSONEncoder().encode(gs.shadow.powerPlays), gs.rng.state)
+            let enc = JSONEncoder()
+            enc.outputFormatting = .sortedKeys
+            return (try enc.encode(gs.shadow.powerPlays), gs.rng.state)
         }
         let a = try play(), b = try play()
         XCTAssertEqual(a.0, b.0)
@@ -578,5 +583,19 @@ final class PlaceNamesTests: XCTestCase {
         XCTAssertNotNil(e.renamePlaceProblem("GEO_ALPS", to: String(repeating: "A", count: 200)))
         let none = PPFixtures.plan(e, "rename the Pentagon to Department of Peace")
         XCTAssertEqual(none?.orders.first?.target, "DEPT_DEFENSE", "free with no actions left")
+    }
+}
+
+final class PowerPlayConsequencesTests: XCTestCase {
+    @MainActor
+    func testStrikingAnAllyCallsTheCouncilAndTheCardSaysSo() throws {
+        let e = PPFixtures.engine()
+        let gs = try XCTUnwrap(e.gameState)
+        let ally = try XCTUnwrap(["GBR", "FRA", "CAN", "DEU"].first { Consequences.alliance(with: $0, in: gs) != nil })
+        let name = try XCTUnwrap(gs.getCountry(id: ally)?.name)
+        let p = try XCTUnwrap(PPFixtures.plan(e, "precision strike on \(name)"))
+        XCTAssertTrue(p.warnings.contains { $0.level == 2 && $0.text.contains("is your ally") })
+        XCTAssertNotNil(e.limitedStrike(ally, kind: .precision, roll: 0))
+        XCTAssertTrue(gs.shadow.consequences.councils.contains { $0.victim == ally })
     }
 }

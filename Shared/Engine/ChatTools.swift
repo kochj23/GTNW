@@ -427,9 +427,8 @@ enum ChatTools {
         if category == nil || category == "military" || category == "all" {
             d["also"] = ["attack (any mix of ground, air and naval; set all for everything)", "declareWar", "navalStrike", "showOfForce",
                          "claim (unclaimed land)", "buy (a colony)", "liberate (back a colony's independence)",
-                         "limitedStrike (detail: precision, boats, facility or nuclearFacility; no declaration of war)", "captureLeader (a raid to seize the head of government)",
-                         "acquire / pressure / posture / frameworkDeal / escalateCampaign (a campaign to buy a land or nation)",
-                         "emergency, endEmergency, emergencyTariffs and reissue (detail: legal authority)"]
+                         "limitedStrike", "captureLeader", "acquire", "pressure", "posture", "frameworkDeal", "escalateCampaign",
+                         "emergency", "endEmergency", "emergencyTariffs", "reissue", "renamePlace (power plays: see the power_plays tool)"]
         }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }

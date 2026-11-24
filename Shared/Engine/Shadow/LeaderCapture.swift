@@ -130,6 +130,7 @@ extension GameEngine {
         guard captureProblem(target) == nil, let gs = gameState, let ti = gs.countries.firstIndex(where: { $0.id == target }),
               let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return nil }
         let odds = captureOdds(target)
+        powerPlayConsequences(target, how: "a raid")
         let r = roll ?? gameRoll()
         let outcome: RaidOutcome = r < odds ? .captured : (r < odds + (1 - odds) * 0.5 ? .hostages : .firefight)
         let name = gs.countries[ti].name, me = gs.countries[pi]

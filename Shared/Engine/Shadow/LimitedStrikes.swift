@@ -219,6 +219,7 @@ extension GameEngine {
         guard strikeProblem(target, kind: kind) == nil, let gs = gameState, let ti = gs.countries.firstIndex(where: { $0.id == target }),
               let pi = gs.countries.firstIndex(where: { $0.id == gs.playerCountryID }) else { return nil }
         let odds = strikeOdds(target, kind: kind)
+        powerPlayConsequences(target, how: "strikes")
         let hit = (roll ?? gameRoll()) < odds
         let name = gs.countries[ti].name
         let authorized = isAuthorized(target)
