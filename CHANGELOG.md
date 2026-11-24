@@ -34,8 +34,9 @@ Planned as 3.35.0 — "Talk to me".
 - **Any backend from Settings → AI:** Ollama with native tool calls (streamed), OpenAI-compatible backends
   (OpenRouter, OpenAI, MLX server, TinyLLM, OpenWebUI…) with native tool calls (streamed, the key from the Keychain),
   and the rest (Anthropic's wire, the Nova Gateway, an Ollama model without tool support) with the tools in the prompt.
-  The Ollama model defaults to the benchmark's pick (`GTNW.chat.ollamaModel` overrides it; a missing model falls
-  back to the Settings → AI one). No network besides the configured backend.
+  With no Ollama model picked in Settings → AI the chat asks for gpt-oss:120b (the benchmark's pick) and falls back
+  to the Settings → AI model (qwen3:8b by default) when the server lacks it; a picked model is always used. No network
+  besides the configured backend.
 - **Fast path and offline:** a plain one-liner the 3.34 parser reads ("sanction Iran", "who are my allies?") is
   planned or answered at once with no model; with AI off or the backend down, the chief says so and plain orders
   still work.
@@ -43,7 +44,8 @@ Planned as 3.35.0 — "Talk to me".
   in the save, the replay or the determinism checks.
 - **Benchmark:** a Debug-only `--chat-bench` launch runs 25 scripted multi-turn conversations through the real loop
   against local Ollama models and scores tool-call validity, grounding, follow-ups and latency
-  (Documentation/CHAT-BENCHMARK.md).
+  (Documentation/CHAT-BENCHMARK.md: gpt-oss:120b 90% of turns, every follow-up, 2.8 s median reply; qwen3:8b 94%,
+  1.4 s; gemma3:27b and qwen3:30b-a3b 77%).
 - **The engine in WebAssembly (phase 1):** `Package.swift` builds the engine as `GTNWCore`, pure Swift + Foundation,
   from the same files the app compiles (no files moved; app-only code sits behind `#if !GTNW_CORE`). `GTNWWasm` is a
   WASI reactor with a JSON bridge (`newGame`, `act`, `endTurn`, `snapshot`, `save`, `load`) that runs each call to

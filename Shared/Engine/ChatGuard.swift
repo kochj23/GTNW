@@ -151,7 +151,10 @@ enum ChatGrounding {
             let l = text.lowercased()
             return metaMarkers.contains { l.contains($0) } || !metaWords.isDisjoint(with: ChatWords.words(l))
         }
-        guard meta(reply) else { return reply }
+        // A line imitating the conversation's own markers ("[Plan card shown: …]") would look like a card that isn't there.
+        let reply = reply.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { l in !["[plan card", "[game record"].contains { l.lowercased().contains($0) } }.joined(separator: "\n")
+        guard meta(reply) else { return reply.trimmingCharacters(in: .whitespacesAndNewlines) }
         return sentences(reply).filter { !meta($0) }.joined().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -220,7 +223,7 @@ enum ChatGrounding {
     static func numbers(in s: String) -> [Double] { numberTokens(in: s).map(\.1) }
 
     private static func rounded(_ v: Double, _ decimals: Int) -> Double {
-        let p = pow(10.0, Double(min(decimals, 6)))
+        let p = GameMath.pow(10.0, Double(min(decimals, 6)))
         return (v * p).rounded() / p
     }
 }

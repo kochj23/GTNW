@@ -127,7 +127,8 @@ the same to Cuba." "How'd that go?"
   order needs your EXECUTE at the time.
 - **Instant when it can be.** A plain one-liner the built-in parser reads ("sanction Iran", "who are my allies?") is
   planned or answered at once, with no model. With AI off or the backend down, the chief says so and those still work.
-- **Any backend in Settings → AI.** Ollama with native tool calls (the default model is the benchmark's pick, see
+- **Any backend in Settings → AI.** Ollama with native tool calls (gpt-oss:120b when you haven't picked a model and the
+  server has it, otherwise your Settings → AI model, qwen3:8b by default; see
   [Documentation/CHAT-BENCHMARK.md](Documentation/CHAT-BENCHMARK.md)), OpenAI-compatible backends with their Keychain
   key, and the rest with the tools in the prompt. Nothing else is ever contacted.
 - **Content rules at DEFCON 1.** No slurs, nothing sexual, no sweeping claims about a people or a faith, no mockery of

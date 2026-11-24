@@ -155,6 +155,7 @@ enum ChatBench {
         var reply: String
         var tools: [String]
         var invalidToolCalls: Int
+        var calls: [String] = []
         var grounded: Bool
         var dropped: [String]
         var proposed: [String]
@@ -186,10 +187,12 @@ enum ChatBench {
         let out = value("--out").map { URL(fileURLWithPath: $0) }
         let only = value("--only").map { Set($0.split(separator: ",").compactMap { Int($0) }) }
         let url = value("--ollama") ?? NovaAIBackend.ollama.defaultURL
+        // --say "msg|msg|…": one free conversation instead of the script (every plan executed), for sample transcripts.
+        let say = value("--say").map { [Conversation(name: "sample", turns: $0.split(separator: "|").map { Turn(text: String($0), expect: [], execute: true) })] }
         Task { @MainActor in
             var results: [ModelResult] = []
             for m in models {
-                let r = await run(model: m, url: url, only: only)
+                let r = await run(model: m, url: url, only: only, script: say ?? script)
                 results.append(r)
                 print(String(format: "[ChatBench] %@: pass %.0f%%, tools %.0f%%, grounded %.0f%%, follow-ups %.0f%%, first %.1fs, total %.1fs (p90 %.1fs)",   // cli output
                              m, r.passRate * 100, r.toolValidity * 100, r.grounding * 100, r.followUps * 100, r.medianFirstToken ?? -1, r.medianTotal, r.p90Total))
@@ -203,7 +206,7 @@ enum ChatBench {
     }
 
     @MainActor
-    static func run(model: String, url: String, only: Set<Int>?) async -> ModelResult {
+    static func run(model: String, url: String, only: Set<Int>?, script: [Conversation] = script) async -> ModelResult {
         var settings = AppAI.configuration.defaultSettings
         settings.enabled = true
         settings.backend = .ollama
@@ -232,7 +235,8 @@ enum ChatBench {
                 turns.append(TurnResult(conversation: conv.name, text: turn.text, reply: r.text, tools: r.toolCalls, invalidToolCalls: r.invalidToolCalls,
                                         grounded: r.groundedFirstTry, dropped: r.droppedTokens, proposed: proposed, passed: passed,
                                         failures: failures, followUp: turn.followUp, firstToken: r.firstToken, total: r.total, unavailable: r.unavailable))
-                print("[ChatBench] \(model) | \(conv.name) | \(turn.text) -> \(passed ? "PASS" : "FAIL \(failures)") (\(String(format: "%.1f", r.total))s) tools=\(r.toolCalls) :: \(r.text.prefix(240))")   // cli output
+                turns[turns.count - 1].calls = args
+                print("[ChatBench] \(model) | \(conv.name) | \(turn.text) -> \(passed ? "PASS" : "FAIL \(failures)") (\(String(format: "%.1f", r.total))s) tools=\(r.toolCalls) :: \(r.text.prefix(conv.name == "sample" ? 2000 : 240))")   // cli output
                 history.append(.user(turn.text))
                 let summary = r.plans.last.map { "\n[Plan card shown: \(ChatSession.summary($0))]" } ?? ""
                 history.append(.assistant(r.text + summary, []))
@@ -295,6 +299,10 @@ enum ChatBench {
         let record: (String) -> Void
         init(inner: ChatModelClient, record: @escaping (String) -> Void) { self.inner = inner; self.record = record }
         func respond(_ messages: [ChatWireMessage], tools: [ChatToolSpec], onDelta: @escaping @MainActor (String) -> Void) async throws -> ChatModelReply {
+            for m in messages.reversed() {   // this round's tool results: record the errors the model got back
+                guard case .tool(_, let name, let content) = m else { break }
+                if content.hasPrefix("{\"error\"") { record("→ \(name) \(content)") }
+            }
             let r = try await inner.respond(messages, tools: tools, onDelta: onDelta)
             for c in r.toolCalls { record("\(c.name) \(c.argumentsJSON)") }
             return r

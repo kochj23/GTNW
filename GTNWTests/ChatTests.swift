@@ -136,6 +136,8 @@ final class ChatUnitTests: XCTestCase {
         XCTAssertEqual(ChatGrounding.strip("Growth is 2.6% in the U.S. economy. Bolivia would mediate.\n1. Sanction Iran.", unsupported: ["Bolivia"]),
                        "Growth is 2.6% in the U.S. economy.\n1. Sanction Iran.", "decimals, initials and list lines survive")
         XCTAssertEqual(ChatGrounding.stripMeta("Okay, let's see. The tool says 62. Relations are friendly."), "Relations are friendly.")
+        XCTAssertEqual(ChatGrounding.stripMeta("Sanctions are ready.\n[Plan card shown: 1. SANCTIONS: Cuba]"), "Sanctions are ready.",
+                       "a model imitating the history's card marker shows no fake card")
         XCTAssertEqual(ChatGrounding.strip("Bolivia would mediate.", unsupported: ["Bolivia"]), "")
     }
 
@@ -171,6 +173,9 @@ final class ChatUnitTests: XCTestCase {
         XCTAssertEqual(i.forces.aircraft, 40)
         XCTAssertThrowsError(try ChatTools.stepIntent(["verb": "assassinate", "targets": ["Iran"]]))
         XCTAssertThrowsError(try ChatTools.stepIntent(["verb": "invade", "targets": ["Iran"], "troops": 1e12]))
+        XCTAssertEqual(try ChatTools.stepIntent(["verb": "invade", "targets": ["Mexico"], "troops": 50_000]).forces.troops, 50, "a head count")
+        XCTAssertEqual(try ChatTools.stepIntent(["verb": "invade", "targets": ["Mexico"], "troops": 50]).forces.troops, 50, "thousands")
+        XCTAssertEqual(try ChatTools.stepIntent(["action": "ECONOMIC SANCTIONS", "target": "Cuba"]).verb, .sanction, "the action's name, as gpt-oss writes it")
         XCTAssertThrowsError(try ChatTools.stepIntent(["verb": "invade", "targets": []]))
         XCTAssertEqual(try ChatTools.stepIntent(["verb": "nuke", "targets": ["Russia"]]).forces.nuclear, true)
         let long = ChatTools.Args(["name": String(repeating: "a", count: 500)])
@@ -306,7 +311,7 @@ final class ChatIntegrationTests: XCTestCase {
             XCTAssertEqual(req.url?.path, "/api/chat")
             XCTAssertEqual(req.url?.port, 11434)
             let body = try XCTUnwrap(try JSONSerialization.jsonObject(with: req.httpBody ?? Data()) as? [String: Any])
-            XCTAssertEqual(body["model"] as? String, ChatSettings.defaultOllamaModel)
+            XCTAssertEqual(body["model"] as? String, KitChatClient.preferredOllamaModel, "no model picked in Settings → AI: the benchmark's pick")
             XCTAssertEqual(body["stream"] as? Bool, true)
             XCTAssertEqual((body["tools"] as? [Any])?.count, ChatTools.specs.count)
         }
@@ -598,9 +603,14 @@ final class ChatRetryTests: XCTestCase {
             if probe2.hit() == 1 { return (Data(#"{"error":"model 'gpt-oss:120b' not found"}"#.utf8), Stub.response(404, url: req.url)) }
             return (Data(ChatFixtures.ollamaText(["Ready."]).utf8), Stub.response(200, url: req.url))
         })
-        let f = await ChatAgent(engine: CmdFixtures.engine(), client: KitChatClient(ai: missing, ollamaModel: "gpt-oss:120b"))
-            .reply(to: "Hi", history: [], nextPlanID: { 1 }, onDelta: { _ in })
+        let client = KitChatClient(ai: missing)
+        let f = await ChatAgent(engine: CmdFixtures.engine(), client: client).reply(to: "Hi", history: [], nextPlanID: { 1 }, onDelta: { _ in })
         XCTAssertEqual(f.text, "Ready.")
+        let first = try XCTUnwrap(try JSONSerialization.jsonObject(with: rec2.requests[0].httpBody ?? Data()) as? [String: Any])
+        XCTAssertEqual(first["model"] as? String, KitChatClient.preferredOllamaModel)
+        _ = await ChatAgent(engine: CmdFixtures.engine(), client: client).reply(to: "Hi", history: [], nextPlanID: { 1 }, onDelta: { _ in })
+        let again = try XCTUnwrap(try JSONSerialization.jsonObject(with: rec2.requests[2].httpBody ?? Data()) as? [String: Any])
+        XCTAssertEqual(again["model"] as? String, "qwen3:8b", "a missing model is not asked for again")
         let retried = try XCTUnwrap(try JSONSerialization.jsonObject(with: rec2.requests[1].httpBody ?? Data()) as? [String: Any])
         XCTAssertEqual(retried["model"] as? String, "qwen3:8b")
     }

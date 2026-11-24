@@ -64,24 +64,17 @@ protocol ChatModelClient: AnyObject {
 }
 
 /// Chat settings that are not the kit's: the Ollama model the chief of staff uses.
-enum ChatSettings {
-    static let modelKey = "GTNW.chat.ollamaModel"
-    /// The benchmark's pick (Documentation/CHAT-BENCHMARK.md). If the server doesn't have it, the model chosen for
-    /// Ollama in Settings → AI is used instead.
-    static let defaultOllamaModel = "qwen3:30b-a3b"
-
-    static func ollamaModel(_ defaults: UserDefaults = .standard) -> String {
-        let s = (defaults.string(forKey: modelKey) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return s.isEmpty || s.count > NovaAISettings.maxModelLength ? defaultOllamaModel : s
-    }
-}
-
 // MARK: - NovaAIKit-backed client
 
 @MainActor
 final class KitChatClient: ChatModelClient {
     let ai: NovaAI
-    /// The Ollama model; nil uses `ChatSettings.ollamaModel()`.
+    /// The chat benchmark's pick (Documentation/CHAT-BENCHMARK.md). Used when the player has not picked an Ollama model
+    /// in Settings → AI and the server has it; otherwise the Settings → AI model (qwen3:8b by default) is.
+    static let preferredOllamaModel = "gpt-oss:120b"
+    /// Models this server lacks or failed to load: not asked for again this session.
+    private var missingModels = Set<String>()
+    /// The Ollama model; nil picks as described above.
     var ollamaModel: String?
     var temperature = 0.3
     var maxTokens = 900
@@ -112,16 +105,22 @@ final class KitChatClient: ChatModelClient {
         guard !candidates.isEmpty else { throw ChatClientError.unavailable("no AI backend is set up (Settings → AI)") }
         var last: Error = ChatClientError.unavailable("no AI backend answered")
         for var c in candidates {
-            if c.backend == .ollama { c.model = ollamaModel ?? ChatSettings.ollamaModel() }
+            if c.backend == .ollama {
+                if let ollamaModel { c.model = ollamaModel }
+                else if ai.settings.models[NovaAIBackend.ollama.rawValue] == nil, !missingModels.contains(Self.preferredOllamaModel) {
+                    c.model = Self.preferredOllamaModel
+                }
+            }
             var emitted = false
             let relay: @MainActor (String) -> Void = { d in emitted = true; onDelta(d) }
             do {
                 return try await respond(c, engine: engine, messages, tools: tools, onDelta: relay)
             } catch is CancellationError {
                 throw CancellationError()
-            } catch let ChatHTTPError.status(code, body) where c.backend == .ollama && code == 404 && body.lowercased().contains("not found")
-                        && c.model != ai.settings.model(for: .ollama) {
-                // The chat model isn't on this server: fall back to the model picked for Ollama in Settings → AI.
+            } catch let ChatHTTPError.status(code, body) where c.backend == .ollama && c.model != ai.settings.model(for: .ollama)
+                        && (code == 404 && body.lowercased().contains("not found") || code >= 500 && !emitted) {
+                // The chat model isn't on this server (or couldn't load): fall back to the model picked in Settings → AI.
+                missingModels.insert(c.model)
                 c.model = ai.settings.model(for: .ollama)
                 do { return try await respond(c, engine: engine, messages, tools: tools, onDelta: relay) } catch { last = error }
             } catch {

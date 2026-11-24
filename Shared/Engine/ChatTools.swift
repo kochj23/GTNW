@@ -93,7 +93,7 @@ enum ChatTools {
                     "ground": ["type": "boolean"], "air": ["type": "boolean"], "naval": ["type": "boolean"],
                     "nuclear": ["type": "string", "enum": ["yes", "no", "unspecified"]],
                     "all": ["type": "boolean"], "light": ["type": "boolean"],
-                    "troops": ["type": "number", "minimum": 0, "description": "thousands"],
+                    "troops": ["type": "number", "minimum": 0, "description": "in thousands: 50 means 50,000 troops"],
                     "aircraft": ["type": "integer", "minimum": 0], "warheads": ["type": "integer", "minimum": 0],
                     "fleet": ["type": "string", "maxLength": maxArgString],
                 ] as [String: Any],
@@ -470,9 +470,11 @@ enum ChatTools {
 
     /// A step object → the command box's intent. Every field is checked against its closed list.
     static func stepIntent(_ o: [String: Any]) throws -> CommandIntent {
-        guard let vs = o["verb"] as? String else { throw ChatToolError(message: "verb is missing.") }
+        // Models also write the order as "action", or by the Situation Room name the actions tool lists.
+        guard let vs = (o["verb"] ?? o["action"]) as? String else { throw ChatToolError(message: "verb is missing (use the verb the actions tool lists, e.g. \"sanction\").") }
         let key = vs.lowercased().replacingOccurrences(of: "_", with: "").replacingOccurrences(of: " ", with: "")
-        guard let verb = CommandVerb.allCases.first(where: { $0.rawValue.lowercased() == key }) else {
+        guard let verb = CommandVerb.allCases.first(where: { $0.rawValue.lowercased() == key })
+                ?? actionFor(vs).flatMap({ a in verbActions.first(where: { $0.1 == a })?.0 }) else {
             throw ChatToolError(message: "\(String(vs.prefix(30))) is not an order on the list. Use a verb from the actions tool.")
         }
         var targets: [String] = []
@@ -484,7 +486,7 @@ enum ChatTools {
         var f = ForceRequest()
         func flag(_ k: String) -> Bool? { (o[k] as? Bool) ?? (o[k] as? String).map { $0.lowercased() == "true" } }
         func number(_ k: String) throws -> Double? {
-            guard let v = (o[k] as? NSNumber)?.doubleValue ?? (o[k] as? String).flatMap(Double.init) else { return nil }
+            guard let v = (o[k] as? Double) ?? (o[k] as? Int).map(Double.init) ?? (o[k] as? String).flatMap(Double.init) else { return nil }
             guard v.isFinite, v >= 0, v <= 10_000_000 else { throw ChatToolError(message: "\(k) is out of range.") }
             return v > 0 ? v : nil
         }
@@ -499,7 +501,8 @@ enum ChatTools {
         default: if let b = o["nuclear"] as? Bool { f.nuclear = b }
         }
         if verb == .nuke, f.nuclear == nil { f.nuclear = true }
-        f.troops = try number("troops")
+        // Models often send a head count ("50000") for a field in thousands; no army fields ten million troops.
+        f.troops = try number("troops").map { $0 >= 10_000 ? $0 / 1000 : $0 }
         f.aircraft = try number("aircraft").map { Int($0) }
         f.warheads = try number("warheads").map { Int($0) }
         if let fl = o["fleet"] as? String { f.fleet = String(CommandParser.sanitize(fl).prefix(maxArgString)) }
@@ -531,7 +534,8 @@ enum ChatTools {
             return c.isEmpty || c.lowercased() == "none" || c.lowercased() == "null" ? nil : c
         }
         func int(_ k: String) -> Int? {
-            if let n = raw[k] as? NSNumber, n.doubleValue.isFinite { return Int(max(-1_000_000, min(1_000_000, n.doubleValue))) }
+            if let n = raw[k] as? Int { return max(-1_000_000, min(1_000_000, n)) }
+            if let n = raw[k] as? Double, n.isFinite { return Int(max(-1_000_000, min(1_000_000, n))) }
             return (raw[k] as? String).flatMap { Int($0) }
         }
     }
@@ -557,8 +561,8 @@ enum ChatTools {
     /// Compact JSON, keys sorted, capped.
     static func encode(_ d: [String: Any]) -> String {
         guard JSONSerialization.isValidJSONObject(d),
-              let data = try? JSONSerialization.data(withJSONObject: d, options: [.sortedKeys, .withoutEscapingSlashes]) else { return "{}" }
-        let s = String(decoding: data, as: UTF8.self)
+              let data = try? JSONSerialization.data(withJSONObject: d, options: [.sortedKeys]) else { return "{}" }
+        let s = String(decoding: data, as: UTF8.self).replacingOccurrences(of: "\\/", with: "/")
         return s.count > maxOutput ? String(s.prefix(maxOutput)) + "…" : s
     }
 }
