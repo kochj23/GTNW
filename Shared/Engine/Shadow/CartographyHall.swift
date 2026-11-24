@@ -78,7 +78,11 @@ enum CartographyHall {
         guard let folder else { return }
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            #if GTNW_ESSENTIALS
+            try JSONEncoder().encode(all).write(to: folder.appendingPathComponent(fileName))   // WASI has no atomic writes
+            #else
             try JSONEncoder().encode(all).write(to: folder.appendingPathComponent(fileName), options: .atomic)
+            #endif
         } catch {
             // The hall is a keepsake; a failed write never stops the game.
         }
