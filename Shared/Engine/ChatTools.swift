@@ -480,7 +480,7 @@ enum ChatTools {
         }
         // 3.36.0: the power plays at home, in full for "domestic", by name otherwise (the list stays under the cap).
         if category == "domestic" { d["at_home"] = HomePlayCommands.toolRows() }
-        else if category == nil || category == "all" { d["orders_at_home"] = HomePlay.allCases.map { "\($0.rawValue) (\($0.modes.joined(separator: "|")))" } }
+        else if category == nil || category == "all" { d["orders_at_home"] = HomePlay.allCases.map(\.rawValue) }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }
         return ok(d)
