@@ -32,6 +32,7 @@ struct ChatView: View {
         .background(CommandBoxStyle.background)
         .onAppear {
             session.attach(gameEngine)
+            session.warmUp()
             if !GameStoreService.isTestOrSmokeRun { DispatchQueue.main.async { focused = true } }
         }
     }
@@ -66,7 +67,7 @@ struct ChatView: View {
                         }
                         .id(e.id)
                     }
-                    if session.busy { ChatDraft(text: session.draft).id("draft") }
+                    if session.busy || session.warming { ChatDraft(text: session.draft, warming: session.warming).id("draft") }
                 }
                 .padding(.vertical, 4)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -190,12 +191,16 @@ struct ChatLine: View {
 /// The reply as it streams in.
 struct ChatDraft: View {
     let text: String
+    /// The model is still loading.
+    var warming = false
+
+    static let warmingText = "Chief of staff is getting to the office…"
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             if text.isEmpty {
                 ProgressView().controlSize(.small)
-                Text("Checking the reports…").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.neonCyan)
+                Text(warming ? Self.warmingText : "Checking the reports…").font(ThemeFont.mono(12)).foregroundColor(GTNWColors.neonCyan)
             } else {
                 Text(verbatim: (Theme.isRetro ? "COS> " : "") + text).font(ThemeFont.mono(13)).foregroundColor(CommandBoxStyle.text.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)
@@ -203,7 +208,7 @@ struct ChatDraft: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(text.isEmpty ? "Your chief of staff is checking the reports" : "Reply in progress: \(text)")
+        .accessibilityLabel(text.isEmpty ? (warming ? Self.warmingText : "Your chief of staff is checking the reports") : "Reply in progress: \(text)")
     }
 }
 

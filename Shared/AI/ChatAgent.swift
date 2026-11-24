@@ -273,6 +273,9 @@ final class ChatSession: ObservableObject {
     @Published private(set) var armed: (plan: Int, step: Int?)?
     @Published private(set) var lastLatency: (first: TimeInterval?, total: TimeInterval)?
     @Published private(set) var lastSource = ""
+    /// The chat model is loading (the first message waits for it).
+    @Published private(set) var warming = false
+    private var warmTask: Task<Void, Never>?
 
     weak var engine: GameEngine?
     /// The model client; tests inject a scripted one. Created on first use.
@@ -300,6 +303,23 @@ final class ChatSession: ObservableObject {
         plans = [:]
         armed = nil
         entries = store?.load(gs) ?? []
+    }
+
+    private func modelClient() -> ChatModelClient {
+        if let client { return client }
+        let k = KitChatClient(); client = k; return k
+    }
+
+    /// Load the chat model in the background when a game is on the board or the panel opens: once per session, never
+    /// waited on except by a message sent while it loads. Tests and smoke runs (no injected client) skip it.
+    func warmUp() {
+        guard warmTask == nil, client != nil || !GameStoreService.isTestOrSmokeRun else { return }
+        let c = modelClient()
+        warming = true
+        warmTask = Task { [weak self] in
+            await c.warm()
+            self?.warming = false
+        }
     }
 
     private func append(_ role: ChatEntry.Role, _ text: String, planID: Int? = nil) {
@@ -369,8 +389,8 @@ final class ChatSession: ObservableObject {
         busy = true
         draft = ""
         defer { busy = false; draft = "" }
-        let c: ChatModelClient
-        if let client { c = client } else { let k = KitChatClient(); client = k; c = k }
+        let c = modelClient()
+        await warmTask?.value   // a message sent while the model loads waits for it instead of timing out
         let agent = ChatAgent(engine: engine, client: c)
         let history = Array(self.history.dropLast())
         let r = await agent.reply(to: text, history: history, nextPlanID: { [weak self] in

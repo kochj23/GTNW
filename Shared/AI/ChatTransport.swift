@@ -61,6 +61,12 @@ enum ChatClientError: Error, Equatable {
 @MainActor
 protocol ChatModelClient: AnyObject {
     func respond(_ messages: [ChatWireMessage], tools: [ChatToolSpec], onDelta: @escaping @MainActor (String) -> Void) async throws -> ChatModelReply
+    /// Load the model ahead of the first message (no prompt). Once per client; a no-op where there is nothing to load.
+    func warm() async
+}
+
+extension ChatModelClient {
+    func warm() async {}
 }
 
 /// Chat settings that are not the kit's: the Ollama model the chief of staff uses.
@@ -71,7 +77,7 @@ final class KitChatClient: ChatModelClient {
     let ai: NovaAI
     /// The chat benchmark's pick (Documentation/CHAT-BENCHMARK.md). Used when the player has not picked an Ollama model
     /// in Settings → AI and the server has it; otherwise the Settings → AI model (qwen3:8b by default) is.
-    static let preferredOllamaModel = "gpt-oss:120b"
+    nonisolated static let preferredOllamaModel = "gpt-oss:120b"
     /// Models this server lacks or failed to load: not asked for again this session.
     private var missingModels = Set<String>()
     /// The Ollama model; nil picks as described above.
@@ -105,21 +111,16 @@ final class KitChatClient: ChatModelClient {
         guard !candidates.isEmpty else { throw ChatClientError.unavailable("no AI backend is set up (Settings → AI)") }
         var last: Error = ChatClientError.unavailable("no AI backend answered")
         for var c in candidates {
-            if c.backend == .ollama {
-                if let ollamaModel { c.model = ollamaModel }
-                else if ai.settings.models[NovaAIBackend.ollama.rawValue] == nil, !missingModels.contains(Self.preferredOllamaModel) {
-                    c.model = Self.preferredOllamaModel
-                }
-            }
+            if c.backend == .ollama { c.model = chatModel(c.model) }
             var emitted = false
             let relay: @MainActor (String) -> Void = { d in emitted = true; onDelta(d) }
             do {
                 return try await respond(c, engine: engine, messages, tools: tools, onDelta: relay)
             } catch is CancellationError {
                 throw CancellationError()
-            } catch let ChatHTTPError.status(code, body) where c.backend == .ollama && c.model != ai.settings.model(for: .ollama)
-                        && (code == 404 && body.lowercased().contains("not found") || code >= 500 && !emitted) {
-                // The chat model isn't on this server (or couldn't load): fall back to the model picked in Settings → AI.
+            } catch where c.backend == .ollama && c.model != ai.settings.model(for: .ollama) && !emitted && Self.shouldFallBack(error) {
+                // The chat model isn't on this server, couldn't load or timed out: retry this message once on the model
+                // picked in Settings → AI, and use that one for the rest of the session.
                 missingModels.insert(c.model)
                 c.model = ai.settings.model(for: .ollama)
                 do { return try await respond(c, engine: engine, messages, tools: tools, onDelta: relay) } catch { last = error }
@@ -147,6 +148,56 @@ final class KitChatClient: ChatModelClient {
                 // An Ollama model without tool support (gemma3): the tools go in the prompt instead, from now on.
                 promptedModels.insert(c.model)
                 return try await prompted(c, engine: engine, messages, tools: tools, onDelta: onDelta)
+            }
+        }
+    }
+
+    /// Errors after which the preferred model is given up for the Settings → AI one: missing (404), failed to load (5xx),
+    /// or timed out.
+    static func shouldFallBack(_ e: Error) -> Bool {
+        if case ChatHTTPError.status(let code, let body) = e { return code == 404 && body.lowercased().contains("not found") || code >= 500 }
+        return (e as? URLError)?.code == .timedOut
+    }
+
+    /// The Ollama model for a request: the one this client was given, else the benchmark's pick when the player has
+    /// picked none and it hasn't failed this session, else the Settings → AI one (`settingsModel`).
+    private func chatModel(_ settingsModel: String) -> String {
+        if let ollamaModel { return ollamaModel }
+        if ai.settings.models[NovaAIBackend.ollama.rawValue] == nil, !missingModels.contains(Self.preferredOllamaModel) {
+            return Self.preferredOllamaModel
+        }
+        return settingsModel
+    }
+
+    private var warmed = false
+    /// Seconds a warm-up may take (a 65 GB model loads in minutes from a cold disk).
+    var warmTimeout: TimeInterval = 600
+
+    /// Ask Ollama to load the chat model (an empty chat with a keep-alive): once per client, in the background. A model
+    /// that is missing or fails to load is dropped for the Settings → AI one, which is then warmed instead.
+    func warm() async {
+        guard !warmed, ai.isEnabled else { return }
+        warmed = true
+        let engine = ai.engine
+        let probe = NovaAIRequest(messages: [.user("chat")], temperature: temperature, maxTokens: maxTokens)
+        guard var c = engine.candidates(for: probe).first, c.backend == .ollama, Self.wire(c) == .ollama else { return }
+        let fallback = ai.settings.model(for: .ollama)
+        c.model = chatModel(c.model)
+        while true {
+            do {
+                var req = try engine.chatRequest(c, NovaAIRequest(messages: [.user("chat")], backend: c.backend, model: c.model), stream: false)
+                req.timeoutInterval = warmTimeout
+                req.httpBody = try JSONSerialization.data(withJSONObject: ["model": c.model, "messages": [Any](), "keep_alive": "30m"] as [String: Any])
+                let (data, response) = try await engine.session.data(for: req)
+                if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                    throw ChatHTTPError.status(http.statusCode, String(decoding: data.prefix(2_000), as: UTF8.self))
+                }
+                return
+            } catch {
+                Log.ai.info("chat: warming \(c.model, privacy: .public) failed")
+                guard c.model != fallback, Self.shouldFallBack(error) else { return }
+                missingModels.insert(c.model)
+                c.model = fallback
             }
         }
     }

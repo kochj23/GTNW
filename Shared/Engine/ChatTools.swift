@@ -404,8 +404,11 @@ enum ChatTools {
             }
             t = c
         }
+        // A model looks for "ceasefire" under military or diplomatic, not "treaty": the orders that end a war are listed
+        // with the military ones, and every treaty with the diplomatic ones.
         let groups: [String: Set<PresidentialAction>] = [
-            "military": OrderWhitelist.military.union(OrderWhitelist.nuclear), "diplomatic": OrderWhitelist.diplomatic,
+            "military": OrderWhitelist.military.union(OrderWhitelist.nuclear).union([.ceasefire, .peace]),
+            "diplomatic": OrderWhitelist.diplomatic.union(OrderWhitelist.treaties),
             "economic": OrderWhitelist.economic, "covert": OrderWhitelist.covert, "treaty": OrderWhitelist.treaties,
         ]
         let pool = category.flatMap { groups[$0] } ?? OrderWhitelist.actions

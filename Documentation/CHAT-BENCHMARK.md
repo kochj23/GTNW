@@ -52,7 +52,7 @@ What the numbers don't show:
 - **gpt-oss:120b** talks the most like a chief of staff: it looks things up before it answers (1.7 tool calls a turn),
   follows every follow-up, and answers "how'd that go?" from the news wire. Its misses: it sent "Declare war on Canada"
   as a ground invasion (the card says GROUND INVASION, so the President sees it), and it picked the Republic of Congo
-  instead of asking which Congo. It needs about 65 GB, and its first message after a cold load took 4 minutes here.
+  instead of asking which Congo. It needs about 65 GB, and loading it cold takes about 3 minutes (see below).
 - **qwen3:8b** passes the most turns and is the fastest, but it often speaks of "the President" in the third person,
   sometimes answers "how'd that go?" from memory instead of looking it up, and once said no nation could reach the
   United States (it had named us as the target; the `reach` tool now treats that as "who can reach us").
@@ -64,10 +64,27 @@ What the numbers don't show:
 - Both "peace with Spain" misses were the scorer's: the replies said "we're not currently at war" and "already at
   peace".
 
+### Cold vs warm first reply (gpt-oss:120b)
+
+"How do we stand with France?" as the first message of a session, one `diplomacy` call:
+
+| Model state | First token | Whole reply |
+|---|---|---|
+| Cold (unloaded, not in the disk cache) | 176.7 s | 177.7 s |
+| Warm (loaded) | 0.6 s | 2.7 s |
+| Loading it again from the disk cache (the warm-up request alone) | — | 4.9 s |
+
+That's why the chat warms the model before the first message: as soon as a game is on the board (or the panel opens) it
+sends Ollama one empty chat with `keep_alive: 30m`, once per session, in the background. While it loads the panel says
+"Chief of staff is getting to the office…", and a message sent meanwhile waits for it rather than timing out (the reply
+timeout is 180 s, the warm-up's 600 s). If the model can't load, or a reply still times out, the chat switches to the
+Settings → AI model and retries that message once.
+
 ## The choice
 
 - With no model picked for Ollama in Settings → AI, the chat asks for **gpt-oss:120b**. If the server doesn't have it
-  (404) or can't load it (5xx), the chat falls back to the Settings → AI model for the rest of the session.
+  (404), can't load it (5xx) or a reply times out, the chat falls back to the Settings → AI model for the rest of the
+  session.
 - The Settings → AI default for Ollama is **qwen3:8b**, the best model that fits on most machines.
 - A model picked in Settings → AI is always used as is. Other backends (OpenAI-compatible, Anthropic, the Nova
   Gateway) use their Settings → AI model, with the key from the Keychain.
@@ -116,4 +133,7 @@ What the numbers don't show:
 > diplomatic actions?
 
 Turns 2–7 took 4–15 s each (12.5 s for the cabinet turn, three tool calls); the first took 256 s because the model was
-loading.
+loading (now hidden by the warm-up). The last answer was a bug, since fixed: the chief looked for the ceasefire under
+`actions` category "military", and the ceasefire and peace orders were filed only under "treaty". They are now listed
+under military and diplomatic too (`ChatIntegrationTests.testCeasefireDuringAWarStartedThisTurn`), and every 3.34 verb
+is checked to be listed and proposable (`testEveryWhitelistedVerbCanBeProposed`).

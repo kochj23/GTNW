@@ -218,6 +218,39 @@ final class ChatUnitTests: XCTestCase {
 @MainActor
 final class ChatIntegrationTests: XCTestCase {
 
+    /// 3.35.0 sample: "Offer them a ceasefire" in a war started this turn found no ceasefire (the chief looked under
+    /// military; the order was filed under treaty only).
+    func testCeasefireDuringAWarStartedThisTurn() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        let war = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "declareWar", "targets": ["Venezuela"]]]], engine: e, planID: 1)
+        _ = e.executeCommand(try XCTUnwrap(war.plan?.steps.first?.plan?.orders), source: .chat)
+        XCTAssertTrue(e.gameState?.getPlayerCountry()?.atWarWith.contains("VEN") == true)
+        for category in ["military", "diplomatic", "treaty", "all"] {
+            let listed = ChatTools.run("actions", arguments: ["category": category, "target": "Venezuela"], engine: e).text
+            XCTAssertTrue(listed.contains("ceasefire: "), "\(category): \(listed.prefix(300))")
+        }
+        let offer = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "ceasefire", "targets": ["Venezuela"]]]], engine: e, planID: 2)
+        let step = try XCTUnwrap(offer.plan?.steps.first)
+        XCTAssertTrue(step.isReady, offer.text)
+        XCTAssertEqual(step.plan?.orders.first?.action, PresidentialAction.ceasefire.rawValue)
+    }
+
+    /// Every verb of the 3.34 command box can be found with the actions tool and put on a card through propose_orders.
+    func testEveryWhitelistedVerbCanBeProposed() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        let all = ChatTools.run("actions", arguments: ["category": "all"], engine: e).text
+        let targets: [CommandVerb: String] = [.claim: "Antarctica", .buy: "Greenland", .liberate: "Greenland", .peace: "Venezuela", .ceasefire: "Venezuela"]
+        for verb in CommandVerb.allCases {
+            XCTAssertTrue(all.contains("\(verb.rawValue): ") || all.contains("\"\(verb.rawValue)") || all.contains("\(verb.rawValue) ("), "\(verb) not listed")
+            let out = ChatTools.run("propose_orders", arguments: ["steps": [["verb": verb.rawValue, "targets": [targets[verb] ?? "Mexico"]]]], engine: e, planID: 1)
+            XCTAssertFalse(out.isError, "\(verb): \(out.text)")
+            let step = try XCTUnwrap(out.plan?.steps.first, "\(verb)")
+            if case .rejected(let why) = step.outcome {
+                XCTAssertFalse(why.contains("not one the command box") || why.contains("not available") || why.contains("not an order"), "\(verb): \(why)")
+            }
+        }
+    }
+
     func testAgentLooksUpThenAnswersFromTheToolResult() async throws {
         let e = CmdFixtures.engine(year: 2025)
         let fra = try XCTUnwrap(e.gameState?.getCountry(id: "FRA"))
@@ -542,6 +575,63 @@ final class ChatPerformanceTests: XCTestCase {
 
 @MainActor
 final class ChatRetryTests: XCTestCase {
+
+    /// The model loads before the first message: one empty chat with a keep-alive, once; a model that fails to load
+    /// gives way to the Settings → AI one. A reply that times out is retried once on that model.
+    func testWarmUpLoadsOnceAndATimeoutFallsBack() async throws {
+        let rec = RequestRecorder()
+        let probe = RetryProbe()
+        let ai = KitTest.ai(CmdFixtures.ollamaSettings { $0.backend = .ollama }, transport: { req in
+            rec.record(req)
+            let body = (try? JSONSerialization.jsonObject(with: req.httpBody ?? Data())) as? [String: Any] ?? [:]
+            if (body["messages"] as? [Any])?.isEmpty == true {   // a warm-up
+                if body["model"] as? String == KitChatClient.preferredOllamaModel { return (Data(), Stub.response(500, url: req.url)) }
+                return (Data(#"{"done":true,"done_reason":"load"}"#.utf8), Stub.response(200, url: req.url))
+            }
+            if probe.hit() == 1 { throw URLError(.timedOut) }
+            return (Data(ChatFixtures.ollamaText(["At your service."]).utf8), Stub.response(200, url: req.url))
+        })
+        let client = KitChatClient(ai: ai)
+        await client.warm()
+        await client.warm()
+        let warms = rec.requests.compactMap { try? JSONSerialization.jsonObject(with: $0.httpBody ?? Data()) as? [String: Any] }
+        XCTAssertEqual(warms.map { $0["model"] as? String }, [KitChatClient.preferredOllamaModel, "qwen3:8b"], "once, then the fallback")
+        XCTAssertEqual(warms.last?["keep_alive"] as? String, "30m")
+        XCTAssertEqual(rec.requests.first?.url?.path, "/api/chat")
+
+        // A fresh client: the first reply times out on the preferred model and is retried once on the fallback.
+        let rec2 = RequestRecorder()
+        let probe2 = RetryProbe()
+        let ai2 = KitTest.ai(CmdFixtures.ollamaSettings { $0.backend = .ollama }, transport: { req in
+            rec2.record(req)
+            if probe2.hit() == 1 { throw URLError(.timedOut) }
+            return (Data(ChatFixtures.ollamaText(["At your service."]).utf8), Stub.response(200, url: req.url))
+        })
+        let r = await ChatAgent(engine: CmdFixtures.engine(), client: KitChatClient(ai: ai2)).reply(to: "Good morning", history: [], nextPlanID: { 1 }, onDelta: { _ in })
+        XCTAssertNil(r.unavailable)
+        XCTAssertEqual(r.text, "At your service.")
+        let models = rec2.requests.compactMap { (try? JSONSerialization.jsonObject(with: $0.httpBody ?? Data()) as? [String: Any])?["model"] as? String }
+        XCTAssertEqual(models, [KitChatClient.preferredOllamaModel, "qwen3:8b"])
+        _ = probe
+    }
+
+    /// The panel says the chief is on the way while the model loads, and a message sent then waits instead of failing.
+    func testAMessageSentWhileWarmingWaitsForTheModel() async throws {
+        final class SlowWarm: ChatModelClient {
+            var warmed = false
+            func warm() async { try? await Task.sleep(nanoseconds: 200_000_000); warmed = true }
+            func respond(_ messages: [ChatWireMessage], tools: [ChatToolSpec], onDelta: @escaping @MainActor (String) -> Void) async throws -> ChatModelReply {
+                ChatModelReply(text: warmed ? "Ready, sir." : "Not yet.", toolCalls: [], source: "test")
+            }
+        }
+        let e = CmdFixtures.engine()
+        let s = ChatSession(engine: e, client: SlowWarm(), store: nil)
+        s.warmUp()
+        XCTAssertTrue(s.warming)
+        await s.handle("Good morning, what's on the agenda for today?")
+        XCTAssertFalse(s.warming)
+        XCTAssertEqual(s.entries.last?.text, "Ready, sir.")
+    }
 
     func testABackendDownSaysSoAndTheFastPathStillWorks() async throws {
         let e = CmdFixtures.engine(year: 2025)

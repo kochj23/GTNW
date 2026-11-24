@@ -37,6 +37,10 @@ Planned as 3.35.0 — "Talk to me".
   With no Ollama model picked in Settings → AI the chat asks for gpt-oss:120b (the benchmark's pick) and falls back
   to the Settings → AI model (qwen3:8b by default) when the server lacks it; a picked model is always used. No network
   besides the configured backend.
+- **Warm start:** the chat model is loaded in the background once a game is on the board or the panel opens (one
+  empty Ollama chat with a keep-alive, once per session). Meanwhile the panel shows "Chief of staff is getting to the
+  office…" and a message waits for the model instead of timing out; a model that can't load, or a reply that times
+  out, switches to the Settings → AI model and that message is retried once.
 - **Fast path and offline:** a plain one-liner the 3.34 parser reads ("sanction Iran", "who are my allies?") is
   planned or answered at once with no model; with AI off or the backend down, the chief says so and plain orders
   still work.

@@ -84,6 +84,7 @@ struct MainTabView: View {
                 set: { if $0 == nil { electionShown = gameEngine.gameState?.shadow.lastElection?.date } })) { result in
                 ElectionNightView(result: result)
             }
+            .task(id: gameEngine.gameState != nil) { if gameEngine.gameState != nil { chat.warmUp() } }   // 3.35.0: load the chat model early
             .sheet(isPresented: $gameEngine.commandBoxOpen) {
                 ChatView(session: chat).environmentObject(gameEngine)
             }
