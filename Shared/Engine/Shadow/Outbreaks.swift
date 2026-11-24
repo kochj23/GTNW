@@ -412,6 +412,7 @@ enum ShadowChoice {
             let f = part.split(separator: "|").map(String.init)
             switch f.first {
             case "outbreak" where f.count == 3: engine?.respondToOutbreak(f[1], response: f[2])
+            case "antarctic": engine?.resolveAntarcticChoice(f)   // 3.36.0
             case "posture" where f.count == 2: gs.shadow.intelPosture = min(3, max(0, gs.shadow.intelPosture + (Double(f[1]) ?? 0)))
             case "ruthless" where f.count == 2: gs.shadow.ruthlessness += Double(f[1]) ?? 0
             case "refugees" where f.count == 4:   // 3.36.0

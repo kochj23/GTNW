@@ -197,10 +197,8 @@ enum TerritoryQuery: BridgeQuery {
             let claims = Antarctica.claims(by: gs.currentYear)
             notes.append(claims.isEmpty ? "No nation has claimed it yet." : "Overlapping claims, none sovereign: " + claims.joined(separator: ", ") + ".")
             notes.append("Pays no money once whaling ends unless developed: science brings prestige, not income.")   // 3.36.0
-            let status = Antarctica.legalStatus(on: gs.currentDate)
-            if status != .legal {
-                notes.append(status == .treatyBanned ? "TREATY-BANNED — Antarctic Treaty (in force 23 Jun 1961)" : "RESTRICTED — Antarctic Treaty signed 1 Dec 1959")
-            }
+            if let line = Antarctica.statusLine(gs) { notes.append(line) }   // 3.36.0: the President's treaty standing
+            notes += Antarctica.programLines(gs)
         }
         notes.append("An expedition takes it at once as a \(me.map { $0.id == "USA" ? "U.S." : $0.name } ?? "U.S.") territory. "
                      + "Costs one action and some goodwill abroad: rivals about 5, others about 2, more in a spree or after 1945.")

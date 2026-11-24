@@ -133,11 +133,16 @@ extension GameEngine {
             let pol = ExpansionModel.politics(year: year, nth: n)
             let f = AttackSizing.relationFactor(scale: troops / AttackSizing.expeditionStandard) * pol.worldFactor
             if land == Antarctica.id {
-                let status = Antarctica.legalStatus(on: gs.currentDate)
+                let status = gs.antarcticClaimStatus   // 3.36.0: softened outside the treaty or after renegotiating
                 let c = ArsenalCatalog.cost(status)
+                let restricted = gs.currentDate < Antarctica.treatyInForce ? "The Antarctic Treaty is signed but not yet in force; claiming now looks like bad faith."
+                    : "Outside the treaty or with a larger role agreed, a claim is no breach, but the signatories call it bad faith."
+                let n = Antarctica.claims(by: year).count
+                let open = n == 0 ? "No nation has claimed it yet; it is open to whoever plants a flag first."
+                    : (n == 7 ? "Seven nations already claim slices of it; none really rules it." : "\(n) nation\(n == 1 ? "" : "s") already claim\(n == 1 ? "s" : "") a slice of it; none really rules it.")
                 return [AdvisorWarning(who: "Joint Chiefs", text: "The ice needs only \(Antarctica.neededGarrison)K men, but the cold takes 5% of them a month and upkeep is heavy.", level: 1),
                         AdvisorWarning(who: stateWho, text: status == .treatyBanned ? "This breaks the Antarctic Treaty (in force 1961): relations −\(c.world) everywhere, allies −\(c.world + c.allies), sanctions."
-                                       : (status == .restricted ? "The Antarctic Treaty is signed but not yet in force; claiming now looks like bad faith." : "Seven nations already claim slices of it; none really rules it."),
+                                       : (status == .restricted ? restricted : open),
                                        level: status == .treatyBanned ? 2 : (status == .restricted ? 1 : 0)),
                         vp(dPop: pol.popularity - (status == .legal ? 0 : c.popularity), dRuth: pol.ruthlessness + (status == .legal ? 0 : c.ruthlessness), war: nil)]
             }

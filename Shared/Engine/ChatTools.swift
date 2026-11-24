@@ -202,11 +202,19 @@ enum ChatTools {
             case .none: return error("No nation or land called \"\(String(raw.prefix(40)))\" in \(gs.currentYear).")
             case .many(let opts): return ok(["ambiguous": true, "candidates": opts.map { CommandTargets.label($0, in: gs) }])
             case .one(let t, let note):
-                if let note { return withNote(dossier(t, e, gs, me), note) }
+                if let note { return withNote(antarctic(dossier(t, e, gs, me), t, e), note) }
                 target = t
             }
         }
-        return ok(dossier(target, e, gs, me))
+        return ok(antarctic(dossier(target, e, gs, me), target, e))
+    }
+
+    /// 3.36.0: Antarctica's dossier adds the programme: stations, treaty standing, the orders on offer.
+    private static func antarctic(_ d: [String: Any], _ t: ResolvedTarget, _ e: GameEngine) -> [String: Any] {
+        guard t.id == Antarctica.id else { return d }
+        var d = d
+        d["antarctica"] = e.antarcticReport()
+        return d
     }
 
     private static func withNote(_ d: [String: Any], _ note: String) -> ChatToolOutput {
@@ -477,7 +485,7 @@ enum ChatTools {
                          "limitedStrike", "captureLeader", "acquire", "pressure", "posture", "frameworkDeal", "escalateCampaign",
                          "emergency", "endEmergency", "emergencyTariffs", "reissue", "rename (your country, a land you hold, a sea, strait, mountain or department; no action)",
                          "renamePlace (the same as rename)",
-                         "develop (invest in your territory)"]
+                         "develop (invest in your territory)"] + AntarcticOrder.hints
         }
         // 3.36.0: the power plays at home, in full for "domestic", by name otherwise (the list stays under the cap).
         if category == "domestic" { d["at_home"] = HomePlayCommands.toolRows() }

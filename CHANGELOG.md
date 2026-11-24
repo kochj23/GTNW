@@ -114,6 +114,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     1957 and against the 1992 moratorium. A test needs the second confirmation like a strike.
 - Saves keep all of it (`shadow.homeFront`); older saves load with nothing in play, and a game that never uses these
   orders draws nothing extra from the RNG.
+- **Antarctica as a storyline.** Research stations (from 1904, the first permanent base): an order that costs money
+  and upkeep and pays science prestige at once and every year; on ice the President holds, each station counts as one INVEST of
+  land development (Antarctica pays only once developed). The Antarctic Treaty as diplomacy: leave it (Article XII: effective two years after notice; the signatories
+  −8, everyone else −2), rejoin it, or renegotiate a larger role (decided by stations and the signatories' goodwill,
+  shown on the card first). Out of the treaty, or after renegotiating, a claim is bad faith rather than a breach.
+  Before 1959 it is open exploration: the seven claims (1908–1943) arrive as news, or as counter-claims when the
+  President already holds the ice, and every austral summer a rival lands a party on ground he claims. The dated
+  history (Amundsen and Scott at the Pole, Byrd's flight, the IGY, the treaty, the Madrid Protocol, the Larsen ice
+  shelves) lands on its day; ice shelves damage stations; a stranded field party is a cabinet decision (fly them out,
+  ask a rival's station, or wait). Penguin colonies protest the new name in the news, gently. A name given Antarctica
+  in an earlier game is offered back at the start ("Restore your name for Antarctica: …?") and goes up with the flag.
+  The dossier shows the programme with its buttons; the command box and the chief of staff take the four new orders,
+  and the chief's `country` tool reports the stations and treaty standing. Calendar-driven, no RNG; older saves load.
 
 - **INVEST in a territory** (one action, era-priced: half a year of its full output, at least $0.1B before 1900, $0.5B
   before 1950, $2.5B after; paid from the funds or up to 2% of output): six months of development at once. Each

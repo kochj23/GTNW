@@ -197,6 +197,7 @@ extension GameEngine {
                                                    "game_date": PlayHistory.day(gs.currentDate)])
         CartographyHall.record(t, kind: kind, from: old, to: name, in: gs)
         self.gameState = gs
+        if t.id == Antarctica.id { antarcticaRenamed(to: name) }   // 3.36.0: the penguins were not consulted
         return .renamed(from: old, to: name)
     }
 

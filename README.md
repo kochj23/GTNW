@@ -1,7 +1,7 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-1245-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1261-brightgreen)
 ![Version](https://img.shields.io/badge/version-3.35.1-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.1-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
@@ -929,6 +929,15 @@ flowchart LR
   impeachment hearings). It needs only a 0.5K garrison, but the cold takes 5% of it a month and upkeep is heavy. It
   yields sealing (to 1900), whaling (to 1964), science prestige (from 1957), and minerals and oil only from 2048, when
   the Madrid Protocol's mining ban can be reviewed.
+- **The Antarctic storyline (new in 3.36.0)**: build **research stations** (from 1904; money and upkeep, science
+  prestige; on ice you hold each station counts as one INVEST of development); **leave** the Antarctic Treaty (effective
+  two years after notice), **rejoin** it or **renegotiate** a larger role (the parties agree with two stations and
+  goodwill). Outside the treaty, or after renegotiating, a claim is bad faith rather than a breach. The seven
+  historical claims arrive as news, or as counter-claims if the flag is already up; rivals land parties every austral
+  summer; ice shelves collapse on their real dates (and every seven years from 2030) and damage stations; a stranded
+  field party asks the cabinet how to bring it home. The penguins were not consulted about the new name. A name
+  given Antarctica in an earlier game is offered back at the start. All from the dossier, the command box ("build a
+  research station in Antarctica", "withdraw from the Antarctic Treaty") or the chief of staff.
 - **Group actions (new in 3.10.0)**: **Group** in the top bar acts on many nations at once: all U.S. territories,
   all allies (the era's treaty allies plus alliances made in play), all of a region, a hand-picked set, or a saved
   custom group. Give money or send aid (split evenly or by need), set garrisons, impose sanctions, send a diplomatic
@@ -1909,7 +1918,7 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **1245 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **1261 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 

@@ -37,6 +37,8 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
     case develop
     // 3.36.0: power plays at home (`HomePlay`, planned by `planHomePlay`)
     case troopsHome, fixNumbers, leanOnBank, buyStake, stayInPower, missileShield, nuclearTest
+    // Antarctica (3.36.0)
+    case researchStation, joinAntarcticTreaty, leaveAntarcticTreaty, renegotiateAntarcticTreaty
 
     /// The Situation Room action a simple (non-force) verb runs; nil for the force and land verbs.
     var simpleAction: PresidentialAction? {
@@ -99,7 +101,7 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
         case .liberate: return "BACK INDEPENDENCE"
         case .rename: return "RENAME"
         case .develop: return "INVEST"
-        default: return powerPlayTitle ?? HomePlay(verb: self)?.title ?? (simpleAction?.rawValue ?? rawValue).uppercased()
+        default: return antarcticOrder?.title ?? powerPlayTitle ?? HomePlay(verb: self)?.title ?? (simpleAction?.rawValue ?? rawValue).uppercased()
         }
     }
 }
@@ -280,6 +282,17 @@ enum CommandParser {
             .liberate: ["back the independence of", "back independence of", "support independence of", "support the independence of",
                         "liberate", "free"],
             .develop: ["invest in", "develop", "build up"],
+            .researchStation: ["build a research station in", "build a research station on", "build a research station",
+                               "build a station in", "build a station on", "open a research station in", "open a research station",
+                               "establish a research station in", "establish a research station", "set up a research station in",
+                               "research station in", "research station on", "build an antarctic station", "build a base in antarctica"],
+            .joinAntarcticTreaty: ["sign the antarctic treaty", "sign antarctic treaty", "rejoin the antarctic treaty", "rejoin antarctic treaty",
+                                   "join the antarctic treaty", "join antarctic treaty", "return to the antarctic treaty", "ratify the antarctic treaty"],
+            .leaveAntarcticTreaty: ["withdraw from the antarctic treaty", "withdraw from antarctic treaty", "leave the antarctic treaty",
+                                    "leave antarctic treaty", "quit the antarctic treaty", "pull out of the antarctic treaty", "exit the antarctic treaty",
+                                    "tear up the antarctic treaty", "break the antarctic treaty"],
+            .renegotiateAntarcticTreaty: ["renegotiate the antarctic treaty", "renegotiate antarctic treaty", "amend the antarctic treaty",
+                                          "reopen the antarctic treaty"],
         ]
         return table.flatMap { verb, list in list.map { ($0, verb) } }.sorted { $0.0.count > $1.0.count }
     }()

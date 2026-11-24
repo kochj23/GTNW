@@ -44,6 +44,8 @@ enum OrderKind: String, Codable, CaseIterable, Sendable {
     /// 3.36.0: a power play at home (`executeHomePlay`): `action` is a `HomePlay`, `mission` its mode, `target` a
     /// state, an industry or the President's own nation.
     case homePlay
+    /// 3.36.0: the Antarctic programme (`runAntarcticOrder`): `mission` is an `AntarcticOrder`, `target` "ATA".
+    case antarctic
 }
 
 /// One resolved order: what the engine is asked to do, against whom, with exactly which forces.
@@ -93,6 +95,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         case .rename: what = "Rename (\(detail ?? "?"))"
         case .developLand: what = "Invest"
         case .homePlay: what = "\(action ?? "?") \(mission ?? "")"
+        case .antarctic: what = "Antarctica \(mission ?? "?")"
         }
         var sizes: [String] = []
         if let t = troops { sizes.append("\(Int(t))K troops") }
@@ -180,6 +183,7 @@ extension GameEngine {
         }
         if o.kind == .rename || o.kind == .renamePlace { return renameCheck(RenameTarget.from(id: o.target, in: gs), to: o.detail ?? "").refusal }
         if o.kind.isPowerPlay { return powerPlayProblem(o) }   // 3.36.0
+        if o.kind == .antarctic { return antarcticProblem(o) }   // 3.36.0: Antarctica may fly the President's own flag
         if o.target == me.id { return "That is your own nation." }
         let nation = gs.getCountry(id: o.target).flatMap { $0.isDestroyed ? nil : $0 }
         if let n = nation, n.territoryOf == me.id, o.kind != .developLand { return "\(n.name) flies your own flag." }
@@ -215,6 +219,8 @@ extension GameEngine {
             return LandDevelopment.problem(o.target, in: gs)
         case .homePlay:
             return homePlayProblem(o)
+        case .antarctic:
+            return antarcticProblem(o)
         }
     }
 
@@ -264,6 +270,9 @@ extension GameEngine {
             return investInLand(o.target)
         case .homePlay:
             return executeHomePlay(o)
+        case .antarctic:
+            guard let op = o.mission.flatMap(AntarcticOrder.init(rawValue:)) else { return false }
+            return runAntarcticOrder(op)
         }
     }
 

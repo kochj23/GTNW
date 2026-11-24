@@ -645,11 +645,11 @@ struct CountryDossier: View {
                 let claims = Antarctica.claims(by: gameState.currentYear)
                 Text(verbatim: claims.isEmpty ? "No nation has claimed it yet." : "Overlapping claims, none sovereign: " + claims.joined(separator: ", ") + ".")
                     .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
-                let status = Antarctica.legalStatus(on: gameState.currentDate)
-                if status != .legal {
-                    Text(status == .treatyBanned ? "TREATY-BANNED — Antarctic Treaty (in force 23 Jun 1961)" : "RESTRICTED — Antarctic Treaty signed 1 Dec 1959")
+                if let line = Antarctica.statusLine(gameState) {   // 3.36.0: the President's treaty standing
+                    Text(verbatim: line)
                         .font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalRed).fixedSize(horizontal: false, vertical: true)
                 }
+                AntarcticPanel(gameState: gameState)
             }
             Text("An expedition takes it at once as a \(owner.map { $0.id == "USA" ? "U.S." : $0.name } ?? "U.S.") territory. "
                  + "Costs one action and some goodwill abroad: rivals about 5, others about 2, more in a spree or after 1945.")
@@ -770,6 +770,7 @@ struct CountryDossier: View {
                             .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalGreen).fixedSize(horizontal: false, vertical: true)
                         if o == gameState.playerCountryID { landDevelopment(c) }   // 3.36.0
                         if o == gameState.playerCountryID, Islands.byID[c.id] != nil { islandDevelopment(c) }
+                        if o == gameState.playerCountryID, c.id == Antarctica.id { AntarcticPanel(gameState: gameState) }   // 3.36.0
                         if o != gameState.playerCountryID { foreignTerritoryActions(c) }   // 3.28.2
                     }
                     if !c.isPlayerControlled {

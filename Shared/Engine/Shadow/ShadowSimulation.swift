@@ -53,6 +53,7 @@ extension GameEngine {
         adoptOwnColonies()   // 3.28.2
         gameState?.shadow.empireAtStart = gameState.map(EmpireModel.baseline)   // 3.29.0: goals met at the start don't count
         requestWorldBrief()   // 3.29.0: modern games read the real world's week (background, never blocks)
+        offerAntarcticName()   // 3.36.0: a name given Antarctica in an earlier game
     }
 
     /// Start a scenario from the scenario list.
@@ -94,6 +95,7 @@ extension GameEngine {
         processOccupation()
         processSubdivisions()    // 3.36.0: states and provinces: unrest, secession, the provinces a won war holds
         processAntarctica()
+        processAntarcticStoryline()   // 3.36.0: stations, the treaty, rivals, the ice, the penguins
         processPreState()
         processLandMarket()      // 3.29.0: rival bids, auctions, powers selling land they want rid of
         processClaimCampaign()   // 3.29.0: one flag (or a few) a turn until the campaign is done
@@ -655,7 +657,7 @@ extension GameEngine {
         gs.shadow.ruthlessness += politics.ruthlessness
         gs.shadow.moveApproval(politics.popularity, because: "land claims")
         // 3.10.0: claiming Antarctica breaks the Antarctic Treaty from 23 Jun 1961 (restricted since signing in 1959).
-        let antarcticStatus = id == Antarctica.id ? Antarctica.legalStatus(on: gs.currentDate) : .legal
+        let antarcticStatus = id == Antarctica.id ? gs.antarcticClaimStatus : .legal   // 3.36.0: the President's treaty standing
         if antarcticStatus != .legal {
             applyTreatyCost(antarcticStatus, target: nil)
             gs.shadow.post(antarcticStatus == .treatyBanned ? "The claim on Antarctica violates the Antarctic Treaty. The signatories protest."
@@ -667,6 +669,7 @@ extension GameEngine {
         logPlayEvent("claimed_land", detail: ["land": id, "name": PlayHistory.text(claimed.name), "troops_k": Int(troops),
                                               "game_date": PlayHistory.day(gs.currentDate)])
         self.gameState = gs
+        if id == Antarctica.id { antarcticaClaimed() }   // 3.36.0: counter-claims, a name carried over
         if spendAction { completePlayerAction() }
         return true
     }
