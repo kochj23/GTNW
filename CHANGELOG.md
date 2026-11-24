@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Planned as 3.35.0 — "Talk to me".
+## [3.35.0] - 2026-11-23 — Talk to me
 
 ### Added
 - **Chief of staff (⌘K, the prompt line under the map, Orders → Chief of Staff…).** The command box is now a
