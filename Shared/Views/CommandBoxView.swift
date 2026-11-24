@@ -186,7 +186,7 @@ struct CommandPromptBar: View {
             HStack(spacing: 6) {
                 Text(verbatim: CommandBoxStyle.prompt).font(ThemeFont.mono(12, .bold)).foregroundColor(GTNWColors.terminalAmber)
                 BlinkingCursor()
-                Text("Type an order or a question")
+                Text("Talk to your chief of staff")
                     .font(ThemeFont.mono(11)).foregroundColor(CommandBoxStyle.text.opacity(0.75))
                     .lineLimit(1)
                 Spacer(minLength: 8)
@@ -199,8 +199,8 @@ struct CommandPromptBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Command box")
-        .accessibilityHint("Type an order or a question. Shortcut \(key.spoken).")
+        .accessibilityLabel("Chief of staff")
+        .accessibilityHint("Talk it through, ask, or give an order. Shortcut \(key.spoken).")
         #if os(iOS)
         .gameShortcut(.commandBox, store: keys)
         #endif

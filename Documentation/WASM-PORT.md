@@ -387,6 +387,14 @@ reusing Lite's map, ticker, modal and dossier where they exist). The Swift lines
 | AI brains & settings: `BrainAssignmentView`, `GTNWAIViews`, settings, key bindings | 370 | remote brains are out of the core (see the audit). The web needs its own AI path (games-ai) | M |
 | Side features (3.x): `TheLivingRoom`, `PredictiveIntelligence`, `NaturalLanguageIntel`, `MultiPerspectiveAnalyzer`, `EconomicWarfareSimulator`, `CyberWarfareTheater`, `PropagandaEngine`, `SentimentWorldMap`, `CinematicEngine`, `AchievementEngine` | 4,700 | these live in app-only files and would join the core first | L each, or drop |
 
+**Chief of staff (GTNW 3.35.0).** The Mac command box became a conversation. Its engine half is in the core:
+`Shared/Engine/ChatTools.swift` (the tool specs, the read-only lookups and `propose_orders`, planned by
+`CommandPlanner`) and `Shared/Engine/ChatGuard.swift` (the grounding guard, the content filter, the request screen),
+pure Foundation. The loop, the model transport, the transcript and the view are app-only (`Shared/AI/ChatAgent.swift`,
+`ChatTransport.swift`, `ChatBench.swift`, `Shared/Views/ChatView.swift`). The web gets it later through `../api/ai`
+(a tool-calling template on games-ai) plus a bridge op that runs `ChatTools.run`; not built yet (NovaGames
+`games/gtnw-lite/docs/SCREENS.md`).
+
 S is under 200 lines of Lite code, M is 200–600, L is over 600. Phase 2 also needs:
 
 - the bridge ops those screens read: done as typed queries (op 10, above), one file per query;

@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Planned as 3.35.0 — "Talk to me".
+
 ### Added
+- **Chief of staff (⌘K, the prompt line under the map, Orders → Chief of Staff…).** The command box is now a
+  conversation: talk to your chief of staff like a person ("how do we stand with France?", "and their allies?", "why
+  did my approval drop?", "strike their air bases, then blockade, then offer terms", "do the same to Cuba", "how'd that
+  go?"). Replies stream in; the chief asks when an order is ambiguous, advises with reasons, and stays in the voice of
+  the game's year. Modern skin: a chat; Retro skin: a terminal transcript. Both skins, any text size, VoiceOver.
+- **Tools, not guesses:** the model can only look things up through the engine (`ChatTools`: the top bar, dossiers
+  with foreign forces as the intelligence estimate, forces by type, reach, relations, alliances and treaties, fronts,
+  the budget, the polls, the cabinet and its advice, the news wire and recent orders, the actions on offer with cost
+  and the odds the Situation Room shows) and propose orders (`propose_orders`, planned by the 3.34 `CommandPlanner`,
+  the same whitelist). No tool reads the RNG or a hidden outcome, and none writes the game.
+- **Plans:** orders come back as a numbered card (EXECUTE ALL, one step at a time, REMOVE a step, EDIT in words,
+  CANCEL); a nuclear step needs a second press. Nothing runs until the President presses EXECUTE. What runs is
+  recorded as orders (source `chat`), so a replay never needs the conversation. Standing orders ("if France
+  mobilizes, move the fleet") are not offered: they would run without the President's EXECUTE; the chief says so.
+- **Grounding guard:** every number and name in a reply must come from a tool result or the conversation (a
+  token-level check after Nova's own); the chief is asked once to check, then unsupported sentences are dropped.
+- **Content rules at DEFCON 1:** replies with slurs, sexual content, sweeping claims about a people or a faith,
+  mockery of religion, or weapons-method and drug terms are replaced whole by a neutral line (fail-closed); messages
+  like that, and requests for chemical or biological weapons, assassination, terror or drug operations, are answered
+  without asking the model. Host names, addresses and URLs never reach the screen. Messages are capped at 600
+  characters; prompt-injection phrasing gets a reminder to the model and changes nothing.
+- **Any backend from Settings → AI:** Ollama with native tool calls (streamed), OpenAI-compatible backends
+  (OpenRouter, OpenAI, MLX server, TinyLLM, OpenWebUI…) with native tool calls (streamed, the key from the Keychain),
+  and the rest (Anthropic's wire, the Nova Gateway, an Ollama model without tool support) with the tools in the prompt.
+  The Ollama model defaults to the benchmark's pick (`GTNW.chat.ollamaModel` overrides it; a missing model falls
+  back to the Settings → AI one). No network besides the configured backend.
+- **Fast path and offline:** a plain one-liner the 3.34 parser reads ("sanction Iran", "who are my allies?") is
+  planned or answered at once with no model; with AI off or the backend down, the chief says so and plain orders
+  still work.
+- **The transcript** is kept per game (seed, nation, start date) beside the saves, up to the loaded turn; it is never
+  in the save, the replay or the determinism checks.
+- **Benchmark:** a Debug-only `--chat-bench` launch runs 25 scripted multi-turn conversations through the real loop
+  against local Ollama models and scores tool-call validity, grounding, follow-ups and latency
+  (Documentation/CHAT-BENCHMARK.md).
 - **The engine in WebAssembly (phase 1):** `Package.swift` builds the engine as `GTNWCore`, pure Swift + Foundation,
   from the same files the app compiles (no files moved; app-only code sits behind `#if !GTNW_CORE`). `GTNWWasm` is a
   WASI reactor with a JSON bridge (`newGame`, `act`, `endTurn`, `snapshot`, `save`, `load`) that runs each call to

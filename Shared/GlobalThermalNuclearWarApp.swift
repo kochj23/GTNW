@@ -21,6 +21,9 @@ struct GlobalThermalNuclearWarApp: App {
         // Under XCTest the app never activates and keeps its windows out of sight (and AudioGate mutes it).
         AudioGate.hideUnderTest()
         if StoreMigrationCLI.isRequested { StoreMigrationCLI.runAndExit() }
+        #if DEBUG
+        if ChatBench.isRequested { ChatBench.arm(); return }   // 3.35.0: the chief of staff's model benchmark
+        #endif
         if LaunchSmoke.isRequested {
             // Frame smoke test: boot the full app hidden (never activates, never takes
             // focus, no API server), then quit cleanly. See tools/launch_smoke.sh.
@@ -75,7 +78,7 @@ struct GlobalThermalNuclearWarApp: App {
             }
 
             CommandMenu("Orders") {
-                Button("Command Box…") {
+                Button("Chief of Staff…") {
                     if gameEngine.gameState != nil { gameEngine.commandBoxOpen = true }
                 }
                 .gameShortcut(.commandBox, store: keys)

@@ -18,8 +18,8 @@ struct MainTabView: View {
         return args.firstIndex(of: "--tab").flatMap { args.indices.contains($0 + 1) ? Int(args[$0 + 1]) : nil } ?? 0
     }
     @State private var electionShown: Date?
-    /// 3.34.0: the command box keeps its history for the whole sitting.
-    @StateObject private var commandBox = CommandBoxModel()
+    /// 3.35.0: the conversation with the chief of staff (the 3.34 command box grown up); its transcript is kept per game.
+    @StateObject private var chat = ChatSession()
 
     var body: some View {
         if gameEngine.gameState == nil {
@@ -85,7 +85,7 @@ struct MainTabView: View {
                 ElectionNightView(result: result)
             }
             .sheet(isPresented: $gameEngine.commandBoxOpen) {
-                CommandBoxView(model: commandBox).environmentObject(gameEngine)
+                ChatView(session: chat).environmentObject(gameEngine)
             }
         }
     }

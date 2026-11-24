@@ -93,6 +93,8 @@ enum CommandSource: String, Codable, Sendable {
     case model
     /// Replayed from a saved record.
     case replay
+    /// 3.35.0: proposed by the chief of staff in the conversation and confirmed by the President.
+    case chat
 }
 
 /// What the command box carried out on one turn: the orders, never the text.
