@@ -706,3 +706,165 @@ final class CommandBoxFrameTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.37.0: bulk renames, an own state's "invasion"
+
+extension CommandBoxUnitTests {
+    /// Unit: the group phrases, the numbering, and the list kept whole by the parser.
+    func testRenameGroupPhrasesAndNumbering() throws {
+        XCTAssertEqual(RenameGroups.kind("all my states", bareRegion: false), .provinces)
+        XCTAssertEqual(RenameGroups.kind("my provinces", bareRegion: false), .provinces)
+        XCTAssertEqual(RenameGroups.kind("all my territories", bareRegion: false), .lands)
+        XCTAssertEqual(RenameGroups.kind("all of africa", bareRegion: false), .region(.africa))
+        XCTAssertNil(RenameGroups.kind("africa", bareRegion: false), "a bare region only when no land goes by the name")
+        XCTAssertEqual(RenameGroups.kind("africa", bareRegion: true), .region(.africa))
+        XCTAssertNil(RenameGroups.kind("states", bareRegion: true), "\"states\" alone is not \"all my states\"")
+        XCTAssertNil(RenameGroups.kind("texas", bareRegion: true))
+        XCTAssertEqual((0..<4).map { RenameGroups.numbered("Liberty", $0) }, ["Liberty", "Liberty 2", "Liberty 3", "Liberty 4"])
+        let many = RenameGroups.names("Land", count: CommandParser.maxRegionTargets)
+        XCTAssertEqual(many.count, CommandParser.maxRegionTargets)
+        XCTAssertEqual(Set(many).count, many.count)
+        for n in many { XCTAssertEqual(NameScreen.check(n), .ok(n), "a number the content check refuses is skipped") }
+        let i = try XCTUnwrap(CommandParser.parse("rename Texas, Ohio, and Iowa to Lone Star"))
+        XCTAssertEqual(i.renames, [RenameRequest(target: "texas, ohio, and iowa", name: "Lone Star")])
+        XCTAssertEqual(CommandParser.parse("rename all of Africa to New Albion")?.renames?.first?.target, "all of africa")
+        XCTAssertEqual(CommandParser.parse("rename my country to Freedonia")?.renames, [RenameRequest(target: "me", name: "Freedonia")], "unchanged")
+    }
+
+    /// Unit: own-state force verbs.
+    func testOwnStateForceVerbs() {
+        XCTAssertEqual(CommandParser.parse("invade Texas")?.verb, .invade)
+        XCTAssertEqual(CommandParser.parse("send troops into Texas")?.verb, .invade)
+        for v in [CommandVerb.attack, .invade, .landing, .deployTroops] { XCTAssertTrue(GameEngine.ownStateForceVerbs.contains(v)) }
+        XCTAssertFalse(GameEngine.ownStateForceVerbs.contains(.nuke), "a nuclear order is never quietly turned into something else")
+    }
+}
+
+extension CommandBoxFunctionalTests {
+    /// Functional: "all my states" renames every state held, numbered, and EXECUTE carries it out.
+    @MainActor
+    func testRenameAllMyStatesNumbersThem() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        let gs = e.gameState!
+        let held = gs.renamableProvinces
+        XCTAssertGreaterThanOrEqual(held.count, 50)
+        guard case .plan(let p) = CmdFixtures.plan(e, "rename all my states to Liberty") else { return XCTFail("expected a card") }
+        XCTAssertEqual(p.orders.count, held.count)
+        XCTAssertEqual(p.orders[0].detail, "Liberty")
+        XCTAssertEqual(p.orders[1].detail, "Liberty 2")
+        XCTAssertEqual(Set(p.orders.compactMap(\.detail)).count, p.orders.count, "every place keeps a name of its own")
+        XCTAssertEqual(p.actionsNeeded, 0)
+        XCTAssertTrue(p.warnings.contains { $0.text.hasPrefix("One name for many places") && $0.text.contains("Liberty 2") })
+        let r = e.executeCommand(p.orders, source: .parser)
+        XCTAssertEqual(r.carried.count, held.count)
+        XCTAssertEqual(gs.provinceName(held[0].id), "Liberty")
+        XCTAssertEqual(Subdivisions.find("Liberty 2", in: gs)?.id, held[1].id, "a numbered name is a target of its own")
+    }
+
+    /// Functional: a region renames only the lands held there; the rest is listed as left out with the reason.
+    @MainActor
+    func testRenameAllOfAfricaRenamesOnlyHeldLands() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        let gs = e.gameState!
+        guard case .rejected(let none) = CmdFixtures.plan(e, "rename all of Africa to New Albion") else { return XCTFail("nothing held there") }
+        XCTAssertTrue(none.contains("You hold no land in Africa"), none)
+        for id in ["KEN", "GHA"] { if let i = gs.countries.firstIndex(where: { $0.id == id }) { gs.countries[i].territoryOf = "USA" } }
+        guard case .plan(let p) = CmdFixtures.plan(e, "rename all of Africa to New Albion") else { return XCTFail("expected a card") }
+        XCTAssertEqual(Set(p.orders.map(\.target)), ["KEN", "GHA"])
+        XCTAssertEqual(Set(p.orders.compactMap(\.detail)), ["New Albion", "New Albion 2"])
+        XCTAssertTrue(p.warnings.contains { $0.text.hasPrefix("Left out: ") && $0.text.contains("in Africa") && $0.text.contains("not yours to rename") },
+                      p.warnings.map(\.text).joined(separator: " | "))
+    }
+
+    /// Functional: a list; what isn't held is left out with the reason; a land named with "and" stays whole.
+    @MainActor
+    func testRenameAListOfPlaces() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        guard case .plan(let p) = CmdFixtures.plan(e, "rename Texas, Ohio and Bavaria to Freedom") else { return XCTFail("expected a card") }
+        XCTAssertEqual(p.orders, [GameOrder(kind: .rename, target: "US-TX", detail: "Freedom"), GameOrder(kind: .rename, target: "US-OH", detail: "Freedom 2")])
+        XCTAssertTrue(p.warnings.contains { $0.text.hasPrefix("Left out: Bavaria isn't yours to rename") },
+                      p.warnings.map(\.text).joined(separator: " | "))
+        guard case .rejected(let why) = CmdFixtures.plan(e, "rename Trinidad and Tobago to Freedom") else { return XCTFail("not his") }
+        XCTAssertTrue(why.contains("isn't yours to rename"), why)
+    }
+
+    /// Functional: one name the content check refuses blocks the whole bulk command, with the usual refusal.
+    @MainActor
+    func testOneBadNameBlocksTheBulkRename() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        func refusal(_ text: String) -> String? {
+            if case .rejected(let w) = CmdFixtures.plan(e, text) { return w }
+            return nil
+        }
+        XCTAssertEqual(refusal("rename all my states to Nazistan"), NameScreen.blockedReason)
+        XCTAssertEqual(refusal("rename Texas and Ohio to Nazistan"), NameScreen.blockedReason)
+        XCTAssertEqual(e.gameState?.provinceName("US-TX"), "Texas")
+    }
+
+    /// Functional: the cap is `maxRegionTargets`; the rest is left out and counted.
+    @MainActor
+    func testBulkRenameIsCapped() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        let gs = e.gameState!
+        for i in gs.countries.indices where gs.countries[i].id != "USA" && gs.countries[i].territoryOf == nil && !gs.countries[i].isDestroyed {
+            gs.countries[i].territoryOf = "USA"
+        }
+        let lands = gs.renamableTargets.count - 1
+        XCTAssertGreaterThan(lands, CommandParser.maxRegionTargets)
+        guard case .plan(let p) = CmdFixtures.plan(e, "rename all my territories to Land") else { return XCTFail("expected a card") }
+        XCTAssertEqual(p.orders.count, CommandParser.maxRegionTargets)
+        XCTAssertTrue(p.warnings.contains { $0.text == "Left out: \(lands - CommandParser.maxRegionTargets) more past the limit of \(CommandParser.maxRegionTargets) renames on one card." })
+    }
+
+    /// Functional: the chief of staff's rename takes several targets with one name, and group phrases.
+    @MainActor
+    func testChiefOfStaffBulkRename() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        let out = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "rename", "targets": ["Texas", "Ohio"], "name": "Freedom"]]], engine: e)
+        guard case .plan(let p)? = out.plan?.steps.first?.outcome else { return XCTFail(out.text) }
+        XCTAssertEqual(p.orders.map(\.target), ["US-TX", "US-OH"])
+        XCTAssertEqual(p.orders.map(\.detail), ["Freedom", "Freedom 2"])
+        let all = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "rename", "renames": [["target": "all my states", "name": "Liberty"]]]]], engine: e)
+        guard case .plan(let q)? = all.plan?.steps.first?.outcome else { return XCTFail(all.text) }
+        XCTAssertEqual(q.orders.count, e.gameState!.renamableProvinces.count)
+    }
+
+    /// Functional: "invade Texas" is federal troops into one of your own states, with the note; a foreign province
+    /// keeps the invasion path.
+    @MainActor
+    func testInvadingYourOwnStateSendsFederalTroops() throws {
+        let e = CmdFixtures.engine(year: 2025)
+        for text in ["invade Texas", "attack Ohio", "send troops into Iowa"] {
+            guard case .plan(let p) = CmdFixtures.plan(e, text) else { return XCTFail(text) }
+            XCTAssertEqual(p.title, HomePlay.troopsHome.title, text)
+            XCTAssertEqual(p.orders.first?.kind, .homePlay, text)
+            XCTAssertEqual(p.orders.first?.action, HomePlay.troopsHome.rawValue)
+            XCTAssertEqual(p.orders.first?.mission, "deploy")
+            XCTAssertEqual(p.warnings.first?.text, "That's your own state: sending federal troops instead.", text)
+            XCTAssertFalse(p.orders.contains { $0.action == PresidentialAction.groundInvasion.rawValue })
+        }
+        guard case .plan(let tx) = CmdFixtures.plan(e, "invade Texas") else { return XCTFail("Texas") }
+        XCTAssertEqual(tx.orders.first?.target, "US-TX")
+        // A foreign province: the normal invasion of the nation that holds it.
+        let foreign = try XCTUnwrap(CmdFixtures.confirmedPlan(e, "invade Bavaria"))
+        XCTAssertTrue(foreign.orders.contains { $0.action == PresidentialAction.groundInvasion.rawValue && $0.target == "DEU" })
+        XCTAssertFalse(foreign.warnings.contains { $0.text.contains("federal troops") })
+        // The chief of staff's invade goes the same way.
+        let out = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "invade", "targets": ["Texas"]]]], engine: e)
+        guard case .plan(let c)? = out.plan?.steps.first?.outcome else { return XCTFail(out.text) }
+        XCTAssertEqual(c.orders.first?.kind, .homePlay)
+        // EXECUTE deploys the troops.
+        let r = e.executeCommand(tx.orders, source: .parser)
+        XCTAssertEqual(r.carried.count, 1)
+    }
+
+    /// Functional: a President whose states aren't modeled for the order is told why, not "that is your own nation".
+    @MainActor
+    func testInvadingYourOwnProvinceElsewhereExplains() throws {
+        let e = CmdFixtures.engine(year: 2025, player: "RUS")
+        let gs = e.gameState!
+        let mine = try XCTUnwrap(gs.provinces(heldBy: "RUS").first { CommandTargets.state(gs.provinceName($0.id), in: gs)?.id == $0.id })
+        guard case .rejected(let why) = CmdFixtures.plan(e, "invade \(gs.provinceName(mine.id))") else { return XCTFail("expected a refusal") }
+        XCTAssertTrue(why.hasPrefix("That's your own "), why)
+    }
+}

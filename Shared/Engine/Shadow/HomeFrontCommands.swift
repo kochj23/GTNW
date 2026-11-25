@@ -124,6 +124,32 @@ enum HomePlayCommands {
 
 extension GameEngine {
 
+    /// Force verbs that, aimed at one of the President's own states, mean federal troops into it.
+    static let ownStateForceVerbs: Set<CommandVerb> = [.attack, .invade, .landing, .deployTroops]
+
+    /// 3.37.0: "invade Texas", "attack Ohio", "send troops into Iowa" when the state is the President's own: the
+    /// home-front troops deployment (`troopsHome`), with a note saying so. nil = not an own state (a foreign province
+    /// keeps the normal invasion path). Read-only.
+    func planOwnStateForce(_ intent: CommandIntent, verb: CommandVerb, source: CommandSource) -> CommandOutcome? {
+        guard let gs = gameState, Self.ownStateForceVerbs.contains(verb), intent.confirmedTargets == nil, intent.targets.count == 1,
+              let p = CommandTargets.state(CommandParser.sanitize(intent.targets[0]), in: gs),
+              gs.provinceOwner(p.id) == gs.playerCountryID else { return nil }
+        let kind = Subdivisions.historical(p, on: gs.currentDate).kind.lowercased()
+        let note = "That's your own \(kind): sending federal troops instead."
+        var home = intent
+        home.verb = .troopsHome
+        home.targets = ["deploy", gs.provinceName(p.id)]
+        switch planHomePlay(.troopsHome, home, source: source) {
+        case .plan(var plan):
+            plan.warnings.insert(CommandWarning(text: note, level: 0), at: 0)
+            return .plan(plan)
+        case .rejected(let why):
+            return .rejected("That's your own \(kind). \(why)")
+        case let other:
+            return other
+        }
+    }
+
     /// The confirmation card for a power play (read-only).
     func planHomePlay(_ play: HomePlay, _ intent: CommandIntent, source: CommandSource) -> CommandOutcome {
         guard let gs = gameState, let me = gs.getPlayerCountry() else { return .rejected("Start a game first.") }

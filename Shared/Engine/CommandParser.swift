@@ -372,9 +372,12 @@ enum CommandParser {
         var name = String(body[r.upperBound...]).trimmingCharacters(in: .whitespaces)
         if name.hasSuffix(".") || name.hasSuffix("!") { name.removeLast() }
         name = name.trimmingCharacters(in: CharacterSet(charactersIn: "\"'“”‘’ "))
-        var target = normalize(what)
-        for lead in ["the "] where target.hasPrefix(lead) && target.count > lead.count + 2 && !selfNames.contains(target) { target = String(target.dropFirst(lead.count)) }
-        if selfNames.contains(target) { target = "me" }
+        // 3.37.0: a list ("Texas, Ohio and Iowa") keeps its commas; the planner splits it (RenamePlanner.swift).
+        let target = what.split(separator: ",").map { piece -> String in
+            var t = normalize(String(piece))
+            for lead in ["the "] where t.hasPrefix(lead) && t.count > lead.count + 2 && !selfNames.contains(t) { t = String(t.dropFirst(lead.count)) }
+            return selfNames.contains(t) ? "me" : t
+        }.filter { !$0.isEmpty }.joined(separator: ", ")
         guard !target.isEmpty else { return CommandIntent(verb: .rename, renames: []) }
         return CommandIntent(verb: .rename, targets: [target], renames: [RenameRequest(target: target, name: name)])
     }

@@ -15,6 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   checks, cost, news, play history and the command log are the same as typing "invest in Madagascar"; the dossier's
   INVEST button now goes the same way. Disabled with the reason shown when there are no actions left, not enough
   money, or the land is already fully developed. Both skins, VoiceOver labels on each row and button.
+- **Bulk renames from the command box.** One rename can name many places: "rename all my states to Liberty", "rename
+  all my territories to …", "rename all of Africa to New Albion" (only the lands you hold there) or a list, "rename
+  Texas, Ohio and Iowa to Freedom" ("Trinidad and Tobago" stays one name). One name for many places is numbered so
+  each keeps a name of its own: the first gets the name, the next "2", then "3" and so on, and the card says so.
+  Every name goes through the usual content check, and one refused name blocks the whole command with the usual
+  refusal. At most 80 places on one card. The card lists what will be renamed and what was left out and why (not
+  yours, your own country, past the limit). The chief of staff's rename takes the same: several `targets` with one
+  `name`, or a group phrase as a target.
+- **The expelling alliance answers.** After NATO or the Warsaw Pact expels the President for attacking a member,
+  each other member weighs war: the worse its relations, the nearer it is and the stronger it is against him, the
+  likelier it declares (`Consequences.revengeChance`, tuned by `allianceRevengeScale`, at most
+  `allianceRevengeMaxWars` declarations). One draw from the game's seeded RNG per member, in id order. Most stand
+  aside. The news names each declaration and sums up who went, and each declaration is a normal `war_declared`.
+- **"invade Texas".** Invading, attacking or sending troops into one of your own states now plans federal troops into
+  that state (the home-front deployment), with the note "That's your own state: sending federal troops instead."
+  A foreign province keeps the normal invasion of the nation that holds it.
+- **New nations and states in the column.** A land that breaks away from the victim of your attack (Greenland) is
+  logged as `nation_founded` with `reason` `broke_away`; the expelling alliance's answer is `alliance_revenge`. The
+  README's play-history table now lists the state and province events, and a test fails if an engine file adds a
+  nation to the board without logging a founding event.
 
 ### Changed
 - **Governments you install count as held land.** A nation whose new government you chose at the settlement (any of
@@ -31,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its GDP), no ramp-up and nothing from the land's own yield (design choice). It goes into the funds each turn with
   the territories' cash and is shown on the Resources sheet. Older saves load with no installed governments
   (`shadow.installedGovernments`).
+
+### Fixed
+- Renaming a state from the command box or the chief of staff showed the card but EXECUTE refused it: the order
+  check refused the hyphen in a state's id ("US-TX"). A number in a bulk rename whose name the content check refuses
+  is skipped rather than refusing the card.
 
 ## [3.36.0] - 2026-11-24 — Your name on the map
 

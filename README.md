@@ -1,7 +1,7 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-1271-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1285-brightgreen)
 ![Version](https://img.shields.io/badge/version-3.36.0-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.1-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
@@ -1888,6 +1888,7 @@ NovaGames `deploy/db/play.sql`), so Nova's game reporter can write about what wa
 | Elections (3.22.0) | Events `election_result` (electoral and popular vote, opponent, outcome) and `midterms` (House seats) |
 | Swings (3.22.0) | Events `approval_swing` (≥ 5 points in a turn), `defcon_change`, `impeachment_track`, `congress_swing` (≥ 8 points) |
 | Session tallies (3.22.0) | Summary `session_stats`: orders given / failed, advisors overruled, danger warnings ignored, times backed down, recommendations taken / rejected, crises decided / failed, resignations, the biggest one-turn approval drop and the last eight orders; `game_over` carries the same post-mortem |
+| States, provinces and new nations (3.36.0, 3.37.0) | Every new state or nation on the board is logged for the column: `nation_founded` (`country`, `name`; a land that breaks away from a victim of the President's attack adds `reason` `broke_away` and `from`), `province_seceded` (`province`, `name`, `from`), `provinces_annexed` (`loser`, `victor`, `provinces`, `share`), `statehood`. Names: `renamed_province` (`province`, `name`), and a bulk rename ("rename all my states to …") logs one `renamed_province` / `renamed_territory` per place. Alliances: `ally_council`, `ally_expelled` (`victim`, `alliance`) and, after an expulsion, `alliance_revenge` (`alliance`, `victim`, `declared` ids, `stood_aside` count) next to each member's `war_declared` |
 | Dirty tactics (3.17.0) | Events `tactic_used` (`tactic`, `target`, `covert`, `scale`, `legal_status`), `tactic_exposed`, `tactic_tribunal`, `tactic_program_started` / `_ready` / `_discovered`, `tactic_aftermath`, `tactic_stance` (3.17.2), `drug_operations` (3.17.4), `hired_troops_recalled` (3.17.5), `world_atrocity` and `ai_tactic` (3.17.6) |
 | Absorptions (3.16.2) | Events `nation_absorbed` (`land`, `by`), `annexation_crisis` (`land`, `by`) |
 | Foundings (3.16.1) | Events `nation_founded` (`country`, `name`), `independence_movement` (`land`, `owner`) |
@@ -1922,7 +1923,7 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **1271 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **1285 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 

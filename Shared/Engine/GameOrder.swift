@@ -177,7 +177,7 @@ extension GameEngine {
         if gs.gameOver { return "The game is over." }
         if o.kind == .homePlay { return homePlayProblem(o) }   // 3.36.0: aimed at home, checked there
         guard !o.target.isEmpty, o.target.count <= 16,
-              o.target.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || $0 == "_" }) else {
+              o.target.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || $0 == "_" || $0 == "-" }) else {   // 3.37.0: "US-TX"
             return "Not a target."
         }
         for v in [o.troops, o.aircraft.map(Double.init), o.warheads.map(Double.init)] {

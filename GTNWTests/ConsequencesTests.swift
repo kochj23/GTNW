@@ -274,3 +274,104 @@ final class ConsequencesDeterminismTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 3.37.0: the expelling alliance answers
+
+extension ConsequencesUnitTests {
+    /// Unit: angrier, nearer and stronger members are likelier to go to war; the chance stays in bounds.
+    func testRevengeChanceWeighsRelationsDistanceAndStrength() {
+        let base = Consequences.revengeChance(relations: -60, distanceKm: 2000, strength: 60, playerStrength: 80)
+        XCTAssertGreaterThan(base, Consequences.revengeChance(relations: 20, distanceKm: 2000, strength: 60, playerStrength: 80), "relations")
+        XCTAssertGreaterThan(base, Consequences.revengeChance(relations: -60, distanceKm: 9000, strength: 60, playerStrength: 80), "distance")
+        XCTAssertGreaterThan(base, Consequences.revengeChance(relations: -60, distanceKm: 2000, strength: 10, playerStrength: 80), "strength")
+        for (r, d, s) in [(-100, 0.0, 100), (100, Double.infinity, 0), (-100, -5.0, 1000)] {
+            let p = Consequences.revengeChance(relations: r, distanceKm: d, strength: s, playerStrength: 1)
+            XCTAssertTrue((0...0.9).contains(p), "\(p)")
+        }
+        XCTAssertLessThan(Consequences.revengeChance(relations: 80, distanceKm: 6000, strength: 30, playerStrength: 90), 0.1,
+                          "a friendly, distant, weaker member almost never goes to war")
+        XCTAssertGreaterThan(Consequences.allianceRevengeScale, 0)
+        XCTAssertGreaterThan(Consequences.allianceRevengeMaxWars, 0)
+    }
+}
+
+extension ConsequencesIntegrationTests {
+    /// Integration: expelled from NATO after invading Denmark, the angry members weigh war; some declare, never all,
+    /// through the usual war declaration, and the news says who went.
+    @MainActor
+    func testExpellingAllianceMembersDeclareWar() throws {
+        func play() throws -> (wars: [String], ticker: String, members: Int) {
+            let (e, gs) = try Cons.game()
+            e.declareWar(aggressor: "USA", defender: "DNK")
+            let council = try XCTUnwrap(gs.shadow.consequences.councils.first)
+            for i in gs.countries.indices where council.members.contains(gs.countries[i].id) {
+                gs.countries[i].diplomaticRelations["USA"] = -90
+            }
+            gs.turn += 1
+            e.processConsequenceTurn()
+            XCTAssertTrue(gs.shadow.consequences.councils[0].expelled)
+            let me = try XCTUnwrap(gs.getPlayerCountry())
+            let wars = council.members.filter { $0 != "DNK" && me.atWarWith.contains($0) }.sorted()
+            for w in wars {
+                XCTAssertTrue(gs.activeWars.contains { $0.aggressor == w && $0.defender == "USA" }, "\(w) declared through declareWar")
+            }
+            return (wars, Cons.ticker(gs), council.members.count)
+        }
+        let a = try play()
+        XCTAssertFalse(a.wars.isEmpty, "hostile members go to war")
+        XCTAssertLessThanOrEqual(a.wars.count, Consequences.allianceRevengeMaxWars)
+        XCTAssertLessThan(a.wars.count, a.members - 1, "not all of them")
+        XCTAssertTrue(a.ticker.contains("declares war on United States over the attack on Denmark, a fellow member of NATO"), a.ticker)
+        XCTAssertTrue(a.ticker.contains("Of NATO's members,"), a.ticker)
+        let b = try play()
+        XCTAssertEqual(a.wars, b.wars, "the same seed, the same answer")
+        XCTAssertEqual(a.ticker, b.ticker)
+    }
+
+    /// Integration: friendly members condemn and stand aside; the news says so.
+    @MainActor
+    func testFriendlyMembersStandAside() throws {
+        let (e, gs) = try Cons.game()
+        e.declareWar(aggressor: "USA", defender: "DNK")
+        let council = try XCTUnwrap(gs.shadow.consequences.councils.first)
+        for i in gs.countries.indices where council.members.contains(gs.countries[i].id) {
+            gs.countries[i].diplomaticRelations["USA"] = 100
+            gs.countries[i].militaryStrength = 1
+        }
+        gs.turn += 1
+        e.processConsequenceTurn()
+        let me = try XCTUnwrap(gs.getPlayerCountry())
+        let wars = council.members.filter { $0 != "DNK" && me.atWarWith.contains($0) }
+        XCTAssertLessThanOrEqual(wars.count, 2, "a friendly, weak alliance mostly stands aside")
+        XCTAssertTrue(Cons.ticker(gs).contains("NATO's members condemn United States") || Cons.ticker(gs).contains("the rest stand aside"))
+    }
+}
+
+// MARK: - 3.37.0: every new nation is news for the column
+
+final class FoundingEventsCoverageTests: XCTestCase {
+    private let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    /// The play events that put a new nation or state on the record (any one of them covers a founding).
+    static let foundingEvents = ["nation_founded", "province_seceded", "statehood", "provinces_annexed", "claimed_land", "colony_seized",
+                                 "land_purchased", "independence_backed", "acquisition_completed", "land_sold_to_rival", "territory_seized"]
+
+    /// Going forward: an engine file that adds a nation to the board also logs a founding event, so Nova's column
+    /// hears about every new state; and the README's play-history table names the founding events.
+    func testEveryEngineFileThatAddsANationLogsIt() throws {
+        let engine = root.appendingPathComponent("Shared/Engine")
+        let files = try XCTUnwrap(FileManager.default.enumerator(atPath: engine.path)).compactMap { $0 as? String }.filter { $0.hasSuffix(".swift") }
+        var checked = 0
+        for f in files {
+            let text = try String(contentsOf: engine.appendingPathComponent(f), encoding: .utf8)
+            guard text.contains("gs.countries.append(") else { continue }
+            checked += 1
+            XCTAssertTrue(Self.foundingEvents.contains { text.contains("logPlayEvent(\"\($0)\"") },
+                          "\(f) adds a nation to the board but logs no founding event (\(Self.foundingEvents.joined(separator: ", ")))")
+        }
+        XCTAssertGreaterThan(checked, 3)
+        let readme = try String(contentsOf: root.appendingPathComponent("README.md"), encoding: .utf8)
+        for k in ["nation_founded", "province_seceded", "provinces_annexed", "statehood", "renamed_province", "alliance_revenge"] {
+            XCTAssertTrue(readme.contains("`\(k)`"), "README's play history table names \(k)")
+        }
+    }
+}

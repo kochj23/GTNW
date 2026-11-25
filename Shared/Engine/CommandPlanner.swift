@@ -299,6 +299,7 @@ extension GameEngine {
             return .rejected("No actions left this \(gs.turnLength.displayName.lowercased()). End the turn first.")
         }
         if let play = HomePlay(verb: verb) { return planHomePlay(play, intent, source: source) }   // 3.36.0
+        if let home = planOwnStateForce(intent, verb: verb, source: source) { return home }   // 3.37.0: "invade Texas"
         if let op = verb.antarcticOrder { return planAntarctic(op, intent: intent, source: source) }   // 3.36.0
         // Names → targets (or a question back).
         var targets: [ResolvedTarget] = []

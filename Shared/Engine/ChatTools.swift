@@ -101,9 +101,9 @@ enum ChatTools {
                     "detail": ["type": "string", "maxLength": maxArgString,
                                "description": "power plays only: limitedStrike kind (precision, boats, facility, nuclearFacility); emergencyTariffs/reissue legal authority (e.g. nationalSecurity232, emergencyEconomic); emergency reason (trade, security, border, publicOrder, energy)"],
                     // 3.36.0: verb "rename": the President's country ("me") or lands he holds, each with its new name.
-                    "name": ["type": "string", "maxLength": NameScreen.maxLength, "description": "verb rename: the new name for the one target"],
+                    "name": ["type": "string", "maxLength": NameScreen.maxLength, "description": "verb rename: the new name. With several targets, or a target like 'all my states', 'all my territories' or 'all of Africa', the places are numbered: the name, then the name 2, 3…"],
                     "renames": ["type": "array", "maxItems": CommandParser.maxRenames,
-                                "description": "verb rename, several at once: [{target, name}]; target 'me' is the President's own country. Only his country and lands he holds (game_status held_lands).",
+                                "description": "verb rename, several at once: [{target, name}]; target 'me' is the President's own country; a target may also be 'all my states', 'all my territories', 'all of <region>' or 'A, B and C'. Only his country and lands he holds (game_status held_lands).",
                                 "items": ["type": "object", "properties": ["target": str("Land or 'me'"), "name": ["type": "string", "maxLength": NameScreen.maxLength]],
                                           "required": ["target", "name"]] as [String: Any]] as [String: Any],
                 ] as [String: Any],
@@ -597,8 +597,11 @@ enum ChatTools {
                 out.append(RenameRequest(target: t, name: n))
             }
         } else {
-            let t = (o["targets"] as? [Any])?.first ?? o["targets"] ?? o["target"]
-            guard let target = clean(t, maxArgString) else {
+            // 3.37.0: several targets with one name are one bulk rename (the planner numbers them: X, X II, X III…).
+            let one: [Any] = (o["targets"] ?? o["target"]).map { [$0] } ?? []
+            let list = ((o["targets"] as? [Any]) ?? one).prefix(CommandParser.maxRegionTargets)
+            let joined = list.compactMap { clean($0, maxArgString)?.replacingOccurrences(of: ",", with: " ") }.joined(separator: ", ")
+            guard let target = joined.isEmpty ? nil : joined else {
                 throw ChatToolError(message: "rename needs targets: [land or 'me'] and name, or renames: [{target, name}].")
             }
             // A missing name is planned anyway: the planner's refusal tells the model what is wrong.

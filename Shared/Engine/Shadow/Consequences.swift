@@ -17,7 +17,10 @@
 //    • After office: when the presidency ends (removed, beaten, or served out) and the record holds such acts, the
 //      end screen adds a short trial: the charges as they were written down at the time, and a verdict that
 //      follows from them. Neutral words, no embellishment.
-//  Everything is recorded in `ShadowState.consequences`; nothing here draws from the RNG.
+//    • 3.37.0: the expelling alliance answers. After the expulsion its members weigh war on the President: the angrier
+//      (relations), the nearer and the stronger a member is, the likelier it declares (`allianceRevenge*` constants,
+//      one draw from the game's seeded RNG per member, in id order). Most stand aside; the news names who went.
+//  Everything is recorded in `ShadowState.consequences`; nothing else here draws from the RNG.
 //  Repository: https://github.com/kochj23/GTNW
 //
 
@@ -119,6 +122,23 @@ enum Consequences {
     /// Why a target is protected from attack.
     enum Protection: Equatable {
         case surrendered, peace, friend(Int)
+    }
+
+    /// 3.37.0: how readily an expelling alliance's members go to war on the President (1 = as designed, 0 = never).
+    static let allianceRevengeScale = 1.0
+    /// At most this many members declare war after one expulsion.
+    static let allianceRevengeMaxWars = 8
+    /// Distance (km) at which nearness counts half.
+    static let allianceRevengeReachKm = 3000.0
+
+    /// 3.37.0: the chance (0…0.9) a member of the alliance that expelled the President declares war on him: hostility
+    /// (relations below zero), nearness, and its strength against his. Pure.
+    static func revengeChance(relations: Int, distanceKm: Double, strength: Int, playerStrength: Int) -> Double {
+        let hostility = min(1, max(0, Double(-relations) / 100))
+        let near = 1 / (1 + max(0, distanceKm.isFinite ? distanceKm : 20_000) / allianceRevengeReachKm)
+        let capacity = min(1, Double(max(0, strength)) / Double(max(1, playerStrength)))
+        let p = allianceRevengeScale * (0.1 + 0.6 * hostility) * (0.4 + 0.6 * near) * (0.3 + 0.7 * capacity)
+        return min(0.9, max(0, p))
     }
 
     /// Relations above this make a nation a friend whose bombing is a crime, not a war.
@@ -592,8 +612,47 @@ extension GameEngine {
             gs.shadow.consequences.brokenAway.append(n.id)
             gs.shadow.post("\(n.name) takes charge of its own affairs while \(vName) is under attack, and closes its ports and airfields to \(me.name).",
                            date: gs.currentDate, severity: 2)
+            // 3.37.0: a new nation on the board is news for the column, like every other founding.
+            logPlayEvent("nation_founded", detail: ["country": n.id, "name": PlayHistory.text(n.name), "reason": "broke_away", "from": c.victim,
+                                                    "game_date": PlayHistory.day(gs.currentDate)])
         }
         self.gameState = gs
+        allianceRevenge(c)   // 3.37.0
+    }
+
+    /// 3.37.0: the members of the alliance that expelled the President decide whether to go to war with him. Each
+    /// member not already at war with him draws once (in id order) against `Consequences.revengeChance`; the victim is
+    /// already fighting. Declarations go through `declareWar` (the `war_declared` play event, DEFCON, the war record).
+    func allianceRevenge(_ c: AllianceCouncil) {
+        guard c.bloc, let gs = gameState, let me = gs.getPlayerCountry() else { return }
+        let vName = gs.getCountry(id: c.victim)?.name ?? c.victim
+        var going: [String] = [], staying: [String] = []
+        for id in c.members.sorted() where id != c.victim && id != me.id {
+            guard let m = gs.getCountry(id: id), !m.isDestroyed, m.territoryOf == nil, !m.atWarWith.contains(me.id) else { continue }
+            let p = Consequences.revengeChance(relations: m.diplomaticRelations[me.id] ?? 0, distanceKm: Reach.nearestKm(id, me.id, in: gs),
+                                               strength: m.militaryStrength, playerStrength: me.militaryStrength)
+            let roll = Double.random(in: 0..<1, using: &gs.rng)
+            if roll < p, going.count < Consequences.allianceRevengeMaxWars { going.append(id) } else { staying.append(m.name) }
+        }
+        self.gameState = gs
+        for id in going {
+            guard let m = gameState?.getCountry(id: id) else { continue }
+            declareWar(aggressor: id, defender: me.id, scripted: true)
+            gameState?.shadow.post("\(m.name) declares war on \(me.name) over the attack on \(vName), a fellow member of \(c.alliance).",
+                                   date: gs.currentDate, severity: 3)
+        }
+        let names = going.compactMap { gameState?.getCountry(id: $0)?.name }
+        let line: String
+        if names.isEmpty {
+            line = "\(c.alliance)'s members condemn \(me.name); none goes to war over \(vName)."
+        } else {
+            line = "Of \(c.alliance)'s members, \(Consequences.list(names)) \(names.count == 1 ? "goes" : "go") to war with \(me.name)"
+                + (staying.isEmpty ? "." : "; the rest stand aside.")
+        }
+        gameState?.shadow.post(line, date: gs.currentDate, severity: names.isEmpty ? 1 : 3)
+        addLog("⚔️ \(line)", type: .warning)
+        logPlayEvent("alliance_revenge", detail: ["alliance": PlayHistory.text(c.alliance), "victim": c.victim, "declared": going,
+                                                  "stood_aside": staying.count, "game_date": PlayHistory.day(gs.currentDate)])
     }
 
 }
