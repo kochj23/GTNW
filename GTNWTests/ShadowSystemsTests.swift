@@ -860,7 +860,9 @@ final class UnclaimedLandTests: XCTestCase {
         for bad in ["New\nAlbion", "New\rAlbion", "New\u{2028}Albion", "Nul\u{0}l", "Bell\u{7}", "Esc\u{1B}[31m", "Tab\there"] {
             XCTAssertNil(CombatModel.validTerritoryName(bad), bad.debugDescription)
         }
-        for odd in ["<script>alert(1)</script>", "Robert'); --", "%@%n%s", "**bold** [x](http://e.vil)", "{{name}} $(rm -rf)"] {
+        // 3.36.0: an address is refused like any other name the content rules forbid (no hosts on the map).
+        XCTAssertNil(CombatModel.validTerritoryName("**bold** [x](http://e.vil)"))
+        for odd in ["<script>alert(1)</script>", "Robert'); --", "%@%n%s", "{{name}} $(rm -rf)"] {
             XCTAssertEqual(CombatModel.validTerritoryName(odd), odd, "kept verbatim, shown as plain text")
         }
     }

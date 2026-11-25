@@ -344,7 +344,11 @@ final class PresidencyEpilogueTests: XCTestCase {
         try R336E.annex(gs, "ISL"); try R336E.annex(gs, "NOR"); try R336E.annex(gs, "IRL")
         XCTAssertTrue(e.renameTerritory("ISL", to: "Q"))
         XCTAssertTrue(e.renameTerritory("NOR", to: "Asdfjkl"))
-        XCTAssertTrue(e.renameTerritory("IRL", to: "Sarin Bay"))
+        // 3.36.0: the content check refuses it now; an older save may still hold it.
+        XCTAssertFalse(e.renameTerritory("IRL", to: "Sarin Bay"))
+        let irl = try XCTUnwrap(gs.countries.firstIndex { $0.id == "IRL" })
+        gs.shadow.renames.append(RenameRecord(land: "IRL", from: gs.countries[irl].name, to: "Sarin Bay", date: gs.currentDate))
+        gs.countries[irl].name = "Sarin Bay"
         let isl = try XCTUnwrap(gs.countries.firstIndex { $0.id == "ISL" })
         gs.countries[isl].stability = 80
         let grl = try XCTUnwrap(gs.countries.firstIndex { $0.id == "NOR" })

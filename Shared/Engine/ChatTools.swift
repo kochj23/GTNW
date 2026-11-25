@@ -435,7 +435,8 @@ enum ChatTools {
             d["also"] = ["attack (any mix of ground, air and naval; set all for everything)", "declareWar", "navalStrike", "showOfForce",
                          "claim (unclaimed land)", "buy (a colony)", "liberate (back a colony's independence)",
                          "limitedStrike", "captureLeader", "acquire", "pressure", "posture", "frameworkDeal", "escalateCampaign",
-                         "emergency", "endEmergency", "emergencyTariffs", "reissue", "rename (your country, a land you hold, a sea, strait, mountain or department; no action)"]
+                         "emergency", "endEmergency", "emergencyTariffs", "reissue", "rename (your country, a land you hold, a sea, strait, mountain or department; no action)",
+                         "renamePlace (the same as rename)"]
         }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }

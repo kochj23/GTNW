@@ -80,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sexual terms, names mocking a faith and hostility toward a people are refused with a neutral one-line reason;
   crude jokes and gibberish ("ShitGibbon", "asdfasdf") stay allowed. An old save holding a name that is now refused
   shows the land's real name instead (map, news, war log, name book).
+- **One rename path:** seas, straits, mountains and departments (power plays) are renamed through the same RENAME
+  card, check and Hall of Cartography as your country and your lands; the chief of staff can mix them on one card.
 
 ## [3.35.1] - 2026-11-24 — Whole continents
 
