@@ -22,6 +22,7 @@ extension GameEngine {
 
     /// Seed profiles, budget, aid pool and the opening snapshot for a fresh game.
     func setupShadowSystems(electionsEnabled: Bool = ShadowSettings.electionsEnabled()) {
+        refreshRegime()   // 3.37.0
         guard let gs = gameState else { return }
         for i in gs.countries.indices where gs.countries[i].leaderProfile == nil {
             gs.countries[i].leaderProfile = CountryProfile.derived(from: gs.countries[i])
@@ -80,6 +81,7 @@ extension GameEngine {
         let from = gs.previousTurnDate, to = gs.currentDate
         let scale = gs.scale
 
+        refreshRegime()   // 3.37.0: the player's government, before anything this turn speaks in its words
         applyOverdueSettlements()
         processFleets()
         processWMDPrograms()
@@ -919,10 +921,11 @@ extension GameEngine {
             let stage = PopularityModel.nextImpeachmentStage(current: gs.shadow.impeachmentStage, popularity: gs.shadow.popularity,
                                                              ruthlessness: gs.shadow.ruthlessness, congress: player.congressionalSupport)
             // 3.11.0: other nations' leaders fall their own way (no-confidence, coup, party congress…).
-            let mechanism = NationModel.removal(player, on: to)
+            // 3.37.0: the player's own government decides how (Regime.swift): the Holy See, a reigning monarch…
+            let mechanism = gs.shadow.regime?.removal ?? NationModel.removal(player, on: to)
             if stage != gs.shadow.impeachmentStage {
                 if stage > 0 && (stage < 4 || mechanism == .impeachment) { gs.shadow.post(mechanism.stageText(stage), date: to, severity: stage >= 3 ? 3 : 2) }
-                else { gs.shadow.post(mechanism == .impeachment ? "Congress drops its investigation of the White House." : "The threat to your leadership passes.", date: to, severity: 1) }
+                else { gs.shadow.post(mechanism.dropText, date: to, severity: 1) }
                 gs.shadow.impeachmentStage = stage
                 if stage >= 4 && mechanism != .impeachment {
                     endPresidency(mechanism.ending)
@@ -955,7 +958,10 @@ extension GameEngine {
 
         // Assassination.
         let pAssassin = scale.probability(annual: PopularityModel.assassinationAnnualProbability(popularity: gs.shadow.popularity, ruthlessness: gs.shadow.ruthlessness))
-        if gs.shadow.domesticEnding == nil && Double.random(in: 0..<1, using: &gs.rng) < pAssassin { endPresidency(.assassinated) }
+        // 3.37.0: the roll is always made (the same draws in every game); a pope's pontificate does not end this way here.
+        if gs.shadow.domesticEnding == nil && Double.random(in: 0..<1, using: &gs.rng) < pAssassin && gs.shadow.regime?.kind != .papacy {
+            endPresidency(.assassinated)
+        }
 
         // Civil war.
         if gs.shadow.domesticEnding == nil && player.profile.outcry > 90 && player.stability < 15 { endPresidency(.civilWar) }
@@ -972,10 +978,11 @@ extension GameEngine {
     func endPresidency(_ ending: DomesticEnding) {
         guard let gs = gameState, gs.shadow.domesticEnding == nil else { return }
         gs.shadow.domesticEnding = ending
-        gs.shadow.post(ending.headline, date: gs.currentDate, severity: 3)
+        gs.shadow.post(ending.headline, date: gs.currentDate, severity: 3)   // the ticker puts it in the regime's words
         addLog("🏛️ \(ending.headline)", type: .critical)
         switch ending {
-        case .impeached, .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal: ShadowPack.shared.play("sfx.lockdown")
+        case .impeached, .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal, .removedByCouncil, .abdicated:
+            ShadowPack.shared.play("sfx.lockdown")
         case .assassinated: ShadowPack.shared.play("sfx.gunshot")
         default: break
         }
@@ -1091,7 +1098,7 @@ extension GameEngine {
         let lines = new.map(\.message).filter { !$0.isEmpty }
         let target = getCountry(targetID)?.name ?? targetID
         let success: Bool? = new.contains { $0.type == .error } ? false : (lines.isEmpty ? nil : true)
-        actionResult = ActionReport(title: "\(action.rawValue) — \(target)",
+        actionResult = ActionReport(title: "\(action.title(in: gameState)) — \(target)",
                                     lines: lines.isEmpty ? ["The order was carried out. No immediate change was reported."] : lines,
                                     success: success)
     }
@@ -1180,6 +1187,7 @@ extension GameEngine {
         crisisManager.activeCrisis = nil
         showingGameOver = false
         gameState = gs
+        refreshRegime()   // 3.37.0: older saves have none
         if gs.shadow.startSnapshot == nil { setupShadowSystems(electionsEnabled: gs.shadow.electionsEnabled) }
         resetWorldWatch()
         // Continuing a save is a new sitting: a new play session that notes where it picked up.

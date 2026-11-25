@@ -336,7 +336,7 @@ class VictoryChecker {
 
         // Domestic endings: lost election, impeachment, assassination, civil war
         if let ending = gameState.shadow.domesticEnding, !ending.servedOut {
-            return (true, ending.headline)
+            return (true, gameState.endingHeadline(ending))   // 3.37.0: in the regime's words
         }
 
         // Player country destroyed

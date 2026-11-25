@@ -126,7 +126,7 @@ enum ElectionQuery: BridgeQuery {
         let ending = gs.shadow.domesticEnding
         return Result(usa: usa, electionsEnabled: gs.shadow.electionsEnabled, electionLine: TopBarQuery.electionLine(gs),
                       rules: rules, stages: stages, campaign: campaign, lastElection: gs.shadow.lastElection.map(night),
-                      ending: ending?.rawValue, endingTitle: ending.map(endingTitle), endingHeadline: ending?.headline)
+                      ending: ending?.rawValue, endingTitle: ending.map { gs.say(endingTitle($0)) }, endingHeadline: ending.map(gs.endingHeadline))
     }
 
     static func seats(_ n: Int) -> String { n == 0 ? "no change in seats" : (n > 0 ? "gained \(n) seats" : "lost \(-n) seats") }
@@ -195,6 +195,9 @@ enum ElectionQuery: BridgeQuery {
         case .juntaDecision: return "REPLACED BY THE JUNTA"
         case .royalDismissal: return "DISMISSED BY THE CROWN"
         case .ruleExtended: return "NO ELECTION"
+        case .removedByCouncil: return "REMOVED BY THE ASSEMBLY"
+        case .resigned: return "RESIGNATION"
+        case .abdicated: return "ABDICATION"
         }
     }
 }

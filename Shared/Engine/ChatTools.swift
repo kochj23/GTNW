@@ -406,7 +406,7 @@ enum ChatTools {
             "popularity_percent": Int(gs.shadow.popularity.rounded()),
             "recent_polls": Array(polls),
             "public_approval_percent": me.publicApproval, "stability": me.stability,
-            "impeachment": ["none", "Congress investigating", "articles of impeachment", "trial in the Senate"][max(0, min(3, gs.shadow.impeachmentStage))],
+            "impeachment": gs.say(["none", "Congress investigating", "articles of impeachment", "trial in the Senate"][max(0, min(3, gs.shadow.impeachmentStage))]),
             "public_outrage": gs.shadow.ruthlessness > 30 ? "high" : (gs.shadow.ruthlessness > 10 ? "rising" : "low"),
             "notable_news": gs.shadow.ticker.filter { $0.severity >= 1 }.suffix(8).map { "\(GameCalendar.format($0.date)): \($0.text)" },
         ]

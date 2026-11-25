@@ -183,13 +183,16 @@ enum ToldYouSo {
     /// The danger warnings (level 2) he clicked past on a major order. The Secretary of State and the Vice President
     /// are people in the cabinet; the Joint Chiefs speak as one.
     static func recordDangers(_ gs: GameState, warnings: [AdvisorWarning], order: String) {
+        // 3.37.0: the warnings arrive in the regime's words ("Foreign Minister", "Deputy Prime Minister").
+        let state = gs.say("Secretary of State"), deputy = gs.say("Vice President")
         for w in warnings where w.level >= 2 {
-            if w.who.hasPrefix("Secretary of State") {
+            if w.who.hasPrefix(state) {
                 let a = AdviceEngine.advisor(for: "state", in: gs.advisors)
-                record(gs, advisor: a, name: a?.name ?? "", title: "Secretary of State", text: w.text, order: order)
-            } else if w.who == "Vice President" {
-                let a = gs.advisors.first { $0.isActive && $0.title.contains("Vice President") }
-                record(gs, advisor: a, name: a?.name ?? "", title: "Vice President", text: w.text, order: order)
+                record(gs, advisor: a, name: a?.name ?? "", title: state, text: w.text, order: order)
+            } else if w.who == deputy {
+                let a = gs.playerCountryID == "USA" ? gs.advisors.first { $0.isActive && $0.title.contains("Vice President") }
+                    : AdviceEngine.advisor(for: "whc", in: gs.advisors)
+                record(gs, advisor: a, name: a?.name ?? "", title: deputy, text: w.text, order: order)
             } else {
                 record(gs, advisor: nil, name: "", title: "the \(w.who)", text: w.text, order: order)
             }
@@ -217,7 +220,7 @@ enum ToldYouSo {
 
     /// The testimony when Congress moves (or the inquiry, where there is no Congress).
     static func testimonyText(_ w: OverruledWarning, gs: GameState) -> String {
-        let lead = gs.playerCountryID == "USA" ? "Impeachment hearings" : "The inquiry into the leader's conduct"
+        let lead = gs.playerCountryID == "USA" ? "Impeachment hearings" : (gs.shadow.regime?.removal.inquiryLead ?? "The inquiry into the leader's conduct")
         let date = GameCalendar.format(w.date)
         if w.name.isEmpty {
             return "\(lead): the warning \(w.title) gave on \(date) is read into the record: \"\(quote(w.text))\""
@@ -324,7 +327,8 @@ enum PresidencyAwards {
     static func award(_ id: String) -> PresidencyAward? { all.first { $0.id == id } }
 
     /// Ways out of office that count as being removed.
-    static let removals: Set<DomesticEnding> = [.impeached, .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal]
+    static let removals: Set<DomesticEnding> = [.impeached, .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal,
+                                                .removedByCouncil, .resigned, .abdicated]
 
     static func isSingleLetter(_ name: String) -> Bool {
         let t = name.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".")))
@@ -419,12 +423,14 @@ enum PresidencyEpilogue {
     /// The leader's name: the president for the United States, the head of government elsewhere.
     static func leaderName(_ gs: GameState) -> String {
         if gs.playerCountryID == "USA", let p = PlaySummary.president(gs) { return p }
+        // 3.37.0: a pope is never given a real name in this game; others fall back to their own title.
+        if gs.shadow.regime?.kind == .papacy { return "The Pope" }
         if let n = gs.shadow.playerLeader, !n.isEmpty { return n }
         if let c = gs.getPlayerCountry() {
             let h = NationModel.leader(for: c, on: gs.startDate)
             if !h.generic { return h.name }
         }
-        return "The President"
+        return gs.shadow.regime?.leaderFallback ?? "The President"
     }
 
     /// A name the President chose, if it may be shown (a name that breaks the content rules never is).
@@ -449,6 +455,9 @@ enum PresidencyEpilogue {
             case .termLimited, .retired: return "and served the full term"
             case .deniedRenomination: return "and was denied renomination by the party"
             case .ruleExtended: return "and stayed in power without an election"
+            case .removedByCouncil: return "and was removed by the Assembly of Experts"
+            case .resigned: return "and resigned the papacy under mounting pressure"
+            case .abdicated: return "and abdicated when the government fell"
             }
         }
         if let v = victory { return "and left office in victory (\(v.rawValue.lowercased()))" }
@@ -472,7 +481,7 @@ enum PresidencyEpilogue {
         s.append(opening + ".")
         let wars = gs.shadow.playerWarsStarted
         if wars > 0 {
-            s.append("The administration started \(wars) war\(wars == 1 ? "" : "s") and won \(gs.warsWon).")
+            s.append("\(governmentNoun(gs)) started \(wars) war\(wars == 1 ? "" : "s") and won \(gs.warsWon).")
         }
         if let v = r.lostToSmaller.first {
             s.append("It lost a war to \(name(v)), a far smaller power.")
@@ -510,10 +519,21 @@ enum PresidencyEpilogue {
         return s.joined(separator: " ")
     }
 
+    /// "The administration" (the United States), "The Holy See", or "The government".
+    static func governmentNoun(_ gs: GameState) -> String {
+        gs.playerCountryID == "USA" ? "The administration" : (gs.shadow.regime?.kind == .papacy ? "The Holy See" : "The government")
+    }
+
     static func closing(_ gs: GameState, victory: VictoryType?, strikes: Int) -> String {
         let removed = gs.shadow.domesticEnding.map(PresidencyAwards.removals.contains) ?? false
         let pool: [String]
-        if strikes > 0 || removed || gs.shadow.presidency.friendsAttacked.count > 0 {
+        if gs.shadow.regime?.kind == .papacy {
+            // 3.37.0: measured about the office; the judgment is on the decisions.
+            pool = strikes > 0 || removed || gs.shadow.presidency.friendsAttacked.count > 0
+                ? ["Historians record it as a sharp break with the Holy See's long tradition of neutrality.",
+                   "Historians treat it as a turbulent chapter, judged by its decisions."]
+                : ["Historians give it a short, respectful chapter.", "Historians record it as a quiet pontificate."]
+        } else if strikes > 0 || removed || gs.shadow.presidency.friendsAttacked.count > 0 {
             pool = ["Historians rank it near the bottom, just above the ones nobody remembers.",
                     "Historians still argue about it, mostly over which chapter it belongs in.",
                     "Historians are unanimous, which is rarely good news."]
@@ -529,7 +549,7 @@ enum PresidencyEpilogue {
 
     /// The verdict shown: the polished one if a local AI gave one that kept to the facts, else the template.
     static func verdict(_ gs: GameState, victory: VictoryType?) -> String {
-        gs.shadow.presidency.verdict ?? verdictTemplate(gs, victory: victory)
+        gs.say(gs.shadow.presidency.verdict ?? verdictTemplate(gs, victory: victory))   // 3.37.0: the regime's words
     }
 
     /// A polished paragraph, or nil when it can't be trusted: a reasoning scratchpad, a link or markup, a content
@@ -566,6 +586,9 @@ enum PresidencyEpilogue {
     static func library(_ gs: GameState) -> String {
         let leader = leaderName(gs)
         let country = gs.getPlayerCountry()
+        if gs.shadow.regime?.kind == .papacy {   // 3.37.0: the Holy See keeps its papers in its own archive
+            return "The papers of the pontificate, in the Vatican Apostolic Archive"
+        }
         let kind = gs.playerCountryID == "USA" ? "Presidential Library" : "State Library"
         let countryName = country?.name ?? gs.playerCountryID
         let held = gs.nameBook.first { gs.isHeldByPlayer($0.land) }
@@ -744,13 +767,14 @@ extension GameEngine {
             if first.contains(id) { addLog("🏅 Award: \(a.name) — \(a.description).", type: .info) }
         }
         let template = PresidencyEpilogue.verdictTemplate(gs, victory: victory)
-        logPlayEvent("history_verdict", detail: ["text": PlayHistory.text(template), "library": PlayHistory.text(PresidencyEpilogue.library(gs))])
+        logPlayEvent("history_verdict", detail: ["text": PlayHistory.text(gs.say(template)), "library": PlayHistory.text(PresidencyEpilogue.library(gs))])
         #if !GTNW_CORE
         for id in first { store?.unlockAchievement(id) }
         if !first.isEmpty && !AudioGate.underXCTest { Task { @MainActor in AchievementEngine.shared.reload() } }
         #endif
         self.gameState = gs
-        guard let polish = PresidencyEpilogue.polisher else { return }
+        // 3.37.0: no AI-written text about a religious office; the template stands.
+        guard let polish = PresidencyEpilogue.polisher, ![.papacy, .theocracy].contains(gs.shadow.regime?.kind) else { return }
         let prompt = "Facts (keep every one, add none):\n" + template
         Task { @MainActor in
             guard let reply = await polish(prompt), let text = PresidencyEpilogue.cleanPolish(reply, template: template),

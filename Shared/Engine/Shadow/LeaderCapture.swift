@@ -98,7 +98,7 @@ extension GameEngine {
     }
 
     /// The cabinet's read-out: the odds, the law, the world, the politics.
-    func captureWarnings(_ target: String) -> [AdvisorWarning] {
+    func rawCaptureWarnings(_ target: String) -> [AdvisorWarning] {   // 3.37.0: see Regime.swift
         guard let gs = gameState, let me = gs.getPlayerCountry(), let t = gs.getCountry(id: target) else { return [] }
         let odds = captureOdds(target)
         let jcs = AdvisorWarning(who: "Joint Chiefs", text: "Odds \(Int(odds * 100))%. If it fails, the team is killed or taken, or it turns into a firefight and a war.",

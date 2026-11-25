@@ -212,7 +212,7 @@ extension GameEngine {
     }
 
     /// The cabinet's read-out on a campaign step.
-    func campaignWarnings(_ land: String, step: CampaignStep) -> [AdvisorWarning] {
+    func rawCampaignWarnings(_ land: String, step: CampaignStep) -> [AdvisorWarning] {   // 3.37.0: see Regime.swift
         guard let gs = gameState, let t = acquisitionTarget(land) ?? openCampaign(land).flatMap({ c in gs.getCountry(id: c.owner).map { (c.kind, $0, c.label) } }) else { return [] }
         var c = openCampaign(land) ?? AcquisitionCampaign(land: land, owner: t.owner.id, kind: t.kind, label: t.label, started: gs.currentDate,
                                                           lastMove: gs.currentDate, stage: .offered, price: acquisitionPrice(land, kind: t.kind, owner: t.owner),

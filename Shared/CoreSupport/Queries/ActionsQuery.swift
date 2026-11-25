@@ -26,6 +26,8 @@ enum ActionsQuery: BridgeQuery {
     struct Action: Encodable {
         /// The order's name, as `act` takes it ("Send Ambassador").
         var id: String
+        /// 3.37.0: the order as the player's nation gives it ("Start a Secret Chemical Program", "Ask Italy: Air Strike").
+        var title: String
         var rung: Int
         var category: String
         var hostile: Bool
@@ -64,12 +66,13 @@ enum ActionsQuery: BridgeQuery {
         let actions = PresidentialAction.allCases.filter { $0.isAvailable(on: gs.currentDate, in: gs) }.map { a -> Action in
             let kinds = AttackSizing.kinds(for: a)
             var problem = a.wmd != nil ? e.wmdProblem(a) : nil
-            if problem == nil, let k = kinds.first(where: { AttackSizing.available($0, in: gs) <= 0 }) {
+            let asksAlly = RegimeCapability.needsAlly(a, in: gs)   // 3.37.0: an ally's forces, not ours
+            if problem == nil, !asksAlly, let k = kinds.first(where: { AttackSizing.available($0, in: gs) <= 0 }) {
                 problem = "Nothing to send: no \(k.label.lowercased()) available."
             }
             let odds = player.flatMap { p in target.map { QueryText.round2(AdviceEngine.successEstimate(action: a, player: p, target: $0)) } }
-            return Action(id: a.rawValue, rung: a.rung.rawValue, category: a.category.rawValue, hostile: a.isHostile,
-                          description: a.description, cost: QueryText.dollars(a.cost), risk: a.riskLevel.rawValue, odds: odds,
+            return Action(id: a.rawValue, title: a.title(in: gs), rung: a.rung.rawValue, category: a.category.rawValue, hostile: a.isHostile,
+                          description: a.description(in: gs), cost: QueryText.dollars(a.cost), risk: a.riskLevel.rawValue, odds: odds,
                           problem: problem, major: MajorAction.isMajor(a), sizedBy: kinds.map(\.rawValue))
         }
         return Result(target: target?.id, targetName: target?.name, usable: usable, actionsRemaining: gs.actionsRemaining,

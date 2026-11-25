@@ -110,6 +110,7 @@ class GameEngine: ObservableObject {
         advisors = Advisor.trumpCabinet()
         crisisManager.currentYear = { [weak self] in self?.gameState?.currentYear }
         crisisManager.playerNation = { [weak self] in self?.gameState?.getPlayerCountry() }
+        crisisManager.adapt = { [weak self] c in self?.gameState.map { RegimeCapability.adapt(c, in: $0) } ?? c }   // 3.37.0
         crisisManager.shadowChoice = { [weak self] choice, gs in ShadowChoice.apply(choice, engine: self, to: gs) }
         crisisManager.onResolved = { [weak self] crisis, option, worked in
             self?.logCrisisDecision(crisis, option: option, worked: worked)
@@ -157,7 +158,8 @@ class GameEngine: ObservableObject {
         // 3.11.0: another nation's leader gets that nation's real cabinet for the date, and no U.S. presidential elections.
         if playerCountryID != "USA", let gs = gameState, let me = gs.getPlayerCountry() {
             gs.advisors = NationModel.cabinet(for: me, on: gs.currentDate)
-            gs.shadow.playerLeader = NationModel.leader(for: me, on: gs.currentDate).name
+            let name = NationModel.leader(for: me, on: gs.currentDate).name
+            gs.shadow.playerLeader = name.isEmpty ? nil : name   // 3.37.0: no name on record, no blank leader
             setupShadowSystems(electionsEnabled: false)
         } else {
             setupShadowSystems()
@@ -1913,7 +1915,7 @@ class GameEngine: ObservableObject {
 
     /// Add log message
     func addLog(_ message: String, type: LogType) {
-        let message = gameState.map { EraWords.localizeAlert(message, year: $0.currentYear) } ?? message   // 3.28.0
+        let message = gameState.map { EraWords.localizeAlert($0.say(message), year: $0.currentYear) } ?? message   // 3.28.0; 3.37.0 regime
         let logMessage = LogMessage(message: message, type: type, timestamp: Date())
         logMessages.append(logMessage)
 
@@ -1984,6 +1986,7 @@ extension GameEngine {
 
     func executeShadowPresidentAction(_ action: PresidentialAction, from playerID: String, to targetID: String, size: AttackSize? = nil, warhead: WarheadType? = nil) {
         guard var gameState = gameState else { return }
+        if askAllyIfUnarmed(action, from: playerID, to: targetID) { return }   // 3.37.0: no forces of our own (RegimeCapability)
         // 3.4.0: the President's sizing step (see AttackSizing). nil = the pre-3.4 attack; Standard is identical.
         let kinds = AttackSizing.kinds(for: action)
         let sized = size.map { AttackSizing.clamp($0, for: action, in: gameState) }

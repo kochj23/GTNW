@@ -23,6 +23,9 @@ enum DomesticEnding: String, Codable, CaseIterable {
     case noConfidence, coup, revolution, partyCongress, juntaDecision, royalDismissal
     /// 3.36.0: the President stayed in power past his term (defied the limit or postponed the election, and won).
     case ruleExtended
+    /// 3.37.0 (Regime.swift): removed by the Assembly of Experts; a pope who resigns under pressure; a monarch who
+    /// abdicates when the government falls.
+    case removedByCouncil, resigned, abdicated
 
     /// 3.28.0: the presidency ran its full course (term limit or chose not to run): a finish, not a defeat.
     var servedOut: Bool { self == .termLimited || self == .retired }
@@ -43,6 +46,9 @@ enum DomesticEnding: String, Codable, CaseIterable {
         case .juntaDecision: return "The junta votes to replace you."
         case .royalDismissal: return "The monarch dismisses you from office."
         case .ruleExtended: return "No election is held. You remain in office indefinitely; the republic you swore to preserve is not the one you lead."
+        case .removedByCouncil: return "The Assembly of Experts removes you from office."
+        case .resigned: return "You resign the papacy, as a pope last did in 2013. The College of Cardinals gathers in conclave to elect a successor."
+        case .abdicated: return "The government has fallen and the pressure on the crown is too great. You abdicate."
         }
     }
 }
@@ -276,6 +282,9 @@ struct ShadowState: Codable {
     var antarctic = AntarcticProgram()
     /// 3.37.0: governments the President installed in nations he beat; they count as held land (HeldLands.swift).
     var installedGovernments: [String: InstalledGovernment] = [:]
+    /// 3.37.0: the player nation's government (Regime.swift): its words, how its leader falls, what it can do.
+    /// Nil for the United States and in older saves (set again when the game loads and every turn).
+    var regime: Regime?
 
     // Scenario
     var scenarioID: String?
@@ -299,6 +308,7 @@ struct ShadowState: Codable {
     var presidency = PresidencyRecord()
 
     mutating func post(_ text: String, date: Date, severity: Int = 0) {
+        let text = regime.map { $0.localize(text) } ?? text   // 3.37.0: the player government's words
         ticker.append(TickerItem(date: date, text: EraWords.localizeAlert(text, year: GameCalendar.year(of: date)), severity: severity))
         if ticker.count > 120 { ticker.removeFirst(ticker.count - 120) }
     }
@@ -331,6 +341,7 @@ struct ShadowState: Codable {
         case homeFront
         case antarctic
         case installedGovernments
+        case regime
     }
 
     init() {}
@@ -448,6 +459,7 @@ struct ShadowState: Codable {
         homeFront = (try? c.decodeIfPresent(HomeFrontState.self, forKey: .homeFront)) ?? HomeFrontState()
         antarctic = (try? c.decodeIfPresent(AntarcticProgram.self, forKey: .antarctic)) ?? AntarcticProgram()
         installedGovernments = (try? c.decodeIfPresent([String: InstalledGovernment].self, forKey: .installedGovernments)) ?? [:]
+        regime = try? c.decodeIfPresent(Regime.self, forKey: .regime)
     }
 }
 

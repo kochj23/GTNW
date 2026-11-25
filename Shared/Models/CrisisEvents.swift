@@ -258,6 +258,8 @@ class CrisisManager: ObservableObject {
     var onResolved: ((CrisisEvent, Int, Bool) -> Void)?
     /// 3.22.2: the game year, so every card is put into its era's words before the President sees it.
     var currentYear: (() -> Int?)?
+    /// 3.37.0: puts a card in the player government's words and swaps options it cannot carry out (Regime.swift).
+    var adapt: ((CrisisEvent) -> CrisisEvent)?
     /// 3.28.0: the President's nation, so cards written for the United States read right for any nation.
     var playerNation: (() -> Country?)?
     /// 3.31.0: hands a card's `shadowChoice` back to the engine (outbreak responses, intelligence posture…).
@@ -1418,6 +1420,7 @@ class CrisisManager: ObservableObject {
     func presentCrisis(_ crisis: CrisisEvent) {
         var crisis = currentYear?().map { EraWords.localize(crisis, year: $0) } ?? crisis
         if let me = playerNation?(), me.id != "USA" { crisis = NationWords.localize(crisis, for: me) }
+        if let adapt { crisis = adapt(crisis) }   // 3.37.0: the regime's words, and only options the nation can carry out
         if activeCrisis != nil {
             // Queue it; the oldest waiting decision gives way when the desk is overflowing — but never an election
             // decision (3.21.0): those jump the queue, because the calendar won't wait.

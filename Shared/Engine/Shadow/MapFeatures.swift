@@ -212,7 +212,7 @@ extension GameEngine {
     }
 
     /// The cabinet's read before a rename.
-    func renamePlaceWarnings(_ id: String) -> [AdvisorWarning] {
+    func rawRenamePlaceWarnings(_ id: String) -> [AdvisorWarning] {   // 3.37.0: see Regime.swift
         if Subdivisions.byID[id] != nil {   // 3.36.0: a state or province
             return [AdvisorWarning(who: powerPlayStateWho, text: "The people there didn't choose it: expect unrest\(id.hasPrefix("US-") ? ", and a cooler vote there next election" : "").", level: 1)]
         }

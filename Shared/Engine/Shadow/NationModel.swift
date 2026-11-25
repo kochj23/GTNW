@@ -49,6 +49,9 @@ struct NationCabinets: Decodable {
 /// How a leader falls, by form of government. Impeachment is the U.S. (or another republic's) process.
 enum RemovalMechanism: String, Codable, CaseIterable {
     case impeachment, noConfidence, coup, revolution, partyCongress, juntaDecision, royalDismissal
+    /// 3.37.0 (Regime.swift): the Assembly of Experts (a theocracy's leader), the pressure on a pope to resign (he
+    /// serves for life; the precedent is 2013), and the pressure on a reigning monarch to step aside.
+    case council, resignationPressure, abdication
 
     var title: String {
         switch self {
@@ -59,6 +62,9 @@ enum RemovalMechanism: String, Codable, CaseIterable {
         case .partyCongress: return "Party congress"
         case .juntaDecision: return "Junta decision"
         case .royalDismissal: return "Royal dismissal"
+        case .council: return "Assembly of Experts"
+        case .resignationPressure: return "Pressure to resign"
+        case .abdication: return "Abdication"
         }
     }
 
@@ -83,6 +89,15 @@ enum RemovalMechanism: String, Codable, CaseIterable {
         case (.royalDismissal, 1): return "The court lets its displeasure be known."
         case (.royalDismissal, 2): return "Rivals gain the monarch's ear."
         case (.royalDismissal, 3): return "The monarch will dismiss the government at the next poll unless favour returns."
+        case (.council, 1): return "Members of the Assembly of Experts question the Leader's course."
+        case (.council, 2): return "The Assembly of Experts meets in closed session to review the Leader's fitness to serve."
+        case (.council, 3): return "The Assembly of Experts will vote on removal at the next poll unless support recovers."
+        case (.resignationPressure, 1): return "Concern over the Holy See's course is voiced openly among the cardinals."
+        case (.resignationPressure, 2): return "Senior cardinals privately urge the Pope to consider stepping down."
+        case (.resignationPressure, 3): return "Calls for the Pope's resignation grow: a decision is expected at the next poll unless confidence returns."
+        case (.abdication, 1): return "Ministers distance themselves from the crown's decisions."
+        case (.abdication, 2): return "The government falls; no one will form a new one on the crown's present course."
+        case (.abdication, 3): return "Pressure mounts on the crown to step aside: abdication is expected at the next poll unless confidence returns."
         case (_, let s): return PopularityModel.impeachmentText(stage: s)
         }
     }
@@ -96,6 +111,9 @@ enum RemovalMechanism: String, Codable, CaseIterable {
         case .partyCongress: return .partyCongress
         case .juntaDecision: return .juntaDecision
         case .royalDismissal: return .royalDismissal
+        case .council: return .removedByCouncil
+        case .resignationPressure: return .resigned
+        case .abdication: return .abdicated
         }
     }
 }
@@ -149,7 +167,9 @@ enum NationModel {
                 return Holder(name: r[0], title: r[1], uncertain: r[4].contains("u"), acting: r[4].contains("a"), generic: false, unverified: late)
             }
         }
-        let title = NationCabinets.shared?.generic[gov]?.titles[role] ?? role.replacingOccurrences(of: "_", with: " ").capitalized
+        let override = gameID == "VAT" ? Regime(kind: .papacy, country: gameID, countryName: "", capital: "", removal: .resignationPressure)
+            .cabinetTitle(role: role) : nil   // 3.37.0: the Holy See's own offices
+        let title = override ?? NationCabinets.shared?.generic[gov]?.titles[role] ?? role.replacingOccurrences(of: "_", with: " ").capitalized
         return Holder(name: "", title: title.isEmpty ? role.replacingOccurrences(of: "_", with: " ").capitalized : title,
                       uncertain: false, acting: false, generic: true, unverified: false)
     }
@@ -157,6 +177,7 @@ enum NationModel {
     /// Government type of a nation on a date: the research's, or a guess from the game's government type.
     static func governmentType(_ c: Country, on date: Date) -> String {
         if let p = period(c.id, on: date) { return p.gov }
+        if c.id == "VAT" { return "holy_see" }   // 3.37.0: an elective monarchy for life, not a theocratic republic
         switch c.government {
         case .monarchy: return "constitutional_monarchy_parliamentary"
         case .communist: return "one_party_communist_state"
@@ -208,7 +229,8 @@ enum NationModel {
             let h = holder(c.id, role: slot.role, on: date, government: gov)
             if h.generic && slot.role == second && leader == "head_of_state" && gov.contains("presidential") { continue }
             var a = Advisor(id: "\(c.id)-\(slot.role)", name: h.display, title: h.title, department: slot.role.replacingOccurrences(of: "_", with: " ").capitalized,
-                            bio: h.generic ? "No record for this office on this date; generic title for a \(gov.replacingOccurrences(of: "_", with: " "))."
+                            bio: c.id == "VAT" ? "An office of the Holy See. No officeholder is named in this game."   // 3.37.0
+                                 : h.generic ? "No record for this office on this date; generic title for a \(gov.replacingOccurrences(of: "_", with: " "))."
                                  : "\(h.title) of \(c.name).\(h.acting ? " Acting." : "")\(h.uncertain ? " Dates uncertain." : "")",
                             expertise: 60, loyalty: 65, influence: 55, publicSupport: 50, hawkishness: 50, interventionism: 50,
                             fiscalConservatism: 50, adviceAreas: [], portraitColor: ["#4A90E2", "#D0021B", "#7ED321", "#F5A623", "#9013FE", "#50E3C2", "#B8E986"][i % 7])

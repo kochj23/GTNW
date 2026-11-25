@@ -1037,7 +1037,7 @@ struct ActionLadderSheet: View {
                             } label: {
                                 HStack {
                                     Circle().fill(a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen).frame(width: FontScale.w(7), height: FontScale.h(7))
-                                    Text(a.rawValue).font(ThemeFont.mono(11, .bold))
+                                    Text(a.title(in: gameState)).font(ThemeFont.mono(11, .bold))
                                     Spacer()
                                 }
                                 .padding(5)
@@ -1045,7 +1045,7 @@ struct ActionLadderSheet: View {
                                 .background(action == a ? GTNWColors.terminalAmber : Color.clear)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel(a.rawValue)
+                            .accessibilityLabel(a.title(in: gameState))
                             .accessibilityValue(a.isHostile ? "hostile" : "friendly")
                             .accessibilityAddTraits(action == a ? .isSelected : [])
                         }
@@ -1055,8 +1055,8 @@ struct ActionLadderSheet: View {
                 .themedPanel(retroFill: EGA.black)
                 VStack(alignment: .leading, spacing: 10) {
                     if let a = action {
-                        Text(a.rawValue.uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.neonCyan)
-                        Text(a.description).font(ThemeFont.mono(11)).foregroundColor(GTNWColors.terminalGreen)
+                        Text(a.title(in: gameState).uppercased()).font(ThemeFont.mono(13, .bold)).foregroundColor(GTNWColors.neonCyan)
+                        Text(a.description(in: gameState)).font(ThemeFont.mono(11)).foregroundColor(GTNWColors.terminalGreen)
                         ArsenalLine(action: a, gameState: gameState, problem: gameEngine.wmdProblem(a))
                         if size != nil {
                             AttackSizingPanel(action: a, size: Binding(get: { size ?? AttackSize() }, set: { size = $0 }),
@@ -1095,7 +1095,8 @@ struct ActionLadderSheet: View {
                             Button(CabinetWarningsView.proceedTitle(warnings, default: "DO IT")) { perform(a, advice: advice) }
                                 .buttonStyle(ThemedButtonStyle(color: a.isHostile ? GTNWColors.terminalRed : GTNWColors.terminalGreen, prominent: true))
                                 .disabled(gameState.actionsRemaining == 0 || gameEngine.wmdProblem(a) != nil
-                                          || AttackSizing.kinds(for: a).contains { AttackSizing.available($0, in: gameState) <= 0 })
+                                          || (!RegimeCapability.needsAlly(a, in: gameState)   // 3.37.0: an ally's forces
+                                              && AttackSizing.kinds(for: a).contains { AttackSizing.available($0, in: gameState) <= 0 }))
                         }
                     } else {
                         Text("Choose an action. The responsible advisor will tell you what they think before you commit.")

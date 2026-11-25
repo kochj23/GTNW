@@ -178,7 +178,7 @@ extension GameEngine {
     }
 
     /// The cabinet's read-out on a strike, before EXECUTE.
-    func strikeWarnings(_ target: String, kind: StrikeKind) -> [AdvisorWarning] {
+    func rawStrikeWarnings(_ target: String, kind: StrikeKind) -> [AdvisorWarning] {   // 3.37.0: see Regime.swift
         guard let gs = gameState, let t = gs.getCountry(id: target) else { return [] }
         let odds = strikeOdds(target, kind: kind)
         let esc = (gs.shadow.powerPlays.escalation[target] ?? 0) + kind.escalation * (0.5 + Double(t.aggressionLevel) / 100)

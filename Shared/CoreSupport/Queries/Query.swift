@@ -77,6 +77,7 @@ enum QueryRegistry {
         PresidencyQuery.self,
         ProvincesQuery.self,
         RecordsQuery.self,
+        RegimeQuery.self,
         RenamesQuery.self,
         ResourcesQuery.self,
         ScenariosQuery.self,

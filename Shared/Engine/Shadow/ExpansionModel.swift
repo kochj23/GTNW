@@ -274,8 +274,14 @@ extension GameEngine {
             if !gs.shadow.impeachmentWarned {
                 gs.shadow.impeachmentWarned = true
                 let next = gs.shadow.impeachmentStage + 1
-                gs.shadow.post("WARNING from the Chief of Staff: at the next monthly poll Congress moves to \(next >= 4 ? "remove you" : (next == 3 ? "a House impeachment vote" : (next == 2 ? "draft articles of impeachment" : "open impeachment hearings"))) unless approval recovers above \(Int(ExpansionModel.popularityFloor))% and the outrage fades.",
-                               date: gs.currentDate, severity: 3)
+                // 3.37.0: elsewhere the next stage is the regime's own (a confidence vote, the cardinals, the army).
+                if let m = gs.shadow.regime?.removal, m != .impeachment {
+                    gs.shadow.post("WARNING from the Chief of Staff: unless approval recovers above \(Int(ExpansionModel.popularityFloor))% and the outrage fades, the next monthly poll brings this: \(next >= 4 ? m.ending.headline : m.stageText(next))",
+                                   date: gs.currentDate, severity: 3)
+                } else {
+                    gs.shadow.post("WARNING from the Chief of Staff: at the next monthly poll Congress moves to \(next >= 4 ? "remove you" : (next == 3 ? "a House impeachment vote" : (next == 2 ? "draft articles of impeachment" : "open impeachment hearings"))) unless approval recovers above \(Int(ExpansionModel.popularityFloor))% and the outrage fades.",
+                                   date: gs.currentDate, severity: 3)
+                }
             }
         } else {
             gs.shadow.impeachmentWarned = false

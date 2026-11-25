@@ -39,7 +39,7 @@ enum AdvisorWarnings {
 
 extension GameEngine {
     /// The three lines for a major action. Empty when there is no game.
-    func advisorWarnings(for action: MajorAction) -> [AdvisorWarning] {
+    func rawAdvisorWarnings(for action: MajorAction) -> [AdvisorWarning] {   // 3.37.0: advisorWarnings(for:) words them
         guard let gs = gameState, let player = gs.getPlayerCountry() else { return [] }
         let year = gs.currentYear
         let stateName = AdviceEngine.advisor(for: "state", in: gs.advisors)?.name

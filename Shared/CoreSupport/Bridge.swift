@@ -296,6 +296,7 @@ public enum GTNWBridge {
             CoreRunLoop.reset()
             let e = engine ?? GameEngine()
             e.gameState = gs
+            e.refreshRegime()   // 3.37.0: older saves have none
             engine = e
             logSeen = e.logMessages.count
             tickerSeen = Set(gs.shadow.ticker.map(\.id))

@@ -275,7 +275,8 @@ enum Consequences {
 
     /// Endings that put a former President before a court: removed, beaten at the polls, or out at the end of a term.
     static let trialEndings: Set<DomesticEnding> = [.impeached, .lostElection, .termLimited, .retired, .deniedRenomination,
-                                                    .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal]
+                                                    .noConfidence, .coup, .revolution, .partyCongress, .juntaDecision, .royalDismissal,
+                                                    .removedByCouncil, .resigned, .abdicated]
 
     /// The counts on the record: what was written down at the time, plus treaty-banned tactics used openly or
     /// traced back. Oldest first.

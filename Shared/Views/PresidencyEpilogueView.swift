@@ -19,7 +19,7 @@ struct PresidencyEpilogueView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("AFTER THE PRESIDENCY")
+            Text(verbatim: gameState.say("AFTER THE PRESIDENCY"))   // 3.37.0: AFTER THE PONTIFICATE, AFTER THE PREMIERSHIP
                 .font(.scaled(size: 16, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
                 .accessibilityAddTraits(.isHeader)

@@ -544,6 +544,8 @@ struct ElectionNightView: View {
 /// Header art for a domestic game over (impeachment lock-out, assassination) — pack screen or a drawn stand-in.
 struct DomesticEndingBanner: View {
     let ending: DomesticEnding
+    /// 3.37.0: the player's government, for its own words ("THE PRIME MINISTER IS DEAD"); nil for the U.S.
+    var regime: Regime? = nil
 
     var body: some View {
         Group {
@@ -566,6 +568,9 @@ struct DomesticEndingBanner: View {
             case .juntaDecision: drawn("star.slash.fill", "REPLACED BY THE JUNTA")
             case .royalDismissal: drawn("crown.fill", "DISMISSED BY THE CROWN")
             case .ruleExtended: drawn("building.columns.fill", "NO ELECTION")
+            case .removedByCouncil: drawn("person.3.fill", "REMOVED BY THE ASSEMBLY")
+            case .resigned: drawn("door.left.hand.open", "RESIGNATION")
+            case .abdicated: drawn("crown.fill", "ABDICATION")
             }
         }
         .frame(maxHeight: FontScale.h(220))
@@ -574,8 +579,9 @@ struct DomesticEndingBanner: View {
     private func drawn(_ icon: String, _ text: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: icon).font(.scaled(size: 54))
-            Text(text).font(ThemeFont.mono(20, .bold))
+            Text(regime?.localize(text) ?? text).font(ThemeFont.mono(20, .bold))
         }
+        .accessibilityElement(children: .combine)
         .foregroundColor(GTNWColors.terminalRed)
         .frame(maxWidth: .infinity, minHeight: FontScale.h(160))
         .themedPanel(retroFill: EGA.black)

@@ -230,8 +230,10 @@ extension GameEngine {
             return nil
         default:
             if ArsenalCatalog.stockpileExists(kind, on: date) { return nil }
-            guard let p = program else { return "No stockpile exists: the program must be restarted first." }
-            return p.ready > date ? "The restarted program is not ready until \(GameCalendar.format(p.ready))." : nil
+            // 3.37.0: a nation that never had a program starts one (RegimeCapability).
+            let fresh = gs.playerCountryID != "USA" && !RegimeCapability.hadProgram(kind, gs.playerCountryID)
+            guard let p = program else { return fresh ? "No stockpile exists: a secret program must be started first." : "No stockpile exists: the program must be restarted first." }
+            return p.ready > date ? "The \(fresh ? "secret" : "restarted") program is not ready until \(GameCalendar.format(p.ready))." : nil
         }
     }
 
@@ -241,10 +243,13 @@ extension GameEngine {
         guard let kind = action.wmd, wmdProblem(action) == nil, let gs = gameState, let player = gs.getPlayerCountry() else { return false }
         let date = gs.currentDate, year = gs.currentYear
         if action == .restartChemical || action == .restartBiological {
-            let ready = GameCalendar.calendar.date(byAdding: .year, value: ArsenalCatalog.restartLeadYears(kind), to: date) ?? date
+            // 3.37.0: restarted only where there was one; elsewhere started from nothing, and slower (RegimeCapability).
+            let restart = gs.playerCountryID == "USA" || RegimeCapability.hadProgram(kind, gs.playerCountryID)
+            let years = restart ? ArsenalCatalog.restartLeadYears(kind) : RegimeCapability.startLeadYears(kind)
+            let ready = GameCalendar.calendar.date(byAdding: .year, value: years, to: date) ?? date
             gs.shadow.wmdPrograms[kind.rawValue] = WMDProgram(kind: kind, started: date, ready: ready)
-            addLog("🧪 A secret \(kind.title.lowercased()) weapons program is restarted. Ready \(GameCalendar.format(ready)).", type: .warning)
-            gs.shadow.logWar("\(GameCalendar.format(date)): \(kind.title) weapons program secretly restarted.")
+            addLog("🧪 A secret \(kind.title.lowercased()) weapons program is \(restart ? "restarted" : "started"). Ready \(GameCalendar.format(ready)).", type: .warning)
+            gs.shadow.logWar("\(GameCalendar.format(date)): \(kind.title) weapons program secretly \(restart ? "restarted" : "started").")
             logPlayEvent("wmd_program_started", detail: ["kind": kind.rawValue, "ready": PlayHistory.day(ready), "game_date": PlayHistory.day(date)])
             self.gameState = gs
             return true
@@ -267,7 +272,7 @@ extension GameEngine {
         applyWMDCost(status, kind: kind, target: target)
         if status == .treatyBanned { noteBannedWeapon(kind.title, target: target) }   // 3.36.0: on the record
         let label = ArsenalCatalog.treatyLabel(kind, year: year)
-        gs.shadow.post("The United States uses \(kind.title.lowercased()) weapons against \(tName).\(label.map { " \($0)." } ?? "")",
+        gs.shadow.post("\(gs.playerCountryID == "USA" ? "The United States" : player.name) uses \(kind.title.lowercased()) weapons against \(tName).\(label.map { " \($0)." } ?? "")",
                        date: date, severity: 3)
         gs.shadow.logWar("\(GameCalendar.format(date)): \(kind.title) weapons used against \(tName) (\(status.label.lowercased())).")
         logPlayEvent("wmd_used", detail: ["kind": kind.rawValue, "target": target, "target_name": PlayHistory.text(tName),
@@ -292,7 +297,7 @@ extension GameEngine {
         gs.shadow.moveApproval(-c.popularity, because: "breaking a treaty")   // 3.36.0: named at the next poll
         if c.sanctions > 0, let pi = gs.countries.firstIndex(where: { $0.id == player.id }) {
             gs.countries[pi].gdp *= 1 - c.sanctions
-            gs.shadow.post("Trading partners impose sanctions on the United States.", date: gs.currentDate, severity: 2)
+            gs.shadow.post("Trading partners impose sanctions on \(player.id == "USA" ? "the United States" : player.name).", date: gs.currentDate, severity: 2)
         }
         if c.opensImpeachment && gs.shadow.impeachmentStage == 0 {
             gs.shadow.impeachmentStage = 1
@@ -308,7 +313,8 @@ extension GameEngine {
             if p.ready <= gs.currentDate { continue }
             if Double.random(in: 0..<1, using: &gs.rng) < gs.scale.probability(annual: ArsenalCatalog.restartDiscoveryAnnual) {
                 gs.shadow.wmdPrograms[key]?.discovered = true
-                gs.shadow.post("Intelligence leaks expose a secret U.S. \(p.kind.title.lowercased()) weapons program.", date: gs.currentDate, severity: 3)
+                let whose = gs.playerCountryID == "USA" ? "U.S." : (gs.getPlayerCountry().map { "\($0.name)" } ?? "U.S.")
+                gs.shadow.post("Intelligence leaks expose a secret \(whose) \(p.kind.title.lowercased()) weapons program.", date: gs.currentDate, severity: 3)
                 applyWMDCost(.treatyBanned, kind: p.kind, target: nil)
                 logPlayEvent("wmd_program_discovered", detail: ["kind": p.kind.rawValue, "game_date": PlayHistory.day(gs.currentDate)])
             }

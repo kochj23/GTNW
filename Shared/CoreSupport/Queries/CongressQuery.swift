@@ -73,7 +73,7 @@ enum CongressQuery: BridgeQuery {
             warPowers = left > 0 ? "WAR POWERS: \(left) DAYS" : "WAR POWERS: WITHDRAW \(max(0, left + CongressModel.withdrawalDays)) DAYS"
         }
         let pressure = ExpansionModel.impeachmentPressure(popularity: gs.shadow.popularity, ruthlessness: gs.shadow.ruthlessness, congress: congress)
-        let mech = p.map { NationModel.removal($0, on: gs.currentDate) } ?? .impeachment
+        let mech = gs.shadow.regime?.removal ?? p.map { NationModel.removal($0, on: gs.currentDate) } ?? .impeachment   // 3.37.0
         var kinds: [Kind] = []
         var targetName: String?
         var votes: [Vote] = []

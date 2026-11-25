@@ -188,6 +188,7 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `presidency` | | the record of the presidency (3.36): every award (this game, new, career), the career, "I told you so", and at game over the epilogue: the history books' verdict, the library, fifty years later, the trial |
 | `provinces` | `nation?` | states and provinces (3.36) of one nation this year: name (the President's and history's), kind, share, holder, occupier, unrest, electors and the last election state by state; the nations that have them |
 | `records` | | the Records tabs: the Hall of Infamy (as stored, for the front end to keep) and the age, renamed lands, empire goals, war deliberations and reasons, the fog, the debrief |
+| `regime` | | the player's own government (3.37.0): form, the leader's title, legislature, deputy, military chiefs, whether it holds elections, how its leader falls and the stage reached (in its words), forces of its own or the ally it would ask, and whether a chemical / biological program would be restarted or started |
 | `renames` | `id?, name?` | everything the President may rename (nation, lands, departments, seas and mountains, states and provinces); with `id` and `name` the app's check (`NameScreen`), the stored name and the cabinet's read; renamed features and who uses them |
 | `resources` | | territory income, extraction rates and levies (ResourcesSheet) |
 | `scenarios` | | the historical scenarios and the sittings (short scored challenges) |

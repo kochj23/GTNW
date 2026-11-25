@@ -66,12 +66,12 @@ struct ShadowPresidentMenu: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             // Title
-                            Text(action.rawValue.uppercased())
+                            Text(action.title(in: gameState).uppercased())
                                 .font(GTNWFonts.subheading())
                                 .foregroundColor(selectedCategory.color)
 
                             // Description
-                            Text(action.description)
+                            Text(action.description(in: gameState))
                                 .font(GTNWFonts.terminal(size: 14))
                                 .foregroundColor(GTNWColors.terminalGreen)
 
@@ -209,11 +209,11 @@ struct ShadowPresidentMenu: View {
                     .frame(width: FontScale.w(10), height: FontScale.h(10))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(action.rawValue)
+                    Text(action.title(in: gameState))
                         .font(GTNWFonts.terminal(size: 14, weight: .semibold))
                         .foregroundColor(selectedAction == action ? .black : GTNWColors.terminalGreen)
 
-                    Text(action.description)
+                    Text(action.description(in: gameState))
                         .font(GTNWFonts.terminal(size: 11))
                         .foregroundColor(selectedAction == action ? .black.opacity(0.7) : GTNWColors.terminalAmber.opacity(0.8))
                         .lineLimit(2)

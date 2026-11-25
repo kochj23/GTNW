@@ -57,6 +57,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its GDP), no ramp-up and nothing from the land's own yield (design choice). It goes into the funds each turn with
   the territories' cash and is shown on the Resources sheet. Older saves load with no installed governments
   (`shadow.installedGovernments`).
+- **Your own government.** Playing a nation other than the United States no longer runs it as an American
+  presidency. A regime layer (`Regime.swift`) reads the nation's form of government (the research's cabinets, the
+  game's government type, and a short table where they misdescribe it: parliamentary republics, ruling monarchies,
+  Vatican City) and gives the leader's title and the names of the legislature, the deputy, the military chiefs and
+  the seat of government. The ticker, the log, crisis cards, the cabinet's warnings, the game-over headline and banner,
+  the history books' verdict, the library and the end screen's heading use them ("AFTER THE PONTIFICATE"). A U.S. game
+  reads exactly as before.
+- **Each government falls its own way**, on the same approval and outrage track: impeachment in a presidential
+  republic, a no-confidence vote in a parliamentary one, the party leadership in a communist state, a coup under an
+  authoritarian or military regime, the Assembly of Experts in Iran, the government's fall and the crown pressed to
+  step aside in a ruling monarchy, and for the Pope (who serves for life) mounting pressure until he resigns, as a pope
+  last did in 2013. New endings `removedByCouncil`, `resigned` and `abdicated` with their own headlines, banners and
+  verdict clauses; "Impeached on Easy" still fires only for an impeachment.
+- **Only what the country has.** A nation with no meaningful military (strength under 5 and no warheads: the Vatican,
+  Monaco, San Marino, Liechtenstein, Andorra, Nauru…) asks the nearest friendly power that can act (Italy, for the
+  Vatican), and that ally decides from its relations with both sides; nobody uses weapons of mass destruction on
+  another's behalf. Crisis options are filtered at the one shared point (the Rogue Nuclear Commander's EMP strike
+  becomes "Ask Italy: EMP Strike on Silo"; a launch option is dropped for a nation without an arsenal). A chemical or
+  biological program is "restarted" only where one existed; elsewhere it is "Start a Secret … Program" and takes twice
+  as long.
+- **The Holy See's own offices** for the Vatican's cabinet (Secretary of State, Secretary for Relations with States,
+  Commander of the Swiss Guard, Commander of the Gendarmerie Corps, Director of the Holy See Press Office), no real
+  officeholder named, no AI-polished verdict for a religious office, and the Vatican Apostolic Archive in place of a
+  presidential library.
+- GTNWCore query `regime`: the player's government, its words, how its leader falls and the stage reached, and what it
+  can do. The `actions` query adds each order's `title` as the player's nation gives it.
+- Saves: `shadow.regime` (absent for the United States and in older saves; restored when a game loads and every turn).
 
 ### Fixed
 - Renaming a state from the command box or the chief of staff showed the card but EXECUTE refused it: the order
