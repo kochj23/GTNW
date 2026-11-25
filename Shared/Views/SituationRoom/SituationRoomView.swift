@@ -25,7 +25,7 @@ struct SituationRoomView: View {
 
     enum SituationSheet: String, Identifiable {
         case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space, airCampaign, unclaimed
-        case powerPlays   // 3.36.0
+        case powerPlays, homeFront   // 3.36.0
         var id: String { rawValue }
     }
 

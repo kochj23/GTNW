@@ -448,6 +448,7 @@ enum PresidencyEpilogue {
             case .lostElection: return "and lost the election"
             case .termLimited, .retired: return "and served the full term"
             case .deniedRenomination: return "and was denied renomination by the party"
+            case .ruleExtended: return "and stayed in power without an election"
             }
         }
         if let v = victory { return "and left office in victory (\(v.rawValue.lowercased()))" }

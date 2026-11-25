@@ -91,6 +91,7 @@ extension GameEngine {
         if mode == "withdraw" {
             gs.shadow.homeFront.deployments.removeAll { $0.state == state }
             self.gameState = gs
+            if let o = liveEmergencyOrder(.deployment, target: state) { endEmergencyOrder(o.id, status: .rescinded, why: "the troops came home") }
             homeStateNudge(state, by: -5)
             gs.shadow.post("Federal troops leave \(name). The governor resumes command of the state's guard.", date: gs.currentDate, severity: 1)
             addLog("🏛️ Federal troops withdrawn from \(name).", type: .info)
@@ -122,11 +123,16 @@ extension GameEngine {
                 gs.shadow.homeFront.deployments.removeAll { $0.state == d.state }
                 continue
             }
+            // Under the Insurrection Act the emergency-powers court rules; struck down (or withdrawn), the troops leave.
+            if let o = homeFrontOrder(d), !o.status.isLive {
+                gs.shadow.homeFront.deployments.removeAll { $0.state == d.state }
+                continue
+            }
             let restores = d.unrestAtStart >= HomeFrontModel.orderThreshold
             homeStateNudge(d.state, by: scale.amount(annual: restores ? -30 : 25))
             gs.shadow.popularity = PopularityModel.clamp(gs.shadow.popularity - scale.amount(annual: restores ? 0 : 4))
             // The governor's suit.
-            if !d.challenged, GameCalendar.days(from: d.since, to: gs.currentDate) >= HomeFrontModel.courtDays, !homeFrontCourtOwnsIt(d.state) {
+            if !d.challenged, GameCalendar.days(from: d.since, to: gs.currentDate) >= HomeFrontModel.courtDays, homeFrontOrder(d) == nil {
                 if let i = gs.shadow.homeFront.deployments.firstIndex(where: { $0.state == d.state }) { gs.shadow.homeFront.deployments[i].challenged = true }
                 if HomeFrontModel.deploymentUpheld(unrestAtStart: d.unrestAtStart, emergency: homeFrontEmergencyInForce()) {
                     gs.shadow.post("The courts let the federal deployment in \(name) stand.", date: gs.currentDate, severity: 1)
@@ -165,10 +171,16 @@ extension GameEngine {
 
     // MARK: Emergency powers and the courts (adapter)
 
-    func homeFrontEmergencyOrder(state: String, name: String) {}
+    /// Records the deployment as an emergency order under the Insurrection Act (from 1807, U.S. only); its court
+    /// clock then decides. Nil before the Act: the governor's suit (`deploymentUpheld`) decides instead.
+    func homeFrontEmergencyOrder(state: String, name: String) {
+        issueEmergencyOrder(kind: .deployment, target: state, subject: "federal troops in \(name)", basis: .insurrectionAct)
+    }
 
-    /// The emergency-powers model is reviewing this deployment itself (its court rules, not ours).
-    func homeFrontCourtOwnsIt(_ state: String) -> Bool { false }
+    /// The emergency order behind this deployment, when the emergency-powers court is the one reviewing it.
+    func homeFrontOrder(_ d: HomeDeployment) -> EmergencyOrder? {
+        gameState?.shadow.powerPlays.orders.last { $0.kind == .deployment && $0.target == d.state && $0.issued >= d.since }
+    }
 
-    func homeFrontEmergencyInForce() -> Bool { false }
+    func homeFrontEmergencyInForce() -> Bool { gameState?.shadow.powerPlays.emergency != nil }
 }

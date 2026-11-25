@@ -299,6 +299,8 @@ enum CommandParser {
         guard !text.isEmpty else { return nil }
         // 3.36.0: renames (a sea, mountain or department first, then a country or land; RenamePlanner.swift), power plays.
         if let r = PowerPlayParser.parseRename(raw) ?? parseRename(sanitize(raw)) { return r }
+        // Power plays at home before the campaign steps ("pressure the Fed" is the central bank, not a campaign step).
+        if let home = parseOrder(text), let v = home.verb, HomePlay(verb: v) != nil { return home }
         if let p = PowerPlayParser.parse(text) { return p }
         if questionStarts.contains(where: { text == $0 || text.hasPrefix($0 + " ") }) || helpWords.contains(text) {
             return parseQuestion(text, raw: raw).map(CommandIntent.ask)
