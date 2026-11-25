@@ -1,7 +1,7 @@
 # GTNW: Global Thermal Nuclear War
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-1242-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1245-brightgreen)
 ![Version](https://img.shields.io/badge/version-3.35.1-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.1-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
@@ -1909,7 +1909,7 @@ Games DB (tests, `LOCAL`), nothing is queued.
 
 ## Testing
 
-The suite has **1242 tests and 0 failures**, covering all seven required categories. No test touches the network, the
+The suite has **1245 tests and 0 failures**, covering all seven required categories. No test touches the network, the
 real `UserDefaults`, or real saves. Counts are by each test's main category; five tests from before 3.13 are not in
 the tally.
 

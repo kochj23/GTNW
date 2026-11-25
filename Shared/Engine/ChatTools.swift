@@ -82,7 +82,7 @@ enum ChatTools {
              ["action": str("An order verb from the actions tool (optional)"), "target": str("Nation name (with action)")]),
         spec("news", "The news wire, the latest game log lines, and the orders you carried out recently.",
              ["count": ["type": "integer", "minimum": 1, "maximum": 20]]),
-        spec("actions", "Orders available this year with their verb, cost, risk and description; with a target, also the odds shown for each against it. 'at_home' lists the power plays at home (troops in your states, the statistics office, the central bank, equity stakes, term limits, the missile shield, nuclear tests).",
+        spec("actions", "Orders available this year with their verb, cost and risk (and a description, by category); with a target, also the odds shown for each against it. 'at_home' lists the power plays at home (troops in your states, the statistics office, the central bank, equity stakes, term limits, the missile shield, nuclear tests).",
              ["target": str("Nation name (optional)"), "category": ["type": "string", "enum": ["military", "diplomatic", "economic", "covert", "treaty", "domestic", "all"]]]),
         spec("power_plays", "The President's power plays under way: the national emergency, emergency orders with their legal authority and court status, acquisition campaigns with leverage and resistance, limited strikes, capture raids and Congress's votes on them.", [:]),
         spec("propose_orders", "Put orders in front of the President for confirmation. Nothing runs until the President presses EXECUTE. One step per order, in order, at most 5 steps. Use the verbs from the actions tool. Verb rename (no action spent) renames the President's own country, lands he holds, seas, straits, mountains or departments; several renames go in one step's renames list.",
@@ -467,7 +467,8 @@ enum ChatTools {
         for (verb, a) in verbActions where pool.contains(a) && a.isAvailable(on: gs.currentDate, in: gs) {
             var row = "\(verb.rawValue): \(a.rawValue), $\(money(a.cost)), risk \(a.riskLevel.rawValue.lowercased())"
             if let t { row += ", odds shown \(Int((AdviceEngine.successEstimate(action: a, player: me, target: t) * 100).rounded()))%" }
-            rows.append(row + ". " + String(a.description.prefix(90)))
+            // The full list leaves descriptions to the categories, so every verb fits under `maxOutput`.
+            rows.append(category == nil || category == "all" ? row : row + ". " + String(a.description.prefix(90)))
         }
         var d: [String: Any] = ["actions_left": gs.actionsRemaining, "orders": rows]
         if category == nil || category == "military" || category == "all" {

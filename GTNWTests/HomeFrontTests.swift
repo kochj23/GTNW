@@ -305,6 +305,11 @@ final class HomeFrontChatTests: XCTestCase {
         let e = HomeFixtures.engine()
         let list = ChatTools.run("actions", arguments: ["category": "domestic"], engine: e).text
         for p in HomePlay.allCases { XCTAssertTrue(list.contains(p.rawValue), p.rawValue) }
+        // Nothing is cut silently: every category of the actions tool fits under the cap (ChatIntegrationTests checks each verb is listed).
+        for c in ["military", "diplomatic", "economic", "covert", "treaty", "domestic", "all"] {
+            let t = ChatTools.run("actions", arguments: ["category": c], engine: e).text
+            XCTAssertLessThan(t.count, ChatTools.maxOutput, "\(c) is truncated")
+        }
         let out = ChatTools.run("propose_orders", arguments: ["steps": [["verb": "buyStake", "targets": ["steel"]],
                                                                         ["verb": "fixNumbers"]]], engine: e, planID: 1)
         XCTAssertFalse(out.isError, out.text)
@@ -401,5 +406,48 @@ final class HomeFrontSaveTests: XCTestCase {
             for w in R331.banned { XCTAssertFalse(low.contains(w), "\"\(w)\" in: \(t)") }
             for host in ["localhost", "127.0.0.1", "http"] { XCTAssertFalse(low.contains(host), t) }
         }
+    }
+}
+
+// MARK: - Troops in the states (F's states model, G's emergency-powers court)
+
+@MainActor
+final class HomeFrontTroopsTests: XCTestCase {
+
+    func testTroopsGoToCourtUnderTheInsurrectionActAndComeHome() throws {
+        let e = HomeFixtures.engine(year: 2025)
+        _ = try XCTUnwrap(HomeFixtures.run(e, "send federal troops into Texas"))
+        let gs = try XCTUnwrap(e.gameState)
+        XCTAssertEqual(gs.shadow.homeFront.deployments.map(\.state), ["US-TX"])
+        let order = try XCTUnwrap(e.liveEmergencyOrder(.deployment, target: "US-TX"))
+        XCTAssertEqual(order.basis, .insurrectionAct)
+        XCTAssertGreaterThan(gs.shadow.provinces.unrest["US-TX"] ?? 0, 0, "the first days are the worst")
+        XCTAssertNotNil(HomeFixtures.refusal(e, "send federal troops into Texas"), "already there")
+        _ = try XCTUnwrap(HomeFixtures.run(e, "withdraw federal troops from Texas"))
+        XCTAssertTrue(gs.shadow.homeFront.deployments.isEmpty)
+        XCTAssertEqual(gs.shadow.powerPlays.orders.first { $0.id == order.id }?.status, .rescinded)
+    }
+
+    func testOnlyYourOwnStates() {
+        let e = HomeFixtures.engine(year: 2025)
+        XCTAssertTrue(HomeFixtures.refusal(e, "send federal troops into Ontario")?.contains("No state of yours") == true)
+        let old = HomeFixtures.engine(year: 1880)
+        XCTAssertNotNil(HomeFixtures.refusal(old, "send federal troops into Utah"), "a territory in 1880, not a state")
+        XCTAssertNil(HomeFixtures.refusal(old, "send federal troops into Ohio"))
+    }
+
+    func testAStatePastItsBreakingPointMaySecede() throws {
+        let e = HomeFixtures.engine(year: 2025)
+        _ = try XCTUnwrap(HomeFixtures.run(e, "send federal troops into Texas"))
+        let gs = try XCTUnwrap(e.gameState)
+        gs.shadow.powerPlays.orders = []   // the governor's own suit decides, not the emergency-powers court
+        gs.shadow.homeFront.deployments[0].unrestAtStart = 99
+        for _ in 0..<400 where gs.getCountry(id: "US-TX") == nil {
+            gs.shadow.provinces.unrest["US-TX"] = 99
+            HomeFixtures.turns(e, 1)
+        }
+        XCTAssertNotNil(gs.getCountry(id: "US-TX"), "Texas declares independence")
+        XCTAssertNotEqual(gs.provinceOwner("US-TX"), "USA")
+        XCTAssertTrue(gs.shadow.homeFront.deployments.isEmpty)
     }
 }

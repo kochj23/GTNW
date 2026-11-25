@@ -33,7 +33,7 @@ extension HomeFrontModel {
     }
     /// Annual chance a state past its breaking point, with troops in it, tries to leave the Union.
     static let secessionAnnual = 0.25
-    static let secessionUnrest = 85.0
+    static var secessionUnrest: Double { ProvinceModel.breakingPoint }
 }
 
 extension GameEngine {
@@ -158,16 +158,26 @@ extension GameEngine {
     // MARK: The states model (adapter)
 
     /// One of the President's own states by a typed name: its id and name this year.
-    func homeStateLookup(_ raw: String) -> (id: String, name: String)? { nil }
+    func homeStateLookup(_ raw: String) -> (id: String, name: String)? {
+        guard let gs = gameState, let s = Subdivisions.find(raw, in: gs), let name = homeStateName(s.id) else { return nil }
+        return (s.id, name)
+    }
 
-    /// A state's name, when it is one of the President's own states this year.
-    func homeStateName(_ id: String) -> String? { nil }
+    /// A state's name, when it is one of the President's own states this year (a state of the Union he still holds).
+    func homeStateName(_ id: String) -> String? {
+        guard let gs = gameState, Subdivisions.isUSState(id, on: gs.currentDate), gs.provinceOwner(id) == gs.playerCountryID else { return nil }
+        return gs.provinceName(id)
+    }
 
-    func homeStateUnrest(_ id: String) -> Double { 0 }
+    func homeStateUnrest(_ id: String) -> Double { gameState?.shadow.provinces.unrest[id] ?? 0 }
 
-    func homeStateNudge(_ id: String, by amount: Double) {}
+    func homeStateNudge(_ id: String, by amount: Double) {
+        guard let gs = gameState else { return }
+        let v = min(100, max(0, homeStateUnrest(id) + amount))
+        gs.shadow.provinces.unrest[id] = v < 0.5 ? nil : (v * 10).rounded() / 10
+    }
 
-    func homeStateSecede(_ id: String, reason: String) {}
+    func homeStateSecede(_ id: String, reason: String) { secede(id, reason: reason) }
 
     // MARK: Emergency powers and the courts (adapter)
 
