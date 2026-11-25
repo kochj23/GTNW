@@ -232,7 +232,7 @@ struct ChatTranscriptStore {
     }
 
     static func key(_ gs: GameState) -> String {
-        "\(String(gs.rng.seed, radix: 16))-\(gs.playerCountryID)-\(Int(gs.startDate.timeIntervalSince1970))"
+        "\(String(gs.rng.seed, radix: 16))-\(gs.playerCountryID)-\(Int64(gs.startDate.timeIntervalSince1970))"   // Int64: Int is 32 bits in WebAssembly (a pre-1902 start overflowed)
             .filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
     }
 

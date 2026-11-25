@@ -58,7 +58,7 @@ enum CampaignStep: String, Codable, CaseIterable, Sendable {
 }
 
 struct AcquisitionCampaign: Codable, Equatable, Identifiable {
-    var id: String { land + "@" + String(Int(started.timeIntervalSince1970)) }
+    var id: String { land + "@" + String(Int64(started.timeIntervalSince1970)) }   // Int64: Int is 32 bits in WebAssembly
     var land: String
     var owner: String
     var kind: AcquisitionKind

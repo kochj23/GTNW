@@ -86,6 +86,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Saves: `shadow.regime` (absent for the United States and in older saves; restored when a game loads and every turn).
 
 ### Fixed
+- The web engine (WebAssembly) stopped when a land was renamed in a game that began before 1902, and would have on an
+  acquisition campaign started before 1902: the game's start in seconds was turned into a 32-bit `Int` there
+  (`CartographyHall.gameKey`, `AcquisitionCampaign.id`). Now `Int64`; the app's keys are unchanged.
 - Renaming a state from the command box or the chief of staff showed the card but EXECUTE refused it: the order
   check refused the hyphen in a state's id ("US-TX"). A number in a bulk rename whose name the content check refuses
   is skipped rather than refusing the card.

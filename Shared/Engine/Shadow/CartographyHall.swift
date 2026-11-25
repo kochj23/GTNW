@@ -48,7 +48,7 @@ enum CartographyHall {
     nonisolated(unsafe) private static var cacheFolder: URL?
 
     static func gameKey(_ gs: GameState) -> String {
-        "\(String(gs.rng.seed, radix: 16))-\(gs.playerCountryID)-\(Int(gs.startDate.timeIntervalSince1970))"
+        "\(String(gs.rng.seed, radix: 16))-\(gs.playerCountryID)-\(Int64(gs.startDate.timeIntervalSince1970))"   // Int64: Int is 32 bits in WebAssembly (a pre-1902 start overflowed)
     }
 
     static func gameLabel(_ gs: GameState) -> String {

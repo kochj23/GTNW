@@ -147,6 +147,10 @@ for (const g of games) {
     let r = await both(OP.newGame, JSON.stringify({ player: g.player, year: g.year, seed: g.seed, rules: g.rules, turnLength: g.turnLength }), `${label} newGame`);
     if (!r.ok) throw new Error(`${label}: newGame failed: ${r.error}`);
     totalCalls++;
+    // A rename goes through the name hall's game key (the start in seconds: a pre-1902 start once overflowed Int32).
+    r = await both(OP.act, JSON.stringify({ verb: 'renameTarget', id: g.player, name: 'Freedonia' }), `${label} rename`);
+    totalCalls++;
+    if (!r.ok) throw new Error(`${label}: rename failed: ${r.error}`);
     const orders = g.hawk ? HAWK : DOVE;
     for (let t = 0; t < g.turns && !r.state.gameOver; t++) {
       const at = `${label} turn ${r.state.turn}`;
