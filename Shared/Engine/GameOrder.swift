@@ -130,6 +130,8 @@ enum CommandSource: String, Codable, Sendable {
     case replay
     /// 3.35.0: proposed by the chief of staff in the conversation and confirmed by the President.
     case chat
+    /// 3.37.0: a Situation Room button that gives the same order (the Govern sheet's INVEST).
+    case sheet
 }
 
 /// What the command box carried out on one turn: the orders, never the text.

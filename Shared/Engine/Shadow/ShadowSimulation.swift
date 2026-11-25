@@ -614,6 +614,7 @@ extension GameEngine {
             gs.shadow.post("A new government is installed in \(loser.capital).", date: gs.currentDate, severity: 3)
         }
         self.gameState = gs
+        if s.victor == gs.playerCountryID, choice != .annex { noteInstalledGovernment(s.loser) }   // 3.37.0: held land
         return true
     }
 

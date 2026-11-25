@@ -568,14 +568,29 @@ enum PresidencyEpilogue {
         let country = gs.getPlayerCountry()
         let kind = gs.playerCountryID == "USA" ? "Presidential Library" : "State Library"
         let countryName = country?.name ?? gs.playerCountryID
-        let held = gs.nameBook.first { n in
-            gs.getCountry(id: n.land).map { $0.territoryOf == gs.playerCountryID && !$0.isDestroyed } ?? false
-        }
+        let held = gs.nameBook.first { gs.isHeldByPlayer($0.land) }
         if let n = held, let current = shown(n.current) {
             let original = shown(n.original) ?? "a land with an older name"
-            return "The \(leader) \(kind), \(current) (formerly \(original)), a territory of \(countryName)"
+            let tie = gs.isPuppet(n.land) ? "whose government \(countryName) installed" : "a territory of \(countryName)"
+            return "The \(leader) \(kind), \(current) (formerly \(original)), \(tie)"
         }
         return "The \(leader) \(kind), \(country?.capital ?? countryName), \(countryName)"
+    }
+
+    /// 3.37.0: the lands held abroad at the end, from the one definition (HeldLands.swift): "4 lands held abroad:
+    /// 3 territories and 1 government installed (Cuba)." Nil when none.
+    static func landsHeld(_ gs: GameState) -> String? {
+        let held = gs.heldLands
+        guard !held.isEmpty else { return nil }
+        let puppets = held.filter { gs.isPuppet($0.id) }
+        let territories = held.count - puppets.count
+        var parts: [String] = []
+        if territories > 0 { parts.append("\(territories) territor\(territories == 1 ? "y" : "ies")") }
+        if !puppets.isEmpty {
+            let names = puppets.prefix(4).map(\.name).joined(separator: ", ") + (puppets.count > 4 ? " and \(puppets.count - 4) more" : "")
+            parts.append("\(puppets.count) government\(puppets.count == 1 ? "" : "s") installed (\(names))")
+        }
+        return "\(held.count) land\(held.count == 1 ? "" : "s") held abroad: " + parts.joined(separator: " and ") + "."
     }
 
     /// One land's name fifty years on.
@@ -595,7 +610,7 @@ enum PresidencyEpilogue {
             let c = gs.getCountry(id: n.land)
             let original = shown(n.original) ?? "its old name"
             let his = shown(n.current)
-            let held = c.map { $0.territoryOf == gs.playerCountryID && !$0.isDestroyed } ?? false
+            let held = gs.isHeldByPlayer(n.land)
             let stable = (c?.stability ?? 0) >= 40
             let h = NovaCommentary.stableHash(n.land + n.current)
             if let his, held, stable {

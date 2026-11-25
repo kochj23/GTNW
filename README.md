@@ -316,6 +316,9 @@ flowchart LR
   - **Let it form a new government of your choosing**: Democratic Republic, Constitutional Monarchy, Military Junta,
     Communist One-Party State, Theocracy, Provisional Government or Client State. Each sets the country's
     government, ideology, camp, stability and relations with Washington (see the table below).
+    3.37: a government you install counts as land you hold (score, empire goals, renaming, the end screen) while it
+    stands, stays at peace with you and keeps relations at 20 or more; it pays tribute, half the land's base output as
+    a territory, instead of a territory's income.
   - The screen can't be dismissed. A choice still open when you end the turn falls back to the pre-3.2 settlement
     (a government shaped like the victor's). Saves keep territories and open choices; older saves load unchanged.
 
@@ -643,7 +646,8 @@ genocides has a matching tactic id.
     3.36: a new territory says "Develops in N months: $X a year at full output" until it does; **INVEST** (one action,
     era-priced) brings it six months closer. Science is prestige, not money: Antarctica pays nothing after the whaling
     era unless developed. "claim all of Africa", "buy all of Asia" and "develop all of Africa" take every land there
-    that can take the order.
+    that can take the order. 3.37: the Govern sheet lists every land still developing (income now and developed,
+    months left, the cost) with an INVEST button that gives the command box's own order.
   - **Empire victories**: *Manifest Destiny* (every land of North America, 1000 pts), *The Sun Never Sets* (land in
     every region, 1200 pts), *Every Rock* (all 32 small islands, 900 pts). Goals already met when the game starts
     don't count. RECORDS → EMPIRE shows the progress.

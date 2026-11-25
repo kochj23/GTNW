@@ -282,7 +282,7 @@ struct SituationTopBar: View {
             } else {
                 Button("BUDGET") { onSheet(.budget) }.buttonStyle(ThemedButtonStyle())
             }
-            if gameState.countries.contains(where: { $0.territoryOf == gameState.playerCountryID }) {
+            if !gameState.heldLands.isEmpty {
                 Button("RESOURCES") { onSheet(.resources) }.buttonStyle(ThemedButtonStyle())
             }
             Button("TROOPS \(Int(AttackSizing.freeTroops(gameState)))K") { onSheet(.manpower) }.buttonStyle(ThemedButtonStyle())
@@ -611,7 +611,7 @@ struct CountryDossier: View {
                 if LandDevelopment.canDevelop(c.id, in: gameState) {
                     let cost = LandDevelopment.investCost(c, in: gameState)
                     let problem = LandDevelopment.problem(c.id, in: gameState)
-                    Button(String(format: "INVEST ($%.2fB)", cost)) { gameEngine.investInLand(c.id) }
+                    Button(String(format: "INVEST ($%.2fB)", cost)) { gameEngine.investFromSheet(c.id) }   // 3.37.0: the command box's order
                         .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan))
                         .disabled(problem != nil)
                         .help(problem ?? "One action: six months of development at once.")

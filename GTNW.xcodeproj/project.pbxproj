@@ -127,6 +127,11 @@
 		889B4FBA82BBA743146E7886 /* HomeFrontEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9861B7E469B9AAF1A28CB308 /* HomeFrontEngine.swift */; };
 		5AF5718124E157E3A4DD99BC /* HomeFront.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F8D597F78436E617D8A0970 /* HomeFront.swift */; };
 		14C825C7503C08B10B6DFAF3 /* Antarctica.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C825C7503C08B10B6DFAF1 /* Antarctica.swift */; };
+		A337A0000000000000000002 /* HeldLands.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337A0000000000000000001 /* HeldLands.swift */; };
+		A337A0000000000000000003 /* HeldLands.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337A0000000000000000001 /* HeldLands.swift */; };
+		A337A0000000000000000012 /* DevelopmentBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337A0000000000000000011 /* DevelopmentBoard.swift */; };
+		A337A0000000000000000013 /* DevelopmentBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337A0000000000000000011 /* DevelopmentBoard.swift */; };
+		A337A0000000000000000022 /* HeldLandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337A0000000000000000021 /* HeldLandsTests.swift */; };
 		336B00000000000000000002 /* ReportBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000001 /* ReportBooks.swift */; };
 		336B00000000000000000003 /* ReportBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000001 /* ReportBooks.swift */; };
 		336B00000000000000000005 /* ReportBooksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B00000000000000000004 /* ReportBooksTests.swift */; };
@@ -520,6 +525,9 @@
 		F33600000000000000000C01 /* Subdivisions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Subdivisions.swift; sourceTree = "<group>"; };
 		F33600000000000000000B01 /* USStatesHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = USStatesHistory.swift; sourceTree = "<group>"; };
 		F33600000000000000000A01 /* SubdivisionData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubdivisionData.swift; sourceTree = "<group>"; };
+		A337A0000000000000000001 /* HeldLands.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeldLands.swift; sourceTree = "<group>"; };
+		A337A0000000000000000011 /* DevelopmentBoard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DevelopmentBoard.swift; sourceTree = "<group>"; };
+		A337A0000000000000000021 /* HeldLandsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeldLandsTests.swift; sourceTree = "<group>"; };
 		336B00000000000000000001 /* ReportBooks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportBooks.swift; sourceTree = "<group>"; };
 		336B00000000000000000004 /* ReportBooksTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportBooksTests.swift; sourceTree = "<group>"; };
 		5CCB087FBBE14EE793242002 /* HomeFrontTroops.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFrontTroops.swift; sourceTree = "<group>"; };
@@ -846,6 +854,7 @@
 				1D3360000000000000000004 /* ConsequencesTests.swift */,
 				000000000000E3360E030001 /* PresidencyRecordTests.swift */,
 				336B00000000000000000004 /* ReportBooksTests.swift */,
+				A337A0000000000000000021 /* HeldLandsTests.swift */,
 				1A7E5C003363BA4BC9B2A4C0 /* DeterminismTests.swift */,
 				1A7E5C00341EFE2314425601 /* CommandBoxTests.swift */,
 				0CF8397D11AC0DEC90DBE71E /* ForeignPowerPlaysTests.swift */,
@@ -925,6 +934,8 @@
 				F33600000000000000000B01 /* USStatesHistory.swift */,
 				F33600000000000000000A01 /* SubdivisionData.swift */,
 				336B00000000000000000001 /* ReportBooks.swift */,
+				A337A0000000000000000001 /* HeldLands.swift */,
+				A337A0000000000000000011 /* DevelopmentBoard.swift */,
 				5CCB087FBBE14EE793242002 /* HomeFrontTroops.swift */,
 				4571822105E5BBA238B17F2D /* HomeFrontCommands.swift */,
 				9861B7E469B9AAF1A28CB308 /* HomeFrontEngine.swift */,
@@ -1490,6 +1501,8 @@
 				F33600000000000000000B02 /* USStatesHistory.swift in Sources */,
 				F33600000000000000000A02 /* SubdivisionData.swift in Sources */,
 				336B00000000000000000002 /* ReportBooks.swift in Sources */,
+				A337A0000000000000000002 /* HeldLands.swift in Sources */,
+				A337A0000000000000000012 /* DevelopmentBoard.swift in Sources */,
 				85786841B3EFD3C99663BD5E /* HomeFrontTroops.swift in Sources */,
 				7ED97C84B189D8AA17661D87 /* HomeFrontCommands.swift in Sources */,
 				889B4FBA82BBA743146E7886 /* HomeFrontEngine.swift in Sources */,
@@ -1586,6 +1599,7 @@
 				1D3360000000000000000005 /* ConsequencesTests.swift in Sources */,
 				000000000000E3360E030002 /* PresidencyRecordTests.swift in Sources */,
 				336B00000000000000000005 /* ReportBooksTests.swift in Sources */,
+				A337A0000000000000000022 /* HeldLandsTests.swift in Sources */,
 				1A7E5C00337A9EC615920DE6 /* DeterminismTests.swift in Sources */,
 				1A7E5C0033476FCFF5554347 /* RepoHygieneTests.swift in Sources */,
 				1A7E5C00336A9BCE23DFDD1D /* AccessibilityTests.swift in Sources */,
@@ -1726,6 +1740,8 @@
 				F33600000000000000000B03 /* USStatesHistory.swift in Sources */,
 				F33600000000000000000A03 /* SubdivisionData.swift in Sources */,
 				336B00000000000000000003 /* ReportBooks.swift in Sources */,
+				A337A0000000000000000003 /* HeldLands.swift in Sources */,
+				A337A0000000000000000013 /* DevelopmentBoard.swift in Sources */,
 				FF1788BFE92D7152235E2998 /* HomeFrontTroops.swift in Sources */,
 				C4100EE523A00421DA08D256 /* HomeFrontCommands.swift in Sources */,
 				85E679CC3D0DCD9E214EF940 /* HomeFrontEngine.swift in Sources */,

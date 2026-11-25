@@ -27,6 +27,7 @@ struct PresidencyEpilogueView: View {
             block("THE HISTORY BOOKS", PresidencyEpilogue.verdict(gameState, victory: victoryType),
                   note: record.verdict == nil ? nil : "Polished by Nova from the record; every fact is the game's.")
             block("THE LIBRARY", PresidencyEpilogue.library(gameState))
+            if let lands = PresidencyEpilogue.landsHeld(gameState) { block("THE LANDS", lands) }   // 3.37.0
 
             let later = PresidencyEpilogue.fiftyYearsLater(gameState)
             if !later.isEmpty {
@@ -125,6 +126,10 @@ struct PresidencyAwardsPanel: View {
                 .accessibilityAddTraits(.isHeader)
             Text(verbatim: "\(career.awards.count) of \(PresidencyAwards.all.count) earned · \(career.games) game\(career.games == 1 ? "" : "s") · \(career.line) · Antarctica claimed in \(career.antarcticaGames)")
                 .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan)
+            if let lands = PresidencyEpilogue.landsHeld(gameState) {   // 3.37.0: this game's lands, territories and installed governments
+                Text(verbatim: "This game: " + lands).font(ThemeFont.mono(10)).foregroundColor(GTNWColors.terminalGreen)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(PresidencyAwards.all) { a in

@@ -250,6 +250,7 @@ extension GameEngine {
             }
         }
         total += gs.shadow.acquisitionIncome   // 3.13.0: purchases like Louisiana pay too
+        total += reviewInstalledGovernments()   // 3.37.0: governments he installed pay tribute (HeldLands.swift)
         let earned = total * yf
         gs.shadow.resourceEarnings += earned
         // 3.13.1: the money lands in the spendable funds (aid, group actions, purchases); a smaller share shows up

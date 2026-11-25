@@ -1071,6 +1071,12 @@ struct ResourcesSheet: View {
             Text(String(format: "TOTAL $%.1fB A YEAR · EARNED SO FAR $%.1fB · APPROVAL +%.1f FROM PROSPERITY", total,
                         gameState.shadow.resourceEarnings, ExpansionModel.prosperityBonus(incomePerYear: total)))
                 .font(ThemeFont.mono(11, .bold)).foregroundColor(GTNWColors.terminalGreen)
+            let puppets = gameState.puppets   // 3.37.0: governments he installed pay tribute (HeldLands.swift)
+            if !puppets.isEmpty {
+                Text(String(format: "TRIBUTE $%.2fB A YEAR FROM GOVERNMENTS YOU INSTALLED: %@", HeldLands.totalTribute(gameState),
+                            puppets.map { $0.name.uppercased() }.joined(separator: ", ")))
+                    .font(ThemeFont.mono(10)).foregroundColor(GTNWColors.neonCyan).fixedSize(horizontal: false, vertical: true)
+            }
             // 3.29.0: what the land itself yields (Factbook resources, farmland, coast) at full production
             Text(String(format: "LAND YIELD $%.1fB A YEAR AT FULL PRODUCTION · RISES WITH YEARS HELD",
                         rows.reduce(0) { $0 + ExpansionModel.landYield($1.country, in: gameState) }))
@@ -1308,11 +1314,59 @@ struct GovernSheet: View {
                     }
                 }
             }
+            GovernDevelopmentList(gameState: gameState, firstID: countryID)
             HStack { Spacer(); Button("CLOSE") { dismiss() }.buttonStyle(ThemedButtonStyle()) }
         }
         .padding(16)
         .frame(width: FontScale.w(640))
         .background(Theme.isRetro ? EGA.blue : Color.black)
+    }
+}
+
+/// 3.37.0: the Govern sheet's DEVELOPMENT list (DevelopmentBoard.swift): this land and every other one still
+/// developing, income now and developed, months left, the cost, and INVEST (the command box's own order).
+struct GovernDevelopmentList: View {
+    @EnvironmentObject var gameEngine: GameEngine
+    @ObservedObject var gameState: GameState
+    let firstID: String
+    /// Rows shown; the rest are counted (the sheet doesn't scroll).
+    static let shown = 6
+
+    var body: some View {
+        let rows = LandDevelopment.governRows(first: firstID, in: gameState)
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DEVELOPMENT").font(ThemeFont.mono(10, .bold)).foregroundColor(GTNWColors.terminalAmber)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(rows.prefix(Self.shown)) { r in
+                    HStack(alignment: .top, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(verbatim: r.name.uppercased()).font(ThemeFont.mono(10, .bold))
+                                .foregroundColor(Theme.isRetro ? EGA.white : .white)
+                            Text(verbatim: r.line).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let p = r.problem {
+                                Text(verbatim: p).font(ThemeFont.mono(9)).foregroundColor(GTNWColors.terminalRed)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                        Spacer()
+                        Button("INVEST") { gameEngine.investFromSheet(r.id) }
+                            .buttonStyle(ThemedButtonStyle(color: GTNWColors.neonCyan, prominent: r.canInvest))
+                            .disabled(!r.canInvest)
+                            .help(r.problem ?? "One action: six months of development at once.")
+                            .accessibilityLabel(r.spoken)
+                            .accessibilityHint(r.problem ?? "Uses one action. Brings full output six months closer.")
+                    }
+                    .padding(4).themedPanel()
+                }
+                if rows.count > Self.shown {
+                    Text(verbatim: "\(rows.count - Self.shown) more developing. Type \"develop all of\" and a region in the command box.")
+                        .font(ThemeFont.mono(9)).foregroundColor(GTNWColors.neonCyan)
+                }
+            }
+        }
     }
 }
 

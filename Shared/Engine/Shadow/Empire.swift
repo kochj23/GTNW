@@ -78,9 +78,10 @@ enum EmpireGoal: String, CaseIterable, Identifiable {
 }
 
 enum EmpireModel {
-    /// The player holds a land: it is the player, or the player's territory.
+    /// The player holds a land: it is the player, or land he holds abroad (a territory or, 3.37.0, a government he
+    /// installed: `GameState.isHeldByPlayer`).
     static func holds(_ id: String, in gs: GameState) -> Bool {
-        id == gs.playerCountryID || gs.getCountry(id: id).map { !$0.isDestroyed && $0.territoryOf == gs.playerCountryID } == true
+        id == gs.playerCountryID || gs.isHeldByPlayer(id)
     }
 
     /// Every North American land in this game: its countries (and territories), and the colonies, peoples' lands and
@@ -96,7 +97,7 @@ enum EmpireModel {
 
     /// Regions where the player holds land.
     static func regionsHeld(_ gs: GameState) -> Set<WorldRegion> {
-        Set(gs.countries.filter { !$0.isDestroyed && ($0.id == gs.playerCountryID || $0.territoryOf == gs.playerCountryID) }.map(\.region))
+        Set(gs.countries.filter { !$0.isDestroyed && holds($0.id, in: gs) }.map(\.region))
     }
 
     /// Progress toward a goal: lands (or regions) held, of how many.
@@ -279,7 +280,7 @@ extension GameState {
 
     /// Lands to label with the President's name for them: renamed and still held.
     var namedLands: Set<String> {
-        Set(shadow.renames.map(\.land)).filter { getCountry(id: $0)?.territoryOf == playerCountryID }
+        Set(shadow.renames.map(\.land)).filter(isHeldByPlayer)
     }
 }
 

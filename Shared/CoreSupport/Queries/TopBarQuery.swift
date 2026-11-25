@@ -63,7 +63,7 @@ enum TopBarQuery: BridgeQuery {
             peaceLabel: eval.peaceLevel.label, peaceIndex: Int(eval.peaceIndex),
             impeachmentStage: gs.shadow.impeachmentStage, freeTroops: Int(AttackSizing.freeTroops(gs)),
             budgetReady: gs.shadow.budgetReviewPending,
-            hasTerritories: gs.countries.contains { $0.territoryOf == gs.playerCountryID },
+            hasTerritories: !gs.heldLands.isEmpty,
             offer: e.openAcquisitions().first?.name, landBids: gs.shadow.landBids.count,
             treatyFrom: gs.shadow.treatyOffers.first.map { gs.getCountry(id: $0.from)?.name ?? $0.from },
             scenario: gs.shadow.scenarioID, scenarioTitle: gs.shadow.scenarioID.flatMap(ScenarioDefinition.find)?.title,

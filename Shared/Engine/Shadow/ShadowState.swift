@@ -274,6 +274,8 @@ struct ShadowState: Codable {
     var homeFront = HomeFrontState()
     /// 3.36.0: the Antarctic programme: stations, treaty standing, a name carried over, the penguins.
     var antarctic = AntarcticProgram()
+    /// 3.37.0: governments the President installed in nations he beat; they count as held land (HeldLands.swift).
+    var installedGovernments: [String: InstalledGovernment] = [:]
 
     // Scenario
     var scenarioID: String?
@@ -328,6 +330,7 @@ struct ShadowState: Codable {
         case books
         case homeFront
         case antarctic
+        case installedGovernments
     }
 
     init() {}
@@ -444,6 +447,7 @@ struct ShadowState: Codable {
         books = (try? c.decodeIfPresent(ReportBooks.self, forKey: .books)) ?? ReportBooks()
         homeFront = (try? c.decodeIfPresent(HomeFrontState.self, forKey: .homeFront)) ?? HomeFrontState()
         antarctic = (try? c.decodeIfPresent(AntarcticProgram.self, forKey: .antarctic)) ?? AntarcticProgram()
+        installedGovernments = (try? c.decodeIfPresent([String: InstalledGovernment].self, forKey: .installedGovernments)) ?? [:]
     }
 }
 

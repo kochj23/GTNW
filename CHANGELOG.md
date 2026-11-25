@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **INVEST from the Govern sheet.** A DEVELOPMENT list under the territory being governed: that land first, then every
+  other land you hold that is still developing (fewest months left first, six shown), each with its income now and
+  once developed, the months left, what one INVEST costs, and an **INVEST** button. The button issues the command
+  box's own order (`GameOrder` `.developLand` through `executeCommand`, logged with the new `CommandSource.sheet`), so
+  checks, cost, news, play history and the command log are the same as typing "invest in Madagascar"; the dossier's
+  INVEST button now goes the same way. Disabled with the reason shown when there are no actions left, not enough
+  money, or the land is already fully developed. Both skins, VoiceOver labels on each row and button.
+
+### Changed
+- **Governments you install count as held land.** A nation whose new government you chose at the settlement (any of
+  the seven, the victor's model when the choice lapses, and a regime toppled by a capture raid) is held while that
+  government stands, isn't at war with you, isn't destroyed or annexed, and keeps relations with you at 20 or more
+  (a communist state or theocracy starts cool and doesn't count until relations warm). A government that falls, turns
+  on you or cools is dropped for good, with a news line. One definition (`GameState.isHeldByPlayer` / `heldLands`,
+  HeldLands.swift) is used by the score's land tally, the empire goals (Manifest Destiny, the Sun Never Sets, Every
+  Rock), renaming (you may rename a puppet), the map's names, the presidential library, fifty years later, the
+  RESOURCES button and a new count of lands held on the end screen and the Records → AWARDS tab ("4 lands held
+  abroad: 3 territories and 1 government installed (Cuba)").
+- **Tribute.** An installed government isn't governed (no garrison, extraction, statehood or INVEST), so it pays
+  tribute instead of a territory's output: half the land's base output as a territory (its resource table, or 2% of
+  its GDP), no ramp-up and nothing from the land's own yield (design choice). It goes into the funds each turn with
+  the territories' cash and is shown on the Resources sheet. Older saves load with no installed governments
+  (`shadow.installedGovernments`).
+
 ## [3.36.0] - 2026-11-24 — Your name on the map
 
 ### Added

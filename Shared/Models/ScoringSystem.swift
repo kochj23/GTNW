@@ -126,7 +126,7 @@ struct GameScore: Codable {
 
         // Land and resources held (3.7.0)
         score.expansionBonus = ExpansionModel.scoreBonus(
-            territories: gameState.countries.filter { $0.territoryOf == gameState.playerCountryID && !$0.isDestroyed }.count,
+            territories: gameState.heldLands.count,   // 3.37.0: installed governments count (HeldLands.swift)
             earned: gameState.shadow.resourceEarnings, statehoods: gameState.shadow.statesAdmitted.count)
 
         score.peaceBonus = PeaceModel.scoreBonus(gameState)

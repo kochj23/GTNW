@@ -82,7 +82,7 @@ enum RenameTarget: Hashable, Codable, Sendable {
         switch self {
         case .country(let id):
             guard let c = gs.getCountry(id: id), !c.isDestroyed else { return false }
-            return id == gs.playerCountryID || c.territoryOf == gs.playerCountryID
+            return id == gs.playerCountryID || gs.isHeldByPlayer(id)   // 3.37.0: a government he installed too
         case .feature(let id): return MapFeatures.feature(id)?.exists(in: gs.currentYear) ?? false
         case .department(let id): return Departments.current(in: gs).contains { $0.id == id }
         case .province(let id): return gs.provinceOwner(id) == gs.playerCountryID
@@ -118,7 +118,7 @@ extension GameState {
 
     /// Everything the President may rename: his own nation first, then the lands he holds, by name.
     var renamableTargets: [RenameTarget] {
-        let lands = countries.filter { $0.territoryOf == playerCountryID && !$0.isDestroyed }.sorted { $0.name < $1.name }
+        let lands = heldLands.sorted { $0.name < $1.name }
         return [RenameTarget.country(playerCountryID)] + lands.map { .country($0.id) }
     }
 
@@ -227,7 +227,7 @@ extension GameEngine {
         }
         // The world: the great powers and the land's neighbors decide whether to use the new name.
         let region = gs.getCountry(id: t.id)?.region
-        let independent = gs.countries.filter { !$0.isDestroyed && $0.territoryOf == nil && $0.id != me.id }
+        let independent = gs.countries.filter { !$0.isDestroyed && $0.territoryOf == nil && $0.id != me.id && $0.id != t.id }
         let powers = independent.sorted { $0.powerScore != $1.powerScore ? $0.powerScore > $1.powerScore : $0.id < $1.id }.prefix(5)
         let neighbors = independent.filter { $0.region == region }.sorted { $0.id < $1.id }.prefix(5)
         let observers = Array(Set(powers.map(\.id) + neighbors.map(\.id))).sorted()
