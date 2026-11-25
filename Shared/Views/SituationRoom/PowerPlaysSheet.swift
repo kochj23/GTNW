@@ -253,19 +253,20 @@ struct PowerPlaysSheet: View {
         let depts = Departments.current(in: gameState)
         let pick = placeID.isEmpty ? (depts.first?.id ?? features.first?.id ?? "") : placeID
         let problem = newName.isEmpty ? "Type a new name." : gameEngine.renamePlaceProblem(pick, to: newName)
-        func shown(_ id: String) -> String {
-            MapFeatures.feature(id).map { MapFeatures.shownName($0, in: gameState) }
-                ?? Departments.department(id).map { Departments.shownName($0, in: gameState) } ?? id
-        }
+        let provinces = gameState.renamableProvinces   // 3.36.0: the states and provinces the President holds
+        func shown(_ id: String) -> String { RenameTarget.from(id: id, in: gameState).currentName(in: gameState) ?? id }
         return VStack(alignment: .leading, spacing: 4) {
             heading("NAMES · MAP AND GOVERNMENT")
             HStack {
                 Menu(shown(pick)) {
                     Section("Government") { ForEach(depts) { d in Button(Departments.shownName(d, in: gameState)) { placeID = d.id } } }
                     Section("Map") { ForEach(features) { f in Button(MapFeatures.shownName(f, in: gameState)) { placeID = f.id } } }
+                    if !provinces.isEmpty {
+                        Section("States and provinces") { ForEach(provinces, id: \.id) { p in Button(gameState.provinceName(p.id)) { placeID = p.id } } }
+                    }
                 }
                 .fixedSize()
-                .accessibilityLabel("Place or department to rename")
+                .accessibilityLabel("Place, department, state or province to rename")
                 TextField("New name", text: $newName)
                     .textFieldStyle(.roundedBorder).font(ThemeFont.mono(11)).frame(maxWidth: FontScale.w(240))
                     .accessibilityLabel("New name")

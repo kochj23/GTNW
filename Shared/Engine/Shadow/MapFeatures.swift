@@ -213,6 +213,9 @@ extension GameEngine {
 
     /// The cabinet's read before a rename.
     func renamePlaceWarnings(_ id: String) -> [AdvisorWarning] {
+        if Subdivisions.byID[id] != nil {   // 3.36.0: a state or province
+            return [AdvisorWarning(who: powerPlayStateWho, text: "The people there didn't choose it: expect unrest\(id.hasPrefix("US-") ? ", and a cooler vote there next election" : "").", level: 1)]
+        }
         if let f = MapFeatures.feature(id) {
             let r = featureRecognizers(f)
             guard let gs = gameState else { return [] }
@@ -236,7 +239,11 @@ extension GameEngine {
     /// nations take a position (relations), and the news gives both names. `name` has passed the checks.
     func applyPlaceName(_ id: String, _ name: String) {
         guard let gs = gameState, let me = gs.getPlayerCountry() else { return }
-        if let f = MapFeatures.feature(id) {
+        if Subdivisions.byID[id] != nil, let r = applyProvinceName(id, name) {   // 3.36.0: a state or province
+            let restored = gs.shadow.provinces.names[id] == nil
+            gs.shadow.post(restored ? "\(r.old) is \(name) again." : "The President renames \(r.old) \(name).", date: gs.currentDate, severity: 1)
+            logPlayEvent("renamed_province", detail: ["province": id, "name": PlayHistory.text(name), "game_date": PlayHistory.day(gs.currentDate)])
+        } else if let f = MapFeatures.feature(id) {
             let real = f.name(in: gs.currentYear)
             let old = MapFeatures.shownName(f, in: gs)
             gs.shadow.powerPlays.featureNames[id] = name == real ? nil : name

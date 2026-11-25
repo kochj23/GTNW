@@ -25,21 +25,25 @@ enum RenameTarget: Hashable, Codable, Sendable {
     case feature(String)
     /// One of the President's own departments or ministries (MapFeatures.swift): his government uses his name.
     case department(String)
+    /// 3.36.0: a state or province he holds (Subdivisions.swift): renamed like a place, its people mind (unrest there,
+    /// and votes in a U.S. state).
+    case province(String)
 
     /// The target an id means: a map feature, a department, else a country.
     static func from(id: String, in gs: GameState) -> RenameTarget {
         if MapFeatures.feature(id) != nil { return .feature(id) }
         if Departments.department(id) != nil { return .department(id) }
+        if Subdivisions.byID[id] != nil { return .province(id) }
         return .country(id)
     }
 
     var id: String {
         switch self {
-        case .country(let id), .feature(let id), .department(let id): return id
+        case .country(let id), .feature(let id), .department(let id), .province(let id): return id
         }
     }
 
-    /// A place with no people of its own (a sea, a mountain, a department).
+    /// Renamed as a place, not a nation (a sea, a mountain, a department, a state or province).
     var isPlace: Bool { if case .country = self { return false }; return true }
 
     /// The record's kind: "nation" (the President's own), "land" (a land he holds), "feature", "department".
@@ -48,6 +52,7 @@ enum RenameTarget: Hashable, Codable, Sendable {
         case .country(let id): return id == gs.playerCountryID ? "nation" : "land"
         case .feature: return "feature"
         case .department: return "department"
+        case .province: return "province"
         }
     }
 
@@ -57,6 +62,7 @@ enum RenameTarget: Hashable, Codable, Sendable {
         case .country(let id): return gs.getCountry(id: id)?.name
         case .feature(let id): return MapFeatures.feature(id).map { MapFeatures.shownName($0, in: gs) }
         case .department(let id): return Departments.department(id).map { Departments.shownName($0, in: gs) }
+        case .province(let id): return Subdivisions.byID[id] != nil ? gs.provinceName(id) : nil
         }
     }
 
@@ -66,6 +72,7 @@ enum RenameTarget: Hashable, Codable, Sendable {
         case .country(let id): return gs.realName(of: id)
         case .feature(let id): return MapFeatures.feature(id)?.name(in: gs.currentYear) ?? id
         case .department(let id): return Departments.department(id)?.name ?? id
+        case .province(let id): return Subdivisions.byID[id].map { Subdivisions.historical($0, on: gs.currentDate).name } ?? id
         }
     }
 
@@ -78,6 +85,7 @@ enum RenameTarget: Hashable, Codable, Sendable {
             return id == gs.playerCountryID || c.territoryOf == gs.playerCountryID
         case .feature(let id): return MapFeatures.feature(id)?.exists(in: gs.currentYear) ?? false
         case .department(let id): return Departments.current(in: gs).contains { $0.id == id }
+        case .province(let id): return gs.provinceOwner(id) == gs.playerCountryID
         }
     }
 
@@ -85,6 +93,7 @@ enum RenameTarget: Hashable, Codable, Sendable {
     func isInhabited(in gs: GameState) -> Bool {
         switch self {
         case .country(let id): return id != Antarctica.id && !Islands.uninhabited(id)
+        case .province: return true
         case .feature, .department: return false
         }
     }

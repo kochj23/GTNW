@@ -305,6 +305,9 @@ final class ProvinceRenameTests: XCTestCase {
         XCTAssertEqual(gs.provinceName("US-OH"), "Buckeye Land")
         XCTAssertEqual(Subdivisions.find("Buckeye Land", in: gs)?.id, "US-OH", "the new name is a target")
         XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("renames Ohio Buckeye Land") })
+        XCTAssertEqual(gs.shadow.renames.last?.land, "US-OH", "on the record with every other rename")
+        XCTAssertEqual(e.renameTarget("California", in: gs).target, .province("US-CA"), "a state, not the nation that holds it")
+        XCTAssertNil(e.renameTarget("Bavaria", in: gs).target)
         XCTAssertEqual(gs.stateSwing()["US-OH"], -2, "a name nobody there chose costs votes")
         XCTAssertTrue(SubdivisionLayer(gs).describe("US-OH").hasPrefix("Buckeye Land — State (Ohio)"))
         // The same checks as every name: one line, no addresses, a length, only what he holds.

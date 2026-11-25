@@ -83,8 +83,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rout), and the surrender sheet gains **ANNEX PROVINCES**: take only those, while the loser keeps its government and
   pays like any loser. The terms list the provinces.
 - **Rename a state:** any state or province the President holds (at home, seceded back, annexed) is renamed through
-  the same card and name check as seas and departments (POWER PLAYS → NAMES, or "rename Texas to …"); the new name
-  shows on the map, the dossier, the news and the election map, and costs unrest there and votes in a U.S. state.
+  the rename system (`RenameTarget.province`: the same content check, the record and the Hall of Cartography;
+  POWER PLAYS → NAMES, or "rename Texas to …"); the new name shows on the map, the dossier, the news and the election
+  map, and costs unrest there and votes in a U.S. state.
 - **Chief of staff and orders:** the `country` tool lists a nation's states and provinces (holder, occupation,
   unrest) and answers for one by name (people, electoral votes, last result); orders accept state names ("sanction
   Bavaria" goes to Germany), and claim/buy/liberate on a province point to the peace table.

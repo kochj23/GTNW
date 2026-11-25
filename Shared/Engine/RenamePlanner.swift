@@ -24,6 +24,11 @@ extension GameEngine {
         if let f = MapFeatures.match(raw, in: gs) { return (.feature(f.id), nil) }
         if let d = Departments.match(raw, in: gs) { return (.department(d.id), nil) }
         let notYours = "You can rename your own country and the lands you hold."
+        // 3.36.0: a state or province (before the nation resolver, which would hand back the nation that holds it).
+        if let p = CommandTargets.state(raw, in: gs) {
+            let r = RenameTarget.province(p.id)
+            return r.isHeld(in: gs) ? (r, nil) : (nil, "\(gs.provinceName(p.id)) isn't yours to rename. You can rename the states and provinces you hold.")
+        }
         switch CommandTargets.resolve(raw, in: gs) {
         case .one(let t, _):
             let r = RenameTarget.country(t.id)
