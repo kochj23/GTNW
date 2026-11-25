@@ -42,6 +42,9 @@ extension GameEngine {
         gs.shadow.polls = [PollRecord(date: gs.currentDate, popularity: gs.shadow.popularity)]
         gs.shadow.startSnapshot = WorldEvaluation.evaluate(gs).snapshot(date: gs.currentDate, popularity: gs.shadow.popularity)
         gs.shadow.post("\(gs.currentDateLabel): You take the oath of office. The Situation Room is yours.", date: gs.currentDate, severity: 1)
+        if let r = gs.shadow.regime {   // 3.37.0: the office you hold and how it can be lost
+            gs.shadow.post("You lead \(r.countryName) as \(r.terms.title). How the office can end: \(r.removal.title), if approval collapses and outrage grows\(r.terms.hasElections ? " (or at the polls)" : ""). \(r.removal.ending.headline)", date: gs.currentDate, severity: 1)
+        }
         if gs.shadow.electionsEnabled {
             let e = GameCalendar.nextElection(after: gs.currentDate)
             gs.shadow.post("Next presidential election: \(GameCalendar.format(e)).", date: gs.currentDate)

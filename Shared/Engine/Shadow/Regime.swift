@@ -446,6 +446,8 @@ extension GameState {
     var regime: Regime { shadow.regime ?? Regime.resolve(self) ?? Regime.us }
 
     /// An American line in the player government's words (unchanged for the United States).
+    /// The player's nation as world news names it: "the United States", or the nation's own name.
+    var playerNation: String { playerCountryID == "USA" ? "the United States" : (getPlayerCountry()?.name ?? playerCountryID) }
     func say(_ text: String) -> String { shadow.regime.map { $0.localize(text) } ?? text }
 
     /// The game-over headline for a domestic ending.

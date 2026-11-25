@@ -191,6 +191,8 @@ final class RegimeVaticanGameTests: XCTestCase {
         XCTAssertTrue(titles.contains("Commander of the Swiss Guard"), "\(titles)")
         XCTAssertFalse(titles.contains { $0.contains("President") }, "\(titles)")
         XCTAssertTrue(gs.shadow.ticker.contains { $0.text.contains("Your pontificate begins.") })
+        XCTAssertTrue(gs.shadow.ticker.contains { $0.text.hasPrefix("You lead Vatican City as Pope. How the office can end: Pressure to resign,") },
+                      "the opening names the office and how it ends")
 
         // The ally: Italy, the nearest friendly power that can act.
         let ally = try XCTUnwrap(RegimeCapability.nearestCapableAlly(gs, target: nil))
@@ -287,6 +289,7 @@ final class RegimeUSRegressionTests: XCTestCase {
     func testUnitedStatesUnchanged() throws {
         let (e, gs) = try R337D.game("USA", difficulty: .easy)
         XCTAssertNil(gs.shadow.regime)
+        XCTAssertFalse(gs.shadow.ticker.contains { $0.text.hasPrefix("You lead ") }, "no opening card for the U.S.")
         for line in ["Congress has removed you from office.", PopularityModel.impeachmentText(stage: 2),
                      "State of the Union: the President addresses a joint session of Congress.", "THE PRESIDENT IS DEAD",
                      "The Vice President and the Joint Chiefs advise the President from the White House."] {
@@ -351,7 +354,8 @@ final class RegimePersistenceTests: XCTestCase {
             let (e, gs) = try R337D.game("VAT", seed: 99)
             e.performAdvisedAction(.airStrike, targetID: "RUS", advice: nil)
             R337D.fall(e, gs, turns: 6)
-            return gs.shadow.ticker.map(\.text)
+            // The Hall of Infamy is kept across games (and Nova remarks on a new record), so it is left out.
+            return gs.shadow.ticker.map(\.text).filter { !$0.hasPrefix("Hall of Infamy") && !$0.hasPrefix("Nova:") }
         }
         XCTAssertEqual(try play(), try play())
     }

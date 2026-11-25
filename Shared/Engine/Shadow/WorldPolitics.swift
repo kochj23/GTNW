@@ -262,19 +262,19 @@ extension GameEngine {
             gs.shadow.territoryPolicies.removeValue(forKey: weak.id)
             modifyDiplomaticRelation(from: me.id, to: lead.id, by: -20)
             bumpWorld("claims")
-            gs.shadow.post("\(lead.name) seizes lightly garrisoned \(weak.name) from the United States.", date: gs.currentDate, severity: 3)
+            gs.shadow.post("\(lead.name) seizes lightly garrisoned \(weak.name) from \(gs.playerNation).", date: gs.currentDate, severity: 3)
             logPlayEvent("territory_seized", detail: ["by": lead.id, "land": weak.id, "game_date": PlayHistory.day(gs.currentDate)])
         }
         // A coalition against an overreaching United States; on Hard and Nightmare its leader goes to war.
         if taken >= threshold * 2, rivals.count >= 2 {
             let a = rivals[0], b = rivals[1]
             if !a.alliances.contains(b.id) { formAlliance(country1: a.id, country2: b.id) }
-            gs.shadow.post("\(a.name) and \(b.name) form a coalition against the United States.", date: gs.currentDate, severity: 3)
+            gs.shadow.post("\(a.name) and \(b.name) form a coalition against \(gs.playerNation).", date: gs.currentDate, severity: 3)
             bumpWorld("diplomacy")
             if act >= 1.5, !a.atWarWith.contains(me.id), Reach.canReach(a.id, me.id, in: gs) {   // 3.29.0
                 declareWar(aggressor: a.id, defender: me.id)
                 bumpWorld("wars")
-                gs.shadow.post("\(a.name) declares war on the United States.", date: gs.currentDate, severity: 3)
+                gs.shadow.post("\(a.name) declares war on \(gs.playerNation).", date: gs.currentDate, severity: 3)
             }
         }
         self.gameState = gs
@@ -305,7 +305,7 @@ extension GameEngine {
         let rel = f.diplomaticRelations[me.id] ?? 0
         let type: TreatyType = rel > 70 && !me.alliances.contains(f.id) ? .alliance : (rel > 50 ? .nonAggression : .tradeAgreement)
         gs.shadow.treatyOffers.append(TreatyOffer(from: f.id, type: type, date: gs.currentDate))
-        gs.shadow.post("\(f.name) proposes a \(type.rawValue.lowercased()) with the United States.", date: gs.currentDate, severity: 1)
+        gs.shadow.post("\(f.name) proposes a \(type.rawValue.lowercased()) with \(gs.playerNation).", date: gs.currentDate, severity: 1)
         bumpWorld("diplomacy")
         self.gameState = gs
     }
@@ -455,7 +455,7 @@ extension GameEngine {
                 if gs.shadow.historicalAbsorptions[id] == owner { continue }   // history restores it (processAbsorptions)
                 gs.countries[held].profile.outcry = min(100, gs.countries[held].profile.outcry + 20)
                 gs.countries[held].stability = max(0, gs.countries[held].stability - 10)
-                let ownerName = owner == gs.playerCountryID ? "the United States" : (gs.getCountry(id: owner)?.name ?? owner)
+                let ownerName = owner == gs.playerCountryID ? gs.playerNation : (gs.getCountry(id: owner)?.name ?? owner)
                 gs.shadow.post("An independence movement in \(gs.countries[held].name) demands freedom from \(ownerName).", date: gs.currentDate, severity: 2)
                 logPlayEvent("independence_movement", detail: ["land": id, "owner": owner, "game_date": PlayHistory.day(gs.currentDate)])
                 continue
