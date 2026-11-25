@@ -2,7 +2,7 @@
 
 ![Build](https://github.com/kochj23/GTNW/actions/workflows/build.yml/badge.svg)
 ![Tests](https://img.shields.io/badge/tests-1261-brightgreen)
-![Version](https://img.shields.io/badge/version-3.35.1-blue)
+![Version](https://img.shields.io/badge/version-3.36.0-blue)
 ![AI](https://img.shields.io/badge/AI-NovaAIKit%201.1-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013.0%2B%20%7C%20iOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)

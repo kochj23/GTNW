@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.36.0] - 2026-11-24 — Your name on the map
+
 ### Added
 - **Consequences.** Striking a nation that has surrendered to you, is at peace with you under signed terms, or is a
   friend (relations above +40): the command card warns before EXECUTE; afterwards an international tribunal opens a
@@ -1891,6 +1893,8 @@ threshold of 12 and impeachment advanced a stage at every monthly poll, while la
 - `WarRoomView.swift` was not compiled by any target.
 
 ## [Unreleased]
+
+## [3.36.0] - 2026-11-24 — Your name on the map
 
 ### Added
 - **A brain per country (PvP + PvE)** — every country can be driven by a different brain:
