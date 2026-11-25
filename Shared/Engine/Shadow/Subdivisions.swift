@@ -318,11 +318,14 @@ extension GameEngine {
         for s in Subdivisions.all { if let n = holders.home[s.id] { home[n, default: []].append(s) } }
         for nid in home.keys.sorted() {
             guard let nation = gs.getCountry(id: nid), !nation.isDestroyed, nation.territoryOf == nil, let subs = home[nid] else { continue }
+            // One write per nation: `shadow` is published, so a write per province would copy and notify 500 times a turn.
+            var unrest = gs.shadow.provinces.unrest
             for s in subs {
-                let now = gs.shadow.provinces.unrest[s.id] ?? 0
+                let now = unrest[s.id] ?? 0
                 let next = now * keep + ProvinceModel.unrestTarget(s, nation: nation, owner: holders.owner[s.id], in: gs) * (1 - keep)
-                gs.shadow.provinces.unrest[s.id] = next < 0.5 ? nil : (next * 10).rounded() / 10
+                unrest[s.id] = next < 0.5 ? nil : (next * 10).rounded() / 10
             }
+            gs.shadow.provinces.unrest = unrest
             // Secession: a nation near collapse, a reason, and a province past the breaking point (the most restless).
             guard nation.stability < ProvinceModel.collapse, let why = ProvinceModel.trigger(nation, in: gs) else { continue }
             let candidates = subs.filter { holders.owner[$0.id] == nid && !Subdivisions.isCapitalDistrict($0)
