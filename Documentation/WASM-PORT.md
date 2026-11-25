@@ -158,6 +158,7 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `advice` | `action, target` | the cabinet's advice (advisor, stance, reason, odds), the three-line warnings for major actions, the default sizing and warhead |
 | `advisors` | `country?` | the advisor rail in order: status, loyalty, hawkishness, current advice, recommendation, briefing; the profile (expertise, influence, public support, interventionism, fiscal conservatism, department, bio, advice areas); `posts`: the seven Situation Room posts with holder, title, briefing and former holders |
 | `aid` | `id` | foreign aid to one country (AidSheet): money left this year, need and sent per kind of aid |
+| `antarctica` | | the Antarctic programme (AntarcticPanel, 3.36): treaty standing, stations, who holds the ice, the four orders with cost, why not now and the button's hint |
 | `airCampaign` | `target` | the strategic air campaign (AirCampaignSheet): why it can't be ordered, the two aims |
 | `arsenal` | `target?, action?, troops?, aircraft?, warheads?` | the era's weapons under each military order with legal status and treaty (ArsenalLine), and the force-sizing panel for one offensive (AttackSizingPanel) with the cabinet's warnings |
 | `brains` | `jobs?` | who plays each country (human, rule-based, the site AI), whether the player is only watching (Watch AI vs AI), and with `jobs` the site-AI moves the next end of turn will ask for |
@@ -166,6 +167,7 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `coalitions` | `target` | a coalition against a country (CoalitionSheet): members and each candidate's odds of joining |
 | `command` | `text` \| `intent` \| `model` \| `schema` | the command box (3.34.0): `CommandParser` then `CommandPlanner`, as the app runs them → `plan` (card + `GameOrder`s), `clarify` (choices carrying their intent), `answer`, `rejected`, or `unparsed` (ask a model); `model` is a translation in the app's `ModelCommand` shape, checked against the closed lists before planning; `schema` returns the lists |
 | `congress` | `target?` | the House and Senate, war support, the War Powers clock, impeachment risk and stage, and against a target the two authorizations with their odds and the votes so far |
+| `consequences` | `target?` | what the world remembers (3.36): the acts a court could charge, alliance councils and expulsions, refugee waves and the answers, lands that broke away, the trial; with `target` its protection and the command card's warnings |
 | `country` | `id` | the dossier: a nation (profile, economy, intelligence estimates for foreign military and warheads, anxieties, aid need, factbook) or a colony / pre-state / unclaimed land |
 | `crisis` | | the waiting crisis as DetailedCrisisView shows it: severity label, brief, epigraph, time limit, decisions waiting behind it, options with the recommending advisor's name and odds |
 | `dirtyTactics` | `target?, preset?` | every tactic of the year with its legal status, problem, program, covert risk and standing policies in force; what comes later |
@@ -173,6 +175,7 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `fleets` | `target, fleet?, mission?, preset?` | fleet orders (FleetOrderSheet): the era's fleets, missions, commitments, the read-out, why not, warnings, fleets out |
 | `fronts` | | the War Room: every front with troop and damage assessments, momentum, the orders it allows, surrender odds, the War Powers clock, the operations log |
 | `groupAction` | `pick, region?, ids?, saved?, kind, amount?, garrison?, split?, rate?` | a group action's per-nation plan and total (GroupActionSheet) |
+| `homeFront` | | the HOME FRONT sheet (3.36): official vs leaked figures, one panel per power play at home with its lines and orders, each carrying the `command` query's `intent` (plan, card, then `executeCommand`, as on the Mac); the states and industries the orders accept |
 | `intel` | | the intelligence summary: wars, nuclear powers, relations |
 | `landMarket` | | the land market's bids, unclaimed lands, the claim campaign and the regions it can cover |
 | `manpower` | | troops, the draft in force, and the two call-ups with cost and training (ManpowerSheet) |
@@ -181,7 +184,11 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `nations` | `year` | the nations that exist in a year (1789–2100) for the new-game picker |
 | `news` | | the news wire (`ShadowState.ticker`, saved with the game) with dates and severities, and the scenario's epigraph |
 | `peace` | | the four peace paths with progress, the conditions, the wars elsewhere to broker (PeaceSheet) |
+| `powerPlays` | `target?` | the POWER PLAYS sheet (3.36): the acquisition campaign and its steps, limited strikes with hit odds, the leader capture raid, emergency tariffs under each authority with the court's likely ruling, the national emergency, the emergency orders in court with their reissue options |
+| `presidency` | | the record of the presidency (3.36): every award (this game, new, career), the career, "I told you so", and at game over the epilogue: the history books' verdict, the library, fifty years later, the trial |
+| `provinces` | `nation?` | states and provinces (3.36) of one nation this year: name (the President's and history's), kind, share, holder, occupier, unrest, electors and the last election state by state; the nations that have them |
 | `records` | | the Records tabs: the Hall of Infamy (as stored, for the front end to keep) and the age, renamed lands, empire goals, war deliberations and reasons, the fog, the debrief |
+| `renames` | `id?, name?` | everything the President may rename (nation, lands, departments, seas and mountains, states and provinces); with `id` and `name` the app's check (`NameScreen`), the stored name and the cabinet's read; renamed features and who uses them |
 | `resources` | | territory income, extraction rates and levies (ResourcesSheet) |
 | `scenarios` | | the historical scenarios and the sittings (short scored challenges) |
 | `scorecard` | | the scenario scorecard against history, the World Evaluation and Presidency Summary, and once the game is over the final score, breakdown, statistics and epigraphs |
@@ -210,6 +217,7 @@ through verbs is a function of seed and orders.
 | `annexProvinces` | `id` | SettlementSheet ANNEX PROVINCES (3.36.0): only the provinces the army holds |
 | `answerMessage` | `id, response` | a reply on a diplomatic message (accept, decline, counter, nonAggression, apology, standFirm, trade, mediation) |
 | `answerTreaty` | `id, accept` | TreatyOffersSheet ACCEPT / DECLINE |
+| `antarcticOrder` | `op` (station, join, leave, renegotiate) | AntarcticPanel's buttons (`runAntarcticOrder`), one action |
 | `askCongress` | `target, kind` | ask for a declaration of war or an authorization to use force |
 | `assignBrain` | `country, brain` | human, rule or relay (the site AI) |
 | `brainMoves` | `on, moves?` | stage the site AI's answers for the next end of turn (`on: false`: rule-based) |
@@ -232,7 +240,10 @@ through verbs is a function of seed and orders.
 | `launchSatellite` | `type` | recon or warning |
 | `orderFleet`, `recallFleet` | `fleet, target, mission, preset`; `id` | FleetOrderSheet |
 | `petitionStatehood` | `id` | ask Congress to admit a territory |
+| `powerPlay` | `op` (campaign, strike, raid, tariff, declare, end, rescind, reissue) and its fields | POWER PLAYS sheet buttons, each the engine method the Mac button calls |
+| `presidencyCareer` | `career` | restore the career the front end kept (the `presidency` query's `stored`) |
 | `renameTerritory` | `id, name` | name or rename a territory |
+| `renameTarget` | `id, name` | rename anything the `renames` query lists: a place through `renamePlace`, the nation or a land through `rename` (no action) |
 | `requestCoalition` | `target` | CoalitionSheet ASK |
 | `sendAid` | `target, humanitarian?, economic?, intelligence?, military?, nuclear?` | AidSheet SEND AID |
 | `settle` | `id, choice, name?` | SettlementSheet ANNEX / INSTALL |

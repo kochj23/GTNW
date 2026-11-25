@@ -35,6 +35,10 @@ const games = (specs.length ? specs : DEFAULT_GAMES).map((s) => {
 const DOVE = ['Send Ambassador', 'Trade Deal', 'Economic Aid', 'Arrange Summit', 'Investment Package', 'Military Exercise',
   'Deploy Spies', 'Satellite Recon', 'Economic Sanctions', 'Cyber Attack', 'Fund Opposition', 'Food Aid', 'Joint Statement',
   'Impose Tariffs', 'Military Aid', 'Sell Weapons', 'Steal Technology', 'Defensive Pact', 'Demand Apology', 'Tech Assistance'];
+// The web screens' read-only queries for the 3.36 features, asked every tenth turn in both engines (the replies must be
+// identical, and the saved game after them too: a query never changes the game).
+const QUERIES = (target) => [{ q: 'presidency' }, { q: 'provinces' }, { q: 'renames' }, { q: 'powerPlays' }, { q: 'powerPlays', target },
+  { q: 'homeFront' }, { q: 'antarctica' }, { q: 'consequences', target }];
 const HAWK = [...DOVE, 'Air Strike', 'Naval Blockade', 'Ground Invasion', 'Special Forces', 'Bombardment', 'Stage Coup'];
 
 // ---- the native engine: gtnw-golden --serve ----
@@ -56,14 +60,14 @@ const nativeCall = native.call;
 
 // ---- the WebAssembly engine (or, with "native" for the .wasm, a second native process: a baseline that shows
 // what differs between any two runs) ----
-const OP = { newGame: 1, act: 2, endTurn: 3, snapshot: 4, save: 5 };
+const OP = { newGame: 1, act: 2, endTurn: 3, snapshot: 4, save: 5, query: 10 };
 let otherCall;
 if (wasmPath === 'native') {
   otherCall = serve().call;
 } else {
   const resources = Object.fromEntries(Object.entries(RESOURCE_FILES).map(([n, p]) => [n, readFileSync(join(root, p))]));
   const wasm = await loadGTNW(readFileSync(wasmPath), resources, { log: (_fd, t) => process.stderr.write(`wasm: ${t}\n`) });
-  otherCall = async (op, payload) => wasm.raw(op, op === OP.newGame || op === OP.act ? payload : undefined);
+  otherCall = async (op, payload) => wasm.raw(op, op === OP.newGame || op === OP.act || op === OP.query ? payload : undefined);
 }
 
 // ---- comparison ----
@@ -156,6 +160,13 @@ for (const g of games) {
       }
       if (r.state?.gameOver) break;
       const live = (r.state?.nations ?? []).filter((n) => !n.destroyed && n.id !== g.player).map((n) => n.id).sort();
+      if (t % 10 === 0 && live.length) {
+        for (const q of QUERIES(live[(t * 3) % live.length])) {
+          const a = await both(OP.query, JSON.stringify(q), `${at} query ${q.q}`);
+          totalCalls++;
+          if (!a.ok) throw new Error(`${at}: query ${q.q} failed: ${a.error}`);
+        }
+      }
       if (live.length) {
         const nuke = g.hawk && t > 0 && t % 40 === 0;
         const action = nuke ? 'Launch Nukes' : orders[t % orders.length];

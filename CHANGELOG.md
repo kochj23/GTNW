@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   logged as `nation_founded` with `reason` `broke_away`; the expelling alliance's answer is `alliance_revenge`. The
   README's play-history table now lists the state and province events, and a test fails if an engine file adds a
   nation to the board without logging a founding event.
+- **Web bridge for the 3.36 features** (GTNWCore, `Documentation/WASM-PORT.md`): queries `presidency` (awards, career, "I told
+  you so", and at game over the verdict, library, fifty years later and the trial), `provinces` (states and provinces with
+  holder, occupation, unrest, electors and the last election state by state), `renames` (every renamable target and the
+  content check), `powerPlays`, `homeFront` (each order carries the command-box intent the Mac sheet plans), `antarctica`
+  and `consequences`; verbs `powerPlay`, `antarcticOrder`, `renameTarget` and `presidencyCareer`. `gtnw-golden --serve`
+  answers queries, and the Wasm-vs-native soak asks the new ones every tenth turn.
 
 ### Changed
 - **Governments you install count as held land.** A nation whose new government you chose at the settlement (any of

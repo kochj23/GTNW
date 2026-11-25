@@ -31,7 +31,7 @@ for (name, dir) in [("nation_cabinets", "Shared/Resources"), ("nation_characters
 
 if args.dropFirst().first == "--serve" {
     // The bridge over stdin/stdout, for the soak (Wasm/parity/soak.mjs): one request per line, "<op> <payload>", with
-    // gtnw_call's op numbers (1 newGame, 2 act, 3 endTurn, 4 snapshot, 5 save, 6 load); one reply per line.
+    // gtnw_call's op numbers (1 newGame, 2 act, 3 endTurn, 4 snapshot, 5 save, 6 load, 10 query); one reply per line.
     while let line = readLine(strippingNewline: true) {
         let op = line.prefix { $0 != " " }, payload = String(line.dropFirst(op.count + 1))
         let out: String
@@ -42,6 +42,7 @@ if args.dropFirst().first == "--serve" {
         case "4": out = GTNWBridge.snapshot()
         case "5": out = GTNWBridge.save()
         case "6": out = GTNWBridge.load(payload)
+        case "10": out = GTNWBridge.query(payload)
         default: out = #"{"ok":false,"error":"unknown op"}"#
         }
         FileHandle.standardOutput.write(Data((out + "\n").utf8))
