@@ -195,10 +195,12 @@ enum BrainBrief {
         let near = Reach.landNeighbors(c.id, in: gs)
         add(others.filter { near.contains($0.id) }.sorted { (abs(rel($0)), $1.id) > (abs(rel($1)), $0.id) })
         add(Array(others.sorted { ($0.gdp, $1.id) > ($1.gdp, $0.id) }.prefix(5)))
-        if picked.count < cap {
-            add(others.filter { Reach.canReach(c.id, $0.id, in: gs) }.sorted { (abs(rel($0)), $1.id) > (abs(rel($1)), $0.id) })
+        // Reach checks are the costly part: only the thirty it feels most strongly about, and stop once full.
+        for o in others.sorted(by: { (abs(rel($0)), $1.id) > (abs(rel($1)), $0.id) }).prefix(30) where picked.count < cap && !picked.contains(o.id) {
+            if Reach.canReach(c.id, o.id, in: gs) { picked.append(o.id) }
         }
-        return picked.prefix(cap).compactMap { id in others.first { $0.id == id } }
+        let byID = Dictionary(others.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return picked.prefix(cap).compactMap { byID[$0] }
     }
 
     /// One line per relevant nation: relation, what it is to us, our estimates and whether we can reach it.
@@ -277,7 +279,8 @@ enum BrainBrief {
                    + "sanctioned by \(sanctions.isEmpty ? "nobody" : sanctions.prefix(4).joined(separator: ", ")).")
 
         // Relations.
-        let rels = c.diplomaticRelations.filter { k, _ in gs.getCountry(id: k).map { !$0.isDestroyed && !$0.isTerritory } ?? false }
+        let live = Set(gs.liveCountries.map(\.id))
+        let rels = c.diplomaticRelations.filter { k, _ in live.contains(k) }
         let friends = rels.filter { $0.value > 0 }.sorted { ($0.value, $1.key) > ($1.value, $0.key) }.prefix(caps.friends)
         let rivals = rels.filter { $0.value < 0 }.sorted { ($0.value, $0.key) < ($1.value, $1.key) }.prefix(caps.friends)
         out.append("Friends: \(friends.isEmpty ? "none" : friends.map { "\($0.key) \(signed($0.value))" }.joined(separator: ", ")). "
