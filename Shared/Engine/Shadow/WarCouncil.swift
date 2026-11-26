@@ -314,9 +314,12 @@ enum WarCouncil {
     // MARK: The record
 
     /// The whole deliberation, built from the numbers above. `roll` (0…1) sets which way thin information is wrong.
-    static func deliberate(_ a: Country, _ d: Country, in gs: GameState, roll: Double) -> WarDeliberation {
+    /// 3.37.0: `seen` is the figure a model brain's council works from (its own fogged estimate, BrainBrief.swift);
+    /// nil for the built-in AI, which reads the figure in general circulation.
+    static func deliberate(_ a: Country, _ d: Country, in gs: GameState, roll: Double,
+                           seen override: (value: Double, age: Int, source: IntelSource)? = nil) -> WarDeliberation {
         // 3.32.1: the figure the government is working from, and how old it is.
-        let seen = Intelligence.believedArmy(of: d, for: a, in: gs)
+        let seen = override ?? Intelligence.believedArmy(of: d, for: a, in: gs)
         let aged = max(0, 1 - Double(seen.age) * 0.08)   // a figure loses a twelfth of its worth every turn
         let conf = confidence(a, about: d, year: gs.currentYear) * aged
         let truth = WarEstimate(capability: capability(a, d), resolve: resolve(d), confidence: conf)
@@ -389,14 +392,18 @@ extension GameEngine {
     /// `committed`: the war has already been ordered (by the cabinet that just asked, by a treaty, by a revolt), so
     /// the paper records what was weighed and reads "war" — the comparison with the cheaper instruments stays on it.
     @discardableResult
-    func deliberateWar(actor: String, target: String, roll: Double? = nil, committed: Bool = false) -> WarDeliberation? {
+    /// 3.37.0: `brain`: a model brain ordered the war; its council works from that nation's own estimates and the
+    /// record says so (a stand-down names the move taken instead, `WarCouncil.brainAlternative`).
+    func deliberateWar(actor: String, target: String, roll: Double? = nil, committed: Bool = false,
+                       brain: Bool = false) -> WarDeliberation? {
         guard let gs = gameState, let a = gs.getCountry(id: actor), let d = gs.getCountry(id: target) else { return nil }
         // One sitting per pair per turn: the cabinet does not write the same paper twice on its way to the same war.
         if let last = gs.shadow.deliberations.last, last.actor == actor, last.target == target, last.turn == gs.turn {
             return last
         }
         let r = roll ?? Double.random(in: 0..<1, using: &gs.rng)
-        var dl = WarCouncil.deliberate(a, d, in: gs, roll: r)
+        var dl = WarCouncil.deliberate(a, d, in: gs, roll: r,
+                                       seen: brain ? Intelligence.estimate(.army, of: d, for: a, in: gs).map { ($0.value, $0.age, $0.source) } : nil)
         if committed, dl.chose != "war" {
             dl.chose = "war"
             dl.statement = dl.statement.replacingOccurrences(
@@ -415,16 +422,21 @@ extension GameEngine {
             gs.shadow.post("\(a.name) steps back from war with \(d.name): \(dl.instruments.first { $0.id == dl.chose }?.name.lowercased() ?? "a cheaper instrument") costs less.",
                            date: gs.currentDate, severity: 1)
         }
-        logPlayEvent("war_deliberation", detail: ["actor": actor, "target": target, "chose": dl.chose,
-                                                 "capability": PlayHistory.num(dl.estimate.capability),
-                                                 "resolve": PlayHistory.num(dl.estimate.resolve),
-                                                 "confidence": PlayHistory.num(dl.estimate.confidence),
-                                                 "biases": dl.biases.map(\.rawValue).joined(separator: ","),
-                                                 "true_capability": PlayHistory.num(dl.truth.capability),
-                                                 "true_resolve": PlayHistory.num(dl.truth.resolve),
-                                                 "casus": dl.casus.rawValue, "done_test": dl.doneTest.kind.rawValue,
-                                                 "excerpt": PlayHistory.text(String(dl.statement.prefix(300))),
-                                                 "game_date": PlayHistory.day(gs.currentDate)])
+        var detail: [String: Any] = ["actor": actor, "target": target, "chose": dl.chose,
+                                     "capability": PlayHistory.num(dl.estimate.capability),
+                                     "resolve": PlayHistory.num(dl.estimate.resolve),
+                                     "confidence": PlayHistory.num(dl.estimate.confidence),
+                                     "biases": dl.biases.map(\.rawValue).joined(separator: ","),
+                                     "true_capability": PlayHistory.num(dl.truth.capability),
+                                     "true_resolve": PlayHistory.num(dl.truth.resolve),
+                                     "casus": dl.casus.rawValue, "done_test": dl.doneTest.kind.rawValue,
+                                     "excerpt": PlayHistory.text(String(dl.statement.prefix(300))),
+                                     "game_date": PlayHistory.day(gs.currentDate)]
+        if brain {
+            detail["source"] = "brain"
+            if dl.chose != "war" { detail["instead"] = WarCouncil.brainAlternative(dl.chose, target: target).verb }
+        }
+        logPlayEvent("war_deliberation", detail: detail)
         self.gameState = gs
         return dl
     }

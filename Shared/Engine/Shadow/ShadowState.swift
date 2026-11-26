@@ -269,6 +269,8 @@ struct ShadowState: Codable {
     /// 3.34.0: what the command box carried out, as resolved orders (never the typed text), newest last.
     var commandLog: [CommandRecord] = []
     static let commandLogCap = 200
+    /// 3.37.0: what each model-brain nation did on its last few turns and why, in its own words (BrainBrief.swift).
+    var brainMemory: [String: [BrainMemoryEntry]] = [:]
     /// 3.36.0: the record a court could charge, alliance councils, refugee waves, lands that broke away.
     var consequences = ConsequenceState()
     /// 3.36.0: presidential power plays: acquisition campaigns, emergency orders and the courts, capture raids,
@@ -339,6 +341,7 @@ struct ShadowState: Codable {
         case deliberations, casusLog, doneTests, statedCasus, intel, worldIntel, dispatches, peaceTerms
         case doctrines, sittingID, sittingTurns, sittingDebrief
         case commandLog
+        case brainMemory
         case consequences
         case presidency
         case powerPlays
@@ -458,6 +461,7 @@ struct ShadowState: Codable {
         sittingTurns = try? c.decodeIfPresent(Int.self, forKey: .sittingTurns)
         sittingDebrief = (try? c.decodeIfPresent([String].self, forKey: .sittingDebrief)) ?? []
         commandLog = (try? c.decodeIfPresent([CommandRecord].self, forKey: .commandLog)) ?? []
+        brainMemory = (try? c.decodeIfPresent([String: [BrainMemoryEntry]].self, forKey: .brainMemory)) ?? [:]
         consequences = (try? c.decodeIfPresent(ConsequenceState.self, forKey: .consequences)) ?? ConsequenceState()
         presidency = (try? c.decodeIfPresent(PresidencyRecord.self, forKey: .presidency)) ?? PresidencyRecord()
         powerPlays = (try? c.decodeIfPresent(PowerPlayState.self, forKey: .powerPlays)) ?? PowerPlayState()

@@ -117,6 +117,8 @@
 		0FE240986C32A661C433FF53 /* EmergencyCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 230E948CE8E6B2EDB18D694C /* EmergencyCatalog.swift */; };
 		0FEE09119D70ACB9E1B306FE /* NovaAIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 99902B2064DFC7543496C0EE /* NovaAIKit */; };
 		1133AF3FACD6B76AFF6F8365 /* GameEngineBrains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */; };
+		F337F0000000000000000002 /* BrainBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = F337F0000000000000000001 /* BrainBrief.swift */; };
+		F337F0000000000000000003 /* BrainBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = F337F0000000000000000001 /* BrainBrief.swift */; };
 		128301DFE2C8797427A9D85F /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
 		129B37F43319C96B0A3D7094 /* NaturalLanguageIntel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FA7A49314ADF98CD22BB912 /* NaturalLanguageIntel.swift */; };
 		1357BE3A32F95BEC7FA165C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7840FA926BF3040BC40D754 /* ContentView.swift */; };
@@ -199,6 +201,7 @@
 		46C1C603239AE673AB82F396 /* ShadowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C8633DA3F981CA877D68DAB /* ShadowState.swift */; };
 		471CAF9CFF65EE7E4D0EB572 /* ShadowPackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */; };
 		4964D75AAE78229C8DE429D7 /* AIBrainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1204760B8883BA6B8FB377CD /* AIBrainTests.swift */; };
+		F337F0000000000000000005 /* BrainBriefTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F337F0000000000000000004 /* BrainBriefTests.swift */; };
 		49CD0FDA3BDC83B0556227B7 /* CombatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C61B45692E5ECBC414422A /* CombatModel.swift */; };
 		4CF3D7350109DEA2300DD6D0 /* ScoringSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5D4DCCF7F05CDE80263A03 /* ScoringSystem.swift */; };
 		4E070956D299BFBFE9D58CC9 /* GTNWRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B18B020054C4C3F928E69B /* GTNWRetryTests.swift */; };
@@ -227,7 +230,6 @@
 		62EB1DD76C1B4B1081B6C3B7 /* HistoricalCrises_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FC28C0C961BEC6236B2FFF /* HistoricalCrises_PreNuclear.swift */; };
 		6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */; };
 		634BF8435107BB2914F1ED7C /* GameStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D467968FAB7262BA7A2FF54 /* GameStoreTests.swift */; };
-		6389A4D8D9F7A6BE10CC8664 /* AdaptiveOpponentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */; };
 		63D3917AA2EEFC9D5EA781FD /* AdvancedActionsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E527FECF5DDF142FDFEEBC2 /* AdvancedActionsPanel.swift */; };
 		641E1562EBDC48F9AB281013 /* WorldCountriesDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76A2267D69249178DDADD78 /* WorldCountriesDatabase.swift */; };
 		66F2249CECDBBC27AAD10B49 /* HistoricalAdministrations_PreNuclear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07946DC296FF0187307C810E /* HistoricalAdministrations_PreNuclear.swift */; };
@@ -298,7 +300,6 @@
 		F33600000000000000000F03 /* SubdivisionMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000000F01 /* SubdivisionMap.swift */; };
 		8E9F944388DF59415EE024D9 /* WorldWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D479F429932A825514F5FAF8 /* WorldWatchTests.swift */; };
 		F33600000000000000001002 /* SubdivisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33600000000000000001001 /* SubdivisionTests.swift */; };
-		8F7547338C4D6E16297EB9AD /* AdaptiveOpponentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */; };
 		8FC212DF204E40116AA4FAF2 /* PreStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC212DF204E40116AA4FAF1 /* PreStateModel.swift */; };
 		8FC212DF204E40116AA4FAF3 /* PreStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC212DF204E40116AA4FAF1 /* PreStateModel.swift */; };
 		909EF8D72DB1F0F956BB1359 /* AppAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F531D63D4C9E7958EA8037A /* AppAI.swift */; };
@@ -535,6 +536,7 @@
 		0E95E8512CE97DF1EC30E2A9 /* ElectionCycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ElectionCycle.swift; sourceTree = "<group>"; };
 		1141BA63FDB01AF2170CA3B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1204760B8883BA6B8FB377CD /* AIBrainTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIBrainTests.swift; sourceTree = "<group>"; };
+		F337F0000000000000000004 /* BrainBriefTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BrainBriefTests.swift; sourceTree = "<group>"; };
 		1423DF6B0861CDEC638BCAF1 /* AudioGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioGate.swift; sourceTree = "<group>"; };
 		14C825C7503C08B10B6DFAF1 /* Antarctica.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Antarctica.swift; sourceTree = "<group>"; };
 		F33600000000000000000D01 /* StateElection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StateElection.swift; sourceTree = "<group>"; };
@@ -558,7 +560,6 @@
 		19B45E868695D0EB48133AB0 /* AIOptionsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIOptionsTests.swift; sourceTree = "<group>"; };
 		1AA33EBB6DA34E128D5B5218 /* AlienInvasionScenario.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlienInvasionScenario.swift; sourceTree = "<group>"; };
 		1B789017E194BE2CA8D93A8D /* EconomyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EconomyModels.swift; sourceTree = "<group>"; };
-		1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdaptiveOpponentEngine.swift; sourceTree = "<group>"; };
 		1D16FF1F735071CEC4584373 /* WorldWatch.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldWatch.swift; sourceTree = "<group>"; };
 		1F531D63D4C9E7958EA8037A /* AppAI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppAI.swift; sourceTree = "<group>"; };
 		1FAEB803289CF2B22BD2D87B /* NovaAPIServer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NovaAPIServer.swift; sourceTree = "<group>"; };
@@ -610,6 +611,7 @@
 		6A1C521C011A1B3B0E412D4D /* AIKitAdoptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIKitAdoptionTests.swift; sourceTree = "<group>"; };
 		6DB4D84116FC98A46D9A304E /* WorldEvaluation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorldEvaluation.swift; sourceTree = "<group>"; };
 		6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GameEngineBrains.swift; sourceTree = "<group>"; };
+		F337F0000000000000000001 /* BrainBrief.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BrainBrief.swift; sourceTree = "<group>"; };
 		701102036BC53F821A7D94AB /* PostgresGameStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PostgresGameStore.swift; sourceTree = "<group>"; };
 		741E9954966E3FD4CF3B0AF1 /* OccupationModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OccupationModel.swift; sourceTree = "<group>"; };
 		74CCD308F7E5918ED00093E8 /* RenamePlanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RenamePlanner.swift; sourceTree = "<group>"; };
@@ -763,6 +765,7 @@
 				AECB96BC2F3C16F08080563A /* AIMove.swift */,
 				80D288D0C83D8EB60BA776D4 /* AIBrain.swift */,
 				6E36828F5A5E59F59A1B7AD3 /* GameEngineBrains.swift */,
+				F337F0000000000000000001 /* BrainBrief.swift */,
 				4551BAADF5536A897DEAD970 /* Shadow */,
 				A5E789AE09DC5C6EFDA7EE61 /* Retry.swift */,
 				E7A1C0DE00000000000000A1 /* EnginePlatform.swift */,
@@ -852,6 +855,7 @@
 				3C6C128510F682CA02563AF3 /* GTNWFunctionalTests.swift */,
 				7546728FBC68818B40D03FC0 /* GTNWSecurityTests.swift */,
 				1204760B8883BA6B8FB377CD /* AIBrainTests.swift */,
+				F337F0000000000000000004 /* BrainBriefTests.swift */,
 				9CA3E7FC67216FDA941511B3 /* GTNWAuditTests.swift */,
 				9D2D5B784CD374EAB3B152F9 /* ShadowPackTests.swift */,
 				E7C4A019381A252777158DFB /* ShadowSystemsTests.swift */,
@@ -1099,7 +1103,6 @@
 		92035FF12B559A4A7AD5B737 /* AI */ = {
 			isa = PBXGroup;
 			children = (
-				1BD1C283ACC4F34542BAA6D4 /* AdaptiveOpponentEngine.swift */,
 				16128088EEBC501C77066EB8 /* AIOutputSanitizer.swift */,
 				1F531D63D4C9E7958EA8037A /* AppAI.swift */,
 				1A7E5C00349ADF35C1393A10 /* CommandTranslator.swift */,
@@ -1464,7 +1467,6 @@
 				79602484A81ED37C5DB339E6 /* AchievementEngine.swift in Sources */,
 				BDDC07680AF084544D50CD10 /* PredictiveIntelligence.swift in Sources */,
 				CA6462EEB2E6B81B69D35F2A /* NaturalLanguageIntel.swift in Sources */,
-				6389A4D8D9F7A6BE10CC8664 /* AdaptiveOpponentEngine.swift in Sources */,
 				7B5D1C3A60EDC9F80545B4CB /* TheLivingRoom.swift in Sources */,
 				1C79C86BAFCFD45DFD28E584 /* CinematicEngine.swift in Sources */,
 				6A3EA91EF0FA3F9EB096E784 /* MultiPerspectiveAnalyzer.swift in Sources */,
@@ -1480,6 +1482,7 @@
 				F5D3EECD972DFFBD004425C8 /* AIMove.swift in Sources */,
 				D31714E3CFC04A2FB56720BA /* AIBrain.swift in Sources */,
 				AF28774C81756009FAC7CBC3 /* GameEngineBrains.swift in Sources */,
+				F337F0000000000000000002 /* BrainBrief.swift in Sources */,
 				533F72387DFB4F90133E498F /* BrainAssignmentView.swift in Sources */,
 				63D3917AA2EEFC9D5EA781FD /* AdvancedActionsPanel.swift in Sources */,
 				0AF81EFA232DADCE28B225B6 /* ShadowPack.swift in Sources */,
@@ -1607,6 +1610,7 @@
 				1388886FA413B3428253908D /* GTNWFunctionalTests.swift in Sources */,
 				6317BA6E49C51C795AB51D06 /* GTNWSecurityTests.swift in Sources */,
 				4964D75AAE78229C8DE429D7 /* AIBrainTests.swift in Sources */,
+				F337F0000000000000000005 /* BrainBriefTests.swift in Sources */,
 				99BD19A6521D9A063A32D7A6 /* GTNWAuditTests.swift in Sources */,
 				471CAF9CFF65EE7E4D0EB572 /* ShadowPackTests.swift in Sources */,
 				3E54B0A4F07F41A7AF717735 /* ShadowSystemsTests.swift in Sources */,
@@ -1712,7 +1716,6 @@
 				30F68E1207F3561746C91DDA /* AchievementEngine.swift in Sources */,
 				7541030DABD387A9939B01C1 /* PredictiveIntelligence.swift in Sources */,
 				129B37F43319C96B0A3D7094 /* NaturalLanguageIntel.swift in Sources */,
-				8F7547338C4D6E16297EB9AD /* AdaptiveOpponentEngine.swift in Sources */,
 				5C26A6F901262E80A187FD40 /* TheLivingRoom.swift in Sources */,
 				44D3506DAA90405656E52A9E /* CinematicEngine.swift in Sources */,
 				34FD20D352517C86411805AD /* MultiPerspectiveAnalyzer.swift in Sources */,
@@ -1726,6 +1729,7 @@
 				2717DAD271F33C80CAA4E1BA /* AIMove.swift in Sources */,
 				C4397A3E206071BE38AD914B /* AIBrain.swift in Sources */,
 				1133AF3FACD6B76AFF6F8365 /* GameEngineBrains.swift in Sources */,
+				F337F0000000000000000003 /* BrainBrief.swift in Sources */,
 				D6E797F0D014EF9D1EB9F5E0 /* BrainAssignmentView.swift in Sources */,
 				AC397C0A52F46F8DD12586D6 /* AdvancedActionsPanel.swift in Sources */,
 				E17B11EEC4A1BFEED29A738C /* GameCalendar.swift in Sources */,

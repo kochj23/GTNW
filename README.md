@@ -211,8 +211,9 @@ Press **⌘K** (Orders → Command Box…, or the `>` prompt under the world bri
 - Every leader has ambition and ethic (each rated 1 to 6), an ideology and a leadership score.
 - Leaders also carry **five worries**: nuclear, military, political, economic and social. These drive what
   computer-run countries do, and a sharp rise in a worry becomes a crisis.
-- **Adaptive opponents** track how you play (aggression, bluffing, alliance preferences, risk tolerance) and adjust
-  their strategy to match.
+- **Nations played by a model** (Nova, a local Ollama model or a frontier model) read a brief of their own state,
+  friends, rivals, wars and memory, the player's record (wars started, nuclear use, friends attacked, approval), and
+  their own fogged estimates of the nations that matter to them; their wars go before the same war council.
 
 ### Domestic politics
 

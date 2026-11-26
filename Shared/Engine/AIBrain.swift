@@ -245,7 +245,9 @@ enum BrainClient {
         Respond with ONLY a JSON object of the form \
         {"action":"<ACTION>","target":"<COUNTRY_ID or null>","params":{"warheads":N},"rationale":"..."}. \
         Choose exactly one action from the provided legalActions. Use a target country ID from the world state \
-        for actions that require one. Do not add prose outside the JSON.
+        for actions that require one. Figures about other nations are your own estimates and may be stale or wrong. \
+        Wars and strikes need reach; your war council may stand a declaration down. Keep the rationale to one \
+        sentence. Do not add prose outside the JSON.
         """
 
     static func userPrompt(_ request: MoveRequest) -> String {

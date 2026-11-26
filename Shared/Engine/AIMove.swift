@@ -97,10 +97,16 @@ enum MoveAction: String, CaseIterable, Sendable {
     case improveRelations = "IMPROVE_RELATIONS"
     case threatenNuke     = "THREATEN_NUKE"
     case sueForPeace      = "SUE_FOR_PEACE"
+    // 3.37.0: the built-in AI's quieter moves, carried out by the same engine code (executeWorldMove).
+    case condemn          = "CONDEMN"
+    case covertAction     = "COVERT_ACTION"
+    case tradeDeal        = "TRADE_DEAL"
+    case backRebels       = "BACK_REBELS"
+    case internalReform   = "INTERNAL_REFORM"
 
     var requiresTarget: Bool {
         switch self {
-        case .wait, .buildMilitary, .buildNukes: return false
+        case .wait, .buildMilitary, .buildNukes, .internalReform: return false
         default: return true
         }
     }
@@ -110,9 +116,9 @@ enum MoveAction: String, CaseIterable, Sendable {
     var intent: String {
         switch self {
         case .wait: return "hold"
-        case .buildMilitary, .buildNukes: return "build"
-        case .formAlliance, .improveRelations, .sueForPeace: return "diplomacy"
-        case .declareWar, .launchNuke, .threatenNuke: return "hostile"
+        case .buildMilitary, .buildNukes, .internalReform: return "build"
+        case .formAlliance, .improveRelations, .sueForPeace, .tradeDeal: return "diplomacy"
+        case .declareWar, .launchNuke, .threatenNuke, .condemn, .covertAction, .backRebels: return "hostile"
         }
     }
 }
@@ -137,7 +143,7 @@ extension GameEngine {
     /// The legal actions available to a given country right now. Pure.
     func legalActions(for country: Country) -> [String] {
         guard let gameState = gameState else { return [MoveAction.wait.rawValue] }
-        var actions: [MoveAction] = [.wait, .buildMilitary]
+        var actions: [MoveAction] = [.wait, .buildMilitary, .internalReform]
 
         // Nuclear-age build only
         if gameState.currentYear >= 1945 {
@@ -149,7 +155,7 @@ extension GameEngine {
             $0.id != country.id && !$0.isDestroyed
         }
         if hasOthers {
-            actions.append(contentsOf: [.declareWar, .formAlliance, .improveRelations])
+            actions.append(contentsOf: [.declareWar, .formAlliance, .improveRelations, .tradeDeal, .condemn, .covertAction, .backRebels])
         }
 
         // Nuclear-only verbs
@@ -172,25 +178,8 @@ extension GameEngine {
         guard let gameState = gameState,
               let country = gameState.getCountry(id: countryID) else { return nil }
 
-        let wars = country.atWarWith.sorted().compactMap { gameState.getCountry(id: $0)?.name }
-        let allies = country.alliances.sorted().compactMap { gameState.getCountry(id: $0)?.name }
-        let neighbors = gameState.countries
-            .filter { $0.id != country.id && !$0.isDestroyed }
-            .sorted { $0.militaryStrength > $1.militaryStrength }
-            .prefix(8)
-            .map { "\($0.name) [\($0.id)] mil:\($0.militaryStrength) nukes:\($0.nuclearWarheads)" }
-
-        let summary = """
-        You are \(country.name) [\(country.id)] in \(gameState.currentYear).
-        Alignment: \(country.alignment.rawValue). Government: \(country.government.rawValue).
-        Military: \(country.militaryStrength)/100. Nuclear warheads: \(country.nuclearWarheads). \
-        Aggression: \(country.aggressionLevel)/100. Stability: \(country.stability)/100.
-        \(NationCharacterTable.shared.character(for: country, difficulty: gameState.difficultyLevel).brief(country.profile))
-        At war with: \(wars.isEmpty ? "none" : wars.joined(separator: ", ")).
-        Allies: \(allies.isEmpty ? "none" : allies.joined(separator: ", ")).
-        World: \(gameState.defconName) \(gameState.defconLevel.rawValue), \(gameState.activeWars.count) active wars.
-        Nearby powers: \(neighbors.joined(separator: "; ")).\(HistoricalWars.line(year: gameState.currentYear).map { "\nHistory: \($0)" } ?? "")
-        """
+        // 3.37.0: the full brief (BrainBrief.swift): own state, relations, the world under fog, the player, memory.
+        let summary = BrainBrief.summary(for: country, in: gameState, spectating: spectating)
 
         return MoveRequest(
             gameId: gameState.playerCountryID + "-\(gameState.eraStartYear)",
@@ -223,6 +212,12 @@ extension GameEngine {
         // 3.29.0: wars and strikes only where the country can physically get at the target.
         if action == .declareWar || action == .launchNuke, !Reach.canReach(countryID, resolved, in: gameState) {
             return .failure(MoveRejection(reason: "\(country.name) cannot reach \(gameState.getCountry(id: resolved)?.name ?? resolved): no border, no navy in range, no bomber or missile that reaches"))
+        }
+        if action == .tradeDeal, country.atWarWith.contains(resolved) {
+            return .failure(MoveRejection(reason: "no trade deal with a nation you are at war with"))
+        }
+        if action == .backRebels, country.alliances.contains(resolved) {
+            return .failure(MoveRejection(reason: "you cannot arm rebels against your own ally"))
         }
         return .success((action, resolved))
     }
@@ -257,6 +252,15 @@ extension GameEngine {
 
         case .declareWar:
             if holySeeHoldsWar(countryID, targetID!) { return .noOp }   // 3.37.0: the Holy See's envoys
+            // 3.37.0: the war goes before the same council the built-in AI answers to (WarCouncil), working from this
+            // nation's own estimates. A council that stands it down takes its cheaper instrument instead, on the record.
+            if countryID != gameState.playerCountryID, let t = getCountry(targetID!), !WarCouncil.obligated(country, t, in: gameState),
+               let d = deliberateWar(actor: countryID, target: targetID!, brain: true), d.chose != "war" {
+                let alt = WarCouncil.brainAlternative(d.chose, target: targetID!)
+                addLog("🏛 \(country.name)'s council stands down the war on \(t.name): \(alt.verb.replacingOccurrences(of: "_", with: " ").lowercased()) instead.", type: .info)
+                executeWorldMove(alt.move, for: country)
+                return .applied(alt.verb)
+            }
             declareWar(aggressor: countryID, defender: targetID!)
             if let t = getCountry(targetID!) {
                 gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(t.flag) \(t.name)")
@@ -294,6 +298,13 @@ extension GameEngine {
         case .sueForPeace:
             let ok = sueForPeace(from: countryID, to: targetID!)
             return ok ? .applied(verb) : .rejectedIllegal
+
+        case .condemn, .covertAction, .tradeDeal, .backRebels, .internalReform:
+            let t = targetID ?? countryID
+            let move: WorldMove = action == .condemn ? .condemn(t) : action == .covertAction ? .covertAction(t)
+                : action == .tradeDeal ? .tradeTies(t) : action == .backRebels ? .supportRebels(t) : .internalReform
+            executeWorldMove(move, for: country)
+            return .applied(verb)
         }
     }
 

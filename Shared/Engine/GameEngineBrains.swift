@@ -136,11 +136,16 @@ extension GameEngine {
 
         // Apply the accepted moves on the main actor (mutations are serialized here).
         for (id, response) in accepted {
-            if applyMove(response, for: id) == .rejectedIllegal {   // legal but failed (e.g. peace refused)
+            let result = applyMove(response, for: id)
+            if result == .rejectedIllegal {   // legal but failed (e.g. peace refused)
                 applyRuleBasedAction(for: id)
                 lastTurnFallbackCountryIDs.insert(id)
             } else if let action = MoveAction(rawValue: response.action.trimmingCharacters(in: .whitespaces).uppercased()) {
                 brainIntents[id] = action.intent
+                // 3.37.0: the nation remembers what it did and why (BrainBrief), and what its council made of it.
+                var outcome: String? = nil
+                if case .applied(let verb) = result, verb != action.rawValue { outcome = "council stood the war down: \(verb) instead" }
+                rememberBrainMove(id, response: response, action: action, outcome: outcome)
             }
         }
 

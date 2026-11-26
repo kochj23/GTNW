@@ -72,6 +72,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `consequences`; verbs `powerPlay`, `antarcticOrder`, `renameTarget` and `presidencyCareer`. `gtnw-golden --serve`
   answers queries, and the Wasm-vs-native soak asks the new ones every tenth turn.
 
+- **Model brains see the world the way a government does.** A nation played by Nova or another model used to read a
+  line of its own numbers and the TRUE strength of the eight biggest armies on earth. Its brief (`BrainBrief`) now
+  carries its own state (GDP, treasury, debt, trade deals, who sanctions it; ground, naval and air forces, ICBMs, SLBMs,
+  bombers, cyber, missile defense; stability and approval), its friends and rivals by relation, its blocs and
+  treaties, the wars under way (who against whom), the latest world news and the real-world brief where it touches
+  this nation, the player's nation and record (wars started, nuclear strikes, friends attacked, approval trend, the
+  habits the player has shown), and its own last five moves with the reasons it gave. Other nations come as a list of
+  up to twelve that matter to it (enemies, the player, rivals, allies, neighbors, the great powers, what it can
+  reach), each with whether and how it can strike them and ITS OWN ESTIMATES of their army, fleet and arsenal, with
+  the source and the age of each figure, never the truth. Every government now has its own believed view of every
+  other (`Intelligence.estimate`): the best source it has for that figure, how often that source reports and how far
+  off it is, growing with age, all derived from the game seed and the turn, so nothing is stored and no random draw is
+  spent. The brief stays within a hard cap (6,000 characters, under 2,500 tokens with the instructions) and shrinks
+  its lists before it would ever cut text.
+- **Model brains have the built-in AI's quieter moves.** CONDEMN, COVERT_ACTION, TRADE_DEAL, BACK_REBELS and
+  INTERNAL_REFORM, carried out by the same engine code the computer-run nations use. No trade deal with a nation you
+  are at war with, no rebels against an ally. The memory of what each brain did is saved with the game (older saves
+  load with none).
+
 ### Changed
 - **Governments you install count as held land.** A nation whose new government you chose at the settlement (any of
   the seven, the victor's model when the choice lapses, and a regime toppled by a capture raid) is held while that
@@ -114,6 +133,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GTNWCore query `regime`: the player's government, its words, how its leader falls and the stage reached, and what it
   can do. The `actions` query adds each order's `title` as the player's nation gives it.
 - Saves: `shadow.regime` (absent for the United States and in older saves; restored when a game loads and every turn).
+
+- **A model brain's war goes before its war council.** A DECLARE_WAR from a model used to skip the council the
+  computer-run nations answer to. It now goes through the same deliberation (`WarCouncil`), worked from that nation's
+  own estimates; a cautious council with a better cheaper instrument stands it down, and the nation condemns, trades or
+  backs rebels instead. The `war_deliberation` event says `source: brain` and what was done `instead`, the news says the
+  nation stepped back, and the brain's memory tells it next time. Wars an ally owes are not reconsidered, as before.
+  The built-in AI is unchanged (it still reads the figure in general circulation), so the golden games are identical.
+- Removed `AdaptiveOpponentEngine`, which nothing called. What a model brain knows about the player now comes from the
+  game's own record (above).
 
 ### Fixed
 - The web engine (WebAssembly) stopped when a land was renamed in a game that began before 1902, and would have on an
