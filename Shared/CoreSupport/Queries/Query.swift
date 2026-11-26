@@ -64,6 +64,7 @@ enum QueryRegistry {
         FleetsQuery.self,
         FrontsQuery.self,
         GroupActionQuery.self,
+        HolySeeQuery.self,
         HomeFrontQuery.self,
         IntelQuery.self,
         LandMarketQuery.self,

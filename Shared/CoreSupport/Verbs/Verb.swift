@@ -56,6 +56,7 @@ enum VerbRegistry {
         GovernTerritoryVerb.self,
         GroupActionVerb.self,
         HallOfInfamyVerb.self,
+        HolySeeVerb.self,
         InvestLandVerb.self,
         LandBidVerb.self,
         LaunchSatelliteVerb.self,

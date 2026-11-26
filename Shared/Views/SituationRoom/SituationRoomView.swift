@@ -26,6 +26,7 @@ struct SituationRoomView: View {
     enum SituationSheet: String, Identifiable {
         case budget, aid, evaluation, city, warRoom, saves, nameClaim, rename, fleet, resources, congress, govern, manpower, group, coalition, scorecard, offers, treaties, records, peace, tactics, statehood, factbook, tutorial, space, airCampaign, unclaimed
         case powerPlays, homeFront   // 3.36.0
+        case holySee   // 3.37.0: Vatican City only
         var id: String { rawValue }
     }
 
@@ -81,6 +82,7 @@ struct SituationRoomView: View {
             case .space: SpaceSheet(gameState: gameState).environmentObject(gameEngine)
             case .airCampaign: AirCampaignSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .homeFront: HomeFrontSheet(gameState: gameState).environmentObject(gameEngine)   // 3.36.0
+            case .holySee: HolySeeSheet(gameState: gameState).environmentObject(gameEngine)   // 3.37.0
             case .tactics: DirtyTacticsSheet(gameState: gameState, targetID: selectedCountryID).environmentObject(gameEngine)
             case .congress: CongressSheet(gameState: gameState, targetID: selectedCountryID ?? "").environmentObject(gameEngine)
             case .powerPlays: PowerPlaysSheet(gameState: gameState, targetID: selectedCountryID ?? gameState.playerCountryID).environmentObject(gameEngine)
@@ -301,6 +303,10 @@ struct SituationTopBar: View {
                 Button("SCORECARD") { onSheet(.scorecard) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))
             }
             Button("PEACE") { onSheet(.peace) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalGreen))   // 3.16.0
+            if HolySeeModel.isOffered(gameState) {   // 3.37.0: the Holy See's statecraft (HolySee.swift)
+                Button("HOLY SEE") { onSheet(.holySee) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber, prominent: true))
+                    .accessibilityLabel("Holy See: mediation, appeals, treaties and humanitarian work")
+            }
             Button("TACTICS") { onSheet(.tactics) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.neonPurple))   // 3.17.0: dirty tactics
             Button("HOME FRONT") { onSheet(.homeFront) }.buttonStyle(ThemedButtonStyle(color: GTNWColors.terminalAmber))   // 3.36.0: power plays at home
             Button("RECORDS") { onSheet(.records) }.buttonStyle(ThemedButtonStyle())   // 3.15.0: Hall of Infamy

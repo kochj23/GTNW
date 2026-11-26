@@ -240,7 +240,8 @@ final class ChatIntegrationTests: XCTestCase {
         let e = CmdFixtures.engine(year: 2025)
         let all = ChatTools.run("actions", arguments: ["category": "all"], engine: e).text
         let targets: [CommandVerb: String] = [.claim: "Antarctica", .buy: "Greenland", .liberate: "Greenland", .peace: "Venezuela", .ceasefire: "Venezuela"]
-        for verb in CommandVerb.allCases {
+        // 3.37.0: the Holy See's verbs are listed only in a Vatican game (HolySeeTests covers them).
+        for verb in CommandVerb.allCases where verb.holySeeAction == nil {
             XCTAssertTrue(all.contains("\(verb.rawValue): ") || all.contains("\"\(verb.rawValue)") || all.contains("\(verb.rawValue) ("), "\(verb) not listed")
             let out = ChatTools.run("propose_orders", arguments: ["steps": [["verb": verb.rawValue, "targets": [targets[verb] ?? "Mexico"]]]], engine: e, planID: 1)
             XCTAssertFalse(out.isError, "\(verb): \(out.text)")

@@ -175,6 +175,7 @@ touching each other's code. GTNW Lite's typed mirror is `games/gtnw-lite/src/ful
 | `fleets` | `target, fleet?, mission?, preset?` | fleet orders (FleetOrderSheet): the era's fleets, missions, commitments, the read-out, why not, warnings, fleets out |
 | `fronts` | | the War Room: every front with troop and damage assessments, momentum, the orders it allows, surrender odds, the War Powers clock, the operations log |
 | `groupAction` | `pick, region?, ids?, saved?, kind, amount?, garrison?, split?, rate?` | a group action's per-nation plan and total (GroupActionSheet) |
+| `holySee` | | the HOLY SEE sheet (3.37.0, Vatican City only): whether it is offered, the record and its points toward Honest Broker, every action with its summary, precedent, cooldown and why not now, the wars and disputes on the board with odds, the teaching themes and the treaties open to ratify |
 | `homeFront` | | the HOME FRONT sheet (3.36): official vs leaked figures, one panel per power play at home with its lines and orders, each carrying the `command` query's `intent` (plan, card, then `executeCommand`, as on the Mac); the states and industries the orders accept |
 | `intel` | | the intelligence summary: wars, nuclear powers, relations |
 | `landMarket` | | the land market's bids, unclaimed lands, the claim campaign and the regions it can cover |
@@ -237,6 +238,7 @@ through verbs is a function of seed and orders.
 | `governTerritory` | `id, garrison?, governance?` | a territory's garrison and government |
 | `groupAction`, `saveGroup` | the `groupAction` query's fields; `name, ids` | GroupActionSheet CONFIRM / SAVE GROUP |
 | `hallOfInfamy` | `hall` | restore the Hall of Infamy the front end kept |
+| `holySee` | `op`, `first`?, `second`?, `option`? | a HOLY SEE sheet button (`runHolySee`, 3.37.0): mediate, host talks, back channel, appeal, envoys, a teaching document, a treaty, humanitarian work, a visit, relations, the UN, resign; one action each |
 | `landBid` | `id, op` | raise, accept or walk away from a land-market bid |
 | `launchSatellite` | `type` | recon or warning |
 | `orderFleet`, `recallFleet` | `fleet, target, mission, preset`; `id` | FleetOrderSheet |

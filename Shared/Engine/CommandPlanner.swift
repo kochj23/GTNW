@@ -301,6 +301,8 @@ extension GameEngine {
         if let play = HomePlay(verb: verb) { return planHomePlay(play, intent, source: source) }   // 3.36.0
         if let home = planOwnStateForce(intent, verb: verb, source: source) { return home }   // 3.37.0: "invade Texas"
         if let op = verb.antarcticOrder { return planAntarctic(op, intent: intent, source: source) }   // 3.36.0
+        if let a = verb.holySeeAction { return planHolySee(a, intent: intent, source: source) }   // 3.37.0: HolySee.swift
+        if verb == .stateVisit, HolySeeModel.isOffered(gs) { return planHolySee(.pastoralVisit, intent: intent, source: source) }
         // Names → targets (or a question back).
         var targets: [ResolvedTarget] = []
         /// Nations added by a region name: one that can't take the order is skipped, not a refusal of the whole plan.
@@ -828,6 +830,7 @@ enum CommandHelp {
         "  at home: fire the chief statistician · pressure the Fed to cut rates · buy a stake in steel",
         "  build a missile shield · conduct an underground nuclear test · postpone the election",
         "  build a research station in Antarctica · leave, rejoin or renegotiate the Antarctic Treaty",
+        "  as the Holy See: mediate between Chile and Argentina · appeal for peace · visit Poland · issue an encyclical on peace",
         "Questions (answered from the game, nothing changes):",
         "  who can reach me with ICBMs? · can I reach Brazil? · what's France's stability?",
         "  who am I at war with? · who are my allies? · how many actions left? · where are my fleets?",

@@ -122,6 +122,7 @@ enum PeaceModel {
     static func scoreBonus(_ gs: GameState) -> Int {
         let peaceYears = Double(gs.peaceTurns) * gs.turnLength.yearFraction
         return treatyPartners(gs).count * 25 + gs.shadow.nobelMoments * 200 + Int(peaceYears * 10) + Int(outputShare(gs) * 1000)
+            + HolySeeModel.scoreBonus(gs)   // 3.37.0: the Holy See's record (peace brokered, lives saved; zero elsewhere)
     }
 
     /// Odds the player can broker peace between two warring nations: better the more both like the United States.

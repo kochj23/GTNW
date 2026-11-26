@@ -95,7 +95,7 @@ enum WorldPolitics {
     static func applyRivalries(_ gs: GameState) {
         let y = gs.currentYear
         let ids = Set(gs.countries.map(\.id))
-        for r in rivalries where r.from <= y && y <= r.to && ids.contains(r.a) && ids.contains(r.b) {
+        for r in rivalries where r.from <= y && y <= r.to && ids.contains(r.a) && ids.contains(r.b) && !HolySeeModel.holds(gs, r.a, r.b) {
             for (x, z) in [(r.a, r.b), (r.b, r.a)] {
                 gs.setRelation(from: x, to: z, value: min(gs.getCountry(id: x)?.diplomaticRelations[z] ?? 0, -60))
             }
@@ -147,6 +147,7 @@ extension GameEngine {
         for r in WorldPolitics.rivalries where r.war && r.from <= y && y <= r.to && !gs.shadow.firedRivalries.contains(r.key) {
             guard r.a != me, r.b != me, let a = gs.getCountry(id: r.a), let b = gs.getCountry(id: r.b),
                   !a.isDestroyed, !b.isDestroyed, !a.isTerritory, !b.isTerritory else { continue }
+            if holySeeHoldsWar(r.a, r.b) { continue }   // 3.37.0: delayed while the Holy See's envoys talk (fires later)
             gs.shadow.firedRivalries.insert(r.key)
             if a.atWarWith.contains(b.id) { continue }
             breakAlliance(a.id, b.id)

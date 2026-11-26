@@ -46,6 +46,9 @@ enum OrderKind: String, Codable, CaseIterable, Sendable {
     case homePlay
     /// 3.36.0: the Antarctic programme (`runAntarcticOrder`): `mission` is an `AntarcticOrder`, `target` "ATA".
     case antarctic
+    /// 3.37.0: the Holy See's statecraft (`runHolySee`, HolySee.swift): `mission` is a `HolySeeAction`, `target` the
+    /// first nation (or "VAT"), `detail` the second nation, a teaching theme or a treaty id.
+    case holySee
 }
 
 /// One resolved order: what the engine is asked to do, against whom, with exactly which forces.
@@ -69,7 +72,9 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
     var presidentialAction: PresidentialAction? { action.flatMap(PresidentialAction.init(rawValue:)) }
 
     /// 3.36.0: a rename and ending the emergency take no action, so they run with none left.
-    var costsNoAction: Bool { kind == .rename || kind == .renamePlace || (kind == .emergency && mission == "end") }
+    var costsNoAction: Bool {
+        kind == .rename || kind == .renamePlace || (kind == .emergency && mission == "end") || (kind == .holySee && mission == "resignOffice")
+    }
 
     var isNuclear: Bool {
         if kind == .homePlay { return action == HomePlay.nuclearTest.rawValue }   // a test needs the second press too
@@ -96,6 +101,7 @@ struct GameOrder: Codable, Equatable, Hashable, Sendable {
         case .developLand: what = "Invest"
         case .homePlay: what = "\(action ?? "?") \(mission ?? "")"
         case .antarctic: what = "Antarctica \(mission ?? "?")"
+        case .holySee: what = "Holy See \(mission ?? "?")\(detail.map { " \($0)" } ?? "")"
         }
         var sizes: [String] = []
         if let t = troops { sizes.append("\(Int(t))K troops") }
@@ -186,6 +192,7 @@ extension GameEngine {
         if o.kind == .rename || o.kind == .renamePlace { return renameCheck(RenameTarget.from(id: o.target, in: gs), to: o.detail ?? "").refusal }
         if o.kind.isPowerPlay { return powerPlayProblem(o) }   // 3.36.0
         if o.kind == .antarctic { return antarcticProblem(o) }   // 3.36.0: Antarctica may fly the President's own flag
+        if o.kind == .holySee { return holySeeProblem(o) }   // 3.37.0: aimed at the Holy See itself or a pair of nations
         if o.target == me.id { return "That is your own nation." }
         let nation = gs.getCountry(id: o.target).flatMap { $0.isDestroyed ? nil : $0 }
         if let n = nation, n.territoryOf == me.id, o.kind != .developLand { return "\(n.name) flies your own flag." }
@@ -223,6 +230,8 @@ extension GameEngine {
             return homePlayProblem(o)
         case .antarctic:
             return antarcticProblem(o)
+        case .holySee:
+            return holySeeProblem(o)
         }
     }
 
@@ -275,6 +284,8 @@ extension GameEngine {
         case .antarctic:
             guard let op = o.mission.flatMap(AntarcticOrder.init(rawValue:)) else { return false }
             return runAntarcticOrder(op)
+        case .holySee:
+            return runHolySee(o)
         }
     }
 

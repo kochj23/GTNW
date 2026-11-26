@@ -489,6 +489,8 @@ enum ChatTools {
         }
         // 3.36.0: the power plays at home, in full for "domestic", by name otherwise (the list stays under the cap).
         if category == "domestic" { d["at_home"] = HomePlayCommands.toolRows() }
+        // 3.37.0: the Holy See's statecraft, only when the President leads Vatican City (HolySee.swift).
+        if HolySeeModel.isOffered(gs), category != "domestic" { d["holy_see"] = HolySeeCommands.toolRows(gs, full: category == "diplomatic") }
         else if category == nil || category == "all" { d["also_at_home"] = HomePlay.allCases.map(\.rawValue) }
         d["not_available_here"] = "Chemical and biological weapons, assassination, terror support and drug operations stay on the escalation ladder."
         if let t { d["target"] = t.name }
@@ -549,6 +551,7 @@ enum ChatTools {
         }
         if verb == .rename || verb == .renamePlace { return try renameIntent(o) }   // 3.36.0: one rename path
         if verb.isPowerPlay { return try powerPlayIntent(verb, o) }   // 3.36.0
+        if let a = verb.holySeeAction { return try holySeeIntent(verb, a, o) }   // 3.37.0: HolySee.swift
         var targets: [String] = []
         if let t = o["targets"] as? [Any] { targets = t.compactMap { $0 as? String } }
         else if let t = o["targets"] as? String { targets = [t] }

@@ -122,7 +122,7 @@ enum ScorecardQuery: BridgeQuery {
         if victory == .peaceMaker { wopr = ["\"A STRANGE GAME.\"", "\"THE ONLY WINNING MOVE IS NOT TO PLAY.\"", "- WOPR"] }
         else if victory != nil { wopr = ["\"SHALL WE PLAY ANOTHER GAME?\"", "- WOPR"] }
         else { wopr = ["\"WOULD YOU LIKE TO TRY AGAIN?\"", "- WOPR"] }
-        return Final(victory: victory?.rawValue, victoryDescription: victory?.description, secretEnding: victory == .secretEnding,
+        return Final(victory: victory.map { $0.title(for: gs) }, victoryDescription: victory.map { $0.description(for: gs) }, secretEnding: victory == .secretEnding,
                      destroyed: destroyed, reason: gs.gameOverReason, ending: gs.shadow.domesticEnding?.rawValue,
                      endingTitle: gs.shadow.domesticEnding.map(ElectionQuery.endingTitle), score: s.finalScore, breakdown: breakdown, stats: stats,
                      epigraphs: quotes.map { ["text": $0.text, "source": $0.source, "kind": $0.kind.rawValue] }, wopr: wopr)
@@ -132,7 +132,7 @@ enum ScorecardQuery: BridgeQuery {
     static func endingTags(_ v: VictoryType?, ending: DomesticEnding?, destroyed: Bool) -> Set<QuoteTag> {
         switch v {
         case .peaceMaker?, .nobelPeace?, .secretEnding?: return [.peace, .victory, .nuclear]
-        case .diplomaticVictory?, .allianceLeader?: return [.diplomacy, .alliance, .victory]
+        case .diplomaticVictory?, .allianceLeader?, .honestBroker?: return [.diplomacy, .alliance, .victory]
         case .economicVictory?, .prosperity?: return [.economy, .peace]
         case .servedFullTerm?: return [.election, .leadership, .peace]
         case .manifestDestiny?, .sunNeverSets?, .everyRock?: return [.power, .victory, .economy]

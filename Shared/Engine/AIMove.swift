@@ -256,6 +256,7 @@ extension GameEngine {
             return .applied(verb)
 
         case .declareWar:
+            if holySeeHoldsWar(countryID, targetID!) { return .noOp }   // 3.37.0: the Holy See's envoys
             declareWar(aggressor: countryID, defender: targetID!)
             if let t = getCountry(targetID!) {
                 gameState.aiActionSummary.append("\(country.flag) \(country.name) ⚔️ declared war on \(t.flag) \(t.name)")

@@ -101,6 +101,7 @@ extension GameEngine {
         processSubdivisions()    // 3.36.0: states and provinces: unrest, secession, the provinces a won war holds
         processAntarctica()
         processAntarcticStoryline()   // 3.36.0: stations, the treaty, rivals, the ice, the penguins
+        processHolySee()              // 3.37.0: envoys, teaching documents, reform (Vatican City only)
         processPreState()
         processLandMarket()      // 3.29.0: rival bids, auctions, powers selling land they want rid of
         processClaimCampaign()   // 3.29.0: one flag (or a few) a turn until the campaign is done

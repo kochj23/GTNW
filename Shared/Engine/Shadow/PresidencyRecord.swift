@@ -322,7 +322,7 @@ enum PresidencyAwards {
                         description: "Served the full term without giving a single order", icon: "building.columns", rarity: "Epic"),
         PresidencyAward(id: "cartographer_general", name: "Cartographer General",
                         description: "Renamed ten or more lands in one game", icon: "map", rarity: "Uncommon"),
-    ]
+    ] + HolySeeModel.awards   // 3.37.0: the Holy See's record (HolySee.swift)
 
     static func award(_ id: String) -> PresidencyAward? { all.first { $0.id == id } }
 
@@ -364,7 +364,7 @@ enum PresidencyAwards {
         let r = gs.shadow.presidency
         let ending = gs.shadow.domesticEnding
         let removed = ending.map(removals.contains) ?? false
-        let servedOut = ending?.servedOut ?? false
+        let servedOut = (ending?.servedOut ?? false) && ending != .steppedDown   // 3.37.0: a resignation is not a full term
         let me = gs.playerCountryID
         let nukes = gs.nuclearStrikes.contains { $0.attacker == me }
         let renamed = Set(gs.shadow.renames.map(\.land))
@@ -388,7 +388,7 @@ enum PresidencyAwards {
         give("overkill", !r.microstatesNuked.isEmpty)
         give("museum_docent", servedOut && noOrders)
         give("cartographer_general", renamed.count >= 10)
-        return out
+        return out + HolySeeModel.earnedAwards(gs, victory: nil)   // 3.37.0
     }
 
     /// Did this game claim Antarctica?
@@ -458,6 +458,7 @@ enum PresidencyEpilogue {
             case .removedByCouncil: return "and was removed by the Assembly of Experts"
             case .resigned: return "and resigned the papacy under mounting pressure"
             case .abdicated: return "and abdicated when the government fell"
+            case .steppedDown: return "and chose to resign the papacy"
             }
         }
         if let v = victory { return "and left office in victory (\(v.rawValue.lowercased()))" }
@@ -502,6 +503,7 @@ enum PresidencyEpilogue {
             s.append("It renamed \(renamed) land\(renamed == 1 ? "" : "s")\(letters >= 2 ? ", \(letters) of them with a single letter" : "").")
         }
         if PresidencyAwards.claimedAntarctica(gs) { s.append("It planted a flag on Antarctica.") }
+        if let line = HolySeeModel.epilogueLine(gs) { s.append(line) }   // 3.37.0: peace brokered, lives saved
         let overruled = r.warnings.count
         if overruled > 0 {
             let resigned = gs.advisors.filter { $0.status == .resigned }.count

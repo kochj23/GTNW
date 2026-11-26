@@ -627,6 +627,7 @@ class GameEngine: ObservableObject {
                let d = deliberateWar(actor: country.id, target: targetID), d.chose != "war" {
                 break   // the deliberation is on the record; the war is not
             }
+            if holySeeHoldsWar(country.id, targetID) { break }   // 3.37.0: held back by the Holy See's envoys
             declareWar(aggressor: country.id, defender: targetID)
             if let target = getCountry(targetID) {
                 eventLogger.log("Declared war on \(target.name)", type: .war, country: country.name, turn: gameState.turn)
@@ -867,6 +868,7 @@ class GameEngine: ObservableObject {
               let defenderCountry = getCountry(defender) else { return }
         // 3.28.0: already at war: nothing to declare (no second war record, no second DEFCON step).
         if aggressorCountry.atWarWith.contains(defender) { return }
+        if holySeeHoldsWar(aggressor, defender) { return }   // 3.37.0: the Holy See's envoys (HolySee.swift)
         if aggressor == gameState.playerCountryID { playerWarConsequences(on: defender) }   // 3.36.0: allies, refugees
         // The council's paper is written for every computer-run war, but a declaration that arrives here has already
         // been decided — by the nation's own cabinet (executeAIAction, which asks the council first and can step
@@ -1824,7 +1826,7 @@ class GameEngine: ObservableObject {
         // Check for victory
         if let victory = VictoryChecker.checkVictory(gameState: gameState) {
             gameState.gameOver = true
-            gameState.gameOverReason = victory.description
+            gameState.gameOverReason = victory.description(for: gameState)   // 3.37.0: a pope who resigns
             self.gameState = gameState
 
             // Calculate final score with victory

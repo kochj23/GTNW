@@ -122,11 +122,11 @@ struct VictoryScreen: View {
                 .font(.scaled(size: 48, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
 
-            Text(victory.rawValue.uppercased())
+            Text(victory.title(for: gameState).uppercased())
                 .font(.scaled(size: 32, weight: .bold, design: .monospaced))
                 .foregroundColor(AppSettings.terminalAmber)
 
-            Text(victory.description)
+            Text(victory.description(for: gameState))
                 .font(.scaled(size: 16, design: .monospaced))
                 .foregroundColor(AppSettings.terminalGreen)
                 .multilineTextAlignment(.center)
@@ -309,7 +309,7 @@ struct VictoryScreen: View {
     private var endingTags: Set<QuoteTag> {
         switch victoryType {
         case .peaceMaker?, .nobelPeace?, .secretEnding?: return [.peace, .victory, .nuclear]
-        case .diplomaticVictory?, .allianceLeader?: return [.diplomacy, .alliance, .victory]
+        case .diplomaticVictory?, .allianceLeader?, .honestBroker?: return [.diplomacy, .alliance, .victory]   // 3.37.0: Honest Broker
         case .economicVictory?, .prosperity?: return [.economy, .peace]
         case .servedFullTerm?: return [.election, .leadership, .peace]
         case .manifestDestiny?, .sunNeverSets?, .everyRock?: return [.power, .victory, .economy]   // 3.29.0

@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The Holy See's statecraft.** Leading Vatican City now brings a HOLY SEE sheet (top bar, Vatican City only) with
+  sixteen actions drawn from what the Holy See has actually done as a state in the last hundred years, each one action
+  with odds from the nations' relations with the Holy See, a cooldown, a visible result and a one-sentence precedent:
+  mediate a dispute (both sides must accept; a treaty signed at the Vatican keeps them from war for five years;
+  Beagle Channel, 1978-84), host peace talks for a ceasefire (2025), a secret back channel with a prisoner release
+  (US-Cuba, 2014), an appeal for peace at DEFCON 2 or 1 that eases it (Vatican Radio, 1962), envoys to both capitals
+  that delay or avert a war (2003), a teaching document on nuclear disarmament, the environment, workers and the poor,
+  or peace that shifts world opinion and nations' willingness for two years, ratifying an arms-control treaty (the
+  NPT, CTBT, chemical weapons, mines, cluster munitions, the nuclear prohibition treaty, each from its year) and
+  pressing others to join, tracing prisoners and the missing (1939-47), sheltering refugees on extraterritorial
+  properties, prisoner exchanges and the return of children (Ukraine, 2022-), pastoral visits (civil society;
+  peaceful pressure for reform under an authoritarian government; visiting both sides of a war argues for peace), an
+  interfaith gathering for peace with a day of truce (Assisi, 1986; every faith takes part as an equal), a debt relief
+  campaign (Jubilee 2000), diplomatic relations and patient negotiation with governments hostile to religion, a
+  one-time address to the United Nations (1965), and resigning (2013). All rolls are the game's seeded RNG; nothing
+  runs or draws a number outside a Vatican game. Statecraft, diplomacy and humanitarian work only: no rite or
+  sacrament is a mechanic, no pope is named or quoted.
+- **Honest Broker.** A Vatican game is scored on its record, not land: treaties signed at the Vatican, ceasefires,
+  nuclear crises defused, wars averted or delayed, thaws, people traced, sheltered or brought home, treaties
+  ratified and joined, debt relieved, relations opened, reforms. The points join the peace bonus; 600 of them with
+  two wars ended, averted or crises defused, at peace, after two years, win the new victory Honest Broker (1300).
+  Resigning ends the game with dignity ("A Dignified Farewell", new ending `steppedDown`), scored on the record. Five
+  new awards (Signed at the Vatican, Back from the Brink, The War That Never Was, Ten Thousand Families, Honest
+  Broker), and the epilogue names the record.
+- **Everywhere the orders are.** Command box: "mediate between Chile and Argentina", "host peace talks between Russia
+  and Ukraine", "appeal for peace", "send envoys to India and Pakistan", "issue an encyclical on peace", "ratify the
+  nuclear ban treaty", "visit Poland" (a pope's visit is pastoral), "convene an interfaith gathering", "resign"
+  (`OrderKind.holySee`). The chief of staff lists them (`holy_see`) and proposes them, with `theme` and `treaty`.
+  Play events `holy_see_*` for Nova's reports (added to `ANTIC_KINDS` in nova_game_report.py). GTNWCore: query
+  `holySee`, verb `holySee`.
 - **INVEST from the Govern sheet.** A DEVELOPMENT list under the territory being governed: that land first, then every
   other land you hold that is still developing (fewest months left first, six shown), each with its income now and
   once developed, the months left, what one INVEST costs, and an **INVEST** button. The button issues the command

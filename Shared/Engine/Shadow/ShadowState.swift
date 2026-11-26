@@ -26,9 +26,11 @@ enum DomesticEnding: String, Codable, CaseIterable {
     /// 3.37.0 (Regime.swift): removed by the Assembly of Experts; a pope who resigns under pressure; a monarch who
     /// abdicates when the government falls.
     case removedByCouncil, resigned, abdicated
+    /// 3.37.0 (HolySee.swift): a pope who chooses to resign, as in 2013: a dignified finish, scored on the record.
+    case steppedDown
 
     /// 3.28.0: the presidency ran its full course (term limit or chose not to run): a finish, not a defeat.
-    var servedOut: Bool { self == .termLimited || self == .retired }
+    var servedOut: Bool { self == .termLimited || self == .retired || self == .steppedDown }
 
     var headline: String {
         switch self {
@@ -49,6 +51,7 @@ enum DomesticEnding: String, Codable, CaseIterable {
         case .removedByCouncil: return "The Assembly of Experts removes you from office."
         case .resigned: return "You resign the papacy, as a pope last did in 2013. The College of Cardinals gathers in conclave to elect a successor."
         case .abdicated: return "The government has fallen and the pressure on the crown is too great. You abdicate."
+        case .steppedDown: return "You choose to resign the papacy, as a pope last did in 2013. The College of Cardinals gathers to elect a successor."
         }
     }
 }
@@ -285,6 +288,9 @@ struct ShadowState: Codable {
     /// 3.37.0: the player nation's government (Regime.swift): its words, how its leader falls, what it can do.
     /// Nil for the United States and in older saves (set again when the game loads and every turn).
     var regime: Regime?
+    /// 3.37.0: the Holy See's statecraft when the player leads Vatican City (HolySee.swift): its record, cooldowns,
+    /// envoys, teaching documents and treaties.
+    var holySee = HolySeeState()
 
     // Scenario
     var scenarioID: String?
@@ -342,6 +348,7 @@ struct ShadowState: Codable {
         case antarctic
         case installedGovernments
         case regime
+        case holySee
     }
 
     init() {}
@@ -460,6 +467,7 @@ struct ShadowState: Codable {
         antarctic = (try? c.decodeIfPresent(AntarcticProgram.self, forKey: .antarctic)) ?? AntarcticProgram()
         installedGovernments = (try? c.decodeIfPresent([String: InstalledGovernment].self, forKey: .installedGovernments)) ?? [:]
         regime = try? c.decodeIfPresent(Regime.self, forKey: .regime)
+        holySee = (try? c.decodeIfPresent(HolySeeState.self, forKey: .holySee)) ?? HolySeeState()
     }
 }
 

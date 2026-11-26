@@ -24,6 +24,7 @@ enum VictoryType: String, Codable, CaseIterable {
     case manifestDestiny = "Manifest Destiny"        // 1000 pts (3.29.0)
     case sunNeverSets = "The Sun Never Sets"          // 1200 pts (3.29.0)
     case everyRock = "Every Rock"                    // 900 pts (3.29.0)
+    case honestBroker = "Honest Broker"              // 1300 pts (3.37.0: the Holy See, HolySee.swift)
 
     var baseScore: Int {
         switch self {
@@ -41,6 +42,7 @@ enum VictoryType: String, Codable, CaseIterable {
         case .manifestDestiny: return 1000
         case .sunNeverSets: return 1200
         case .everyRock: return 900
+        case .honestBroker: return 1300
         }
     }
 
@@ -74,6 +76,8 @@ enum VictoryType: String, Codable, CaseIterable {
             return "Held land in every region of the world, so the sun never set on the flag"
         case .everyRock:
             return "Planted the flag on every one of the world's 32 small islands"
+        case .honestBroker:
+            return "Led the Holy See to a record of peace brokered, crises defused and lives saved"
         }
     }
 }
@@ -303,6 +307,9 @@ class VictoryChecker {
            GameCalendar.days(from: since, to: gameState.currentDate) >= goodLifeDays {
             return .prosperity
         }
+
+        // 3.37.0: the Holy See wins on its record of peace (HolySee.swift); nil for every other nation
+        if let holySee = HolySeeModel.victory(gameState) { return holySee }
 
         // Treaty network, alliance leadership, economic dominance, Nobel moments (PeaceModel)
         if let peace = PeaceModel.victory(gameState) { return peace }

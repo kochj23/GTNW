@@ -198,6 +198,7 @@ enum ElectionQuery: BridgeQuery {
         case .removedByCouncil: return "REMOVED BY THE ASSEMBLY"
         case .resigned: return "RESIGNATION"
         case .abdicated: return "ABDICATION"
+        case .steppedDown: return "RESIGNATION"
         }
     }
 }

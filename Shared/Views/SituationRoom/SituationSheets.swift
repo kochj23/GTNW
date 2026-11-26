@@ -571,6 +571,7 @@ struct DomesticEndingBanner: View {
             case .removedByCouncil: drawn("person.3.fill", "REMOVED BY THE ASSEMBLY")
             case .resigned: drawn("door.left.hand.open", "RESIGNATION")
             case .abdicated: drawn("crown.fill", "ABDICATION")
+            case .steppedDown: drawn("figure.walk", "RESIGNATION")
             }
         }
         .frame(maxHeight: FontScale.h(220))

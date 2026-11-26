@@ -39,6 +39,9 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
     case troopsHome, fixNumbers, leanOnBank, buyStake, stayInPower, missileShield, nuclearTest
     // Antarctica (3.36.0)
     case researchStation, joinAntarcticTreaty, leaveAntarcticTreaty, renegotiateAntarcticTreaty
+    // 3.37.0: the Holy See's statecraft (HolySee.swift; Vatican City only). Raw values are `HolySeeAction`'s.
+    case mediate, hostTalks, backChannel, appealForPeace, sendEnvoys, encyclical, ratifyTreaty, tracePrisoners, shelterRefugees
+    case prisonerExchange, pastoralVisit, interfaithGathering, debtRelief, openRelations, addressUN, resignOffice
 
     /// The Situation Room action a simple (non-force) verb runs; nil for the force and land verbs.
     var simpleAction: PresidentialAction? {
@@ -101,7 +104,7 @@ enum CommandVerb: String, Codable, CaseIterable, Sendable {
         case .liberate: return "BACK INDEPENDENCE"
         case .rename: return "RENAME"
         case .develop: return "INVEST"
-        default: return antarcticOrder?.title ?? powerPlayTitle ?? HomePlay(verb: self)?.title ?? (simpleAction?.rawValue ?? rawValue).uppercased()
+        default: return holySeeAction?.title ?? antarcticOrder?.title ?? powerPlayTitle ?? HomePlay(verb: self)?.title ?? (simpleAction?.rawValue ?? rawValue).uppercased()
         }
     }
 }
@@ -340,6 +343,7 @@ enum CommandParser {
         }
         body = body.trimmingCharacters(in: .whitespaces)
         if let home = HomePlayCommands.parse(body) { return home }   // 3.36.0: power plays at home
+        if let holy = HolySeeCommands.parse(body) { return holy }   // 3.37.0: the Holy See (planned for Vatican City only)
         guard let (phrase, verb0) = phrases.first(where: { body == $0.0 || body.hasPrefix($0.0 + " ") }) else { return nil }
         var verb = verb0
         let rest = String(body.dropFirst(phrase.count)).trimmingCharacters(in: .whitespaces)
