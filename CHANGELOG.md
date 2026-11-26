@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.37.0] - 2026-11-25 — Every head of state
+
 ### Added
 - **The Holy See's statecraft.** Leading Vatican City now brings a HOLY SEE sheet (top bar, Vatican City only) with
   sixteen actions drawn from what the Holy See has actually done as a state in the last hundred years, each one action

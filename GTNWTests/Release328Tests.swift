@@ -40,7 +40,7 @@ final class Release328UnitTests: XCTestCase {
 
     /// Unit: term limit and retirement are finishes; losing, impeachment and the rest are not.
     func testServedOutEndings() {
-        XCTAssertEqual(Set(DomesticEnding.allCases.filter(\.servedOut)), [.termLimited, .retired])
+        XCTAssertEqual(Set(DomesticEnding.allCases.filter(\.servedOut)), [.termLimited, .retired, .steppedDown])
     }
 
     /// Unit: an island's era and label (India's, not "British India", after 1947).
